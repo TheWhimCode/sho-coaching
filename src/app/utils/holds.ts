@@ -1,3 +1,4 @@
+'use client'
 export async function holdSlot(slotId: string, holdKey?: string) {
   const res = await fetch("/api/holds", {
     method: "POST",
