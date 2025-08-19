@@ -43,25 +43,39 @@ function CardForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!stripe || !elements) return;
+async function onSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  if (!stripe || !elements) return;
 
-    setSubmitting(true);
-    setError(null);
+  setSubmitting(true);
+  setError(null);
 
-    const returnUrl = `${window.location.origin}/checkout/success`;
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: returnUrl },
-    });
+  const origin = window.location.origin;
 
-    if (error) {
-      console.error("STRIPE_CONFIRM_ERROR", error);
-      setError(error.message ?? "Payment failed");
-    }
-    setSubmitting(false);
+  const { error, paymentIntent } = await stripe.confirmPayment({
+    elements,
+    confirmParams: { return_url: `${origin}/checkout/success` },
+    redirect: 'if_required', // ← no redirect unless 3DS required
+  });
+
+  if (paymentIntent?.status === 'succeeded') {
+    window.location.href =
+      `/checkout/success?provider=stripe&payment_intent=${paymentIntent.id}&redirect_status=succeeded`;
+    return;
   }
+
+  if (error) {
+    // If Stripe says "already succeeded", treat it as success
+    if ((error as any).code === 'payment_intent_unexpected_state') {
+      window.location.href =
+        `/checkout/success?provider=stripe&redirect_status=succeeded`;
+    } else {
+      setError(error.message ?? 'Payment failed');
+    }
+  }
+
+  setSubmitting(false);
+}
 
   return (
     <form onSubmit={onSubmit} className="max-w-md mx-auto p-4 space-y-4">
