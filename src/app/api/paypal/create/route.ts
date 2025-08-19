@@ -1,9 +1,10 @@
+// src/app/api/paypal/create/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
 import { getBlockIds } from "@/lib/booking/block";
 import { paypalCreateOrder } from "@/lib/paypal";
-import { CFG } from "@/lib/config.public";
+import { CFG_PUBLIC } from "@/lib/config.public"; // ⬅️ fixed
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,13 +20,13 @@ function toBase64Url(s: string) {
 }
 
 function encodeMetaShort(meta: {
-  a: string;
-  m: number;
-  t: string;
-  d: string;
-  g: boolean;
-  f: number;
-  p: number;
+  a: string; // slotId
+  m: number; // liveMinutes
+  t: string; // sessionType
+  d: string; // discord
+  g: boolean; // inGame
+  f: number; // followups
+  p: number; // priceEUR
 }) {
   const b64u = toBase64Url(JSON.stringify(meta));
   return b64u.length <= 127 ? b64u : b64u.slice(0, 127);
@@ -106,8 +107,8 @@ export async function POST(req: Request) {
         brand_name: "Your Coaching",
         user_action: "PAY_NOW",
         shipping_preference: "NO_SHIPPING",
-        return_url: `${CFG.public.SITE_URL}/checkout/success`,
-        cancel_url: `${CFG.public.SITE_URL}/checkout/cancel`,
+        return_url: `${CFG_PUBLIC.SITE_URL}/checkout/success`, // ⬅️ fixed
+        cancel_url: `${CFG_PUBLIC.SITE_URL}/checkout/cancel`,   // ⬅️ fixed
       },
     },
     requestId
