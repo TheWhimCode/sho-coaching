@@ -1,10 +1,14 @@
-import { CFG } from "@/lib/config.public";
+// src/lib/paypal.ts
+import "server-only";
+import { CFG_SERVER } from "@/lib/config.server";
 
+// Pick the correct REST base URL from env
 const base =
-  CFG.paypal.ENV === "live"
+  CFG_SERVER.paypal.ENV === "live"
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
+// Simple bearer-token cache
 let cachedToken: { token: string; expMs: number } | null = null;
 
 function b64(s: string) {
@@ -12,6 +16,7 @@ function b64(s: string) {
 }
 
 export async function getPaypalAccessToken(): Promise<string> {
+  // Reuse cached token if it’s still valid for at least 10s
   const now = Date.now();
   if (cachedToken && cachedToken.expMs > now + 10_000) {
     return cachedToken.token;
@@ -20,24 +25,23 @@ export async function getPaypalAccessToken(): Promise<string> {
   const res = await fetch(`${base}/v1/oauth2/token`, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${b64(`${CFG.paypal.CLIENT_ID}:${CFG.server.PAYPAL_SECRET}`)}`,
+      Authorization: `Basic ${b64(
+        `${CFG_SERVER.paypal.CLIENT_ID}:${CFG_SERVER.paypal.SECRET}`
+      )}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: "grant_type=client_credentials",
   });
 
-  const json = await res.json().catch(() => ({} as any));
+  const json = (await res.json().catch(() => ({}))) as any;
   if (!res.ok) {
     console.error("paypal_oauth_failed", res.status, json);
     throw new Error(`paypal_oauth_failed:${res.status}`);
   }
 
-  const token = (json as any).access_token as string;
-  const expiresIn = (json as any).expires_in as number | undefined;
-  cachedToken = {
-    token,
-    expMs: Date.now() + (expiresIn ? expiresIn * 1000 : 3000 * 1000),
-  };
+  const token = json.access_token as string;
+  const expiresIn = (json.expires_in as number | undefined) ?? 3000; // seconds
+  cachedToken = { token, expMs: now + expiresIn * 1000 };
   return token;
 }
 
@@ -57,7 +61,11 @@ export async function paypalCreateOrder(body: any, requestId?: string) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const dbg = res.headers.get("paypal-debug-id");
-    console.error("paypal_create_error", { status: res.status, debug_id: dbg, body: data });
+    console.error("paypal_create_error", {
+      status: res.status,
+      debug_id: dbg,
+      body: data,
+    });
     throw new Error(`paypal_create_failed:${res.status}`);
   }
   return data; // includes { id: "ORDER_ID" }
