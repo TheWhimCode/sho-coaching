@@ -1,5 +1,5 @@
 // src/app/lab/landing/page.tsx
-import AnimatedBg from "@/app/components/AnimatedBg";
+import AnimatedBg from "@/components/AnimatedBg";
 
 export const dynamic = "force-static";
 

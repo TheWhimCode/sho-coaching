@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../../utils/sessionConfig"; // adjust path if needed
+import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../utils/sessionConfig"; // adjust path if needed
 
 type Props = {
   open: boolean;

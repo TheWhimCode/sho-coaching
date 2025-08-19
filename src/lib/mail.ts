@@ -1,11 +1,15 @@
-// src/lib/mail.ts
 import { prisma } from "@/lib/prisma";
+import { CFG } from "@/lib/config.public";
 
 export async function sendBookingConfirmation(slotId: string) {
-  const booking = await prisma.booking.findUnique({ where: { slotId }, include: { slot: true } });
+  const booking = await prisma.booking.findUnique({
+    where: { slotId },
+    include: { slot: true },
+  });
+
   if (!booking || !booking.slot) return;
 
-  const to = process.env.BOOKING_CONFIRM_TO ?? ""; // or collect buyer email
+  const to = CFG.server.EMAIL_FROM || CFG.server.ADMIN_USER; // fallback if needed
   if (!to) return;
 
   const start = booking.slot.startTime;
@@ -15,6 +19,6 @@ export async function sendBookingConfirmation(slotId: string) {
   console.log("EMAIL ->", to, {
     subject: `Booking confirmed: ${booking.sessionType}`,
     body: `Your session on ${start.toISOString()} for ${minutes} minutes is confirmed.`,
-    icsUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/ics?bookingId=${booking.id}`,
+    icsUrl: `${CFG.public.SITE_URL}/api/ics?bookingId=${booking.id}`,
   });
 }

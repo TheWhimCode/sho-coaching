@@ -3,6 +3,7 @@ import { paypalCaptureOrder } from "@/lib/paypal";
 import { getBlockIds } from "@/lib/booking/block";
 import { finalizeBooking } from "@/lib/booking/finalizeBooking";
 import { prisma } from "@/lib/prisma";
+import { sendBookingEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
 
     const pu = data.purchase_units?.[0];
     const customRaw = pu?.custom_id ? fromBase64Url(String(pu.custom_id)) : null;
-    const c = customRaw ? JSON.parse(customRaw) as any : null;
+    const c = customRaw ? (JSON.parse(customRaw) as any) : null;
 
     // Build meta for finalizeBooking (we recompute the block now)
     const meta: any = c
@@ -65,7 +66,6 @@ export async function POST(req: Request) {
         select: { startTime: true },
       });
       if (slot) {
-        const { sendBookingEmail } = await import("@/lib/email");
         await sendBookingEmail(email, {
           title: meta.sessionType ?? "Coaching Session",
           startISO: slot.startTime.toISOString(),

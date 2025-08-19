@@ -1,7 +1,10 @@
+// src/lib/booking/suggest.ts
+import { CFG_PUBLIC } from "@/lib/config.public";
+
 export type SlotLite = { id: string; startTime: string };
 
 function iso(d: Date) { return d.toISOString(); }
-function addMin(d: Date, m: number) { return new Date(d.getTime() + m*60_000); }
+function addMin(d: Date, m: number) { return new Date(d.getTime() + m * 60_000); }
 
 export async function fetchSuggestedStarts(
   liveMinutes: number,
@@ -17,13 +20,15 @@ export async function fetchSuggestedStarts(
   const from = now;
   const to = addMin(now, horizonDays * 24 * 60);
 
-  // hit your real API (same as CalLikeOverlay), passing liveMinutes
   const qs = new URLSearchParams({
     from: iso(from),
     to: iso(to),
     liveMinutes: String(liveMinutes),
   });
-  const res = await fetch(`/api/slots?${qs}`, { cache: "no-store" });
+
+  // Use full SITE_URL on server, relative on client
+  const base = typeof window === "undefined" ? CFG_PUBLIC.SITE_URL : "";
+  const res = await fetch(`${base}/api/slots?${qs}`, { cache: "no-store" });
   const slots: SlotLite[] = await res.json();
   if (!Array.isArray(slots)) return [];
 
@@ -39,8 +44,8 @@ export async function fetchSuggestedStarts(
 
   // S2: at least gapMin after S1 (or next available if S1 missing)
   if (out.length < count) {
-    const base = out[0]?.startTime ? new Date(out[0].startTime) : now;
-    const s2 = items.find(s => s.dt >= addMin(base, gapMin));
+    const baseTime = out[0]?.startTime ? new Date(out[0].startTime) : now;
+    const s2 = items.find(s => s.dt >= addMin(baseTime, gapMin));
     if (s2) out.push({ id: s2.id, startTime: s2.dt.toISOString() });
   }
 
@@ -55,8 +60,8 @@ export async function fetchSuggestedStarts(
     if (prime) {
       out.push({ id: prime.id, startTime: prime.dt.toISOString() });
     } else {
-      const base = out[out.length-1]?.startTime ? new Date(out[out.length-1].startTime) : now;
-      const nxt = items.find(s => !pickedIds.has(s.id) && s.dt >= addMin(base, gapMin));
+      const baseTime = out[out.length - 1]?.startTime ? new Date(out[out.length - 1].startTime) : now;
+      const nxt = items.find(s => !pickedIds.has(s.id) && s.dt >= addMin(baseTime, gapMin));
       if (nxt) out.push({ id: nxt.id, startTime: nxt.dt.toISOString() });
     }
   }

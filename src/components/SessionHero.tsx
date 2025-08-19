@@ -2,8 +2,8 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import AvailableSlots, { Slot } from "./AvailableSlots";
-import CenterSessionPanel from "@/app/sessions/components/CenterSessionPanel";
+import AvailableSlots, { Slot } from "@/components/AvailableSlots";
+import CenterSessionPanel from "@/components/CenterSessionPanel";
 import { fetchSuggestedStarts } from "@/lib/booking/suggest";
 
 function StepPill({ i, text }: { i: number; text: string }) {

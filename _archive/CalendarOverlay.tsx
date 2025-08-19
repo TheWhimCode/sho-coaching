@@ -13,8 +13,8 @@ import {
   startOfWeek,
 } from "date-fns";
 // ⬇️ only keep fetchSlots
-import { fetchSlots } from "@/app/utils/api";
-import type { Slot } from "@/app/utils/api";
+import { fetchSlots } from "@/utils/api";
+import type { Slot } from "@/utils/api";
 import { useRouter } from "next/navigation";
 
 type Props = {

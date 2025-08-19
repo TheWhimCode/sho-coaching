@@ -123,7 +123,7 @@ export default function CheckoutClient() {
     if (method !== "card") return;
 
     (async () => {
-      const res = await fetch("/api/checkout/intent", {
+      const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

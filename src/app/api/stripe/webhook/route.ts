@@ -1,13 +1,15 @@
-// src/app/api/stripe/webhook/route.ts
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { sendBookingEmail } from "@/lib/email";
 import { finalizeBooking } from "@/lib/booking/finalizeBooking";
+// webhook
+import { CFG_SERVER } from "@/lib/config.server";
+const stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" });
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+
 
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
@@ -15,26 +17,41 @@ export async function POST(req: Request) {
 
   const raw = await req.text();
   let event: Stripe.Event;
+
   try {
     event = stripe.webhooks.constructEvent(
       raw,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      CFG_SERVER.STRIPE_WEBHOOK_SECRET
     );
   } catch (err: any) {
     console.error("WEBHOOK VERIFY ERROR:", err?.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  async function handle(meta: Record<string, string>, amount?: number, currency?: string, paymentRef?: string, emailFromPayload?: string) {
-    // finalize (idempotent)
-    await finalizeBooking(meta, amount, (currency ?? "eur").toLowerCase(), paymentRef);
+  async function handle(
+    meta: Record<string, string>,
+    amount?: number,
+    currency?: string,
+    paymentRef?: string,
+    emailFromPayload?: string
+  ) {
+    // finalize booking (idempotent)
+    await finalizeBooking(
+      meta,
+      amount,
+      (currency ?? "eur").toLowerCase(),
+      paymentRef
+    );
 
     // figure out slot start for the email
     const slotIds = (meta.slotIds ? meta.slotIds.split(",") : []).filter(Boolean);
     const firstSlotId = meta.slotId || slotIds[0];
     const slot = firstSlotId
-      ? await prisma.slot.findUnique({ where: { id: firstSlotId }, select: { startTime: true } })
+      ? await prisma.slot.findUnique({
+          where: { id: firstSlotId },
+          select: { startTime: true },
+        })
       : null;
 
     // only send if we have an email + a start time
@@ -58,8 +75,16 @@ export async function POST(req: Request) {
       let email =
         pi.receipt_email ||
         (typeof pi.customer === "string"
-          ? (!("deleted" in (await stripe.customers.retrieve(pi.customer))) &&
-              (await stripe.customers.retrieve(pi.customer) as Stripe.Customer).email) || undefined
+          ? (() => {
+              const c = stripe.customers.retrieve(pi.customer) as Promise<
+                Stripe.Customer | Stripe.DeletedCustomer
+              >;
+              return c.then(
+                (cust) =>
+                  ("deleted" in cust ? undefined : (cust as Stripe.Customer).email) ??
+                  undefined
+              );
+            })()
           : undefined);
 
       // Fallback: latest charge billing email
@@ -71,7 +96,13 @@ export async function POST(req: Request) {
         email = lc?.billing_details?.email ?? undefined;
       }
 
-      await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email ?? undefined);
+      await handle(
+        meta,
+        pi.amount_received ?? undefined,
+        pi.currency,
+        pi.id,
+        await email
+      );
       break;
     }
 
@@ -84,7 +115,7 @@ export async function POST(req: Request) {
     }
 
     default:
-      // ignore others
+      // ignore other events
       break;
   }
 

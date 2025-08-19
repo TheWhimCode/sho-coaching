@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SessionHero from "../components/SessionHero";
-import CalLikeOverlay from "../components/CalLikeOverlay";
-import SessionTiles from "@/app/sessions/components/SessionTiles";
-import SessionExample from "@/app/sessions/components/SessionExample";
-import CustomizeDrawer from "../components/CustomizeDrawer";
-import SessionTestimonialsSection from "@/app/sessions/components/SessionTestimonialsSection";
+import SessionHero from "../SessionHero";
+import CalLikeOverlay from "../CalLikeOverlay";
+import SessionTiles from "@/components/SessionTiles";
+import SessionExample from "@/components/SessionExample";
+import CustomizeDrawer from "../CustomizeDrawer";
+import SessionTestimonialsSection from "@/components/SessionTestimonialsSection";
 import { AnimatePresence, LayoutGroup } from "framer-motion";
 import type { Cfg } from "../../utils/sessionConfig";
-import { fetchSlots, type Slot as ApiSlot } from "@/app/utils/api";
+import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { startOfMonth, startOfWeek, endOfMonth, endOfWeek } from "date-fns";
 
 export default function VODReviewClient() {

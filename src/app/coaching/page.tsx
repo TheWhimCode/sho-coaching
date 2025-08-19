@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import SessionCard from "../components/SessionCard";
-import { ROTATE_MS, SLIDE_VARIANTS } from "../components/carousel/constants";
+import SessionCard from "../../components/SessionCard";
+import { ROTATE_MS, SLIDE_VARIANTS } from "../../components/carousel/constants";
 import { SESSIONS, POSTER_SRC, VIDEO_SRC, TINT_BY_SLUG, END_FRAME_SRC } from "../data/sessions";
 import Image from "next/image";
 

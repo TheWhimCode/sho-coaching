@@ -3,13 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
 import { getBlockIds } from "@/lib/booking/block";
 import { paypalCreateOrder } from "@/lib/paypal";
+import { CFG } from "@/lib/config.public";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const HOLD_TTL_MIN = 10;
 
-// base64url without relying on Buffer "base64url" variant
 function toBase64Url(s: string) {
   return Buffer.from(s)
     .toString("base64")
@@ -18,21 +18,19 @@ function toBase64Url(s: string) {
     .replace(/=+$/g, "");
 }
 
-// keep metadata short; we'll recompute the block on capture
 function encodeMetaShort(meta: {
-  a: string; // slotId
-  m: number; // liveMinutes
-  t: string; // sessionType
-  d: string; // discord
-  g: boolean; // inGame
-  f: number; // followups
-  p: number; // priceEUR
+  a: string;
+  m: number;
+  t: string;
+  d: string;
+  g: boolean;
+  f: number;
+  p: number;
 }) {
   const b64u = toBase64Url(JSON.stringify(meta));
   return b64u.length <= 127 ? b64u : b64u.slice(0, 127);
 }
 
-// safe ascii idempotency key (no crypto import)
 function makeRequestId(slotId: string, amountCents: number) {
   return `${slotId}-${amountCents}-paypal`
     .replace(/[^a-zA-Z0-9]/g, "")
@@ -47,20 +45,14 @@ export async function POST(req: Request) {
     discord,
     inGame,
     followups,
-    // liveBlocks (UI-only; not needed here)
     holdKey,
   } = CheckoutZ.parse(await req.json());
 
-  // 1) Validate slot & not taken
   const slot = await prisma.slot.findUnique({ where: { id: slotId } });
   if (!slot || slot.isTaken) {
-    return NextResponse.json(
-      { error: "Slot not found or already taken" },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "Slot not found or already taken" }, { status: 409 });
   }
 
-  // 2) Enforce/refresh hold
   const now = new Date();
   if (slot.holdUntil && slot.holdUntil < now) {
     await prisma.slot.update({
@@ -80,19 +72,13 @@ export async function POST(req: Request) {
     } as any,
   });
 
-  // 3) Ensure contiguous block available
   const slotIds = await getBlockIds(slotId, liveMinutes, prisma);
   if (!slotIds?.length) {
-    return NextResponse.json(
-      { error: "Selected time isn’t fully available" },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "Selected time isn’t fully available" }, { status: 409 });
   }
 
-  // 4) Price
   const { priceEUR, amountCents } = computePriceEUR(liveMinutes, followups);
 
-  // 5) Compact custom metadata (no block list here)
   const custom = encodeMetaShort({
     a: slotId,
     m: liveMinutes,
@@ -103,10 +89,8 @@ export async function POST(req: Request) {
     p: priceEUR,
   });
 
-  // 6) Safe idempotency key
   const requestId = makeRequestId(slotId, amountCents);
 
-  // 7) Create order (currency must match your PayPalScriptProvider)
   const order = await paypalCreateOrder(
     {
       intent: "CAPTURE",
@@ -115,18 +99,15 @@ export async function POST(req: Request) {
           reference_id: slotId,
           custom_id: custom,
           description: `${sessionType} (${liveMinutes}m)`,
-          amount: {
-            currency_code: "EUR",
-            value: (amountCents / 100).toFixed(2),
-          },
+          amount: { currency_code: "EUR", value: (amountCents / 100).toFixed(2) },
         },
       ],
       application_context: {
         brand_name: "Your Coaching",
         user_action: "PAY_NOW",
         shipping_preference: "NO_SHIPPING",
-        return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success`,
-        cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/cancel`,
+        return_url: `${CFG.public.SITE_URL}/checkout/success`,
+        cancel_url: `${CFG.public.SITE_URL}/checkout/cancel`,
       },
     },
     requestId

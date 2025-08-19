@@ -1,31 +1,32 @@
-// src/app/api/checkout/intent/route.ts
+// src/app/api/stripe/checkout/intent/route.ts
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
 import { getBlockIds } from "@/lib/booking/block";
-import { rateLimit } from "@/middleware/rateLimit";
+import { rateLimit } from "@/lib/rateLimit";
+import { CFG_SERVER } from "@/lib/config.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const HOLD_TTL_MIN = 10;
 
-// lazy Stripe init with a clear error if the key is missing
+// lazy Stripe init with clear error
 let stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (stripe) return stripe;
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("Stripe not configured: STRIPE_SECRET_KEY is missing");
-  stripe = new Stripe(key);
+  const key = CFG_SERVER.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Stripe not configured: STRIPE_SECRET_KEY missing");
+  stripe = new Stripe(key, { apiVersion: "2025-07-30.basil" });
   return stripe;
 }
 
 export async function POST(req: Request) {
   try {
-    // simple rate limit
+    // --- rate limit ---
     const ip = req.headers.get("x-forwarded-for") || "local";
-    if (!rateLimit(`intent:${ip}`, 1000, 60_000)) {
+    if (!rateLimit(`intent:${ip}`, 20, 60_000)) {
       return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
     }
 
@@ -64,21 +65,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // ---- softened hold enforcement (non-fatal) ----
+    // ---- hold handling ----
     const now = new Date();
-
-    // clear expired holds
     if (slot.holdUntil && slot.holdUntil < now) {
       await prisma.slot.update({
         where: { id: slotId },
         data: { holdUntil: null, holdKey: null },
       });
     }
-
-    // adopt provided key, existing key, or mint a new one
     const effectiveHoldKey = holdKey || slot.holdKey || crypto.randomUUID();
-
-    // refresh/apply the hold for 10 minutes
     await prisma.slot.update({
       where: { id: slotId },
       data: {
@@ -86,9 +81,9 @@ export async function POST(req: Request) {
         holdUntil: new Date(now.getTime() + HOLD_TTL_MIN * 60_000),
       },
     });
-    // -----------------------------------------------
+    // -----------------------
 
-    // ensure the requested continuous block is available
+    // ensure continuous block
     const slotIds = await getBlockIds(slotId, liveMinutes, prisma);
     if (!slotIds?.length) {
       return NextResponse.json(

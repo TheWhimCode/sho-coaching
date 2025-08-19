@@ -1,6 +1,7 @@
-// src/lib/paypal.ts
+import { CFG } from "@/lib/config.public";
+
 const base =
-  process.env.PAYPAL_ENV === "live"
+  CFG.paypal.ENV === "live"
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
@@ -19,7 +20,7 @@ export async function getPaypalAccessToken(): Promise<string> {
   const res = await fetch(`${base}/v1/oauth2/token`, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${b64(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`)}`,
+      Authorization: `Basic ${b64(`${CFG.paypal.CLIENT_ID}:${CFG.server.PAYPAL_SECRET}`)}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: "grant_type=client_credentials",

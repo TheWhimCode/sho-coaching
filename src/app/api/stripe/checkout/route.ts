@@ -1,13 +1,19 @@
+// src/app/api/stripe/checkout/route.ts
 import Stripe from "stripe";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getBlockIds } from "@/lib/booking/block";
-import { rateLimit } from "@/middleware/rateLimit";
+import { rateLimit } from "@/lib/rateLimit";
+import { computePriceEUR } from "@/lib/pricing";
+import { CFG_SERVER } from "@/lib/config.server";
+import { CFG_PUBLIC } from "@/lib/config.public";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+const stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, {
+  apiVersion: "2025-07-30.basil",
+});
 
 // ---- input body ----
 const Body = z.object({
@@ -17,24 +23,17 @@ const Body = z.object({
   discord: z.string().trim().max(64).optional().default(""),
   inGame: z.boolean().optional().default(false),
   followups: z.number().int().min(0).max(4).optional().default(0),
+  liveBlocks: z.number().int().optional().default(0),
 });
-
-// ---- pricing ----
-function calcAmountCents({
-  liveMinutes,
-  followups,
-}: { liveMinutes: number; followups: number }) {
-  const base = 50;
-  const extra = Math.max(0, liveMinutes - 60) * 0.5;
-  const follow = (followups ?? 0) * 10;
-  return Math.round((base + extra + follow) * 100);
-}
 
 export async function POST(req: Request) {
   // --- rate limit ---
   const ip = req.headers.get("x-forwarded-for") || "local";
   if (!rateLimit(`checkout:${ip}`, 10, 60_000)) {
-    return Response.json({ error: "Too many checkout attempts" }, { status: 429 });
+    return Response.json(
+      { error: "Too many checkout attempts" },
+      { status: 429 }
+    );
   }
 
   let body: unknown;
@@ -53,7 +52,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { slotId, sessionType, liveMinutes, discord, inGame, followups } =
+    const { slotId, sessionType, liveMinutes, discord, inGame, followups, liveBlocks } =
       parsed.data;
 
     const slot = await prisma.slot.findUnique({ where: { id: slotId } });
@@ -72,10 +71,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const amount = calcAmountCents({
-      liveMinutes,
-      followups: followups ?? 0,
-    });
+    // pricing
+    const { amountCents, priceEUR } = computePriceEUR(liveMinutes, followups);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -88,13 +85,13 @@ export async function POST(req: Request) {
               name: `${sessionType} (${liveMinutes} min)`,
               description: `Time: ${new Date(slot.startTime).toLocaleString()}`,
             },
-            unit_amount: amount,
+            unit_amount: amountCents,
           },
           quantity: 1,
         },
       ],
-      success_url: `${process.env.SITE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_URL}/checkout/cancel`,
+      success_url: `${CFG_PUBLIC.SITE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${CFG_PUBLIC.SITE_URL}/checkout/cancel`,
       metadata: {
         slotId,
         slotIds: blockIds.join(","),
@@ -103,6 +100,8 @@ export async function POST(req: Request) {
         discord: discord ?? "",
         inGame: String(!!inGame),
         followups: String(followups ?? 0),
+        liveBlocks: String(liveBlocks ?? 0),
+        priceEUR: String(priceEUR),
       },
     });
 

@@ -13,9 +13,9 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { fetchSlots } from "@/app/utils/api";
-import type { Slot } from "@/app/utils/api";
-import { holdSlot, releaseHold } from "@/app/utils/holds";
+import { fetchSlots } from "@/utils/api";
+import type { Slot } from "@/utils/api";
+import { holdSlot, releaseHold } from "@/utils/holds";
 
 type Props = {
   sessionType: string;
@@ -159,7 +159,8 @@ export default function CalLikeOverlay({
     const key = dayKeyLocal(selectedDate);
     return startsByDay.get(key) ?? [];
   }, [selectedDate, startsByDay]);
-
+const hit = slots.find(s => s.id === selectedSlotId);
+console.log('CHOSEN', selectedSlotId, hit?.startTime);
   // submit -> create/refresh hold, then navigate to /checkout
   async function submitBooking() {
     if (!selectedSlotId) return;

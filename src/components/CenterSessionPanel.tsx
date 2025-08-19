@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import SessionBlock from "@/app/sessions/components/SessionBlock";
+import SessionBlock from "@/components/SessionBlock";
 
 type Props = {
   title?: string;
