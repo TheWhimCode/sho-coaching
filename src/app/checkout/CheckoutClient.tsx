@@ -1,4 +1,4 @@
-// app/checkout/CheckoutClient.tsx  (CLIENT)
+// app/checkout/CheckoutClient.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -37,7 +37,7 @@ const appearance: Appearance = {
   },
 };
 
-function Form() {
+function CardForm() {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -46,15 +46,20 @@ function Form() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!stripe || !elements) return;
+
     setSubmitting(true);
     setError(null);
+
+    const returnUrl = `${window.location.origin}/checkout/success`;
     const { error } = await stripe.confirmPayment({
       elements,
-      confirmParams: {
-        return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout/success`,
-      },
+      confirmParams: { return_url: returnUrl },
     });
-    if (error) setError(error.message ?? "Payment failed");
+
+    if (error) {
+      console.error("STRIPE_CONFIRM_ERROR", error);
+      setError(error.message ?? "Payment failed");
+    }
     setSubmitting(false);
   }
 
@@ -72,6 +77,7 @@ function Form() {
 
 export default function CheckoutClient() {
   const sp = useSearchParams();
+
   const payload = useMemo(
     () => ({
       slotId: String(sp.get("slotId") ?? ""),
@@ -92,15 +98,21 @@ export default function CheckoutClient() {
 
   useEffect(() => {
     if (method !== "card") return;
+
     (async () => {
       const res = await fetch("/api/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (res.ok) setClientSecret(data.clientSecret);
-      else console.error(data);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.clientSecret) {
+        setClientSecret(data.clientSecret);
+        // Debug: see which PaymentIntent you're confirming
+        console.log("PI", String(data.clientSecret).split("_secret")[0]);
+      } else {
+        console.error("INTENT_FAIL", data);
+      }
     })();
   }, [payload, method]);
 
@@ -123,8 +135,12 @@ export default function CheckoutClient() {
 
       {method === "card" ? (
         clientSecret ? (
-          <Elements stripe={stripePromise} options={{ clientSecret, appearance, locale: "auto", loader: "auto" }}>
-            <Form />
+          <Elements
+            key={clientSecret}
+            stripe={stripePromise}
+            options={{ clientSecret, appearance, locale: "auto", loader: "auto" }}
+          >
+            <CardForm />
           </Elements>
         ) : (
           <div className="text-white/80">Starting card checkout…</div>
