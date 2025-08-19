@@ -37,45 +37,53 @@ const appearance: Appearance = {
   },
 };
 
-function CardForm() {
+function CardForm({ piId }: { piId?: string | null }) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-async function onSubmit(e: React.FormEvent) {
-  e.preventDefault();
-  if (!stripe || !elements) return;
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!stripe || !elements) return;
 
-  setSubmitting(true);
-  setError(null);
+    setSubmitting(true);
+    setError(null);
 
-  const origin = window.location.origin;
+    const returnUrl = `${window.location.origin}/checkout/success`;
 
-  const { error, paymentIntent } = await stripe.confirmPayment({
-    elements,
-    confirmParams: { return_url: `${origin}/checkout/success` },
-    redirect: 'if_required', // ← no redirect unless 3DS required
-  });
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: returnUrl },
+      redirect: "if_required",
+    });
 
-  if (paymentIntent?.status === 'succeeded') {
-    window.location.href =
-      `/checkout/success?provider=stripe&payment_intent=${paymentIntent.id}&redirect_status=succeeded`;
-    return;
-  }
-
-  if (error) {
-    // If Stripe says "already succeeded", treat it as success
-    if ((error as any).code === 'payment_intent_unexpected_state') {
-      window.location.href =
-        `/checkout/success?provider=stripe&redirect_status=succeeded`;
-    } else {
-      setError(error.message ?? 'Payment failed');
+    if (error) {
+      // If Stripe says the PI already succeeded (rare race), treat as success.
+      if ((error as any).code === "payment_intent_unexpected_state" && piId) {
+        window.location.href =
+          `/checkout/success?provider=stripe` +
+          `&payment_intent=${encodeURIComponent(piId)}` +
+          `&redirect_status=succeeded`;
+      } else {
+        setError(error.message ?? "Payment failed");
+      }
+      setSubmitting(false);
+      return;
     }
-  }
 
-  setSubmitting(false);
-}
+    // No redirect needed and Stripe gave us the PI — navigate to success with the id.
+    if (paymentIntent?.status === "succeeded") {
+      window.location.href =
+        `/checkout/success?provider=stripe` +
+        `&payment_intent=${encodeURIComponent(paymentIntent.id)}` +
+        `&redirect_status=succeeded`;
+      return;
+    }
+
+    // Otherwise Stripe has already redirected; nothing else to do here.
+    setSubmitting(false);
+  }
 
   return (
     <form onSubmit={onSubmit} className="max-w-md mx-auto p-4 space-y-4">
@@ -108,6 +116,7 @@ export default function CheckoutClient() {
   );
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [piId, setPiId] = useState<string | null>(null);
   const [method, setMethod] = useState<"card" | "paypal">("card");
 
   useEffect(() => {
@@ -122,8 +131,8 @@ export default function CheckoutClient() {
       const data = await res.json().catch(() => ({}));
       if (res.ok && data?.clientSecret) {
         setClientSecret(data.clientSecret);
-        // Debug: see which PaymentIntent you're confirming
-        console.log("PI", String(data.clientSecret).split("_secret")[0]);
+        const id = String(data.clientSecret).split("_secret")[0]; // "pi_..."
+        setPiId(id);
       } else {
         console.error("INTENT_FAIL", data);
       }
@@ -154,7 +163,7 @@ export default function CheckoutClient() {
             stripe={stripePromise}
             options={{ clientSecret, appearance, locale: "auto", loader: "auto" }}
           >
-            <CardForm />
+            <CardForm piId={piId} />
           </Elements>
         ) : (
           <div className="text-white/80">Starting card checkout…</div>
