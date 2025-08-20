@@ -2,17 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  addMonths,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isSameDay,
-  isSameMonth,
-  isToday,
-  startOfMonth,
-  startOfWeek,
-} from "date-fns";
+import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, startOfMonth, startOfWeek } from "date-fns";
+
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
 import { holdSlot, releaseHold } from "@/utils/holds";
@@ -92,8 +83,11 @@ export default function CalLikeOverlay({
   // fetch slots for current month (or use prefetched)
   useEffect(() => {
     let ignore = false;
-    const from = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-    const to = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
+const from = addDays(new Date(), 1); // start tomorrow
+from.setHours(0, 0, 0, 0);
+const to = addDays(from, 14); // 14 days from tomorrow
+
+
 
     (async () => {
       setLoading(true);
@@ -327,8 +321,10 @@ console.log('CHOSEN', selectedSlotId, hit?.startTime);
                                 {format(d, "d")}
                               </span>
                               {today && (
-                                <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-cyan-300" />
-                              )}
+  <span className="absolute inset-0 rounded-lg ring-2 ring-cyan-300 pointer-events-none" />
+)}
+
+
                               {hasAvail && !selected && (
                                 <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
                               )}
