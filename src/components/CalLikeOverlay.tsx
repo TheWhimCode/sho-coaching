@@ -2,7 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, startOfMonth, startOfWeek } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
@@ -36,6 +48,7 @@ function dayKeyLocal(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
+
 export default function CalLikeOverlay({
   sessionType,
   liveMinutes,
@@ -47,8 +60,6 @@ export default function CalLikeOverlay({
   liveBlocks = 0,
 }: Props) {
   const router = useRouter();
-
-  // month shown
   const [month, setMonth] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -56,38 +67,26 @@ export default function CalLikeOverlay({
     return d;
   });
 
-  // remote slots
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // selection
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
-  // discord & submit
   const [discord, setDiscord] = useState("");
   const [dErr, setDErr] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  // hold
   const [holdKey, setHoldKey] = useState<string | null>(null);
 
-  function isDiscordValid(s: string) {
-    const t = s.trim();
-    if (!t) return true;
-    return /^@?[a-z0-9._-]{2,32}$/i.test(t) || /^.{2,32}#\d{4}$/.test(t);
-  }
-  const discordOk = isDiscordValid(discord);
+  const discordOk = /^@?[a-z0-9._-]{2,32}$/i.test(discord.trim()) || /^.{2,32}#\d{4}$/.test(discord.trim()) || !discord.trim();
 
-  // fetch slots for current month (or use prefetched)
+  // fetch slots (tomorrow → +14)
   useEffect(() => {
     let ignore = false;
-const from = addDays(new Date(), 1); // start tomorrow
-from.setHours(0, 0, 0, 0);
-const to = addDays(from, 14); // 14 days from tomorrow
-
-
+    const from = addDays(startOfDay(new Date()), 1);
+    const to = addDays(from, 14);
 
     (async () => {
       setLoading(true);
@@ -129,16 +128,17 @@ const to = addDays(from, 14); // 14 days from tomorrow
   // group starts by day
   const startsByDay = useMemo(() => {
     const map = new Map<string, { id: string; local: Date }[]>();
+    const tomorrow = addDays(startOfDay(new Date()), 1);
+
     for (const s of slots) {
       if (s.isTaken) continue;
       const dt = new Date(s.startTime);
-      if (dt.getTime() < Date.now()) continue;
+      if (dt < tomorrow) continue; // skip today
       const key = dayKeyLocal(dt);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push({ id: s.id, local: dt });
     }
-    for (const arr of map.values())
-      arr.sort((a, b) => a.local.getTime() - b.local.getTime());
+    for (const arr of map.values()) arr.sort((a, b) => a.local.getTime() - b.local.getTime());
     return map;
   }, [slots]);
 
@@ -320,10 +320,9 @@ console.log('CHOSEN', selectedSlotId, hit?.startTime);
                               <span className="text-white/90">
                                 {format(d, "d")}
                               </span>
-                              {today && (
-  <span className="absolute inset-0 rounded-lg ring-2 ring-cyan-300 pointer-events-none" />
-)}
-
+                                                              {today && (
+                                  <span className="absolute inset-0 rounded-lg ring-1 ring-cyan-300 pointer-events-none" />
+                                )}
 
                               {hasAvail && !selected && (
                                 <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
