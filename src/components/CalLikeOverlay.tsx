@@ -217,43 +217,55 @@ export default function CalLikeOverlay({
 
                     <div className="grid grid-cols-7 gap-1">
                       {(() => {
-                        const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-                        const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
-                        const days: Date[] = [];
-                        const cur = new Date(start);
-                        while (cur <= end) { days.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
-                        return days;
-                      })().map((d) => {
-                        const key = dayKeyLocal(d);
-                        const hasAvail = (validStartCountByDay.get(key) ?? 0) > 0;
-                        const selected = !!selectedDate && isSameDay(d, selectedDate);
-                        const outside = !isSameMonth(d, month);
-                        const today = isToday(d);
+  const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
+  const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
+  const days: Date[] = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return days;
+})().map((d) => {
+  const key = dayKeyLocal(d);
+  const hasAvail = (validStartCountByDay.get(key) ?? 0) > 0;
+  const selected = !!selectedDate && isSameDay(d, selectedDate);
+  const outside = !isSameMonth(d, month);
+  const today = isToday(d);
 
-                        return (
-                          <button
-                            key={key}
-                            disabled={!hasAvail}
-                            onClick={() => { setSelectedDate(d); setSelectedSlotId(null); }}
-                            className={[
-                              "aspect-square rounded-lg text-sm ring-1 ring-white/10 transition-all",
-                              outside ? "opacity-45" : "",
-                              hasAvail ? "bg-white/[0.03] hover:bg-white/[0.08]" : "bg-white/[0.02] cursor-not-allowed",
-                              selected ? "ring-2 ring-cyan-400/70 bg-cyan-400/10" : "",
-                            ].join(" ")}
-                          >
-                            <div className="flex h-full w-full items-center justify-center relative">
-                              <span className="text-white/90">{format(d, "d")}</span>
-                              {today && (
-                                <span className="absolute inset-0 rounded-lg ring-1 ring-cyan-300 pointer-events-none" />
-                              )}
-                              {hasAvail && !selected && (
-                                <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
+  // clamp: only allow tomorrow -> +14
+  const tomorrow = addDays(startOfDay(new Date()), 1);
+  const endWindow = addDays(tomorrow, 14);
+  endWindow.setHours(23, 59, 59, 999);
+  const inWindow = d >= tomorrow && d <= endWindow;
+
+  return (
+    <button
+      key={key}
+      disabled={!hasAvail || !inWindow}
+      onClick={() => { setSelectedDate(d); setSelectedSlotId(null); }}
+      className={[
+        "aspect-square rounded-lg text-sm ring-1 ring-white/10 transition-all",
+        outside ? "opacity-45" : "",
+        hasAvail && inWindow
+          ? "bg-white/[0.03] hover:bg-white/[0.08]"
+          : "bg-white/[0.02] cursor-not-allowed",
+        selected ? "ring-2 ring-cyan-400/70 bg-cyan-400/10" : "",
+      ].join(" ")}
+    >
+      <div className="flex h-full w-full items-center justify-center relative">
+        <span className="text-white/90">{format(d, "d")}</span>
+        {today && (
+          <span className="absolute inset-0 rounded-lg ring-1 ring-cyan-300 pointer-events-none" />
+        )}
+        {hasAvail && inWindow && !selected && (
+          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
+        )}
+      </div>
+    </button>
+  );
+})}
+
                     </div>
                   </>
                 )}
