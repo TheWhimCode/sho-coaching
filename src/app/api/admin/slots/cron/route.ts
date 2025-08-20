@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
   const today = utcMidnight();
   const end = new Date(today);
-  end.setUTCDate(end.getUTCDate() + 14);
+  end.setUTCDate(end.getUTCDate() + 15);
 
   // 1) delete all past slots (bookings survive via onDelete:SetNull)
   const del = await prisma.slot.deleteMany({
