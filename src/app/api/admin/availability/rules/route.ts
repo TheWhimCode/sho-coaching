@@ -7,9 +7,10 @@ export const dynamic = "force-dynamic";
 
 // "16:00" -> 960
 function hhmmToMinutes(hhmm: string) {
+  if (hhmm === "24:00") return 24 * 60;     // allow midnight+1
   const [h, m] = hhmm.split(":").map(Number);
   if (!Number.isFinite(h) || !Number.isFinite(m)) throw new Error("Bad time");
-  return h * 60 + m;
+  return Math.max(0, Math.min(24 * 60, h * 60 + m)); // clamp 0..1440
 }
 
 const Body = z.object({
