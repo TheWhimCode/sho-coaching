@@ -43,28 +43,28 @@ export async function POST(req: Request) {
       (currency ?? "eur").toLowerCase(),
       paymentRef
     );
+// after finalizeBooking
+const booking = await prisma.booking.findFirst({
+  where: { paymentRef },                // use the ref you just handled
+  select: {
+    id: true,                           // <-- add this
+    scheduledStart: true,
+    scheduledMinutes: true,
+    sessionType: true,
+    followups: true,
+  },
+});
 
-    // figure out slot start for the email
-    const slotIds = (meta.slotIds ? meta.slotIds.split(",") : []).filter(Boolean);
-    const firstSlotId = meta.slotId || slotIds[0];
-    const slot = firstSlotId
-      ? await prisma.slot.findUnique({
-          where: { id: firstSlotId },
-          select: { startTime: true },
-        })
-      : null;
-
-    // only send if we have an email + a start time
-    if (emailFromPayload && slot?.startTime) {
-      await sendBookingEmail(emailFromPayload, {
-        title: meta.sessionType ?? "Coaching Session",
-        startISO: slot.startTime.toISOString(),
-        minutes: parseInt(meta.liveMinutes ?? "60", 10),
-        followups: parseInt(meta.followups ?? "0", 10),
-        priceEUR: parseInt(meta.priceEUR ?? "40", 10),
-        bookingId: firstSlotId ?? "",
-      });
-    }
+if (emailFromPayload && booking) {
+  await sendBookingEmail(emailFromPayload, {
+    title: booking.sessionType ?? "Coaching Session",
+    startISO: booking.scheduledStart.toISOString(),
+    minutes: booking.scheduledMinutes,
+    followups: booking.followups,
+    priceEUR: parseInt(meta.priceEUR ?? "40", 10),
+    bookingId: booking.id,
+  });
+}
   }
 
   switch (event.type) {

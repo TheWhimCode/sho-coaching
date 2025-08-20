@@ -25,7 +25,10 @@ export async function POST(req: Request) {
     const data = await paypalCaptureOrder(orderId);
 
     if (data.status !== "COMPLETED") {
-      return NextResponse.json({ error: "not_completed", raw: data }, { status: 400 });
+      return NextResponse.json(
+        { error: "not_completed", raw: data },
+        { status: 400 }
+      );
     }
 
     const pu = data.purchase_units?.[0];
@@ -52,27 +55,41 @@ export async function POST(req: Request) {
     // Amount/currency from the capture
     const cap = pu?.payments?.captures?.[0];
     const amountCents =
-      cap?.amount?.value ? Math.round(parseFloat(cap.amount.value) * 100) : undefined;
+      cap?.amount?.value
+        ? Math.round(parseFloat(cap.amount.value) * 100)
+        : undefined;
     const currency = cap?.amount?.currency_code?.toLowerCase() ?? "eur";
 
     // Persist booking + mark slots (idempotent)
     await finalizeBooking(meta, amountCents, currency, orderId, "paypal");
 
-    // Email confirmation if we have an address + start time
-    const email = data.payer?.email_address || pu?.payee?.email_address || undefined;
-    if (email && c?.a) {
-      const slot = await prisma.slot.findUnique({
-        where: { id: String(c.a) },
-        select: { startTime: true },
+    // Email confirmation if we have an address
+    const email =
+      data.payer?.email_address || pu?.payee?.email_address || undefined;
+
+    if (email) {
+      // Now read from booking snapshot instead of slot
+      const booking = await prisma.booking.findFirst({
+        where: { paymentRef: orderId },
+        select: {
+          id: true,
+          sessionType: true,
+          scheduledStart: true,
+          scheduledMinutes: true,
+          followups: true,
+        },
       });
-      if (slot) {
+
+      if (booking) {
         await sendBookingEmail(email, {
-          title: meta.sessionType ?? "Coaching Session",
-          startISO: slot.startTime.toISOString(),
-          minutes: parseInt(meta.liveMinutes ?? "60", 10),
-          followups: parseInt(meta.followups ?? "0", 10),
-          priceEUR: amountCents ? Math.round(amountCents / 100) : c?.p ?? 0,
-          bookingId: String(c.a),
+          title: booking.sessionType ?? "Coaching Session",
+          startISO: booking.scheduledStart.toISOString(),
+          minutes: booking.scheduledMinutes,
+          followups: booking.followups,
+          priceEUR: amountCents
+            ? Math.round(amountCents / 100)
+            : c?.p ?? 0,
+          bookingId: booking.id,
         });
       }
     }

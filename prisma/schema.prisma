@@ -9,10 +9,14 @@ datasource db {
 }
 
 model Slot {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   startTime DateTime  @unique
   duration  Int
   isTaken   Boolean   @default(false)
+
+  // NEW: status lets you block slots instead of deleting
+  status    String    @default("free") // "free" | "taken" | "blocked"
+
   holdUntil DateTime?
   holdKey   String?
   createdAt DateTime  @default(now())
@@ -22,11 +26,31 @@ model Slot {
   @@index([startTime])
 }
 
+model AvailabilityRule {
+  id            String   @id @default(cuid())
+  weekday       Int      // 0=Sun … 6=Sat
+  openMinute    Int      // minutes from midnight
+  closeMinute   Int      // exclusive
+  effectiveFrom DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+model AvailabilityException {
+  id         String   @id @default(cuid())
+  date       DateTime @unique // specific day at 00:00
+  openMinute Int?
+  closeMinute Int?
+  blocked    Boolean  @default(false)
+  reason     String?
+  createdAt  DateTime @default(now())
+}
+
+
 model Booking {
   id              String     @id @default(cuid())
   sessionType     String
   status          String     @default("unpaid")
-  slotId          String     @unique
+  slotId          String?    @unique   // now optional
   liveMinutes     Int
   inGame          Boolean    @default(false)
   followups       Int        @default(0)
@@ -40,7 +64,12 @@ model Booking {
   currency        String     @default("eur")
   blockCsv        String?
   customerEmail   String?
-  slot            Slot       @relation("SlotBooking", fields: [slotId], references: [id])
+
+  // NEW: permanent schedule snapshot
+  scheduledStart   DateTime
+  scheduledMinutes Int
+
+  slot            Slot?      @relation("SlotBooking", fields: [slotId], references: [id], onDelete: SetNull)
   emailLogs       EmailLog[]
 }
 

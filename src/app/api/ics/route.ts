@@ -1,4 +1,3 @@
-// src/app/api/ics/route.ts
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -7,7 +6,11 @@ function fmtUTC(d: Date) {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 function esc(s = "") {
-  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
 }
 
 export async function GET(req: Request) {
@@ -17,12 +20,12 @@ export async function GET(req: Request) {
 
   const b = await prisma.booking.findUnique({
     where: { id },
-    include: { slot: true },
   });
-  if (!b || !b.slot) return new Response("not found", { status: 404 });
+  if (!b) return new Response("not found", { status: 404 });
 
-  const start = b.slot.startTime;                              // stored in UTC -> good
-  const end = new Date(start.getTime() + b.liveMinutes * 60_000);
+  // Use schedule snapshot
+  const start = b.scheduledStart;
+  const end = new Date(start.getTime() + b.scheduledMinutes * 60_000);
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -36,10 +39,14 @@ export async function GET(req: Request) {
     `DTSTART:${fmtUTC(start)}`,
     `DTEND:${fmtUTC(end)}`,
     `SUMMARY:${esc(b.sessionType || "Coaching Session")}`,
-    `DESCRIPTION:${esc(`Discord: ${b.discord || "—"} | Follow-ups: ${b.followups}`)}`,
+    `DESCRIPTION:${esc(
+      `Discord: ${b.discord || "—"} | Follow-ups: ${b.followups}`
+    )}`,
     `STATUS:CONFIRMED`,
     `TRANSP:OPAQUE`,
-    `URL:${esc(process.env.NEXT_PUBLIC_SITE_URL || "")}/sessions/vod-review`,
+    `URL:${esc(
+      process.env.NEXT_PUBLIC_SITE_URL || ""
+    )}/sessions/vod-review`,
     // Optional reminders:
     "BEGIN:VALARM",
     "TRIGGER:-PT24H",

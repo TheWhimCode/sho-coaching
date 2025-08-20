@@ -31,9 +31,12 @@ export async function finalizeBooking(
   const followups = parseInt(meta.followups ?? "0", 10);
 
   await prisma.$transaction(async (tx) => {
-    // Idempotency
-    try { await tx.processedEvent.create({ data: { id: paymentRef } }); }
-    catch { return; }
+    // Idempotency guard
+    try {
+      await tx.processedEvent.create({ data: { id: paymentRef } });
+    } catch {
+      return; // already processed
+    }
 
     // Reserve/mark taken + clear hold
     if (slotIds.length) {
@@ -48,6 +51,13 @@ export async function finalizeBooking(
       });
     }
 
+    // 👇 NEW: fetch slot.startTime so we can snapshot into Booking
+    const startSlot = await tx.slot.findUnique({
+      where: { id: firstSlotId },
+      select: { startTime: true },
+    });
+    if (!startSlot) throw new Error("slot not found");
+
     await tx.booking.upsert({
       where: { slotId: firstSlotId },
       update: {
@@ -55,11 +65,12 @@ export async function finalizeBooking(
         amountCents,
         currency,
         blockCsv: slotIds.join(","),
-        // provider-agnostic fields
         paymentProvider: provider,
-        paymentRef: paymentRef,
-        // keep this for backward compatibility with existing columns
+        paymentRef,
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
+        // 👇 NEW schedule snapshot (kept even if slot is deleted later)
+        scheduledStart: startSlot.startTime,
+        scheduledMinutes: liveMinutes,
       },
       create: {
         sessionType,
@@ -70,14 +81,17 @@ export async function finalizeBooking(
         followups,
         discord,
         amountCents,
-        currency: (currency ?? "eur"),
+        currency: currency ?? "eur",
         blockCsv: slotIds.join(","),
         paymentProvider: provider,
-        paymentRef: paymentRef,
+        paymentRef,
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
+        // 👇 NEW schedule snapshot
+        scheduledStart: startSlot.startTime,
+        scheduledMinutes: liveMinutes,
       },
     });
   });
 
-  // (Email already handled in your webhook; PayPal capture below will call mail too if you want.)
+  // (Emails are handled in webhook/capture, not here.)
 }
