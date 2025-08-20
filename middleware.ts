@@ -2,7 +2,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECT = [/^\/admin($|\/)/, /^\/api\/admin\//];
+// middleware.ts
+const PROTECT = [
+  /^\/admin($|\/)/,
+  /^\/api\/admin\/(?!slots\/cron).*$/   // protect all admin APIs except cron
+];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
