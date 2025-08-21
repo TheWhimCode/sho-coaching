@@ -1,108 +1,103 @@
+// src/app/api/stripe/webhook/route.ts
+import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
-import { sendBookingEmail } from "@/lib/email";
 import { finalizeBooking } from "@/lib/booking/finalizeBooking";
-// webhook
+import { sendBookingEmail } from "@/lib/email";
 import { CFG_SERVER } from "@/lib/config.server";
-const stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" });
+import { SlotStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+let stripe: Stripe | null = null;
+function getStripe(): Stripe {
+  if (stripe) return stripe;
+  if (!CFG_SERVER.STRIPE_SECRET_KEY) throw new Error("Missing STRIPE_SECRET_KEY");
+  stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" });
+  return stripe;
+}
+
+async function extractEmailFromPI(pi: Stripe.PaymentIntent): Promise<string | undefined> {
+  // 1) direct PI field
+  if (pi.receipt_email) return pi.receipt_email;
+
+  // 2) from customer
+  const cRef = pi.customer; // string | Customer | DeletedCustomer | null
+  if (typeof cRef === "string") {
+    const cust = await getStripe().customers.retrieve(cRef);
+    if (!("deleted" in cust)) return (cust as Stripe.Customer).email ?? undefined;
+  } else if (cRef && !("deleted" in cRef)) {
+    return (cRef as Stripe.Customer).email ?? undefined;
+  }
+
+  // 3) latest charge billing email
+  const piExpanded = await getStripe().paymentIntents.retrieve(pi.id, { expand: ["latest_charge"] });
+  const lc = piExpanded.latest_charge as Stripe.Charge | null;
+  return lc?.billing_details?.email ?? undefined;
+}
+
+async function commitTakenSlots(slotIdsCsv: string | undefined) {
+  const ids = (slotIdsCsv ?? "").split(",").filter(Boolean);
+  if (!ids.length) return;
+  await prisma.slot.updateMany({
+    where: { id: { in: ids }, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
+    data: { status: SlotStatus.taken, holdKey: null, holdUntil: null },
+  });
+}
 
 
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
-  if (!sig) return new Response("Missing signature", { status: 400 });
+  if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
   const raw = await req.text();
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      raw,
-      sig,
-      CFG_SERVER.STRIPE_WEBHOOK_SECRET
-    );
+    event = getStripe().webhooks.constructEvent(raw, sig, CFG_SERVER.STRIPE_WEBHOOK_SECRET!);
   } catch (err: any) {
-    console.error("WEBHOOK VERIFY ERROR:", err?.message);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+    return NextResponse.json({ error: `Webhook verify failed: ${err?.message || err}` }, { status: 400 });
   }
 
-  async function handle(
+  const handle = async (
     meta: Record<string, string>,
     amount?: number,
     currency?: string,
     paymentRef?: string,
-    emailFromPayload?: string
-  ) {
-    // finalize booking (idempotent)
-    await finalizeBooking(
-      meta,
-      amount,
-      (currency ?? "eur").toLowerCase(),
-      paymentRef
-    );
-// after finalizeBooking
-const booking = await prisma.booking.findFirst({
-  where: { paymentRef },                // use the ref you just handled
-  select: {
-    id: true,                           // <-- add this
-    scheduledStart: true,
-    scheduledMinutes: true,
-    sessionType: true,
-    followups: true,
-  },
-});
+    email?: string
+  ) => {
+    // Idempotent booking finalization
+    await finalizeBooking(meta, amount, (currency ?? "eur").toLowerCase(), paymentRef);
 
-if (emailFromPayload && booking) {
-  await sendBookingEmail(emailFromPayload, {
-    title: booking.sessionType ?? "Coaching Session",
-    startISO: booking.scheduledStart.toISOString(),
-    minutes: booking.scheduledMinutes,
-    followups: booking.followups,
-    priceEUR: parseInt(meta.priceEUR ?? "40", 10),
-    bookingId: booking.id,
-  });
-}
-  }
+    // Mark slots taken (idempotent)
+    await commitTakenSlots(meta.slotIds);
+
+    // Send email (optional)
+    if (email && paymentRef) {
+      const booking = await prisma.booking.findFirst({
+        where: { paymentRef },
+        select: { id: true, scheduledStart: true, scheduledMinutes: true, sessionType: true, followups: true },
+      });
+      if (booking) {
+        await sendBookingEmail(email, {
+          title: booking.sessionType ?? "Coaching Session",
+          startISO: booking.scheduledStart.toISOString(),
+          minutes: booking.scheduledMinutes,
+          followups: booking.followups,
+          priceEUR: parseInt(meta.priceEUR ?? "0", 10) || 0,
+          bookingId: booking.id,
+        });
+      }
+    }
+  };
 
   switch (event.type) {
     case "payment_intent.succeeded": {
       const pi = event.data.object as Stripe.PaymentIntent;
       const meta = (pi.metadata ?? {}) as Record<string, string>;
-
-      let email =
-        pi.receipt_email ||
-        (typeof pi.customer === "string"
-          ? (() => {
-              const c = stripe.customers.retrieve(pi.customer) as Promise<
-                Stripe.Customer | Stripe.DeletedCustomer
-              >;
-              return c.then(
-                (cust) =>
-                  ("deleted" in cust ? undefined : (cust as Stripe.Customer).email) ??
-                  undefined
-              );
-            })()
-          : undefined);
-
-      // Fallback: latest charge billing email
-      if (!email) {
-        const piExpanded = await stripe.paymentIntents.retrieve(pi.id, {
-          expand: ["latest_charge"],
-        });
-        const lc = piExpanded.latest_charge as Stripe.Charge | null;
-        email = lc?.billing_details?.email ?? undefined;
-      }
-
-      await handle(
-        meta,
-        pi.amount_received ?? undefined,
-        pi.currency,
-        pi.id,
-        await email
-      );
+      const email = await extractEmailFromPI(pi);
+      await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
       break;
     }
 
@@ -114,10 +109,10 @@ if (emailFromPayload && booking) {
       break;
     }
 
+    // ignore other events
     default:
-      // ignore other events
       break;
   }
 
-  return new Response("ok", { status: 200 });
+  return NextResponse.json({ ok: true });
 }

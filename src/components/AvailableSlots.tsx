@@ -1,4 +1,11 @@
-export type Slot = { id: string; startISO: string; durationMin: number; isTaken: boolean };
+import { SlotStatus } from "@prisma/client";
+
+export type Slot = {
+  id: string;
+  startISO: string;
+  durationMin: number;
+  status: SlotStatus;           // free | blocked | taken
+};
 
 function dayDiffLocal(a: Date, b: Date) {
   const da = new Date(a); da.setHours(0,0,0,0);
@@ -8,15 +15,11 @@ function dayDiffLocal(a: Date, b: Date) {
 
 function niceDayLabel(dt: Date) {
   const now = new Date();
-  const diff = dayDiffLocal(dt, now); // positive if in the future same day boundary
-
+  const diff = dayDiffLocal(dt, now);
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
-  if (diff >= 2 && diff <= 6) {
-    return dt.toLocaleDateString([], { weekday: "long" }); // e.g., "Friday"
-  }
-  // 7+ days away: full date
-  return dt.toLocaleDateString([], { dateStyle: "medium" }); // e.g., "Sep 4, 2025"
+  if (diff >= 2 && diff <= 6) return dt.toLocaleDateString([], { weekday: "long" });
+  return dt.toLocaleDateString([], { dateStyle: "medium" });
 }
 
 export default function AvailableSlots({
@@ -32,10 +35,11 @@ export default function AvailableSlots({
         const dt = new Date(s.startISO);
         const day = niceDayLabel(dt);
         const time = dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        const disabled = s.status !== SlotStatus.free;
         return (
           <button
             key={s.id}
-            disabled={s.isTaken}
+            disabled={disabled}
             onClick={() => onPick?.(s.id)}
             className="rounded-xl px-3 py-2 text-sm border border-white/10 hover:border-white/30 disabled:opacity-40 text-left"
             title={dt.toLocaleString()}

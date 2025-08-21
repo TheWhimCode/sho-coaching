@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { CFG_SERVER } from "@/lib/config.server";
+import { SlotStatus } from "@prisma/client";
 
 export const SLOT_SIZE_MIN = 15;
 
@@ -16,26 +17,20 @@ export function guards(now = new Date()) {
   const minStart = addMin(now, LEAD_MINUTES);
   const maxStart = addMin(now, MAX_ADVANCE_DAYS * 24 * 60);
   const isWithinHours = (d: Date) => {
-    const h = d.getHours();
+    const h = d.getUTCHours();
     return h >= OPEN_HOUR && h < CLOSE_HOUR;
   };
   return { minStart, maxStart, isWithinHours };
 }
 
-/**
- * ORIGINAL API (kept for compatibility).
- * NOTE: This version performs an extra read for the start slot.
- */
+/** Back-compat: find block ids starting from a slotId. */
 export async function getBlockIds(startSlotId: string, liveMinutes: number, tx = prisma) {
   const start = await tx.slot.findUnique({ where: { id: startSlotId } });
   if (!start) return null;
   return getBlockIdsByTime(start.startTime, liveMinutes, tx);
 }
 
-/**
- * New: compute the contiguous block by start time (no findUnique).
- * Returns the block slot IDs or null if invalid.
- */
+/** Preferred: compute the contiguous FREE block by start time. */
 export async function getBlockIdsByTime(startTime: Date, liveMinutes: number, tx = prisma) {
   const { minStart, maxStart, isWithinHours } = guards(new Date());
   if (startTime < minStart) return null;
@@ -51,27 +46,27 @@ export async function getBlockIdsByTime(startTime: Date, liveMinutes: number, tx
     SLOT_SIZE_MIN
   );
 
+  // ✅ Only slots that are currently FREE
   const block = await tx.slot.findMany({
-    where: { startTime: { gte: windowStart, lt: windowEnd } },
+    where: {
+      startTime: { gte: windowStart, lt: windowEnd },
+      status: SlotStatus.free,
+    },
     orderBy: { startTime: "asc" },
   });
 
   if (block.length !== expected) return null;
-  if (block.some((s) => s.isTaken)) return null;
 
+  // contiguous 15-min chain check
   for (let i = 1; i < block.length; i++) {
-    const prev = block[i - 1].startTime;
-    const want = addMin(prev, SLOT_SIZE_MIN).getTime();
+    const want = addMin(block[i - 1].startTime, SLOT_SIZE_MIN).getTime();
     if (block[i].startTime.getTime() !== want) return null;
   }
 
   return block.map((s) => s.id);
 }
 
-/**
- * New: fast boolean check used by /api/slots.
- * Avoids extra queries and keeps route code simple.
- */
+/** Fast boolean wrapper */
 export async function canStartAtTime(startTime: Date, liveMinutes: number, tx = prisma) {
   const ids = await getBlockIdsByTime(startTime, liveMinutes, tx);
   return Array.isArray(ids) && ids.length > 0;

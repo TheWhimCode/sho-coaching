@@ -1,5 +1,5 @@
-// src/lib/booking/finalizeBooking.ts
 import { prisma } from "@/lib/prisma";
+import { SlotStatus } from "@prisma/client";
 
 export type FinalizeMeta = {
   slotId?: string;
@@ -15,7 +15,7 @@ export async function finalizeBooking(
   meta: FinalizeMeta,
   amountCents?: number,
   currency?: string,
-  paymentRef?: string,            // e.g. pi_xxx / PAYPAL order id
+  paymentRef?: string,
   provider: "stripe" | "paypal" = "stripe"
 ) {
   if (!paymentRef) throw new Error("paymentRef missing");
@@ -42,16 +42,16 @@ export async function finalizeBooking(
     if (slotIds.length) {
       await tx.slot.updateMany({
         where: { id: { in: slotIds } },
-        data: { isTaken: true, holdUntil: null, holdKey: null } as any,
+        data: { status: SlotStatus.taken, holdUntil: null, holdKey: null },
       });
     } else {
       await tx.slot.update({
         where: { id: firstSlotId },
-        data: { isTaken: true, holdUntil: null, holdKey: null } as any,
+        data: { status: SlotStatus.taken, holdUntil: null, holdKey: null },
       });
     }
 
-    // 👇 NEW: fetch slot.startTime so we can snapshot into Booking
+    // Snapshot schedule into Booking
     const startSlot = await tx.slot.findUnique({
       where: { id: firstSlotId },
       select: { startTime: true },
@@ -68,7 +68,6 @@ export async function finalizeBooking(
         paymentProvider: provider,
         paymentRef,
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
-        // 👇 NEW schedule snapshot (kept even if slot is deleted later)
         scheduledStart: startSlot.startTime,
         scheduledMinutes: liveMinutes,
       },
@@ -86,12 +85,9 @@ export async function finalizeBooking(
         paymentProvider: provider,
         paymentRef,
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
-        // 👇 NEW schedule snapshot
         scheduledStart: startSlot.startTime,
         scheduledMinutes: liveMinutes,
       },
     });
   });
-
-  // (Emails are handled in webhook/capture, not here.)
 }

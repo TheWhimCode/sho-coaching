@@ -8,27 +8,29 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
+enum SlotStatus {
+  free
+  taken
+  blocked
+}
+
 model Slot {
   id        String   @id @default(cuid())
-  startTime DateTime  @unique
+  startTime DateTime @unique
   duration  Int
-  isTaken   Boolean   @default(false)
-
-  // NEW: status lets you block slots instead of deleting
-  status    String    @default("free") // "free" | "taken" | "blocked"
-
+  status    SlotStatus @default(free)
   holdUntil DateTime?
   holdKey   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   booking   Booking?  @relation("SlotBooking")
-
   @@index([startTime])
 }
 
+
 model AvailabilityRule {
   id            String   @id @default(cuid())
-  weekday       Int      // 0=Sun … 6=Sat
+  weekday       Int      @unique // 0=Sun … 6=Sat
   openMinute    Int      // minutes from midnight
   closeMinute   Int      // exclusive
   effectiveFrom DateTime @default(now())
@@ -36,13 +38,11 @@ model AvailabilityRule {
 }
 
 model AvailabilityException {
-  id         String   @id @default(cuid())
-  date       DateTime @unique // specific day at 00:00
-  openMinute Int?
+  id          String   @id @default(cuid())
+  date        DateTime 
+  openMinute  Int?
   closeMinute Int?
-  blocked    Boolean  @default(false)
-  reason     String?
-  createdAt  DateTime @default(now())
+  blocked     Boolean  @default(false)
 }
 
 

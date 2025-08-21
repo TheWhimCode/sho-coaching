@@ -1,46 +1,61 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getDayAvailability } from "@/lib/booking/availability";
+import { SLOT_SIZE_MIN } from "@/lib/booking/block";
+import { SlotStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Recompute slots for [today, today+14)
+const utcMidnight = (d = new Date()) => {
+  const t = new Date(d);
+  t.setUTCHours(0, 0, 0, 0);
+  return t;
+};
+
 export async function POST() {
-  const today = new Date();
-  today.setHours(0,0,0,0);
+  const today = utcMidnight();
+  const end = new Date(today);
+  end.setUTCDate(end.getUTCDate() + 15);
+  const now = new Date();
 
-  for (let i = 0; i < 14; i++) {
-    const day = new Date(today);
-    day.setDate(today.getDate() + i);
+  // 1) delete all past slots (any status)
+  const delPast = await prisma.slot.deleteMany({
+    where: { startTime: { lt: today } },
+  });
 
-    const avail = await getDayAvailability(day);
-    const midnight = new Date(day);
-    midnight.setHours(0,0,0,0);
+  // 2) delete ONLY future FREE/BLOCKED that are not actively held
+  const delFuture = await prisma.slot.deleteMany({
+    where: {
+      startTime: { gte: today },
+      status: { in: [SlotStatus.free, SlotStatus.blocked] },
+      OR: [{ holdUntil: null }, { holdUntil: { lt: now } }],
+    },
+  });
 
-    const nextMidnight = new Date(midnight);
-    nextMidnight.setDate(midnight.getDate() + 1);
+  // 3) regenerate future FREE slots
+  let created = 0;
+  for (let day = new Date(today); day < end; day.setUTCDate(day.getUTCDate() + 1)) {
+    const intervals = await getDayAvailability(day);
+    if (!intervals) continue;
 
-    // Delete future untaken slots in that day
-    await prisma.slot.deleteMany({
-      where: {
-        startTime: { gte: midnight, lt: nextMidnight },
-        isTaken: false,
-      },
-    });
-
-    if (!avail) continue;
-
-    // Recreate slots for the available window
-    const data = [];
-    for (let m = avail.openMinute; m < avail.closeMinute; m += 15) {
-      const start = new Date(midnight.getTime() + m * 60_000);
-      data.push({ startTime: start, duration: 15, isTaken: false, status: "free" });
-    }
-    if (data.length) {
-      await prisma.slot.createMany({ data, skipDuplicates: true });
+    for (const { openMinute, closeMinute } of intervals) {
+      const batch: { startTime: Date; duration: number; status: SlotStatus }[] = [];
+      for (let m = openMinute; m < closeMinute; m += SLOT_SIZE_MIN) {
+        const t = new Date(day);
+        t.setUTCMinutes(m, 0, 0);
+        batch.push({ startTime: t, duration: SLOT_SIZE_MIN, status: SlotStatus.free });
+      }
+      if (batch.length) {
+        const res = await prisma.slot.createMany({ data: batch, skipDuplicates: true });
+        created += res.count;
+      }
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    deleted: delPast.count + delFuture.count,
+    created,
+  });
 }

@@ -10,8 +10,6 @@ import SessionTestimonialsSection from "@/components/SessionTestimonialsSection"
 import { AnimatePresence, LayoutGroup } from "framer-motion";
 import type { Cfg } from "../../utils/sessionConfig";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
-import { startOfMonth, startOfWeek, endOfMonth, endOfWeek } from "date-fns";
-
 export default function VODReviewClient() {
   // hint + sections
   const [showHint, setShowHint] = useState(false);
@@ -38,19 +36,24 @@ const calcPrice = (c: Cfg) => {
   const [liveMinutes, setLiveMinutes] = useState(60);
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
 
-  useEffect(() => {
-    let on = true;
-    (async () => {
-      const month = new Date();
-      const from = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-      const to   = endOfWeek(endOfMonth(month),   { weekStartsOn: 1 });
-      try {
-        const data = await fetchSlots(from, to, cfg.liveMin);
-        if (on) setPrefetchedSlots(data);
-      } catch {}
-    })();
-    return () => { on = false; };
-  }, [cfg.liveMin]);
+ useEffect(() => {
+  let on = true;
+
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const end = new Date(tomorrow); end.setDate(end.getDate() + 14); end.setHours(23,59,59,999);
+
+  (async () => {
+    try {
+      const data = await fetchSlots(tomorrow, end, cfg.liveMin);
+      if (on) setPrefetchedSlots(data);
+    } catch {
+      /* ignore */
+    }
+  })();
+
+  return () => { on = false; };
+}, [cfg.liveMin]);
 
   return (
     <LayoutGroup id="booking-flow">

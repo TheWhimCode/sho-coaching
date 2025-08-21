@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../../lib/prisma";
 import { getBlockIds } from "../../../lib/booking/block";
 import { rateLimit } from "../../../lib/rateLimit";
+import { SlotStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

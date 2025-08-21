@@ -6,6 +6,7 @@ import {
   addDays, addMonths, endOfMonth, endOfWeek, format,
   isSameDay, isSameMonth, isToday, startOfDay, startOfMonth, startOfWeek
 } from "date-fns";
+import { SlotStatus } from "@prisma/client";
 
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
@@ -28,6 +29,7 @@ function getPreset(minutes: number, followups = 0): "vod"|"quick"|"signature"|"c
   if (minutes === 45 && followups === 1) return "signature";
   return "custom";
 }
+
 function dayKeyLocal(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -63,7 +65,7 @@ export default function CalLikeOverlay({
     /^.{2,32}#\d{4}$/.test(discord.trim()) ||
     !discord.trim();
 
-  // === Fetch strictly: tomorrow -> tomorrow+14 (end of day). Not month-bound.
+  // Fetch strictly: tomorrow -> tomorrow+14 (end of day). Not month-bound.
   useEffect(() => {
     let ignore = false;
 
@@ -76,7 +78,7 @@ export default function CalLikeOverlay({
       try {
         const data = prefetchedSlots?.length
           ? prefetchedSlots
-          : await fetchSlots(tomorrow, end, liveMinutes); // ensure toISOString in util
+          : await fetchSlots(tomorrow, end, liveMinutes);
         if (!ignore) setSlots(data);
       } catch (e: any) {
         if (!ignore) setError(e?.message || "Failed to load availability");
@@ -86,15 +88,15 @@ export default function CalLikeOverlay({
     })();
 
     return () => { ignore = true; };
-  }, [liveMinutes, prefetchedSlots]); // <-- no 'month' here
+  }, [liveMinutes, prefetchedSlots]);
 
   // Preselect passed slot
   const preselectedOnce = useRef(false);
   useEffect(() => {
     if (preselectedOnce.current || !initialSlotId || !slots.length) return;
-    const hit = slots.find((s: any) => s.id === initialSlotId);
+    const hit = slots.find((s) => s.id === initialSlotId);
     if (!hit) return;
-    const dt = new Date((hit as any).startTime);
+    const dt = new Date(hit.startTime);
     const m = new Date(dt); m.setDate(1); m.setHours(0,0,0,0);
     setMonth(m);
     setSelectedDate(new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()));
@@ -108,9 +110,9 @@ export default function CalLikeOverlay({
     const tomorrow = addDays(startOfDay(new Date()), 1);
     const end = addDays(tomorrow, 14); end.setHours(23,59,59,999);
 
-    for (const s of slots as any[]) {
-      if (s.isTaken) continue;
-      const dt = new Date(s.startTime); // server returns startTime
+    for (const s of slots) {
+      if (s.status !== SlotStatus.free) continue;      // ← only free
+      const dt = new Date(s.startTime);
       if (dt < tomorrow || dt > end) continue;
       const key = dayKeyLocal(dt);
       if (!map.has(key)) map.set(key, []);
@@ -169,7 +171,7 @@ export default function CalLikeOverlay({
     };
   }, [selectedSlotId, holdKey]);
 
-  // --- UI (unchanged except thinner today border) ---
+  // --- UI ---
   return (
     <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm grid place-items-center">
       <div className="w-[92vw] max-w-[1200px] h-[88vh] rounded-2xl overflow-hidden ring-1 ring-white/10 bg-neutral-950 shadow-2xl flex flex-col">
@@ -217,55 +219,54 @@ export default function CalLikeOverlay({
 
                     <div className="grid grid-cols-7 gap-1">
                       {(() => {
-  const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-  const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
-  const days: Date[] = [];
-  const cur = new Date(start);
-  while (cur <= end) {
-    days.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-  return days;
-})().map((d) => {
-  const key = dayKeyLocal(d);
-  const hasAvail = (validStartCountByDay.get(key) ?? 0) > 0;
-  const selected = !!selectedDate && isSameDay(d, selectedDate);
-  const outside = !isSameMonth(d, month);
-  const today = isToday(d);
+                        const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
+                        const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
+                        const days: Date[] = [];
+                        const cur = new Date(start);
+                        while (cur <= end) {
+                          days.push(new Date(cur));
+                          cur.setDate(cur.getDate() + 1);
+                        }
+                        return days;
+                      })().map((d) => {
+                        const key = dayKeyLocal(d);
+                        const hasAvail = (validStartCountByDay.get(key) ?? 0) > 0;
+                        const selected = !!selectedDate && isSameDay(d, selectedDate);
+                        const outside = !isSameMonth(d, month);
+                        const today = isToday(d);
 
-  // clamp: only allow tomorrow -> +14
-  const tomorrow = addDays(startOfDay(new Date()), 1);
-  const endWindow = addDays(tomorrow, 14);
-  endWindow.setHours(23, 59, 59, 999);
-  const inWindow = d >= tomorrow && d <= endWindow;
+                        // clamp: only allow tomorrow -> +14
+                        const tomorrow = addDays(startOfDay(new Date()), 1);
+                        const endWindow = addDays(tomorrow, 14);
+                        endWindow.setHours(23, 59, 59, 999);
+                        const inWindow = d >= tomorrow && d <= endWindow;
 
-  return (
-    <button
-      key={key}
-      disabled={!hasAvail || !inWindow}
-      onClick={() => { setSelectedDate(d); setSelectedSlotId(null); }}
-      className={[
-        "aspect-square rounded-lg text-sm ring-1 ring-white/10 transition-all",
-        outside ? "opacity-45" : "",
-        hasAvail && inWindow
-          ? "bg-white/[0.03] hover:bg-white/[0.08]"
-          : "bg-white/[0.02] cursor-not-allowed",
-        selected ? "ring-2 ring-cyan-400/70 bg-cyan-400/10" : "",
-      ].join(" ")}
-    >
-      <div className="flex h-full w-full items-center justify-center relative">
-        <span className="text-white/90">{format(d, "d")}</span>
-        {today && (
-          <span className="absolute inset-0 rounded-lg ring-1 ring-cyan-300 pointer-events-none" />
-        )}
-        {hasAvail && inWindow && !selected && (
-          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
-        )}
-      </div>
-    </button>
-  );
-})}
-
+                        return (
+                          <button
+                            key={key}
+                            disabled={!hasAvail || !inWindow}
+                            onClick={() => { setSelectedDate(d); setSelectedSlotId(null); }}
+                            className={[
+                              "aspect-square rounded-lg text-sm ring-1 ring-white/10 transition-all",
+                              outside ? "opacity-45" : "",
+                              hasAvail && inWindow
+                                ? "bg-white/[0.03] hover:bg-white/[0.08]"
+                                : "bg-white/[0.02] cursor-not-allowed",
+                              selected ? "ring-2 ring-cyan-400/70 bg-cyan-400/10" : "",
+                            ].join(" ")}
+                          >
+                            <div className="flex h-full w-full items-center justify-center relative">
+                              <span className="text-white/90">{format(d, "d")}</span>
+                              {today && (
+                                <span className="absolute inset-0 rounded-lg ring-1 ring-cyan-300 pointer-events-none" />
+                              )}
+                              {hasAvail && inWindow && !selected && (
+                                <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </>
                 )}

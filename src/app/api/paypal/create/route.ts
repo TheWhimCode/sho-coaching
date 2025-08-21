@@ -5,6 +5,7 @@ import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
 import { getBlockIds } from "@/lib/booking/block";
 import { paypalCreateOrder } from "@/lib/paypal";
 import { CFG_PUBLIC } from "@/lib/config.public"; // ⬅️ fixed
+import { SlotStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,10 +51,10 @@ export async function POST(req: Request) {
   } = CheckoutZ.parse(await req.json());
 
   const slot = await prisma.slot.findUnique({ where: { id: slotId } });
-  if (!slot || slot.isTaken) {
-    return NextResponse.json({ error: "Slot not found or already taken" }, { status: 409 });
-  }
-
+const slot = await prisma.slot.findUnique({ where: { id: slotId } });
+if (!slot || slot.status !== SlotStatus.free) {
+  return NextResponse.json({ error: "Slot not found or not available" }, { status: 409 });
+}
   const now = new Date();
   if (slot.holdUntil && slot.holdUntil < now) {
     await prisma.slot.update({

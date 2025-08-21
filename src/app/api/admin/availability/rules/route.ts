@@ -1,49 +1,68 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-// "16:00" -> 960
-function hhmmToMinutes(hhmm: string) {
-  if (hhmm === "24:00") return 24 * 60;     // allow midnight+1
-  const [h, m] = hhmm.split(":").map(Number);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) throw new Error("Bad time");
-  return Math.max(0, Math.min(24 * 60, h * 60 + m)); // clamp 0..1440
-}
+import { z } from "zod";
 
 const Body = z.object({
-  // exactly 7 entries: Sun..Sat, as your UI sends
-  rules: z
-    .array(
-      z.object({
-        open: z.string().regex(/^\d{2}:\d{2}$/),
-        close: z.string().regex(/^\d{2}:\d{2}$/),
-      })
-    )
-    .length(7),
+  rules: z.array(
+    z.object({
+      open: z.string(),  // "HH:MM"
+      close: z.string(), // "HH:MM" or "24:00"
+    })
+  ).length(7), // must be 7 entries, Sun–Sat
 });
 
+function hhmmToMinutes(hhmm: string) {
+  if (hhmm === "24:00") return 24 * 60;
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+// --- GET: return all 7 rules ---
+export async function GET() {
+  const rules = await prisma.availabilityRule.findMany({
+    orderBy: { weekday: "asc" },
+  });
+
+  // Normalize to 7 entries (Sun=0..Sat=6) with defaults if missing
+  const defaults = Array.from({ length: 7 }, (_, weekday) => ({
+    weekday,
+    openMinute: 13 * 60,   // 13:00
+    closeMinute: 24 * 60,  // 24:00
+  }));
+
+  const byDay = new Map(rules.map(r => [r.weekday, r]));
+  const normalized = defaults.map(d => byDay.get(d.weekday) ?? d);
+
+  return NextResponse.json(normalized);
+}
+
+// --- POST: overwrite rules for all weekdays ---
 export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const { rules } = parsed.data;
   const now = new Date();
 
-  // build 7 rows (0=Sun … 6=Sat)
-  const rows = rules.map((r, weekday) => ({
-    weekday,
-    openMinute: hhmmToMinutes(r.open),
-    closeMinute: hhmmToMinutes(r.close),
-    effectiveFrom: now,
-  }));
+  await Promise.all(
+    parsed.data.rules.map((rule, weekday) =>
+      prisma.availabilityRule.upsert({
+        where: { weekday },
+        update: {
+          openMinute: hhmmToMinutes(rule.open),
+          closeMinute: hhmmToMinutes(rule.close),
+          effectiveFrom: now,
+        },
+        create: {
+          weekday,
+          openMinute: hhmmToMinutes(rule.open),
+          closeMinute: hhmmToMinutes(rule.close),
+          effectiveFrom: now,
+        },
+      })
+    )
+  );
 
-  // keep history by inserting a new "version" (one row per weekday)
-  await prisma.availabilityRule.createMany({ data: rows });
-
-  return NextResponse.json({ ok: true, inserted: rows.length, effectiveFrom: now.toISOString() });
+  return NextResponse.json({ ok: true });
 }

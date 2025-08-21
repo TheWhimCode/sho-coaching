@@ -2,9 +2,10 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import AvailableSlots, { Slot } from "@/components/AvailableSlots";
+import AvailableSlots, { Slot as UiSlot } from "@/components/AvailableSlots";
 import CenterSessionPanel from "@/components/CenterSessionPanel";
 import { fetchSuggestedStarts } from "@/lib/booking/suggest";
+import { SlotStatus } from "@prisma/client";
 
 function StepPill({ i, text }: { i: number; text: string }) {
   return (
@@ -36,7 +37,7 @@ type Props = {
   onBookNow?: () => void;
   onOpenCalendar?: (opts: { slotId?: string; liveMinutes: number }) => void;
 
-  slots?: Slot[];
+  slots?: UiSlot[];
   onPickSlot?: (id: string) => void;
 
   baseMinutes?: number;
@@ -61,7 +62,7 @@ export default function SessionHero({
   totalPriceEUR = 50,
   isCustomizingCenter = false,
 }: Props) {
-  const [autoSlots, setAutoSlots] = useState<Slot[]>([]);
+  const [autoSlots, setAutoSlots] = useState<UiSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const liveMinutes = (baseMinutes ?? 60) + (extraMinutes ?? 0);
 
@@ -72,12 +73,12 @@ export default function SessionHero({
       try {
         const s = await fetchSuggestedStarts(liveMinutes);
         if (!on) return;
-        const mapped: Slot[] = s.map((x) => ({
+        const mapped: UiSlot[] = s.map((x) => ({
           id: x.id,
           startISO: x.startTime,
           durationMin: liveMinutes,
-          isTaken: false,
-        })) as any;
+          status: SlotStatus.free, // suggestions are free by definition
+        }));
         setAutoSlots(mapped);
       } finally {
         if (on) setLoading(false);
@@ -88,26 +89,23 @@ export default function SessionHero({
     };
   }, [liveMinutes]);
 
-  const effectiveSlots = (slots?.length ? slots : autoSlots) as Slot[];
+  const effectiveSlots = (slots?.length ? slots : autoSlots) as UiSlot[];
 
   return (
     <section className="relative isolate h-[100svh] overflow-hidden text-white vignette">
       {/* Background stack (non-interactive) */}
-  <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-    <video
-      src="/videos/hero-test.mp4"
-      autoPlay
-      muted
-      loop
-      playsInline
-      // grayscale + a touch of contrast, then dim a bit
-      className="h-full w-full object-cover [filter:grayscale(1)_contrast(1.05)_brightness(.8)]"
-    />
-    {/* blue tint over the greyscale video */}
-  <div className="absolute inset-0 mix-blend-color bg-[#1f3d8b]/90" />
-    {/* extra soft dim (adjust /30–/60 as you like) */}
-    <div className="absolute inset-0 bg-black/30" />
-  </div>
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <video
+          src="/videos/hero-test.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="h-full w-full object-cover [filter:grayscale(1)_contrast(1.05)_brightness(.8)]"
+        />
+        <div className="absolute inset-0 mix-blend-color bg-[#1f3d8b]/90" />
+        <div className="absolute inset-0 bg-black/30" />
+      </div>
       <div className="absolute inset-0 hud-grid pointer-events-none z-0" />
       <div className="absolute inset-0 scanlines pointer-events-none z-0" />
       <div className="absolute inset-0 noise pointer-events-none z-0" />
@@ -139,14 +137,14 @@ export default function SessionHero({
 
             {/* CENTER */}
             <div className="self-start">
-             <CenterSessionPanel
-  title={title}
-  baseMinutes={baseMinutes}
-  extraMinutes={extraMinutes}
-  totalPriceEUR={totalPriceEUR}
-  isCustomizing={isCustomizingCenter}
-  followups={followups ?? 0}
-/>
+              <CenterSessionPanel
+                title={title}
+                baseMinutes={baseMinutes}
+                extraMinutes={extraMinutes}
+                totalPriceEUR={totalPriceEUR}
+                isCustomizing={isCustomizingCenter}
+                followups={followups ?? 0}
+              />
             </div>
 
             {/* RIGHT — CTA + slots */}

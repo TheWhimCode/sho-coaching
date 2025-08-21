@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { guards, canStartAtTime } from "@/lib/booking/block";
+import { SlotStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,35 +22,26 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "invalid dates" }, { status: 400 });
   }
 
-  // Enforce global guards (lead time / advance window / opening hours)
   const { minStart, maxStart, isWithinHours } = guards(new Date());
-
-  // Clamp the requested window to allowed range
   const gte = from < minStart ? minStart : from;
   const lte = to > maxStart ? maxStart : to;
 
-  // Base query: only untaken slots in range
+  // Only FREE slots in range
   const rows = await prisma.slot.findMany({
     where: {
-      isTaken: false,
-      startTime: { gte, lte },
+      status: SlotStatus.free,
+      startTime: { gte, lt: lte },
     },
-    select: { id: true, startTime: true },
+    select: { id: true, startTime: true, status: true },
     orderBy: { startTime: "asc" },
   });
 
-  // Step 1: respect opening hours
   const filtered = rows.filter((r) => isWithinHours(new Date(r.startTime)));
 
-  // Step 2: continuity + buffer check (parallelized, no redundant overlap query)
   const checked = await Promise.all(
-    filtered.map(async (r) => {
-      const ok = await canStartAtTime(r.startTime, liveMinutes, prisma);
-      return ok ? r : null;
-    })
+    filtered.map(async (r) => (await canStartAtTime(r.startTime, liveMinutes, prisma)) ? r : null)
   );
 
   const valid = checked.filter((x): x is typeof filtered[number] => Boolean(x));
-
   return NextResponse.json(valid);
 }
