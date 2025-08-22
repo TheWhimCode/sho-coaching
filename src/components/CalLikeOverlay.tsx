@@ -47,6 +47,7 @@ export default function CalLikeOverlay({
   const [month, setMonth] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d;
   });
+const DISPLAY_STEP_MIN = 30; // Only show :00 and :30
 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +73,43 @@ export default function CalLikeOverlay({
     const tomorrow = addDays(startOfDay(new Date()), 1);
     const end = addDays(tomorrow, 14);
     end.setHours(23, 59, 59, 999);
+type QuickPick = { id: string; local: Date; label: string };
 
+function computeQuickPicks(allSlots: { id: string; startTime?: string; startISO?: string }[], now = new Date()): QuickPick[] {
+  const toLocal = (s: any) => new Date(s.startTime ?? s.startISO);
+  const sorted = [...allSlots]
+    .map(s => ({ id: s.id, local: toLocal(s) }))
+    .filter(s => s.local > now)
+    .sort((a, b) => a.local.getTime() - b.local.getTime());
+
+  const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6; // Sun/Sat
+  const isEvening = (d: Date) => d.getHours() >= 17 && d.getHours() < 21;
+
+  const soonest = sorted[0];
+
+  const tonight = sorted.find(s => isSameDay(s.local, now) && isEvening(s.local));
+  const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+  const tomorrowEve = sorted.find(s => isSameDay(s.local, tomorrow) && isEvening(s.local));
+
+  const weekend = sorted.find(s => isWeekend(s.local));
+
+  const picks: QuickPick[] = [];
+  if (soonest) picks.push({ ...soonest, label: "Soonest" });
+  if (tonight) picks.push({ ...tonight, label: "Tonight (after work)" });
+  else if (tomorrowEve) picks.push({ ...tomorrowEve, label: "Tomorrow evening" });
+  if (weekend) picks.push({ ...weekend, label: "Weekend" });
+
+  // pad with next items if any pick is missing, and de-dupe by id
+  const seen = new Set(picks.map(p => p.id));
+  for (const s of sorted) {
+    if (picks.length >= 3) break;
+    if (seen.has(s.id)) continue;
+    picks.push({ ...s, label: "Recommended" });
+    seen.add(s.id);
+  }
+  return picks.slice(0, 3);
+}
     (async () => {
       setLoading(true); setError(null);
       try {
@@ -129,10 +166,12 @@ export default function CalLikeOverlay({
     return out;
   }, [startsByDay]);
 
-  const validStartsForSelected = useMemo(() => {
-    if (!selectedDate) return [];
-    return startsByDay.get(dayKeyLocal(selectedDate)) ?? [];
-  }, [selectedDate, startsByDay]);
+const validStartsForSelected = useMemo(() => {
+  if (!selectedDate) return [];
+  const all = startsByDay.get(dayKeyLocal(selectedDate)) ?? [];
+  return all.filter(({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0);
+}, [selectedDate, startsByDay]);
+
 
   async function submitBooking() {
     if (!selectedSlotId) return;

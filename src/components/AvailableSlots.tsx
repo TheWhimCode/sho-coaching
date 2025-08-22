@@ -5,6 +5,7 @@ export type Slot = {
   startISO: string;
   durationMin: number;
   status: SlotStatus;           // free | blocked | taken
+  label?: string;               // 👈 NEW (optional)
 };
 
 function dayDiffLocal(a: Date, b: Date) {
@@ -12,7 +13,6 @@ function dayDiffLocal(a: Date, b: Date) {
   const db = new Date(b); db.setHours(0,0,0,0);
   return Math.round((da.getTime() - db.getTime()) / 86_400_000);
 }
-
 function niceDayLabel(dt: Date) {
   const now = new Date();
   const diff = dayDiffLocal(dt, now);
@@ -37,18 +37,25 @@ export default function AvailableSlots({
         const time = dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
         const disabled = s.status !== SlotStatus.free;
         return (
-          <button
-            key={s.id}
-            disabled={disabled}
-            onClick={() => onPick?.(s.id)}
-            className="rounded-xl px-3 py-2 text-sm border border-white/10 hover:border-white/30 disabled:opacity-40 text-left"
-            title={dt.toLocaleString()}
-          >
-            <span className="font-medium">{day}</span>
-            <span className="mx-1 text-white/40">•</span>
-            <span>{time}</span>
-          </button>
-        );
+<button
+  key={s.id}
+  disabled={disabled}
+  onClick={() => onPick?.(s.id)}
+  className="h-10 w-full rounded-xl px-3 text-sm ring-1 ring-white/10 
+             hover:ring-white/30 disabled:opacity-40 text-left transition-colors"
+  title={dt.toLocaleString()}
+>
+  <div className="flex items-center justify-between">
+    <div>
+      <span className="font-medium">{day}</span>
+      <span className="mx-1 text-white/40">•</span>
+      <span>{time}</span>
+    </div>
+    {s.label && <span className="text-xs text-white/60">{s.label}</span>}
+  </div>
+</button>
+
+);
       })}
     </div>
   );

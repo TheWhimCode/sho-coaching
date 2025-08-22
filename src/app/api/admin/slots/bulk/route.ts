@@ -1,4 +1,3 @@
-// src/app/api/admin/slots/bulk/route.ts  (replace your file)
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
@@ -20,11 +19,10 @@ export async function POST(req: Request) {
   const end = new Date(to);
   const now = new Date();
 
-  // Base range
   const inRange = { startTime: { gte: start, lt: end } };
 
   if (action === "delete") {
-    // SAFE delete: only future free/blocked + not actively held
+    // delete only future free/blocked and not actively held
     const r = await prisma.slot.deleteMany({
       where: {
         ...inRange,
@@ -37,19 +35,15 @@ export async function POST(req: Request) {
 
   if (action === "markTaken") {
     const r = await prisma.slot.updateMany({
-      where: { ...inRange, isTaken: false },
-      data: { isTaken: true, status: SlotStatus.taken, holdKey: null, holdUntil: null },
+      where: { ...inRange, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
+      data: { status: SlotStatus.taken, holdKey: null, holdUntil: null },
     });
     return Response.json({ updated: r.count });
   }
 
-  // markFree: only unblock truly free-ish slots, never flip taken back to free
+  // markFree
   const r = await prisma.slot.updateMany({
-    where: {
-      ...inRange,
-      status: { in: [SlotStatus.free, SlotStatus.blocked] },
-      isTaken: false,
-    },
+    where: { ...inRange, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
     data: { status: SlotStatus.free, holdKey: null, holdUntil: null },
   });
   return Response.json({ updated: r.count });
