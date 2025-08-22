@@ -1,113 +1,133 @@
+// components/CenterSessionPanel.tsx
 "use client";
 
 import { motion } from "framer-motion";
 import SessionBlock from "@/components/SessionBlock";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { getPreset, type Preset } from "@/lib/sessions/preset";
+import { colorsByPreset } from "@/lib/sessions/colors";
+
+/* ===================== Types ===================== */
 
 type Props = {
   title?: string;
-  baseMinutes: number;   // live minutes
-  extraMinutes?: number; // +15 chunks already applied
+  baseMinutes: number;     // live minutes
+  extraMinutes?: number;   // +15 chunks already applied
   totalPriceEUR: number;
-  isCustomizing?: boolean; // drawer state
+  isCustomizing?: boolean; // drawer open/close
   followups?: number;      // 0–2
   liveBlocks?: number;     // optional
 };
 
-/* ---------- preset detection (mirrors SessionBlock) ---------- */
-function getPreset(minutes: number, followups = 0) {
-  if (minutes === 60 && followups === 0) return "vod" as const;
-  if (minutes === 30 && followups === 0) return "quick" as const;
-  if (minutes === 45 && followups === 1) return "signature" as const;
-  return "custom" as const;
-}
-type Preset = ReturnType<typeof getPreset>;
+/* ===================== Stat Rules ===================== */
 
-/* ---------- palette (same as SessionBlock) ---------- */
-/** Toggle: use a distinct color for Custom instead of VOD blue */
-const CUSTOM_HAS_OWN_COLOR = true;
-
-function presetColors(preset: "quick" | "signature" | "vod" | "custom") {
-  switch (preset) {
-    case "quick":     return { ring: "#F8D34B", glow: "rgba(248,211,75,.65)" };   // yellow
-    case "signature": return { ring: "#F87171", glow: "rgba(248,113,113,.65)" };  // red
-    case "vod":       return { ring: "#69A8FF", glow: "rgba(105,168,255,.65)" };  // blue
-    case "custom":
-    default:
-      // neutral steel (subtle, non-presety)
-      return { ring: "rgba(255,255,255,0.28)", glow: "rgba(255,255,255,0.16)" };
-  }
-}
-
-
-/* ---------- stat rules (your spec) ---------- */
 function depthOfInsight(min: number): 1|2|3|4|5 {
   if (min <= 30) return 2;
   if (min <= 45) return 3;
   if (min <= 75) return 4;
   return 5; // 90–120
 }
+
 function clarityStructure(min: number, preset: Preset): 1|2|3|4|5 {
   if (preset === "signature") return 5;
-  if (min <= 45) return 4;
-  if (min <= 75) return 3;
-  if (min <= 105) return 2;
-  return 1;
+  if (min <= 45) return 4;      // 30–45
+  if (min <= 75) return 3;      // 60–75
+  if (min <= 105) return 2;     // 90–105
+  return 1;                     // 105–120
 }
+
 function lastingImpact(min: number, followups: number): 1|2|3|4|5 {
-  let base: 1|2|3 = (min <= 30 ? 1 : min <= 45 ? 2 : 3);
-  const withFU = Math.min(5, base + Math.max(0, Math.min(2, followups)));
-  return withFU as 1|2|3|4|5;
+  const base = min <= 30 ? 2 : 3;
+  const total = base + Math.min(2, Math.max(0, followups));
+  return Math.min(5, total) as 1|2|3|4|5;
 }
+
 function flexibility(preset: Preset): 1|2|3|4|5 {
-  if (preset === "quick") return 1;
+  if (preset === "instant") return 1;
   if (preset === "signature") return 1;
-  if (preset === "vod") return 2;
+  if (preset === "vod") return 3;
   return 5; // custom
 }
 
-/* ---------- prev hook ---------- */
+/* ===================== Hooks ===================== */
+
 function usePrevious<T>(v: T) {
-  const ref = useRef(v);
-  useEffect(() => { ref.current = v; }, [v]);
-  return ref.current;
+  const r = useRef(v);
+  useEffect(() => { r.current = v; }, [v]);
+  return r.current as T;
 }
 
-/* ---------- animated, color-coded pips ---------- */
-function Pips({ value, ring, glow }: { value: number; ring: string; glow: string }) {
-  const prev = (usePrevious(value) ?? value) as number;
-  const rising = value > prev;
+/* ===================== Icons ===================== */
 
+function IconDepth({ color, glow, size = 18 }: { color: string; glow: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden
+      style={{ color, filter: `drop-shadow(0 0 6px ${glow})` }}>
+      <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.6" fill="none"/>
+      <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function IconClarity({ color, glow, size = 18 }: { color: string; glow: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden
+      style={{ color, filter: `drop-shadow(0 0 6px ${glow})` }}>
+      <path d="M12 3l6 9-6 9-6-9 6-9z" fill="none" stroke="currentColor" strokeWidth="1.4"/>
+      <circle cx="12" cy="12" r="2" fill="currentColor"/>
+    </svg>
+  );
+}
+function IconImpact({ color, glow, size = 18 }: { color: string; glow: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden
+      style={{ color, filter: `drop-shadow(0 0 6px ${glow})` }}>
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" fill="none"/>
+      <path d="M12 7v5l4 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+function IconFlex({ color, glow, size = 18 }: { color: string; glow: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden
+      style={{ color, filter: `drop-shadow(0 0 6px ${glow})` }}>
+      <rect x="4" y="6"  width="10" height="2" rx="1" fill="currentColor" />
+      <rect x="10" y="11" width="10" height="2" rx="1" fill="currentColor" />
+      <rect x="6" y="16" width="8"  height="2" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+/* ===================== UI Bits ===================== */
+
+function Pips({ value, ring, glow }: { value: number; ring: string; glow: string }) {
+  const prev = usePrevious(value) ?? value;
+  const rising = value > prev;
   const inactiveBg = "rgba(255,255,255,0.07)";
   const inactiveRing = "rgba(255,255,255,0.12)";
 
   return (
     <div className="flex items-center gap-2">
       {Array.from({ length: 5 }).map((_, i) => {
-        const wasActive = i < prev;
-        const isActive = i < value;
-
+        const was = i < (prev as number);
+        const is  = i < value;
         let delay = 0;
-        if (rising && isActive && !wasActive) delay = (i - prev) * 0.03;
-        if (!rising && wasActive && !isActive) delay = (prev - 1 - i) * 0.03;
+        if (rising && is && !was) delay = (i - (prev as number)) * 0.03;
+        if (!rising && was && !is) delay = ((prev as number) - 1 - i) * 0.03;
 
         return (
           <motion.div
             key={i}
             initial={false}
             animate={{
-              backgroundColor: isActive ? ring : inactiveBg,
-              boxShadow: isActive ? `0 0 8px ${glow}` : "0 0 0 rgba(0,0,0,0)",
-              scale: isActive ? 1 : 0.94,
-              opacity: isActive ? 1 : 0.75,
+              backgroundColor: is ? ring : inactiveBg,
+              boxShadow: is ? `0 0 8px ${glow}` : "0 0 0 rgba(0,0,0,0)",
+              scale: is ? 1 : 0.94,
+              opacity: is ? 1 : 0.75,
             }}
             transition={{ duration: 0.18, delay: Math.max(0, delay) }}
             className="rounded-[5px] ring-1"
-            style={{
-              width: 14,
-              height: 18,
-              borderColor: isActive ? "transparent" : inactiveRing,
-            }}
+            style={{ width: 14, height: 18, borderColor: is ? "transparent" : inactiveRing }}
           />
         );
       })}
@@ -115,17 +135,87 @@ function Pips({ value, ring, glow }: { value: number; ring: string; glow: string
   );
 }
 
-type StatRow = { label: string; value: number };
-function StatRowAnimated({ label, value, ring, glow }: StatRow & { ring: string; glow: string }) {
+function StatRow({
+  icon,
+  label,
+  value,
+  ring,
+  glow,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  ring: string;
+  glow: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-[15px] text-white/90">{label}</span>
+      <span className="flex items-center gap-2 text-[15px] text-white/90">
+        <span className="shrink-0">{icon}</span>
+        {label}
+      </span>
       <Pips value={value} ring={ring} glow={glow} />
     </div>
   );
 }
 
-/* ---------- main panel ---------- */
+/** Dual left→right wipe (no feather): placeholder out, stats in. */
+function DualWipeLR({
+  play,
+  onDone,
+  a, // placeholder
+  b, // stats
+}: {
+  play: boolean;
+  onDone: () => void;
+  a: React.ReactNode;
+  b: React.ReactNode;
+}) {
+  const D = 0.8;
+  const OFFSET = 0.01;
+
+  const [showSweep, setShowSweep] = useState(play);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* A OUT */}
+      <motion.div
+        initial={{ clipPath: "inset(0 0% 0 0)" }}
+        animate={{ clipPath: play ? "inset(0 0% 0 100%)" : "inset(0 0% 0 100%)" }}
+        transition={{ duration: D, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-0"
+      >
+        {a}
+      </motion.div>
+
+      {/* B IN */}
+      <motion.div
+        initial={{ clipPath: "inset(0 100% 0 0)" }}
+        animate={{ clipPath: play ? "inset(0 0% 0 0)" : "inset(0 0% 0 0)" }}
+        transition={{ duration: D, delay: OFFSET, ease: [0.22, 1, 0.36, 1] }}
+        onAnimationComplete={() => { setShowSweep(false); onDone(); }}
+        className="absolute inset-0"
+      >
+        {b}
+      </motion.div>
+
+      {showSweep && (
+        <motion.div
+          initial={{ x: "-120%" }}
+          animate={{ x: "120%" }}
+          transition={{ duration: D + OFFSET, ease: [0.22, 1, 0.36, 1] }}
+          onAnimationComplete={() => setShowSweep(false)}
+          className="pointer-events-none absolute inset-y-0 w-24
+                     bg-gradient-to-r from-transparent via-white/18 to-transparent
+                     blur-[6px] opacity-30"
+        />
+      )}
+    </div>
+  );
+}
+
+/* ===================== Main ===================== */
+
 export default function CenterSessionPanel({
   title = "VOD Review",
   baseMinutes,
@@ -136,77 +226,103 @@ export default function CenterSessionPanel({
   liveBlocks = 0,
 }: Props) {
   const minutes = baseMinutes + extraMinutes;
-  const preset = getPreset(minutes, followups);
-  const { ring, glow } = useMemo(() => presetColors(preset), [preset]);
+  const preset = getPreset(minutes, followups);            // <- central helper
+  const { ring, glow } = colorsByPreset[preset];           // <- central colors
 
-  const stats: StatRow[] = [
-    { label: "Depth of Insight",    value: depthOfInsight(minutes) },
-    { label: "Clarity & Structure", value: clarityStructure(minutes, preset) },
-    { label: "Lasting Impact",      value: lastingImpact(minutes, followups) },
-    { label: "Flexibility",         value: flexibility(preset) },
+  const stats = [
+    { label: "Depth of Insight",   value: depthOfInsight(minutes),          icon: <IconDepth  color={ring} glow={glow} /> },
+    { label: "Clarity & Structure",value: clarityStructure(minutes, preset),icon: <IconClarity color={ring} glow={glow} /> },
+    { label: "Lasting Impact",     value: lastingImpact(minutes, followups),icon: <IconImpact  color={ring} glow={glow} /> },
+    { label: "Flexibility",        value: flexibility(preset),              icon: <IconFlex    color={ring} glow={glow} /> },
   ];
 
-  /* --- placeholder vs stats (unlock on first open) --- */
-  const [statsUnlocked, setStatsUnlocked] = useState(false);
-  const prevCustomizing = usePrevious(isCustomizing) ?? isCustomizing;
+  // Reveal once on first drawer open
+  const [revealed, setRevealed] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const prevOpen = usePrevious(isCustomizing) ?? false;
 
-  // Show stats immediately on first open, then keep forever
   useEffect(() => {
-    if (!statsUnlocked && isCustomizing && !prevCustomizing) setStatsUnlocked(true);
-  }, [isCustomizing, prevCustomizing, statsUnlocked]);
+    if (!revealed && !prevOpen && isCustomizing) {
+      setRevealed(true);
+      setPlaying(true);
+    }
+  }, [isCustomizing, prevOpen, revealed]);
 
-  // Fixed height to avoid layout shift
   const STATS_AREA_HEIGHT = 150;
 
   const placeholder = (
-    <div className="absolute inset-0">
+    <>
       <div className="text-[12px] font-semibold tracking-wide uppercase text-white/65 mb-3">
         Session profile
       </div>
       <div className="space-y-2 text-sm text-white/80">
-        <p>See what this session emphasizes at a glance:</p>
+        <p>Customize to reveal what this session emphasizes.</p>
         <ul className="space-y-1 list-disc list-inside text-white/75">
           <li>Depth vs. structure</li>
-          <li>What you’ll take away</li>
-          <li>How flexible the format is</li>
+          <li>Expected lasting impact</li>
+          <li>Format flexibility</li>
         </ul>
       </div>
-    </div>
+    </>
   );
 
-  const statsBlock = (
-    <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0">
-      <div className="text-[12px] font-semibold tracking-wide uppercase text-white/65 mb-3">
+  const statsContent = (
+    <>
+      <div
+        className="text-[12px] font-semibold tracking-wide uppercase mb-3"
+        style={{ color: ring, filter: `drop-shadow(0 0 6px ${glow})` }}
+      >
         Session profile
       </div>
       <div className="space-y-3">
         {stats.map((s) => (
-          <StatRowAnimated key={s.label} {...s} ring={ring} glow={glow} />
+          <StatRow
+            key={s.label}
+            icon={s.icon}
+            label={s.label}
+            value={s.value}
+            ring={ring}
+            glow={glow}
+          />
         ))}
       </div>
-    </motion.div>
+    </>
   );
-
+        const baseOnly = baseMinutes + extraMinutes;
+const totalForBlock = baseOnly + liveBlocks * 45;
   return (
     <div className="relative w-full max-w-md">
       <div className="rounded-2xl backdrop-blur-md p-6 shadow-[0_10px_30px_rgba(0,0,0,.35)] bg-[#0B1220]/80 ring-1 ring-[rgba(146,180,255,.18)]">
-        <SessionBlock
-          title={title}
-          minutes={minutes}
-          priceEUR={totalPriceEUR}
-          followups={followups}
-          liveBlocks={liveBlocks}
-          isActive={isCustomizing}
-          background="transparent"
-          className="p-0"
-        />
+
+
+<SessionBlock
+  title={title}
+  minutes={totalForBlock}   // ⟵ total drives the block UI
+  priceEUR={totalPriceEUR}
+  followups={followups}
+  liveBlocks={liveBlocks}   // ⟵ still pass blocks so green ticks animate
+  isActive={isCustomizing}
+  background="transparent"
+  className="p-0"
+/>
 
         {/* Divider */}
         <div className="mt-4 mb-3 h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent" />
 
-        {/* Reserved area: placeholder until first open; stats appear on first open and persist */}
+        {/* Stats / placeholder area */}
         <div style={{ height: STATS_AREA_HEIGHT }} className="relative">
-          {statsUnlocked ? statsBlock : placeholder}
+          {!revealed ? (
+            <div className="absolute inset-0">{placeholder}</div>
+          ) : playing ? (
+            <DualWipeLR
+              play
+              onDone={() => setPlaying(false)}
+              a={<div className="h-full">{placeholder}</div>}
+              b={<div className="h-full">{statsContent}</div>}
+            />
+          ) : (
+            <div className="absolute inset-0">{statsContent}</div>
+          )}
         </div>
       </div>
     </div>
