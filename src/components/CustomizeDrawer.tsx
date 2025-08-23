@@ -6,6 +6,8 @@ import { useMemo, useState } from "react";
 import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../utils/sessionConfig";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
+import DualWipeLR from "@/components/DualWipeLR";
+
 
 /* ---------- Icons use shared palette ---------- */
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
@@ -76,14 +78,16 @@ function incDuration(cfg: Cfg): Cfg {
 type Props = { open: boolean; onClose: () => void; cfg: Cfg; onChange: (c: Cfg) => void };
 
 export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props) {
+  console.log("Drawer cfg", cfg);   // 👈 Add here
+
   const [hoverPreset, setHoverPreset] = useState<Preset | null>(null);
 
   // IMPORTANT: preset should be based on TOTAL live minutes (base + in-game)
-  const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;
-  const currentPreset = useMemo(
-    () => getPreset(totalMinutes, cfg.followups),
-    [totalMinutes, cfg.followups]
-  );
+const baseOnly = cfg.liveMin;
+const currentPreset = useMemo(
+  () => getPreset(baseOnly, cfg.followups, cfg.liveBlocks),   // ← include liveBlocks
+  [baseOnly, cfg.followups, cfg.liveBlocks]
+,);
   const { ring, glow } = colorsByPreset[currentPreset];
 
   function applyPreset(p: Exclude<Preset, "custom">) {

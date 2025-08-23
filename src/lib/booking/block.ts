@@ -31,26 +31,39 @@ export async function getBlockIds(startSlotId: string, liveMinutes: number, tx =
 }
 
 /** Preferred: compute the contiguous FREE block by start time. */
-export async function getBlockIdsByTime(startTime: Date, liveMinutes: number, tx = prisma) {
+export async function getBlockIdsByTime(
+  startTime: Date,
+  liveMinutes: number,
+  tx = prisma,
+  opts?: { holdKey?: string }
+) {
   const { minStart, maxStart, isWithinHours } = guards(new Date());
   if (startTime < minStart) return null;
   if (startTime > maxStart) return null;
   if (!isWithinHours(startTime)) return null;
 
   const { BUFFER_BEFORE_MIN, BUFFER_AFTER_MIN } = CFG_SERVER.booking;
-
   const windowStart = addMin(startTime, -BUFFER_BEFORE_MIN);
-  const windowEnd = addMin(startTime, liveMinutes + BUFFER_AFTER_MIN);
-  const expected = ceilDiv(
+  const windowEnd   = addMin(startTime, liveMinutes + BUFFER_AFTER_MIN);
+  const expected    = ceilDiv(
     liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN,
     SLOT_SIZE_MIN
   );
 
-  // ✅ Only slots that are currently FREE
+  const now = new Date();
+  const holdKey = opts?.holdKey;
+
   const block = await tx.slot.findMany({
     where: {
       startTime: { gte: windowStart, lt: windowEnd },
+      // status must be free (we only hard-block at intent/order time)
       status: SlotStatus.free,
+      // and either not soft-held, or soft-held by this user
+      OR: [
+        { holdUntil: null },
+        { holdUntil: { lt: now } },
+        ...(holdKey ? [{ holdKey }] as any : []),
+      ],
     },
     orderBy: { startTime: "asc" },
   });
@@ -62,11 +75,9 @@ export async function getBlockIdsByTime(startTime: Date, liveMinutes: number, tx
     const want = addMin(block[i - 1].startTime, SLOT_SIZE_MIN).getTime();
     if (block[i].startTime.getTime() !== want) return null;
   }
-
-  return block.map((s) => s.id);
+  return block.map(s => s.id);
 }
 
-/** Fast boolean wrapper */
 export async function canStartAtTime(startTime: Date, liveMinutes: number, tx = prisma) {
   const ids = await getBlockIdsByTime(startTime, liveMinutes, tx);
   return Array.isArray(ids) && ids.length > 0;

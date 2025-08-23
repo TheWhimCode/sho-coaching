@@ -1,0 +1,16 @@
+import type { Cfg } from "@/utils/sessionConfig";
+
+export const INGAME_MIN = 45;
+
+export function totalLiveMinutes(cfg: Cfg) {
+  return cfg.liveMin + cfg.liveBlocks * INGAME_MIN;
+}
+
+export function toCalendarQuery(cfg: Cfg) {
+  return {
+    liveMinutes: totalLiveMinutes(cfg),
+    followups: cfg.followups,
+    inGame: cfg.liveBlocks > 0,
+    liveBlocks: cfg.liveBlocks,
+  };
+}

@@ -22,7 +22,6 @@ const container: Variants = {
     opacity: 1,
     transition: { staggerChildren: 0.06, delayChildren: 0.04 },
   },
-  // top→bottom exit as well (staggerDirection: 1)
   exit: {
     opacity: 1,
     transition: { staggerChildren: 0.06, staggerDirection: 1 },
@@ -46,16 +45,16 @@ export default function LeftSteps({ steps, title = "How it works", animKey }: Pr
       className={[
         "relative rounded-2xl backdrop-blur-md ring-1 ring-[rgba(146,180,255,.18)] bg-[#0B1220]/80",
         "p-6 md:p-7 lg:p-8",
-        "min-h-[500px] md:min-h-[540px] lg:min-h-[560px]",
+        // reduced min-heights slightly
+        "min-h-[470px] md:min-h-[510px] lg:min-h-[530px]",
         "flex flex-col",
       ].join(" ")}
     >
       {/* Header */}
-      <div className="mb-3 md:mb-4">
+      <div className="mb-2 md:mb-3">
         <div className="text-xs uppercase tracking-wider text-[#8FB8E6]/90">Quick overview</div>
         <div className="inline-block w-full">
-          <h3 className="mt-1 font-bold text-2xl md:text-[26px] text-white">{title}</h3>
-          <div className="mt-1 h-[2px] w-full rounded-full bg-white/30" />
+          <h3 className="mt-1 font-bold text-2xl text-white">{title}</h3>
         </div>
       </div>
 
@@ -77,15 +76,15 @@ export default function LeftSteps({ steps, title = "How it works", animKey }: Pr
                     <span className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/[.07] ring-1 ring-white/15 text-[15px] font-semibold text-white/90">
                       {idx + 1}
                     </span>
-                    <div className="grow pl-4 pr-2 py-4">
-                      <div className="text-[18px] md:text-[19px] lg:text-[20px] leading-snug text-white/90">
+                    <div className="grow pl-4 pr-2 py-3">
+                      <div className="text-[18px] md:text-[19px] lg:text-[18px] leading-snug text-white/90">
                         {row.title}
                       </div>
                     </div>
                   </div>
                 ) : (
                   // empty row keeps spacing identical for shorter lists
-                  <div className="py-4" />
+                  <div className="py-3" />
                 )}
 
                 {/* Divider between rows (purely visual, keeps grid feel) */}

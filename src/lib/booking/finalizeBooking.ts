@@ -38,10 +38,10 @@ export async function finalizeBooking(
       return; // already processed
     }
 
-    // Reserve/mark taken + clear hold
+    // Mark slots taken + clear holds
     if (slotIds.length) {
       await tx.slot.updateMany({
-        where: { id: { in: slotIds } },
+        where: { id: { in: slotIds }, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
         data: { status: SlotStatus.taken, holdUntil: null, holdKey: null },
       });
     } else {
@@ -51,22 +51,22 @@ export async function finalizeBooking(
       });
     }
 
-    // Snapshot schedule into Booking
+    // Snapshot schedule
     const startSlot = await tx.slot.findUnique({
       where: { id: firstSlotId },
       select: { startTime: true },
     });
     if (!startSlot) throw new Error("slot not found");
 
+    // ✅ Upsert by paymentRef (unique) and connect the slot relation
     await tx.booking.upsert({
-      where: { slotId: firstSlotId },
+      where: { paymentRef }, // idempotent key
       update: {
         status: "paid",
         amountCents,
         currency,
         blockCsv: slotIds.join(","),
         paymentProvider: provider,
-        paymentRef,
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
         scheduledStart: startSlot.startTime,
         scheduledMinutes: liveMinutes,
@@ -74,7 +74,8 @@ export async function finalizeBooking(
       create: {
         sessionType,
         status: "paid",
-        slotId: firstSlotId,
+        // 🔽 connect relation instead of slotId scalar
+        slot: { connect: { id: firstSlotId } },
         liveMinutes,
         inGame,
         followups,

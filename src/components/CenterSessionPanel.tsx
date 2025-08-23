@@ -1,52 +1,70 @@
 // components/CenterSessionPanel.tsx
 "use client";
 
-import { motion } from "framer-motion";
 import SessionBlock from "@/components/SessionBlock";
+import DualWipeLR from "@/components/DualWipeLR";
+import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
+import { computePriceEUR } from "@/lib/pricing";
 
 /* ===================== Types ===================== */
 
 type Props = {
   title?: string;
-  baseMinutes: number;     // live minutes
-  extraMinutes?: number;   // +15 chunks already applied
-  totalPriceEUR: number;
+  baseMinutes: number;     // base live minutes (no in-game added)
+  extraMinutes?: number;   // +15 chunks already applied to base
+  totalPriceEUR: number;   // kept for compatibility; UI uses live price below
   isCustomizing?: boolean; // drawer open/close
   followups?: number;      // 0–2
-  liveBlocks?: number;     // optional
+  liveBlocks?: number;     // number of 45m in-game blocks (0..2)
 };
 
 /* ===================== Stat Rules ===================== */
 
-function depthOfInsight(min: number): 1|2|3|4|5 {
-  if (min <= 30) return 2;
-  if (min <= 45) return 3;
-  if (min <= 75) return 4;
-  return 5; // 90–120
+// 1..5 clamp helper (kept for safety)
+const clamp15 = (n: number) => Math.max(1, Math.min(5, n)) as 1|2|3|4|5;
+
+// Depth: base-driven; if it's 2 and you add ANY live, bump to 3 (no other bumps)
+function depthOfInsight(baseMin: number, liveBlocks: number): 1|2|3|4|5 {
+  let v = baseMin <= 30 ? 2
+        : baseMin <= 45 ? 3
+        : baseMin <= 75 ? 4
+        : 5;
+  if (v === 2 && liveBlocks > 0) v = 3;
+  return clamp15(v);
 }
 
-function clarityStructure(min: number, preset: Preset): 1|2|3|4|5 {
-  if (preset === "signature") return 5;
-  if (min <= 45) return 4;      // 30–45
-  if (min <= 75) return 3;      // 60–75
-  if (min <= 105) return 2;     // 90–105
-  return 1;                     // 105–120
+// Clarity & Structure: +1 for first live block only; cap overall at 4
+function clarityStructure(baseMin: number, preset: Preset, liveBlocks: number): 1|2|3|4|5 {
+  let v = preset === "signature" ? 5
+        : baseMin <= 45 ? 4
+        : baseMin <= 75 ? 3
+        : baseMin <= 105 ? 2
+        : 1;
+
+  if (liveBlocks >= 1) v += 1;   // +1, not +2
+  v = Math.min(4, v);            // cap at 4
+  return clamp15(v);
 }
 
-function lastingImpact(min: number, followups: number): 1|2|3|4|5 {
-  const base = min <= 30 ? 2 : 3;
-  const total = base + Math.min(2, Math.max(0, followups));
-  return Math.min(5, total) as 1|2|3|4|5;
+// Lasting Impact: +1 if 2+ live blocks AND current ≤3 (caps at 4)
+function lastingImpact(baseMin: number, followups: number, liveBlocks: number): 1|2|3|4|5 {
+  const base = baseMin <= 30 ? 2 : 3;
+  let v = base + Math.min(2, Math.max(0, followups)); // unaffected by live by default
+  if (liveBlocks >= 2 && v <= 3) v += 1;              // bump to at most 4
+  return Math.max(1, Math.min(5, v)) as 1|2|3|4|5;
 }
 
-function flexibility(preset: Preset): 1|2|3|4|5 {
-  if (preset === "instant") return 1;
-  if (preset === "signature") return 1;
-  if (preset === "vod") return 3;
-  return 5; // custom
+// Flexibility: -1 per live block (baseline is 5 when preset becomes custom)
+function flexibility(preset: Preset, liveBlocks: number): 1|2|3|4|5 {
+  let v = preset === "instant" ? 1
+        : preset === "signature" ? 1
+        : preset === "vod" ? 3
+        : 5; // custom
+  v -= liveBlocks;
+  return clamp15(v);
 }
 
 /* ===================== Hooks ===================== */
@@ -159,61 +177,6 @@ function StatRow({
   );
 }
 
-/** Dual left→right wipe (no feather): placeholder out, stats in. */
-function DualWipeLR({
-  play,
-  onDone,
-  a, // placeholder
-  b, // stats
-}: {
-  play: boolean;
-  onDone: () => void;
-  a: React.ReactNode;
-  b: React.ReactNode;
-}) {
-  const D = 0.8;
-  const OFFSET = 0.01;
-
-  const [showSweep, setShowSweep] = useState(play);
-
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* A OUT */}
-      <motion.div
-        initial={{ clipPath: "inset(0 0% 0 0)" }}
-        animate={{ clipPath: play ? "inset(0 0% 0 100%)" : "inset(0 0% 0 100%)" }}
-        transition={{ duration: D, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute inset-0"
-      >
-        {a}
-      </motion.div>
-
-      {/* B IN */}
-      <motion.div
-        initial={{ clipPath: "inset(0 100% 0 0)" }}
-        animate={{ clipPath: play ? "inset(0 0% 0 0)" : "inset(0 0% 0 0)" }}
-        transition={{ duration: D, delay: OFFSET, ease: [0.22, 1, 0.36, 1] }}
-        onAnimationComplete={() => { setShowSweep(false); onDone(); }}
-        className="absolute inset-0"
-      >
-        {b}
-      </motion.div>
-
-      {showSweep && (
-        <motion.div
-          initial={{ x: "-120%" }}
-          animate={{ x: "120%" }}
-          transition={{ duration: D + OFFSET, ease: [0.22, 1, 0.36, 1] }}
-          onAnimationComplete={() => setShowSweep(false)}
-          className="pointer-events-none absolute inset-y-0 w-24
-                     bg-gradient-to-r from-transparent via-white/18 to-transparent
-                     blur-[6px] opacity-30"
-        />
-      )}
-    </div>
-  );
-}
-
 /* ===================== Main ===================== */
 
 export default function CenterSessionPanel({
@@ -225,18 +188,35 @@ export default function CenterSessionPanel({
   followups = 0,
   liveBlocks = 0,
 }: Props) {
-  const minutes = baseMinutes + extraMinutes;
-  const preset = getPreset(minutes, followups);            // <- central helper
-  const { ring, glow } = colorsByPreset[preset];           // <- central colors
+  const baseOnly = useMemo(() => baseMinutes + extraMinutes, [baseMinutes, extraMinutes]);
+
+  // Unified minutes for availability/price (base + 45 per live block)
+  const liveMinutes = useMemo(
+    () => baseOnly + (liveBlocks ?? 0) * 45,
+    [baseOnly, liveBlocks]
+  );
+
+  // Preset flips to custom if any live block is added (affects colors/labels)
+  const preset = useMemo(
+    () => getPreset(baseOnly, followups, liveBlocks),
+    [baseOnly, followups, liveBlocks]
+  );
+  const { ring, glow } = colorsByPreset[preset];
+
+  // 🔸 Dynamic price preview from unified minutes (blocks priced like normal time)
+  const pricePreview = useMemo(
+    () => computePriceEUR(liveMinutes, followups).priceEUR,
+    [liveMinutes, followups]
+  );
 
   const stats = [
-    { label: "Depth of Insight",   value: depthOfInsight(minutes),          icon: <IconDepth  color={ring} glow={glow} /> },
-    { label: "Clarity & Structure",value: clarityStructure(minutes, preset),icon: <IconClarity color={ring} glow={glow} /> },
-    { label: "Lasting Impact",     value: lastingImpact(minutes, followups),icon: <IconImpact  color={ring} glow={glow} /> },
-    { label: "Flexibility",        value: flexibility(preset),              icon: <IconFlex    color={ring} glow={glow} /> },
+    { label: "Depth of Insight",    value: depthOfInsight(baseOnly, liveBlocks),           icon: <IconDepth  color={ring} glow={glow} /> },
+    { label: "Clarity & Structure", value: clarityStructure(baseOnly, preset, liveBlocks), icon: <IconClarity color={ring} glow={glow} /> },
+    { label: "Lasting Impact",      value: lastingImpact(baseOnly, followups, liveBlocks), icon: <IconImpact  color={ring} glow={glow} /> },
+    { label: "Flexibility",         value: flexibility(preset, liveBlocks),                icon: <IconFlex    color={ring} glow={glow} /> },
   ];
 
-  // Reveal once on first drawer open
+  // Reveal once on first drawer open; play wipe on open
   const [revealed, setRevealed] = useState(false);
   const [playing, setPlaying] = useState(false);
   const prevOpen = usePrevious(isCustomizing) ?? false;
@@ -248,13 +228,13 @@ export default function CenterSessionPanel({
     }
   }, [isCustomizing, prevOpen, revealed]);
 
-  const STATS_AREA_HEIGHT = 150;
+  // extra headroom so glows don’t clip during the wipe
+  const STATS_AREA_HEIGHT = 160;
 
+  // Placeholder WITHOUT "Session profile" header (so header reveals with stats)
   const placeholder = (
     <>
-      <div className="text-[12px] font-semibold tracking-wide uppercase text-white/65 mb-3">
-        Session profile
-      </div>
+      <div className="h-[18px] mb-3" /> {/* spacer to match header height */}
       <div className="space-y-2 text-sm text-white/80">
         <p>Customize to reveal what this session emphasizes.</p>
         <ul className="space-y-1 list-disc list-inside text-white/75">
@@ -288,23 +268,22 @@ export default function CenterSessionPanel({
       </div>
     </>
   );
-        const baseOnly = baseMinutes + extraMinutes;
-const totalForBlock = baseOnly + liveBlocks * 45;
+
   return (
     <div className="relative w-full max-w-md">
       <div className="rounded-2xl backdrop-blur-md p-6 shadow-[0_10px_30px_rgba(0,0,0,.35)] bg-[#0B1220]/80 ring-1 ring-[rgba(146,180,255,.18)]">
 
-
-<SessionBlock
-  title={title}
-  minutes={totalForBlock}   // ⟵ total drives the block UI
-  priceEUR={totalPriceEUR}
-  followups={followups}
-  liveBlocks={liveBlocks}   // ⟵ still pass blocks so green ticks animate
-  isActive={isCustomizing}
-  background="transparent"
-  className="p-0"
-/>
+        {/* SessionBlock uses base + blocks separately, but price reflects unified minutes */}
+        <SessionBlock
+          title={title}
+          minutes={baseOnly}        // base only (ticks merge inside with liveBlocks)
+          priceEUR={pricePreview}   // 🔸 dynamic price
+          followups={followups}
+          liveBlocks={liveBlocks}
+          isActive={isCustomizing}
+          background="transparent"
+          className="p-0"
+        />
 
         {/* Divider */}
         <div className="mt-4 mb-3 h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent" />

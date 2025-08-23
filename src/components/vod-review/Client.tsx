@@ -49,10 +49,11 @@ export default function VODReviewClient() {
           title="VOD Review"
           subtitle="League of Legends gameplay analysis"
           image="/videos/vod-review-poster-end.png"
-          baseMinutes={cfg.liveMin}
+                  baseMinutes={cfg.liveMin}          // 👈 base from cfg
+        followups={cfg.followups}          // 👈 followups from cfg
+        liveBlocks={cfg.liveBlocks} 
           extraMinutes={0}
           totalPriceEUR={calcPrice(cfg)}
-          followups={cfg.followups}
           isCustomizingCenter={drawerOpen}
           isDrawerOpen={drawerOpen}               
           onCustomize={() => setDrawerOpen(true)}

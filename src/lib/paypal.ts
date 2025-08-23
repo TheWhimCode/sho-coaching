@@ -1,14 +1,30 @@
-// src/lib/paypal.ts
 import "server-only";
 import { CFG_SERVER } from "@/lib/config.server";
 
-// Pick the correct REST base URL from env
 const base =
   CFG_SERVER.paypal.ENV === "live"
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
-// Simple bearer-token cache
+// --- Types ---
+export type CreateOrderOpts = {
+  intent: "CAPTURE";
+  purchase_units: Array<{
+    reference_id?: string;
+    custom_id?: string;
+    description?: string;
+    amount: { currency_code: "EUR" | "USD"; value: string };
+  }>;
+  application_context?: {
+    brand_name?: string;
+    user_action?: "PAY_NOW";
+    shipping_preference?: "NO_SHIPPING";
+    return_url?: string;
+    cancel_url?: string;
+  };
+};
+
+// --- Token cache ---
 let cachedToken: { token: string; expMs: number } | null = null;
 
 function b64(s: string) {
@@ -16,11 +32,8 @@ function b64(s: string) {
 }
 
 export async function getPaypalAccessToken(): Promise<string> {
-  // Reuse cached token if it’s still valid for at least 10s
   const now = Date.now();
-  if (cachedToken && cachedToken.expMs > now + 10_000) {
-    return cachedToken.token;
-  }
+  if (cachedToken && cachedToken.expMs > now + 10_000) return cachedToken.token;
 
   const res = await fetch(`${base}/v1/oauth2/token`, {
     method: "POST",
@@ -40,12 +53,12 @@ export async function getPaypalAccessToken(): Promise<string> {
   }
 
   const token = json.access_token as string;
-  const expiresIn = (json.expires_in as number | undefined) ?? 3000; // seconds
+  const expiresIn = (json.expires_in as number | undefined) ?? 3000;
   cachedToken = { token, expMs: now + expiresIn * 1000 };
   return token;
 }
 
-export async function paypalCreateOrder(body: any, requestId?: string) {
+export async function paypalCreateOrder(opts: CreateOrderOpts, requestId?: string) {
   const token = await getPaypalAccessToken();
   const res = await fetch(`${base}/v2/checkout/orders`, {
     method: "POST",
@@ -55,20 +68,16 @@ export async function paypalCreateOrder(body: any, requestId?: string) {
       Authorization: `Bearer ${token}`,
       ...(requestId ? { "PayPal-Request-Id": requestId } : {}),
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(opts),
   });
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const dbg = res.headers.get("paypal-debug-id");
-    console.error("paypal_create_error", {
-      status: res.status,
-      debug_id: dbg,
-      body: data,
-    });
+    console.error("paypal_create_error", { status: res.status, debug_id: dbg, body: data });
     throw new Error(`paypal_create_failed:${res.status}`);
   }
-  return data; // includes { id: "ORDER_ID" }
+  return data;
 }
 
 export async function paypalCaptureOrder(orderId: string) {

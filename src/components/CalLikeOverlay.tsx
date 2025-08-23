@@ -1,3 +1,4 @@
+// components/CalLikeOverlay.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -11,24 +12,18 @@ import { SlotStatus } from "@prisma/client";
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
 import { holdSlot, releaseHold } from "@/utils/holds";
+import { getPreset } from "@/lib/sessions/preset";
 
 type Props = {
   sessionType: string;
-  liveMinutes: number;
-  inGame?: boolean;
+  liveMinutes: number;          // unified minutes (base + 45*liveBlocks)
+  inGame?: boolean;             // optional flag from caller
   followups?: number;
   onClose?: () => void;
   initialSlotId?: string | null;
   prefetchedSlots?: Slot[];
-  liveBlocks?: number;
+  liveBlocks?: number;          // number of 45m blocks
 };
-
-function getPreset(minutes: number, followups = 0): "vod"|"quick"|"signature"|"custom" {
-  if (minutes === 60 && followups === 0) return "vod";
-  if (minutes === 30 && followups === 0) return "quick";
-  if (minutes === 45 && followups === 1) return "signature";
-  return "custom";
-}
 
 function dayKeyLocal(d: Date) {
   const y = d.getFullYear();
@@ -38,8 +33,14 @@ function dayKeyLocal(d: Date) {
 }
 
 export default function CalLikeOverlay({
-  sessionType, liveMinutes, inGame = false, followups = 0,
-  onClose, initialSlotId = null, prefetchedSlots, liveBlocks = 0,
+  sessionType,
+  liveMinutes,
+  inGame = false,
+  followups = 0,
+  onClose,
+  initialSlotId = null,
+  prefetchedSlots,
+  liveBlocks = 0,
 }: Props) {
   const router = useRouter();
 
@@ -47,7 +48,7 @@ export default function CalLikeOverlay({
   const [month, setMonth] = useState(() => {
     const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d;
   });
-const DISPLAY_STEP_MIN = 30; // Only show :00 and :30
+  const DISPLAY_STEP_MIN = 30; // Only show :00 and :30
 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,43 +74,7 @@ const DISPLAY_STEP_MIN = 30; // Only show :00 and :30
     const tomorrow = addDays(startOfDay(new Date()), 1);
     const end = addDays(tomorrow, 14);
     end.setHours(23, 59, 59, 999);
-type QuickPick = { id: string; local: Date; label: string };
 
-function computeQuickPicks(allSlots: { id: string; startTime?: string; startISO?: string }[], now = new Date()): QuickPick[] {
-  const toLocal = (s: any) => new Date(s.startTime ?? s.startISO);
-  const sorted = [...allSlots]
-    .map(s => ({ id: s.id, local: toLocal(s) }))
-    .filter(s => s.local > now)
-    .sort((a, b) => a.local.getTime() - b.local.getTime());
-
-  const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6; // Sun/Sat
-  const isEvening = (d: Date) => d.getHours() >= 17 && d.getHours() < 21;
-
-  const soonest = sorted[0];
-
-  const tonight = sorted.find(s => isSameDay(s.local, now) && isEvening(s.local));
-  const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
-  const tomorrowEve = sorted.find(s => isSameDay(s.local, tomorrow) && isEvening(s.local));
-
-  const weekend = sorted.find(s => isWeekend(s.local));
-
-  const picks: QuickPick[] = [];
-  if (soonest) picks.push({ ...soonest, label: "Soonest" });
-  if (tonight) picks.push({ ...tonight, label: "Tonight (after work)" });
-  else if (tomorrowEve) picks.push({ ...tomorrowEve, label: "Tomorrow evening" });
-  if (weekend) picks.push({ ...weekend, label: "Weekend" });
-
-  // pad with next items if any pick is missing, and de-dupe by id
-  const seen = new Set(picks.map(p => p.id));
-  for (const s of sorted) {
-    if (picks.length >= 3) break;
-    if (seen.has(s.id)) continue;
-    picks.push({ ...s, label: "Recommended" });
-    seen.add(s.id);
-  }
-  return picks.slice(0, 3);
-}
     (async () => {
       setLoading(true); setError(null);
       try {
@@ -166,12 +131,11 @@ function computeQuickPicks(allSlots: { id: string; startTime?: string; startISO?
     return out;
   }, [startsByDay]);
 
-const validStartsForSelected = useMemo(() => {
-  if (!selectedDate) return [];
-  const all = startsByDay.get(dayKeyLocal(selectedDate)) ?? [];
-  return all.filter(({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0);
-}, [selectedDate, startsByDay]);
-
+  const validStartsForSelected = useMemo(() => {
+    if (!selectedDate) return [];
+    const all = startsByDay.get(dayKeyLocal(selectedDate)) ?? [];
+    return all.filter(({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0);
+  }, [selectedDate, startsByDay]);
 
   async function submitBooking() {
     if (!selectedSlotId) return;
@@ -182,16 +146,25 @@ const validStartsForSelected = useMemo(() => {
       setHoldKey(k);
       sessionStorage.setItem(`hold:${selectedSlotId}`, k);
 
+      // derive base-only minutes so preset is consistent with the rest of the app
+      const blocks = liveBlocks ?? 0;
+      const baseOnly = Math.max(30, liveMinutes - blocks * 45);
+      const preset = getPreset(baseOnly, followups ?? 0, blocks);
+
+      // if caller passed inGame, honor it OR infer from liveBlocks
+      const inGameEff = inGame || blocks > 0;
+
       const url = new URL("/checkout", window.location.origin);
       url.searchParams.set("slotId", selectedSlotId);
       url.searchParams.set("sessionType", sessionType);
-      url.searchParams.set("liveMinutes", String(liveMinutes));
+      url.searchParams.set("liveMinutes", String(liveMinutes)); // unified
       url.searchParams.set("followups", String(followups ?? 0));
-      url.searchParams.set("inGame", String(!!inGame));
+      url.searchParams.set("inGame", String(inGameEff));
       url.searchParams.set("discord", discord.trim());
-      url.searchParams.set("preset", getPreset(liveMinutes, followups));
+      url.searchParams.set("preset", preset);
       url.searchParams.set("holdKey", k);
-      if (liveBlocks) url.searchParams.set("liveBlocks", String(liveBlocks));
+      if (blocks) url.searchParams.set("liveBlocks", String(blocks));
+
       router.push(url.toString());
     } catch (e: any) {
       setDErr(e?.message || "Could not hold the slot");
@@ -235,15 +208,25 @@ const validStartsForSelected = useMemo(() => {
         <div className="px-6 pb-4 flex-1 min-h-0">
           <div className="h-full grid grid-cols-1 md:grid-cols-[1.1fr_1.4fr] gap-6">
             <div className="relative rounded-2xl ring-1 ring-white/10 bg-white/[0.02] p-4">
-              <div className="pointer-events-none absolute -inset-px rounded-2xl blur-xl opacity-50"
-                   style={{background:"linear-gradient(135deg, rgba(34,211,238,0.18), rgba(99,102,241,0.16))"}} />
+              <div
+                className="pointer-events-none absolute -inset-px rounded-2xl blur-xl opacity-50"
+                style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(99,102,241,0.16))" }}
+              />
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
-                  <button onClick={() => setMonth((m) => addMonths(m, -1))}
-                          className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/20 text-white/90">←</button>
+                  <button
+                    onClick={() => setMonth((m) => addMonths(m, -1))}
+                    className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/20 text-white/90"
+                  >
+                    ←
+                  </button>
                   <div className="text-white font-semibold">{format(month, "MMMM yyyy")}</div>
-                  <button onClick={() => setMonth((m) => addMonths(m, 1))}
-                          className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/20 text-white/90">→</button>
+                  <button
+                    onClick={() => setMonth((m) => addMonths(m, 1))}
+                    className="h-9 px-3 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/20 text-white/90"
+                  >
+                    →
+                  </button>
                 </div>
 
                 {loading ? (
@@ -253,7 +236,9 @@ const validStartsForSelected = useMemo(() => {
                 ) : (
                   <>
                     <div className="grid grid-cols-7 text-center text-[11px] text-white/60 mb-1">
-                      {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d) => (<div key={d}>{d}</div>))}
+                      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+                        <div key={d}>{d}</div>
+                      ))}
                     </div>
 
                     <div className="grid grid-cols-7 gap-1">
@@ -314,14 +299,25 @@ const validStartsForSelected = useMemo(() => {
 
             <div className="relative rounded-2xl ring-1 ring-white/10 bg-white/[0.02] p-4 flex flex-col">
               <div className="text-white/80 font-medium mb-3">
-                {selectedDate ? <>Available times on <span className="text-white">{format(selectedDate, "EEE, MMM d")}</span></> : "Select a day to see times"}
+                {selectedDate ? (
+                  <>
+                    Available times on{" "}
+                    <span className="text-white">{format(selectedDate, "EEE, MMM d")}</span>
+                  </>
+                ) : (
+                  "Select a day to see times"
+                )}
               </div>
 
               <div className="relative flex-1 min-h-0 overflow-auto rounded-xl ring-1 ring-white/10 bg-neutral-950/60">
                 {!selectedDate ? (
-                  <div className="h-full grid place-items-center text-white/50 text-sm">Pick a day on the left</div>
+                  <div className="h-full grid place-items-center text-white/50 text-sm">
+                    Pick a day on the left
+                  </div>
                 ) : validStartsForSelected.length === 0 ? (
-                  <div className="h-full grid place-items-center text-white/60 text-sm">No times available for this day.</div>
+                  <div className="h-full grid place-items-center text-white/60 text-sm">
+                    No times available for this day.
+                  </div>
                 ) : (
                   <ul className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {validStartsForSelected.map(({ id, local }) => {
@@ -333,8 +329,9 @@ const validStartsForSelected = useMemo(() => {
                             onClick={() => setSelectedSlotId(id)}
                             className={[
                               "w-full px-3 py-2 rounded-lg text-sm ring-1 transition",
-                              isActive ? "ring-cyan-400/70 bg-cyan-400/15 text-white"
-                                       : "ring-white/10 bg-white/[0.03] hover:bg-white/[0.08] text-white/90",
+                              isActive
+                                ? "ring-cyan-400/70 bg-cyan-400/15 text-white"
+                                : "ring-white/10 bg-white/[0.03] hover:bg-white/[0.08] text-white/90",
                             ].join(" ")}
                           >
                             {label}

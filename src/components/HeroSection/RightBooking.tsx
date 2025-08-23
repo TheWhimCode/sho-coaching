@@ -1,4 +1,4 @@
-// components/HeroSection/RightBookingPanel.tsx
+// components/HeroSection/RightBooking.tsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -11,6 +11,29 @@ type Props = {
   onOpenCalendar?: (opts: { slotId?: string; liveMinutes: number }) => void;
   onCustomize?: () => void;
 };
+
+// Single shimmer row (self-contained sweep)
+function ShimmerRow() {
+  return (
+    <div
+      className="relative h-10 rounded-lg ring-1 ring-white/12 bg-white/[0.05] overflow-hidden"
+      aria-busy="true"
+    >
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          // NOTE: correct gradient syntax (no "="), and use mix-blend for visibility
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)",
+          mixBlendMode: "overlay",
+        }}
+        initial={{ x: "-100%" }}
+        animate={{ x: "100%" }}
+        transition={{ duration: 1.2, ease: "linear", repeat: Infinity }}
+      />
+    </div>
+  );
+}
 
 export default function RightBookingPanel({
   liveMinutes,
@@ -51,12 +74,10 @@ export default function RightBookingPanel({
         <div className="mt-1 text-xs text-[#8FB8E6]">Next available</div>
 
         {loading ? (
-          // keep your skeleton component usage in parent if you prefer.
-          // Here we just show a minimal placeholder to keep this file standalone.
           <div className="space-y-2">
-            <div className="h-10 rounded-lg bg-white/5 animate-pulse" />
-            <div className="h-10 rounded-lg bg-white/5 animate-pulse" />
-            <div className="h-10 rounded-lg bg-white/5 animate-pulse" />
+            <ShimmerRow />
+            <ShimmerRow />
+            <ShimmerRow />
           </div>
         ) : slots.length ? (
           <AvailableSlots
