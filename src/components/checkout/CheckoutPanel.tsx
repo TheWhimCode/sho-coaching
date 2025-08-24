@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
 
 import SessionBlock from "@/components/SessionBlock";
-import SummaryCard from "@/components/checkout/SummaryCard";
 import PaymentChooser from "@/components/checkout/PaymentChooser";
 import CardForm from "@/components/checkout/CardForm";
 import type { Breakdown } from "@/components/checkout/buildBreakdown";
 
-/* Local type (keeps us decoupled) */
+import StepContact from "./CheckoutSteps/StepContact";
+import StepChoose from "./CheckoutSteps/StepChoose";
+import StepPayDetails from "./CheckoutSteps/StepPayDetails";
+import StepSummary from "./CheckoutSteps/StepSummary";
+
+/* Local type */
 type PayMethod = "" | "card" | "paypal" | "revolut_pay";
 
 type Payload = {
@@ -29,12 +33,8 @@ type Payload = {
 type Props = {
   payload: Payload;
   breakdown: Breakdown;
-
-  // stripe infra
   stripePromise: Promise<Stripe | null>;
   appearance: Appearance;
-
-  // server payload we POST
   payloadForBackend: any;
 };
 
@@ -45,61 +45,53 @@ export default function CheckoutPanel({
   appearance,
   payloadForBackend,
 }: Props) {
-  /* ------------------------------
-     Steps: 0=summary, 1=contact, 2=choose, 3=pay
-     ------------------------------ */
+  // Steps: 0=contact, 1=choose, 2=payment details, 3=summary
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
 
-  const goNext = () => {
-    setDir(1);
-    setStep((s) => (s === 3 ? 3 : (s + 1) as 1 | 2 | 3));
-  };
-  const goBack = () => {
-    setDir(-1);
-    setStep((s) => (s === 0 ? 0 : (s - 1) as 0 | 1 | 2));
-  };
+  const goNext = () => { setDir(1); setStep((s) => (s === 3 ? 3 : (s + 1) as 0 | 1 | 2 | 3)); };
+  const goBack = () => { setDir(-1); setStep((s) => (s === 0 ? 0 : (s - 1) as 0 | 1 | 2 | 3)); };
 
-  /* ------------------------------
-     Contact details (step 1)
-     ------------------------------ */
+  // Contact state
+  
   const [email, setEmail] = useState("");
   const [discord, setDiscord] = useState("");
+  const [notes, setNotes] = useState("");
   const [contactErr, setContactErr] = useState<string | null>(null);
+// Contact state
+const emailRef = useRef<HTMLInputElement>(null);
+const discordRef = useRef<HTMLInputElement>(null);
 
-  function validateContact() {
-    if (!email.trim() || !discord.trim()) {
-      setContactErr("Please enter both email and Discord.");
-      return false;
-    }
-    setContactErr(null);
-    return true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const discordRegex = /^[A-Za-z0-9][A-Za-z0-9._]{1,31}$/;
+
+  function validateContact(): boolean {
+    const e = email.trim(); const d = discord.trim();
+emailRef.current?.setCustomValidity("");
+discordRef.current?.setCustomValidity("");    if (!e || !d) { setContactErr("Please enter both email and Discord."); if (!e) emailRef.current?.focus(); else discordRef.current?.focus(); return false; }
+    if (!emailRegex.test(e)) { setContactErr(""); emailRef.current?.reportValidity(); return false; }
+    if (!discordRegex.test(d)) { setContactErr(""); discordRef.current?.reportValidity(); return false; }
+    setContactErr(null); return true;
   }
 
-  /* ------------------------------
-     Payment method + PI lifecycle (step 3)
-     ------------------------------ */
+  // Payment / Stripe
   const [payMethod, setPayMethod] = useState<PayMethod>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [piId, setPiId] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
 
-  // From step 2, when a badge is chosen -> go to step 3 and reset intent
   function chooseAndGo(m: PayMethod) {
     if (!m) return;
     setPayMethod(m);
     setClientSecret(null);
     setPiId(null);
     setDir(1);
-    setStep(3);
+    setStep(2);
   }
 
-  // Create PI when we *enter* step 3 with a selected method
   useEffect(() => {
-    const isStripeFlow =
-      payMethod === "card" || payMethod === "paypal" || payMethod === "revolut_pay";
-    if (step !== 3 || !isStripeFlow) return;
-
+    const isStripeFlow = payMethod === "card" || payMethod === "paypal" || payMethod === "revolut_pay";
+    if (step !== 2 || !isStripeFlow) return;
     let on = true;
     (async () => {
       setLoadingIntent(true);
@@ -107,8 +99,7 @@ export default function CheckoutPanel({
         const res = await fetch("/api/stripe/checkout/intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // include selected method so server pins `payment_method_types`
-          body: JSON.stringify({ ...payloadForBackend, email, discord, payMethod }),
+          body: JSON.stringify({ ...payloadForBackend, payMethod }),
         });
         const data = await res.json().catch(() => ({}));
         if (!on) return;
@@ -120,33 +111,24 @@ export default function CheckoutPanel({
           setClientSecret(null);
           setPiId(null);
         }
-      } finally {
-        if (on) setLoadingIntent(false);
-      }
+      } finally { if (on) setLoadingIntent(false); }
     })();
+    return () => { on = false; };
+  }, [step, payMethod, payloadForBackend]);
 
-    return () => {
-      on = false;
-    };
-  }, [step, payMethod, payloadForBackend, email, discord]);
-
-  /* ------------------------------
-     Animation helpers
-     ------------------------------ */
+  // Anim
   const variants = {
     enter: (d: 1 | -1) => ({ x: d * 40, opacity: 0 }),
     center: { x: 0, opacity: 1 },
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
 
+  // Waiver
+  const [waiver, setWaiver] = useState(false);
+
   return (
-    <div
-      className="relative rounded-2xl p-5 md:p-6
-                 backdrop-blur-md bg-[#0B1220]/80
-                 ring-1 ring-[rgba(146,180,255,.18)]"
-    >
+    <div className="relative rounded-2xl p-5 md:p-6 backdrop-blur-md bg-[#0B1220]/80 ring-1 ring-[rgba(146,180,255,.18)]">
       <div className="relative space-y-4">
-        {/* Pinned session header */}
         <SessionBlock
           layoutId="session-block"
           minutes={payload.baseMinutes}
@@ -156,240 +138,84 @@ export default function CheckoutPanel({
           className="mb-2"
         />
 
-        {/* Sliding stage — unified height for all steps */}
-        <div className="relative min-h-[340px]">
+        <div className="relative min-h-[460px]">
           <AnimatePresence custom={dir} mode="wait">
+            {/* Step 0 */}
             {step === 0 && (
-              <motion.div
-                key="step-summary"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0"
-              >
-                <SummaryCard
-                  baseMinutes={payload.baseMinutes}
-                  liveBlocks={payload.liveBlocks}
-                  followups={payload.followups}
-                  breakdown={breakdown}
-                  isOpen={true}
-                  onConfirm={() => {
-                    setDir(1);
-                    setStep(1);
-                  }}
+              <motion.div key="step-contact" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0">
+                <StepContact
+                  email={email}
+                  discord={discord}
+                  notes={notes}
+                  setEmail={setEmail}
+                  setDiscord={setDiscord}
+                  setNotes={setNotes}
+                  contactErr={contactErr}
+                  emailInputRef={emailRef}
+                  discordInputRef={discordRef}
+                  onSubmit={() => validateContact() && goNext()}
                 />
               </motion.div>
             )}
 
+            {/* Step 1 */}
             {step === 1 && (
-              <motion.div
-                key="step-contact"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0"
-              >
-                <div className="h-full flex flex-col rounded-xl p-4 ring-1 ring-white/12 bg-white/[.04]">
-                  {/* Header row with Back inside + divider; equal spacing top/underline */}
-                  <div className="mb-3">
-                    <div className="relative h-7 flex items-center justify-center">
-                      <button
-                        onClick={goBack}
-                        className="absolute left-0 text-sm text-white/80 hover:text-white"
-                      >
-                        ← Back
-                      </button>
-                      <div className="text-sm text-white/80">Contact details</div>
-                    </div>
-                    <div className="mt-2 border-t border-white/10" />
-                  </div>
-
-                  {/* fields */}
-                  <div className="flex-1 space-y-3">
-                    <label className="block">
-                      <span className="text-xs text-white/65">Email</span>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        className="mt-1 w-full rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 text-base text-white/90 outline-none focus:ring-white/25"
-                        required
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-xs text-white/65">Discord</span>
-                      <input
-                        type="text"
-                        value={discord}
-                        onChange={(e) => setDiscord(e.target.value)}
-                        placeholder="username#0000"
-                        className="mt-1 w-full rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 text-base text-white/90 outline-none focus:ring-white/25"
-                        required
-                      />
-                    </label>
-                    {contactErr && <p className="text-sm text-red-400">{contactErr}</p>}
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      if (validateContact()) goNext();
-                    }}
-                    className="mt-3 w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
-                               bg-[#fc8803] hover:bg-[#f8a81a] transition
-                               shadow-[0_10px_28px_rgba(245,158,11,.35)]
-                               ring-1 ring-[rgba(255,190,80,.55)]"
-                  >
-                    Continue
-                  </button>
-                </div>
+              <motion.div key="step-choose" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0">
+                <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
               </motion.div>
             )}
 
-            {step === 2 && (
-              <motion.div
-                key="step-choose"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0"
-              >
-                <div className="h-full flex flex-col rounded-xl p-4 ring-1 ring-white/12 bg-white/[.04]">
-                  <div className="mb-3">
-                    <div className="relative h-7 flex items-center justify-center">
-                      <button
-                        onClick={goBack}
-                        className="absolute left-0 text-sm text-white/80 hover:text-white"
-                      >
-                        ← Back
-                      </button>
-                      <div className="text-sm text-white/80">Choose payment</div>
-                    </div>
-                    <div className="mt-2 border-t border-white/10" />
-                  </div>
+            {/* Step 2: static loader until clientSecret */}
+            {step === 2 && !clientSecret && (
+              <div className="absolute inset-0">
+                <StepPayDetails
+                  mode="loading"
+                  goBack={goBack}
+                  loadingIntent={loadingIntent}
+                />
+              </div>
+            )}
 
-                  {/* badges-only chooser */}
-                  <div className="flex-1">
-                    <PaymentChooser
-                      // chooser mode: only show badges, no Stripe elements here
-                      mode="choose"
-                      onChoose={(m) => chooseAndGo(m as PayMethod)}
+            {/* Steps 2 & 3 share one Elements instance (stable key) */}
+            {(step === 2 || step === 3) && clientSecret && (
+              <Elements key="stripe-elements" stripe={stripePromise} options={{ clientSecret, appearance, loader: "never" }}>
+                {step === 2 && (
+                  <motion.div key="step-paydetails" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0">
+                    <StepPayDetails
+                      mode="form"
+                      goBack={goBack}
+                      email={email}
+                      payMethod={payMethod || "card"}
+                      onContinue={goNext}
+                      piId={piId}
                     />
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                  </motion.div>
+                )}
 
-            {step === 3 && (
-              <motion.div
-                key="step-pay"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0"
-              >
-                <div className="h-full flex flex-col rounded-xl p-4 ring-1 ring-white/12 bg-white/[.04]">
-                  <div className="mb-3">
-                    <div className="relative h-7 flex items-center justify-center">
-                      <button
-                        onClick={() => {
-                          setDir(-1);
-                          setStep(2);
-                        }} // go back to chooser (not contact)
-                        className="absolute left-0 text-sm text-white/80 hover:text-white"
-                      >
-                        ← Back
-                      </button>
-                      <div className="text-sm text-white/80">
-                        {payMethod === "card"
-                          ? "Card payment"
-                          : payMethod === "paypal"
-                          ? "PayPal"
-                          : "Revolut Pay"}
-                      </div>
-                    </div>
-                    <div className="mt-2 border-t border-white/10" />
-                  </div>
-
-                  <div className="flex-1">
-                    {clientSecret ? (
-                      <Elements
-                        key={clientSecret}
-                        stripe={stripePromise}
-                        options={{ clientSecret, appearance, loader: "auto" }}
-                      >
-                        <CardForm
-                          piId={piId}
-                          email={email}
-                          activePm={
-                            (payMethod || "card") as "card" | "paypal" | "revolut_pay"
-                          }
-                        />
-                      </Elements>
-                    ) : (
-                      <div className="space-y-2">
-                        {loadingIntent ? (
-                          <>
-                            <Shimmer />
-                            <Shimmer />
-                            <Shimmer />
-                          </>
-                        ) : (
-                          <div className="text-white/80">Preparing payment…</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
+                {step === 3 && (
+                  <motion.div key="step-summary" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0">
+                    <StepSummary
+                      goBack={goBack}
+                      waiver={waiver}
+                      setWaiver={setWaiver}
+                      payload={payload}
+                      breakdown={breakdown}
+                      payMethod={payMethod || "card"}
+                      email={email}
+                      piId={piId}
+                    />
+                  </motion.div>
+                )}
+              </Elements>
             )}
           </AnimatePresence>
         </div>
 
-        {/* badges */}
         <div className="flex items-center gap-3 pt-1 text-white/80">
-          <span className="inline-flex items-center gap-2 text-xs">
-            🔒 3D Secure ready
-          </span>
-          <span className="inline-flex items-center gap-2 text-xs">
-            🛡️ Buyer protection
-          </span>
+          <span className="inline-flex items-center gap-2 text-xs">🔒 3D Secure ready</span>
+          <span className="inline-flex items-center gap-2 text-xs">🛡️ Buyer protection</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-/** lightweight shimmer used in loading states */
-function Shimmer() {
-  return (
-    <div
-      className="relative h-10 rounded-lg ring-1 ring-white/12 bg-white/[0.05] overflow-hidden"
-      aria-busy
-    >
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)",
-          mixBlendMode: "overlay",
-          animation: "shimmer 1.2s linear infinite",
-          transform: "translateX(-100%)",
-        }}
-      />
-      <style>{`@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
     </div>
   );
 }

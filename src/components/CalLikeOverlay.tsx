@@ -137,7 +137,7 @@ export default function CalLikeOverlay({
 
   async function submitBooking() {
     if (!selectedSlotId) return;
-    if (!discordOk) { setDErr("Enter a valid Discord handle"); return; }
+    if (!discordOk) { setDErr(""); return; }
     setDErr(null); setPending(true);
     try {
       const { holdKey: k } = await holdSlot(selectedSlotId, holdKey || undefined);
