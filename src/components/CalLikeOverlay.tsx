@@ -17,7 +17,6 @@ import { getPreset } from "@/lib/sessions/preset";
 type Props = {
   sessionType: string;
   liveMinutes: number;          // unified minutes (base + 45*liveBlocks)
-  inGame?: boolean;             // optional flag from caller
   followups?: number;
   onClose?: () => void;
   initialSlotId?: string | null;
@@ -35,7 +34,6 @@ function dayKeyLocal(d: Date) {
 export default function CalLikeOverlay({
   sessionType,
   liveMinutes,
-  inGame = false,
   followups = 0,
   onClose,
   initialSlotId = null,
@@ -151,20 +149,19 @@ export default function CalLikeOverlay({
       const baseOnly = Math.max(30, liveMinutes - blocks * 45);
       const preset = getPreset(baseOnly, followups ?? 0, blocks);
 
-      // if caller passed inGame, honor it OR infer from liveBlocks
-      const inGameEff = inGame || blocks > 0;
-
       const url = new URL("/checkout", window.location.origin);
       url.searchParams.set("slotId", selectedSlotId);
       url.searchParams.set("sessionType", sessionType);
       url.searchParams.set("liveMinutes", String(liveMinutes)); // unified
       url.searchParams.set("followups", String(followups ?? 0));
-      url.searchParams.set("inGame", String(inGameEff));
       url.searchParams.set("discord", discord.trim());
       url.searchParams.set("preset", preset);
       url.searchParams.set("holdKey", k);
       if (blocks) url.searchParams.set("liveBlocks", String(blocks));
-
+console.log("[CalLikeOverlay] submit", {
+  liveMinutes, liveBlocksProp: liveBlocks, blocks,
+  url: url.toString()
+});
       router.push(url.toString());
     } catch (e: any) {
       setDErr(e?.message || "Could not hold the slot");

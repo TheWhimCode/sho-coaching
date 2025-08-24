@@ -25,9 +25,6 @@ type Props = {
   onOpenCalendar?: (opts: { slotId?: string; liveMinutes: number }) => void;
   slots?: UiSlot[];
   baseMinutes?: number;
-  basePriceEUR?: number;
-  extraMinutes?: number;
-  totalPriceEUR?: number;
   isCustomizingCenter?: boolean;
   /** ← pass drawerOpen here */
   isDrawerOpen?: boolean;
@@ -60,9 +57,6 @@ export default function SessionHero({
   slots,
   followups,
   baseMinutes = 60,
-  basePriceEUR = 50,
-  extraMinutes = 0,
-  totalPriceEUR = 50,
   isCustomizingCenter = false,
   isDrawerOpen = false,
   liveBlocks = 0,
@@ -72,14 +66,14 @@ export default function SessionHero({
   const [quickPool, setQuickPool] = useState<{ id: string; startISO: string }[]>([]);
   const [drawerW, setDrawerW] = useState(0); // px
 
-  // BASE minutes only (for preset/labels)
-  const baseOnly = (baseMinutes ?? 60) + (extraMinutes ?? 0);
+  // BASE minutes only
+  const baseOnly = baseMinutes ?? 60;
 
   // UNIFIED duration for availability/checkout, clamped to 30..120
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
   const liveMinutes = Math.min(120, Math.max(30, liveMinutesRaw));
 
-  // Preset is based on BASE minutes, but flips to custom if liveBlocks > 0
+  // Preset is based on BASE minutes, flips to custom if liveBlocks > 0
   const preset = getPreset(baseOnly, followups ?? 0, liveBlocks ?? 0);
   const leftSteps = stepsByPreset[preset];
 
@@ -145,7 +139,7 @@ export default function SessionHero({
     label: q.label,
   }));
 
-  // shift by half the drawer width so the hero stays centered in the remaining space
+  // shift by half the drawer width so the hero stays centered
   const shiftX = isDrawerOpen ? drawerW / 2 : 0;
 
   return (
@@ -211,8 +205,6 @@ export default function SessionHero({
               <CenterSessionPanel
                 title={title}
                 baseMinutes={baseMinutes}
-                extraMinutes={extraMinutes}
-                totalPriceEUR={totalPriceEUR}
                 isCustomizing={isCustomizingCenter}
                 followups={followups ?? 0}
                 liveBlocks={liveBlocks}

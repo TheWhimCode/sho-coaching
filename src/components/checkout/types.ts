@@ -1,9 +1,2 @@
-export type PayMethod = "" | "card" | "paypal";
-
-export type Breakdown = {
-  baseEUR: number;
-  extraEUR: number;
-  extraLabel: string;
-  followupsEUR: number;
-  total: number;
-};
+// one source of truth for the union used across components & API
+export type PayMethod = "" | "card" | "paypal" | "revolut_pay";

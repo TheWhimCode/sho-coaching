@@ -24,7 +24,6 @@ function encodeMetaShort(meta: {
   m: number; // unified liveMinutes
   t: string; // sessionType
   d: string; // discord
-  g: boolean; // inGame
   f: number; // followups
   l: number; // liveBlocks
   p: number; // priceEUR
@@ -43,7 +42,6 @@ export async function POST(req: Request) {
       sessionType,
       liveMinutes,
       discord,
-      inGame,
       followups,
       liveBlocks = 0,
       holdKey,
@@ -124,7 +122,6 @@ export async function POST(req: Request) {
       m: liveMinutes,
       t: sessionType,
       d: discord ?? "",
-      g: !!inGame,
       f: followups ?? 0,
       l: liveBlocks,
       p: priceEUR,

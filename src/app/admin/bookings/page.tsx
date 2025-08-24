@@ -9,7 +9,6 @@ type BookingRow = {
   liveMinutes: number;
   discord: string;
   sessionType: string;
-  inGame: boolean;
   followups: number;
   notes: string | null;
   scheduledStart: string; // ISO
@@ -107,9 +106,6 @@ export default function AdminBookingsPage() {
       </div>
       <div className="px-3 py-3 flex items-center">
         <span className="text-white/90">{r.sessionType}</span>
-      </div>
-      <div className="px-3 py-3 flex items-center">
-        {r.inGame ? <Badge tone="emerald">Yes</Badge> : <Badge tone="rose">No</Badge>}
       </div>
       <div className="px-3 py-3 flex items-center">
         <span className="text-white/90">{r.followups}</span>

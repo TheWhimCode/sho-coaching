@@ -10,7 +10,6 @@ export function toCalendarQuery(cfg: Cfg) {
   return {
     liveMinutes: totalLiveMinutes(cfg),
     followups: cfg.followups,
-    inGame: cfg.liveBlocks > 0,
     liveBlocks: cfg.liveBlocks,
   };
 }

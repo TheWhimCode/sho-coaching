@@ -7,7 +7,6 @@ export const CheckoutZ = z.object({
   liveMinutes: z.number().int().min(30).max(120)
     .refine(n => n % 15 === 0, "15-min steps"),
   discord: z.string().trim().max(64).optional().default(""),
-  inGame: z.boolean().optional().default(false),
   followups: z.number().int().min(0).max(2).optional().default(0),
   // keep liveBlocks in the payload for analytics/metadata,
   // but pricing is based on liveMinutes (= base + 45*liveBlocks)

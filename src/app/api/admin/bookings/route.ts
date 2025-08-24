@@ -28,7 +28,6 @@ export async function GET(req: Request) {
       liveMinutes: true,
       discord: true,
       sessionType: true,
-      inGame: true,
       followups: true,
       notes: true,
       scheduledStart: true,

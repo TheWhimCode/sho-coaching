@@ -36,7 +36,6 @@ export async function POST(req: Request) {
           sessionType: String(c.t),
           liveMinutes: String(c.m),
           discord: String(c.d || ""),
-          inGame: String(!!c.g),
           followups: String(c.f ?? 0),
           liveBlocks: String(c.l ?? 0),
         }

@@ -7,7 +7,6 @@ export type FinalizeMeta = {
   sessionType?: string;
   liveMinutes?: string;
   discord?: string;
-  inGame?: string;
   followups?: string;
 };
 
@@ -27,7 +26,6 @@ export async function finalizeBooking(
   const sessionType = meta.sessionType ?? "Session";
   const liveMinutes = parseInt(meta.liveMinutes ?? "60", 10);
   const discord = meta.discord ?? "";
-  const inGame = meta.inGame === "true";
   const followups = parseInt(meta.followups ?? "0", 10);
 
   await prisma.$transaction(async (tx) => {
@@ -77,7 +75,6 @@ export async function finalizeBooking(
         // 🔽 connect relation instead of slotId scalar
         slot: { connect: { id: firstSlotId } },
         liveMinutes,
-        inGame,
         followups,
         discord,
         amountCents,
