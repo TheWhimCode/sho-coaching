@@ -330,3 +330,11 @@ body {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
   animation: shimmer 2.5s linear infinite;
 }
+@keyframes border-glow {
+  0%, 100% { opacity: 0.3; box-shadow: 0 0 6px rgba(105,168,255,0.4); }
+  50% { opacity: 0.9; box-shadow: 0 0 14px rgba(24, 121, 255, 0.792); }
+}
+
+.animate-border-glow {
+  animation: border-glow 6s ease-in-out infinite;
+}

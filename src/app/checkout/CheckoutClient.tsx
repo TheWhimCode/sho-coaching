@@ -9,43 +9,10 @@ import { buildBreakdown } from "@/components/checkout/buildBreakdown";
 import CheckoutPanel from "@/components/checkout/CheckoutPanel";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 
-import { loadStripe, type Appearance } from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
-/* ===================
-   Stripe client + appearance
-   =================== */
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-const appearance: Appearance = {
-  theme: "night",
-  labels: "floating",
-  variables: {
-    spacingUnit: "6px",
-    borderRadius: "10px",
-    colorPrimary: "#69A8FF",
-    colorText: "rgba(255,255,255,0.92)",
-    colorTextSecondary: "rgba(255,255,255,0.65)",
-  },
-  rules: {
-    ".Input": {
-      padding: "10px 12px",
-      backgroundColor: "rgba(255,255,255,0.04)",
-      borderColor: "rgba(146,180,255,0.18)",
-      boxShadow: "none",
-    },
-    ".Input:focus": { borderColor: "rgba(105,168,255,0.5)" },
-    ".Tab, .Block": {
-      padding: "10px 12px",
-      backgroundColor: "rgba(255,255,255,0.03)",
-      borderColor: "rgba(146,180,255,0.18)",
-    },
-    ".Label": { fontSize: "13px", color: "rgba(255,255,255,0.75)" },
-  },
-};
-
-/* ===================
-   Helpers (robust decode)
-   =================== */
 const MIN = 30;
 const MAX = 120;
 const LIVEBLOCK_MIN = 45;
@@ -77,13 +44,9 @@ function mergedMinutes(baseMinutes: number, liveBlocks: number) {
   return clampN(baseMinutes + liveBlocks * LIVEBLOCK_MIN, MIN, MAX);
 }
 
-/* ===================
-   Main
-   =================== */
 export default function CheckoutClient() {
   const sp = useSearchParams();
 
-  // Build the payload once from URL params (robust to missing values)
   const payload = useMemo(() => {
     const liveBlocks = Number(sp.get("liveBlocks") ?? 0) || 0;
     const liveMinParam = sp.get("liveMin");
@@ -101,7 +64,7 @@ export default function CheckoutClient() {
       slotId: String(sp.get("slotId") ?? ""),
       sessionType: String(sp.get("sessionType") ?? "Session"),
       baseMinutes,
-      liveMinutes: totalMins, // combined for pricing/scheduling
+      liveMinutes: totalMins,
       followups: Number(sp.get("followups") ?? 0) || 0,
       liveBlocks,
       discord: String(sp.get("discord") ?? ""),
@@ -110,13 +73,11 @@ export default function CheckoutClient() {
     };
   }, [sp]);
 
-  // Price breakdown from combined minutes
   const breakdown = useMemo(
     () => buildBreakdown(payload.liveMinutes, payload.followups, payload.liveBlocks),
     [payload.liveMinutes, payload.followups, payload.liveBlocks]
   );
 
-  // The payload we POST to the backend (Stripe intent route)
   const payloadForBackend = useMemo(
     () => ({
       slotId: payload.slotId,
@@ -132,30 +93,42 @@ export default function CheckoutClient() {
   );
 
   return (
-    <section className="relative isolate min-h-screen py-8 md:py-10">
-      {/* background — brighter navy + grid + noise (no auroras) */}
+    <section className="relative isolate min-h-screen py-8 md:py-10 text-white">
+      {/* === Background (darker + brand glows) === */}
       <div className="absolute inset-0 -z-10 pointer-events-none isolate">
-        {/* brighter base gradient so glass blur reads */}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#162a4c_0%,#0e1f3a_100%)]" />
-        {/* overlays */}
-        <div className="absolute inset-0 hud-grid opacity-30" />
-        <div className="absolute inset-0 noise opacity-20" />
+        {/* Deep navy to black */}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,#060914_0%,#04060e_100%)]" />
+
+        {/* Subtle vignette for depth */}
+        <div className="absolute inset-0 [mask-image:radial-gradient(70%_70%_at_50%_40%,black,transparent)] bg-black/70" />
+
+        {/* Ambient anchors (blue left / orange right) */}
+        <div className="absolute -left-24 top-[18%] h-[46rem] w-[46rem] rounded-full blur-3xl opacity-25 bg-[radial-gradient(circle_at_center,#69A8FF_0%,transparent_65%)]" />
+        <div className="absolute right-[-16%] bottom-[-8%] h-[42rem] w-[42rem] rounded-full blur-3xl opacity-15 bg-[radial-gradient(circle_at_center,#ff7a1a_0%,transparent_70%)]" />
+
+        {/* Grid + noise */}
+        <div className="absolute inset-0 hud-grid opacity-20" />
+        <div className="absolute inset-0 noise opacity-25" />
       </div>
 
-      {/* content */}
+      {/* === Content === */}
       <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
-        <div className="grid lg:grid-cols-[1.1fr_auto_.9fr] gap-8 items-start min-h-[70vh]">
-          {/* Left column */}
+        <div className="grid lg:grid-cols-[1.05fr_auto_.95fr] gap-8 items-start min-h-[70vh]">
+          {/* Left column — integrated (no card chrome) */}
           <div className="relative">
+            {/* very soft backdrop only to keep copy readable on busy bg */}
+            <div className="absolute -inset-4 -z-10 rounded-2xl backdrop-blur-[1px] bg-black/0" />
+            {/* soft glow behind the copy */}
+            <span className="pointer-events-none absolute -inset-6 -z-10 rounded-3xl bg-[radial-gradient(80%_60%_at_0%_0%,rgba(148,182,255,0.08),transparent_70%)]" />
             <UsefulToKnow />
           </div>
 
-          {/* Divider */}
+          {/* Divider (kept light so it doesn't steal focus) */}
           <div className="hidden lg:flex items-stretch mx-2 px-4">
-            <div className="w-px bg-gradient-to-b from-transparent via-white/25 to-transparent" />
+            <div className="w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
           </div>
 
-          {/* Right column (the panel that slides steps) */}
+          {/* Right column — primary floating card */}
           <div className="w-full max-w-xl lg:justify-self-end relative z-0">
             <CheckoutPanel
               payload={payload}
