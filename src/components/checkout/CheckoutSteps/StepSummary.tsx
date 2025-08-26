@@ -1,14 +1,14 @@
+// components/checkout/StepSummary.tsx
 "use client";
 
-import { useState } from "react";
 import { useElements, useStripe } from "@stripe/react-stripe-js";
 import CardForm from "@/components/checkout/CardForm";
 import type { Breakdown } from "@/components/checkout/buildBreakdown";
+import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 
 type Props = {
   goBack: () => void;
-  waiver: boolean;
-  setWaiver: (v: boolean) => void;
   payload: {
     baseMinutes: number;
     liveBlocks: number; // each block = 45 min
@@ -18,30 +18,35 @@ type Props = {
   payMethod: "card" | "paypal" | "revolut_pay";
   email: string;
   piId?: string | null;
+
+  // consent props (controlled by CheckoutPanel)
+  waiver: boolean;
+  setWaiver: (v: boolean) => void;
 };
 
 export default function StepSummary({
   goBack,
-  waiver,
-  setWaiver,
   payload,
   breakdown: b,
   payMethod,
   email,
   piId,
+  waiver,
+  setWaiver,
 }: Props) {
   const inGameMinutes = payload.liveBlocks * 45;
 
   return (
-    <div className="h-full flex flex-col rounded-xl p-4 bg-transparent">
+    <div className="h-full flex flex-col pt-2">
       {/* Step header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
             onClick={goBack}
-            className="absolute left-0 text-sm text-white/80 hover:text-white"
+            className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
           >
-            ← Back
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </button>
           <div className="text-sm text-white/80">Order summary</div>
         </div>
@@ -88,34 +93,43 @@ export default function StepSummary({
             <span className="text-white">€{b.total.toFixed(0)}</span>
           </div>
 
-          <label className="flex items-start gap-2 text-sm text-white/80">
+          {/* 1) Explicit withdrawal waiver (required checkbox) */}
+          <label className="flex items-start gap-2 text-[13px] text-white/80 px-1">
             <input
               type="checkbox"
               checked={waiver}
               onChange={(e) => setWaiver(e.target.checked)}
-              className="mt-1 h-4 w-4 accent-[#fc8803]"
+              className="mt-0.5 h-4 w-4 accent-[#fc8803]"
             />
             <span>
-              I agree to waive my 14-day withdrawal right so that Sho can start delivering
-              immediately.
+              I request immediate service and acknowledge I lose my 14-day withdrawal right.
             </span>
           </label>
 
-          <PayButton disabled={!waiver} email={email} />
+          {/* 2) Compact clickwrap line (AGB + Privacy), right above the button */}
+          <p className="text-[11px] leading-snug text-white/60 px-1 -mt-1">
+            By clicking <span className="text-white/80 font-medium">Pay now</span>,
+            you agree to our{" "}
+            <a href="/terms" className="underline hover:text-white">Terms</a> and{" "}
+            <a href="/privacy" className="underline hover:text-white">Privacy Policy</a>.
+          </p>
+
+          {/* 3) Button */}
+          <PayButton email={email} disabled={!waiver} />
         </div>
       </div>
     </div>
   );
 }
 
-function PayButton({ disabled, email }: { disabled: boolean; email: string }) {
+function PayButton({ email, disabled = false }: { email: string; disabled?: boolean }) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handlePay() {
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || disabled) return;
     setSubmitting(true);
     setError(null);
 

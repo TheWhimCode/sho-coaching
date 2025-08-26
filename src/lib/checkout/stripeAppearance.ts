@@ -15,13 +15,13 @@ export const appearanceDarkBrand: Appearance = {
   },
   rules: {
     ".Tab, .Block": {
-      padding: "10px 12px",
+      padding: "20px 20px",
       backgroundColor: "rgba(255,255,255,0.04)",
       borderColor: "rgba(146,180,255,0.18)",
     },
     ".Tab": { minHeight: "40px" },
     ".Input": {
-      padding: "12px 14px",
+      padding: "14px 14px",
       backgroundColor: "rgba(255,255,255,0.05)",
       borderColor: "rgba(146,180,255,0.22)",
       boxShadow: "none",

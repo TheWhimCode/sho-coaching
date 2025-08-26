@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import PaymentChooser from "@/components/checkout/PaymentChooser";
+import { ArrowLeft } from "lucide-react";
+
 
 type Props = {
   goBack: () => void;
@@ -13,65 +15,72 @@ const BEFORE = "🔒 Checkout is secure — handled by ";
 const STRIPE = "Stripe";
 
 export default function StepChoose({ goBack, onChoose }: Props) {
-  // Determine once, *before* first render effect runs
-  const [shouldAnimate] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false; // SSR: no animation
-    return sessionStorage.getItem("secureLineAnimated") !== "1";
-  });
+  // gate the one-time animation with sessionStorage
+  const [playReveal, setPlayReveal] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const shouldAnimate = sessionStorage.getItem("secureLineAnimated") !== "1";
+    if (shouldAnimate) setPlayReveal(true);
+  }, []);
 
   return (
-    <div className="h-full flex flex-col rounded-xl p-4 bg-transparent">
+    <div className="h-full flex flex-col pt-2">
       {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
-            onClick={goBack}
-            className="absolute left-0 text-sm text-white/80 hover:text-white"
-          >
-            ← Back
-          </button>
+  onClick={goBack}
+  className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
+>
+  <ArrowLeft className="w-4 h-4" />
+  Back
+</button>
           <div className="text-sm text-white/80">Choose payment</div>
         </div>
         <div className="mt-2 border-t border-white/10" />
       </div>
 
       {/* Payment chooser */}
-      <div className="flex-1">
+      <div>
         <PaymentChooser mode="choose" onChoose={onChoose} />
       </div>
 
-      {/* Secure line: letter slide-in (first time only) + glow */}
+      {/* Secure line directly below chooser (top-aligned), with one-time slide+fade reveal */}
       <motion.div
-        className="mt-6 text-center text-sm text-white/70 securePulse"
-        initial={shouldAnimate ? "hidden" : "visible"}
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.012 } } }}
+        className="mt-4 text-center text-sm text-white/70"
+        initial={playReveal ? { opacity: 0, y: 12 } : false}
+        animate={playReveal ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         onAnimationComplete={() => {
-          if (shouldAnimate && typeof window !== "undefined") {
+          if (playReveal && typeof window !== "undefined") {
             sessionStorage.setItem("secureLineAnimated", "1");
+            setPlayReveal(false);
           }
         }}
       >
-        {BEFORE.split("").map((ch, i) => (
-          <motion.span
-            key={`pre-${i}`}
-            variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
-            transition={{ duration: 0.14, ease: "easeOut" }}
-          >
-            {ch}
-          </motion.span>
-        ))}
-        {STRIPE.split("").map((ch, i) => (
-          <motion.span
-            key={`stripe-${i}`}
-            className="font-semibold text-white"
-            variants={{ hidden: { opacity: 0, x: -12 }, visible: { opacity: 1, x: 0 } }}
-            transition={{ duration: 0.14, ease: "easeOut" }}
-          >
-            {ch}
-          </motion.span>
-        ))}
+        <motion.span
+          className="inline-block font-medium"
+          initial={{ textShadow: "0 0 0px rgba(255,255,255,0)" }}
+          animate={{
+            textShadow: [
+              "0 0 0px rgba(255,255,255,0)",
+              "0 0 12px rgba(255, 255, 255, 1)",
+              "0 0 0px rgba(255,255,255,0)",
+            ],
+          }}
+          transition={{
+            duration: 1.8,
+            ease: "easeInOut",
+            repeat: Infinity, // <-- loop glow forever
+          }}
+        >
+          {BEFORE}
+          <span className="font-semibold text-white">{STRIPE}</span>
+        </motion.span>
       </motion.div>
+
+      <div className="flex-1" />
     </div>
   );
 }

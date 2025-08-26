@@ -114,14 +114,8 @@ export default function CheckoutClient() {
       {/* === Content === */}
       <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
         <div className="grid lg:grid-cols-[1.05fr_auto_.95fr] gap-8 items-start min-h-[70vh]">
-          {/* Left column — integrated (no card chrome) */}
-          <div className="relative">
-            {/* very soft backdrop only to keep copy readable on busy bg */}
-            <div className="absolute -inset-4 -z-10 rounded-2xl backdrop-blur-[1px] bg-black/0" />
-            {/* soft glow behind the copy */}
-            <span className="pointer-events-none absolute -inset-6 -z-10 rounded-3xl bg-[radial-gradient(80%_60%_at_0%_0%,rgba(148,182,255,0.08),transparent_70%)]" />
-            <UsefulToKnow />
-          </div>
+          {/* Left column — Useful info (no extra bg wrappers) */}
+          <UsefulToKnow />
 
           {/* Divider (kept light so it doesn't steal focus) */}
           <div className="hidden lg:flex items-stretch mx-2 px-4">
@@ -129,7 +123,7 @@ export default function CheckoutClient() {
           </div>
 
           {/* Right column — primary floating card */}
-          <div className="w-full max-w-xl lg:justify-self-end relative z-0">
+          <div className="w-[400px] lg:justify-self-end relative z-0">
             <CheckoutPanel
               payload={payload}
               breakdown={breakdown}

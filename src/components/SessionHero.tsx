@@ -147,7 +147,7 @@ export default function SessionHero({
       {/* background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
         <video
-          src="/videos/hero-test.mp4"
+          src="/videos/hero-slow.mp4"
           autoPlay
           muted
           loop

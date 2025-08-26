@@ -32,7 +32,7 @@ export default function StepContact({
   onSubmit,
 }: Props) {
   return (
-    <div className="h-full flex flex-col rounded-xl pt-2 px-4 pb-4 bg-transparent">
+<div className="h-full flex flex-col pt-2">
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <div className="text-sm text-white/80">Contact details</div>
@@ -74,12 +74,12 @@ export default function StepContact({
             />
           </label>
           <label className="block">
-            <span className="text-xs text-white/65">Additional notes (optional)</span>
+            <span className="text-xs text-white/65">Anything you want me to know</span>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="Anything you'd like me to know…"
+              placeholder="(Optional)"
               className="mt-1 w-full rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 text-base text-white/90 outline-none focus:ring-white/25 resize-none min-h-[110px]"
             />
           </label>
@@ -88,7 +88,7 @@ export default function StepContact({
 
         <button
           type="submit"
-          className="mt-3 w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
+          className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
                      bg-[#fc8803] hover:bg-[#f8a81a] transition
                      shadow-[0_10px_28px_rgba(245,158,11,.35)]
                      ring-1 ring-[rgba(255,190,80,.55)]"

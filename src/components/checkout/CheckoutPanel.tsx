@@ -140,6 +140,7 @@ export default function CheckoutPanel({
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
 
+  // NEW: store withdrawal consent so we can persist it server-side later
   const [waiver, setWaiver] = useState(false);
 
   return (
@@ -158,7 +159,8 @@ export default function CheckoutPanel({
           ring-1 ring-white/10
         "
       >
-        <div className="relative space-y-4">
+        <div className="relative space-y-2">
+          {/* Session block */}
           <div className="relative rounded-xl">
             <div className="absolute inset-0 rounded-xl ring-2 ring-sky-300/60 animate-border-glow pointer-events-none" />
             <SessionBlock
@@ -171,7 +173,8 @@ export default function CheckoutPanel({
             />
           </div>
 
-          <div className="relative min-h-[460px]">
+          {/* Steps directly in panel */}
+          <div className="relative min-h-[440px] overflow-visible">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
                 <motion.div
@@ -182,11 +185,7 @@ export default function CheckoutPanel({
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 rounded-xl
-                    backdrop-blur-xl
-                    bg-[linear-gradient(135deg,rgba(15,20,35,0.55),rgba(15,20,35,0.3))]
-                    ring-1 ring-white/10
-                    shadow-inner shadow-black/40"
+                  className="absolute inset-0 h-full flex flex-col"
                 >
                   <StepContact
                     email={email}
@@ -212,11 +211,7 @@ export default function CheckoutPanel({
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 rounded-xl
-                    backdrop-blur-xl
-                    bg-[linear-gradient(135deg,rgba(15,20,35,0.55),rgba(15,20,35,0.3))]
-                    ring-1 ring-white/10
-                    shadow-inner shadow-black/40"
+                  className="absolute inset-0 h-full flex flex-col"
                 >
                   <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
                 </motion.div>
@@ -231,34 +226,32 @@ export default function CheckoutPanel({
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 rounded-xl
-                    backdrop-blur-xl
-                    bg-[linear-gradient(135deg,rgba(15,20,35,0.55),rgba(15,20,35,0.3))]
-                    ring-1 ring-white/10
-                    shadow-inner shadow-black/40"
+                  className="absolute inset-0 h-full flex flex-col"
                 >
-                  {clientSecret ? (
-                    <Elements
-                      stripe={stripePromise}
-                      options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
-                    >
-                      <StepPayDetails
-                        mode="form"
-                        goBack={goBack}
-                        email={email}
-                        payMethod={payMethod || "card"}
-                        onContinue={goNext}
-                        piId={piId}
-                      />
-                    </Elements>
-                  ) : (
-                    <StepPayDetails
-                      mode="loading"
-                      goBack={goBack}
-                      loadingIntent={loadingIntent}
-                      payMethod={payMethod || "card"}
-                    />
-                  )}
+                  {/* conditional props for loading/form */}
+                  <StepPayDetails
+                    {...(clientSecret
+                      ? ({
+                          mode: "form",
+                          goBack,
+                          email,
+                          payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
+                          onContinue: goNext,
+                          piId,
+                          stripePromise,
+                          appearance: appearanceToUse,
+                          clientSecret,
+                        } as const)
+                      : ({
+                          mode: "loading",
+                          goBack,
+                          payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
+                          loadingIntent,
+                          stripePromise,
+                          appearance: appearanceToUse,
+                          clientSecret,
+                        } as const))}
+                  />
                 </motion.div>
               )}
 
@@ -271,11 +264,7 @@ export default function CheckoutPanel({
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 rounded-xl
-                    backdrop-blur-xl
-                    bg-[linear-gradient(135deg,rgba(15,20,35,0.55),rgba(15,20,35,0.3))]
-                    ring-1 ring-white/10
-                    shadow-inner shadow-black/40"
+                  className="absolute inset-0 h-full flex flex-col"
                 >
                   <Elements
                     stripe={stripePromise}
@@ -283,13 +272,13 @@ export default function CheckoutPanel({
                   >
                     <StepSummary
                       goBack={goBack}
-                      waiver={waiver}
-                      setWaiver={setWaiver}
                       payload={payload}
                       breakdown={breakdown}
                       payMethod={payMethod || "card"}
                       email={email}
                       piId={piId}
+                      waiver={waiver}
+                      setWaiver={setWaiver}
                     />
                   </Elements>
                 </motion.div>
@@ -297,10 +286,9 @@ export default function CheckoutPanel({
             </AnimatePresence>
           </div>
 
-          {/* Footer (no glow here) */}
-          <div className="flex items-center gap-3 pt-1 text-white/80">
-            <span className="inline-flex items-center gap-2 text-xs">
-              {/* cube icon for 3D Secure */}
+          {/* Footer */}
+          <div className="flex items-center gap-3 pt-3 text-white/80">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 text-xs">
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="currentColor" opacity=".9" />
                 <path d="M3 7v10l9 5V12L3 7Z" fill="currentColor" opacity=".65" />
@@ -308,8 +296,7 @@ export default function CheckoutPanel({
               </svg>
               3D Secure ready
             </span>
-            <span className="inline-flex items-center gap-2 text-xs">
-              {/* shield */}
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 text-xs">
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2 4 6v6c0 4.2 2.7 8 8 10 5.3-2 8-5.8 8-10V6l-8-4Z" fill="currentColor" />
               </svg>

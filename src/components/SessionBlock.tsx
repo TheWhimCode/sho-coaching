@@ -21,7 +21,6 @@ type Props = {
 };
 
 // --- tick sizing (single source of truth) ---
-const TICK_W = 44;
 const TICK_H = 8;
 const TOTAL_TICKS = 6; // 0..6 -> 30..120
 
@@ -154,9 +153,9 @@ export default function SessionBlock({
         <span className="text-white/90">€{priceEUR}</span>
       </div>
 
-      {/* Ticks */}
+      {/* Ticks — now span the full width via flex growth */}
       <div className="mt-3">
-        <div className="flex gap-2 items-center">
+        <div className="flex items-center gap-2">
           {Array.from({ length: TOTAL_TICKS }).map((_, i) => {
             const isLit = i < litTicks;
             const isIngame = isLit && i >= ingameStart && i < litTicks;
@@ -164,14 +163,12 @@ export default function SessionBlock({
             return (
               <div
                 key={i}
-                className="relative rounded-full ring-1"
+                className="relative flex-1 rounded-full ring-1 overflow-hidden"
                 style={{
-                  width: TICK_W,
                   height: TICK_H,
                   backgroundColor: isLit ? ring : "rgba(255,255,255,0.12)",
                   borderColor: isLit ? "transparent" : "rgba(255,255,255,0.18)",
                   boxShadow: isLit ? `0 2px 10px ${glow}` : "none",
-                  overflow: "hidden",
                 }}
               >
                 {isIngame && (
