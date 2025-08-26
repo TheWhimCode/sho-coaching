@@ -33,7 +33,7 @@ export default function StepSummary({
   const inGameMinutes = payload.liveBlocks * 45;
 
   return (
-    <div className="h-full flex flex-col rounded-xl p-4 ring-1 ring-white/12 bg-white/[.04]">
+    <div className="h-full flex flex-col rounded-xl p-4 bg-transparent">
       {/* Step header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">

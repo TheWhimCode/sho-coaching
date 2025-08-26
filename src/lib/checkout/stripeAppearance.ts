@@ -1,3 +1,4 @@
+// e.g. src/lib/stripe/appearanceDarkBrand.ts
 import type { Appearance } from "@stripe/stripe-js";
 
 export const appearanceDarkBrand: Appearance = {
@@ -32,6 +33,13 @@ export const appearanceDarkBrand: Appearance = {
     ".Block--highlight": {
       backgroundColor: "rgba(15,29,55,0.55)",
       borderColor: "rgba(105,168,255,0.25)",
+    },
+
+    // 🔴 Only red inputs; hide helper text
+    ".Error": { display: "none" },
+    ".Input--invalid": {
+      borderColor: "#ff6b6b",
+      boxShadow: "0 0 0 1px #ff6b6b inset",
     },
   },
 };

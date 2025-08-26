@@ -19,15 +19,20 @@ type Props = {
   onSubmit: () => void;
 };
 
-
 export default function StepContact({
-  email, discord, notes,
-  setEmail, setDiscord, setNotes,
-  contactErr, emailInputRef, discordInputRef,
+  email,
+  discord,
+  notes,
+  setEmail,
+  setDiscord,
+  setNotes,
+  contactErr,
+  emailInputRef,
+  discordInputRef,
   onSubmit,
 }: Props) {
   return (
-    <div className="h-full flex flex-col rounded-xl pt-2 px-4 pb-4 ring-1 ring-white/12 bg-white/[.04]">
+    <div className="h-full flex flex-col rounded-xl pt-2 px-4 pb-4 bg-transparent">
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <div className="text-sm text-white/80">Contact details</div>
@@ -35,7 +40,13 @@ export default function StepContact({
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="flex-1 flex flex-col">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit();
+        }}
+        className="flex-1 flex flex-col"
+      >
         <div className="flex-1 space-y-3">
           <label className="block">
             <span className="text-xs text-white/65">E-Mail</span>
