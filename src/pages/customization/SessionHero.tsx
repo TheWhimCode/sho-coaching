@@ -1,7 +1,7 @@
 // components/HeroSection/SessionHero.tsx
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState, useRef } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Slot as UiSlot } from "@/components/AvailableSlots";
 import CenterSessionPanel from "@/pages/customization/components/CenterSessionPanel";
@@ -26,15 +26,20 @@ type Props = {
   slots?: UiSlot[];
   baseMinutes?: number;
   isCustomizingCenter?: boolean;
-  /** ← pass drawerOpen here */
   isDrawerOpen?: boolean;
-  /** number of 45m in-game blocks (0..2) */
-  liveBlocks?: number;
+  liveBlocks?: number; // number of 45m in-game blocks (0..2)
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const TITLE_DELAY = 0.25;
 const TAGLINE_DELAY = 0.5;
+
+// panel enter delays (left < center < right)
+const PANEL_DELAY = {
+  left: 0.25,
+  center: 0.40,
+  right: 0.65,
+} as const;
 
 const titleVariants = {
   hidden: { opacity: 0, x: -24 },
@@ -219,11 +224,24 @@ export default function SessionHero({
               </AnimatePresence>
             </header>
 
+            {/* LEFT — uses its own enterDelay prop */}
             <div className="self-start">
-              <LeftSteps steps={leftSteps} title="How it works" animKey={preset} />
+              <LeftSteps
+                steps={leftSteps}
+                title="How it works"
+                animKey={preset}   // ← animKey for list swap
+                preset={preset}     // ← for glow color
+                enterDelay={PANEL_DELAY.left}
+              />
             </div>
 
-            <div className="self-start">
+            {/* CENTER — wrapped to add staggered enter */}
+            <motion.div
+              className="self-start"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: PANEL_DELAY.center }}
+            >
               <CenterSessionPanel
                 title={title}
                 baseMinutes={baseMinutes}
@@ -231,15 +249,22 @@ export default function SessionHero({
                 followups={followups ?? 0}
                 liveBlocks={liveBlocks}
               />
-            </div>
+            </motion.div>
 
-            <RightBookingPanel
-              liveMinutes={liveMinutes}
-              loading={loading}
-              slots={quickUiSlots}
-              onOpenCalendar={onOpenCalendar}
-              onCustomize={onCustomize}
-            />
+            {/* RIGHT — wrapped to add the longest delay */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
+            >
+              <RightBookingPanel
+                liveMinutes={liveMinutes}
+                loading={loading}
+                slots={quickUiSlots}
+                onOpenCalendar={onOpenCalendar}
+                onCustomize={onCustomize}
+              />
+            </motion.div>
           </div>
         </div>
       </motion.div>

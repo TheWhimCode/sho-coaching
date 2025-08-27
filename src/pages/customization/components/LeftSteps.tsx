@@ -3,6 +3,8 @@
 
 import React from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { type Preset } from "@/lib/sessions/preset";
+import { colorsByPreset } from "@/lib/sessions/colors";
 
 export type StepItem = { title: string };
 
@@ -11,11 +13,14 @@ type Props = {
   title?: string;
   /** Change on preset switch to retrigger enter/exit (e.g., the preset string). */
   animKey?: string | number;
+  /** Active session preset to color the header glow. */
+  preset: Preset;
+  /** Optional: match/stagger page enter timing */
+  enterDelay?: number;
 };
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-// container controls child staggering for both enter and exit
 const container: Variants = {
   hidden: { opacity: 1 },
   show: {
@@ -36,25 +41,42 @@ const item: Variants = {
 
 const ROWS = 5;
 
-export default function LeftSteps({ steps, title = "How it works", animKey }: Props) {
+export default function LeftSteps({
+  steps,
+  title = "How it works",
+  animKey,
+  preset,
+  enterDelay = 0.05,
+}: Props) {
   // lock layout to 5 rows so 4-step presets align exactly like 5-step ones
   const rows: (StepItem | null)[] = Array.from({ length: ROWS }, (_, i) => steps[i] ?? null);
 
+  // EXACT same color/glow sourcing as CenterSessionPanel
+  const { ring, glow } = colorsByPreset[preset];
+
   return (
-    <div
+    <motion.div
+      // same page-enter as RightBooking
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: enterDelay }}
       className={[
         "relative rounded-2xl backdrop-blur-[4px] ring-1 ring-[rgba(146,180,255,.14)] bg-[#0B1220]/15",
-        "p-6 md:p-7 lg:p-8",
-        // reduced min-heights slightly
+        "px-6 md:px-7 lg:px-8 py-4.5 md:py-5 lg:py-6", // half the original vertical padding
         "min-h-[470px] md:min-h-[510px] lg:min-h-[530px]",
         "flex flex-col",
       ].join(" ")}
     >
-      {/* Header */}
-      <div className="mb-2 md:mb-3">
-        <div className="text-xs uppercase tracking-wider text-[#8FB8E6]/90">Quick overview</div>
+      {/* Header (identical pattern to CenterSessionPanel) */}
+      <div className="mb-1 md:mb-2">
+        <div
+          className="text-[12px] font-semibold tracking-wide uppercase mb-1"
+          style={{ color: ring, filter: `drop-shadow(0 0 6px ${glow})` }}
+        >
+          Quick overview
+        </div>
         <div className="inline-block w-full">
-          <h3 className="mt-1 font-bold text-2xl text-white">{title}</h3>
+          <h3 className="mt-0 font-bold text-2xl text-white">{title}</h3>
         </div>
       </div>
 
@@ -98,12 +120,12 @@ export default function LeftSteps({ steps, title = "How it works", animKey }: Pr
       </div>
 
       {/* Footer */}
-      <p className="mt-3 text-[13px] text-white/60">
+      <p className="mt-2 text-[13px] text-white/60">
         For more information — scroll down on the previous page.
       </p>
 
       {/* corner glow */}
       <span className="pointer-events-none absolute -inset-3 -z-10 rounded-[24px] opacity-10 blur-2xl bg-[radial-gradient(70%_50%_at_0%_0%,_rgba(148,182,255,.25),_transparent_60%)]" />
-    </div>
+    </motion.div>
   );
 }

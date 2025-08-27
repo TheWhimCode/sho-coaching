@@ -64,6 +64,9 @@ export default function Calendar({
   // prevent releasing hold while navigating to checkout
   const goingToCheckout = useRef(false);
 
+  // NEW: local open state to allow exit animation before unmount
+  const [isOpen, setIsOpen] = useState(true);
+
   useEffect(() => {
     let ignore = false;
     const tomorrow = addDays(startOfDay(new Date()), 1);
@@ -157,101 +160,108 @@ export default function Calendar({
     };
   }, [selectedSlotId, holdKey]);
 
+  // After exit animation completes, notify parent to unmount
+  const handleExitComplete = () => {
+    if (!isOpen) onClose?.();
+  };
+
   return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-50 grid place-items-center bg-black/10 supports-[backdrop-filter]:backdrop-blur-[2px]"
-        variants={overlay}
-        initial="hidden"
-        animate="show"
-        exit="exit"
-      >
+    <AnimatePresence onExitComplete={handleExitComplete}>
+      {isOpen && (
         <motion.div
-          className="w-[92vw] max-w-[1200px] h-[88vh] rounded-2xl overflow-hidden
-                     flex flex-col shadow-[0_20px_80px_-20px_rgba(0,0,0,.6)]
-                     ring-1 ring-[rgba(146,180,255,.18)]
-                     bg-[rgba(11,18,32,.55)]
-                     supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150"
-          variants={shell}
+          className="fixed inset-0 z-50 grid place-items-center bg-black/10 supports-[backdrop-filter]:backdrop-blur-[2px]"
+          variants={overlay}
+          initial="hidden"
+          animate="show"
+          exit="exit"
         >
-          {/* header */}
-          <div className="px-6 pt-5 pb-3 flex items-center justify-between">
-            <div className="text-white/85">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/60">Schedule</div>
-              <div className="text-xl font-semibold">{sessionType}</div>
+          <motion.div
+            className="w-[92vw] max-w-[1200px] h-[88vh] rounded-2xl overflow-hidden
+                       flex flex-col shadow-[0_20px_80px_-20px_rgba(0,0,0,.6)]
+                       ring-1 ring-[rgba(146,180,255,.18)]
+                       bg-[rgba(11,18,32,.55)]
+                       supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150"
+            variants={shell}
+          >
+            {/* header */}
+            <div className="px-6 pt-5 pb-3 flex items-center justify-between">
+              <div className="text-white/85">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-white/60">Schedule</div>
+                <div className="text-xl font-semibold">{sessionType}</div>
+              </div>
+              <div />
             </div>
-            <div />
-          </div>
 
-          {/* body: ONE shared glass panel with a 1px divider column */}
-          <div className="px-6 pb-4 flex-1 min-h-0">
-            <div
-              className="
-                h-full rounded-2xl ring-1 ring-[rgba(146,180,255,.20)]
-                bg-[rgba(12,22,44,.72)]
-                [background-image:linear-gradient(180deg,rgba(99,102,241,.12),transparent)]
-                supports-[backdrop-filter]:backdrop-blur-md
-                supports-[backdrop-filter]:backdrop-saturate-150
-                supports-[backdrop-filter]:backdrop-contrast-125
-              "
-            >
-              <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1px_1.4fr] h-full">
-                <div className="min-h-0 p-4">
-                  <CalendarGrid
-                    month={month}
-                    onMonthChange={setMonth}
-                    selectedDate={selectedDate}
-                    onSelectDate={(d) => { setSelectedDate(d); setSelectedSlotId(null); }}
-                    validStartCountByDay={validStartCountByDay}
-                    loading={loading}
-                    error={error}
-                  />
-                </div>
+            {/* body: ONE shared glass panel with a 1px divider column */}
+            <div className="px-6 pb-4 flex-1 min-h-0">
+              <div
+                className="
+                  h-full rounded-2xl ring-1 ring-[rgba(146,180,255,.20)]
+                  bg-[rgba(12,22,44,.72)]
+                  [background-image:linear-gradient(180deg,rgba(99,102,241,.12),transparent)]
+                  supports-[backdrop-filter]:backdrop-blur-md
+                  supports-[backdrop-filter]:backdrop-saturate-150
+                  supports-[backdrop-filter]:backdrop-contrast-125
+                "
+              >
+                <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1px_1.4fr] h-full">
+                  <div className="min-h-0 p-4">
+                    <CalendarGrid
+                      month={month}
+                      onMonthChange={setMonth}
+                      selectedDate={selectedDate}
+                      onSelectDate={(d) => { setSelectedDate(d); setSelectedSlotId(null); }}
+                      validStartCountByDay={validStartCountByDay}
+                      loading={loading}
+                      error={error}
+                    />
+                  </div>
 
-                {/* divider */}
-                <div className="hidden md:block bg-[rgba(146,180,255,.24)]" />
+                  {/* divider */}
+                  <div className="hidden md:block bg-[rgba(146,180,255,.24)]" />
 
-                <div className="min-h-0 p-4">
-                  <TimeSlotsList
-                    slots={validStartsForSelected}
-                    selectedSlotId={selectedSlotId}
-                    onSelectSlot={setSelectedSlotId}
-                    showTimezoneNote
-                  />
+                  <div className="min-h-0 p-4">
+                    <TimeSlotsList
+                      slots={validStartsForSelected}
+                      selectedSlotId={selectedSlotId}
+                      onSelectSlot={setSelectedSlotId}
+                      showTimezoneNote
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* footer */}
-          <div className="px-6 py-4 border-t border-[rgba(146,180,255,.18)] flex items-center justify-between gap-3">
-            {dErr && <div className="text-rose-400 text-sm">{dErr}</div>}
-            <div className="ml-auto flex gap-2">
-              <button
-                className="h-9 px-4 rounded-xl bg-[rgba(16,24,40,.70)] hover:bg-[rgba(20,28,48,.85)]
-                           ring-1 ring-[rgba(146,180,255,.18)] text-white
-                           supports-[backdrop-filter]:backdrop-blur-md"
-                onClick={async () => {
-                  if (selectedSlotId) await releaseHold(selectedSlotId, holdKey || undefined);
-                  onClose?.();
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="h-9 px-4 rounded-xl bg-[#fc8803] hover:bg-[#f8a81a]
-                           shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]
-                           disabled:opacity-40 text-[#0A0A0A] font-semibold"
-                disabled={!selectedSlotId || pending}
-                onClick={submitBooking}
-              >
-                {pending ? "Opening checkout…" : "Continue to payment"}
-              </button>
+            {/* footer */}
+            <div className="px-6 py-4 border-t border-[rgba(146,180,255,.18)] flex items-center justify-between gap-3">
+              {dErr && <div className="text-rose-400 text-sm">{dErr}</div>}
+              <div className="ml-auto flex gap-2">
+                <button
+                  className="h-9 px-4 rounded-xl bg-[rgba(16,24,40,.70)] hover:bg-[rgba(20,28,48,.85)]
+                             ring-1 ring-[rgba(146,180,255,.18)] text-white
+                             supports-[backdrop-filter]:backdrop-blur-md"
+                  onClick={() => {
+                    // Trigger exit animation; onExitComplete will call onClose
+                    setIsOpen(false);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="h-9 px-4 rounded-xl bg-[#fc8803] hover:bg-[#f8a81a]
+                             shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]
+                             disabled:opacity-40 text-[#0A0A0A] font-semibold"
+                  disabled={!selectedSlotId || pending}
+                  onClick={submitBooking}
+                >
+                  {pending ? "Opening checkout…" : "Continue to payment"}
+                </button>
+              </div>
             </div>
-          </div>
 
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </AnimatePresence>
   );
 }

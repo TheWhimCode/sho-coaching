@@ -1,41 +1,29 @@
 // components/SessionBlock.tsx
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 
 type Props = {
   title?: string;
-  /** Base live minutes (not including in-game blocks) */
-  minutes: number;             // 30..120 (15-min steps)
+  minutes: number;
   priceEUR: number;
-  followups?: number;          // 0..2 (15m each)
+  followups?: number;
+  /** True while the customize drawer is open */
   isActive?: boolean;
   background?: "transparent" | string;
   className?: string;
   layoutId?: string;
-  /** Number of 45m in-game blocks (0..2) */
-  liveBlocks?: number;
+  liveBlocks?: number; // 0..2 (45m each)
 };
 
-// --- tick sizing (single source of truth) ---
 const TICK_H = 8;
-const TOTAL_TICKS = 6; // 0..6 -> 30..120
-
+const TOTAL_TICKS = 6;
 const clampN = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
-/** Small top-right emblem per preset (inline SVG, no deps). */
-function SessionIcon({
-  preset,
-  color,
-  glow,
-}: {
-  preset: Preset;
-  color: string;
-  glow: string;
-}) {
+function SessionIcon({ preset, color, glow }: { preset: Preset; color: string; glow: string }) {
   const common = {
     width: 22,
     height: 22,
@@ -70,7 +58,6 @@ function SessionIcon({
       </svg>
     );
   }
-  // custom: sparkle
   return (
     <svg {...common} aria-hidden>
       <path d="M12 4l1.2 2.6L16 8l-2.8 1.4L12 12l-1.2-2.6L8 8l2.8-1.4L12 4Z" fill={color} />
@@ -81,7 +68,7 @@ function SessionIcon({
 
 export default function SessionBlock({
   title,
-  minutes,        // base minutes (no blocks merged)
+  minutes,
   priceEUR,
   followups = 0,
   isActive = false,
@@ -90,45 +77,68 @@ export default function SessionBlock({
   layoutId,
   liveBlocks = 0,
 }: Props) {
-  // TOTAL minutes (drives ticks + display)
   const totalMinutes = minutes + liveBlocks * 45;
-
-  // Preset/colors from BASE minutes (flip to custom if liveBlocks>0 via getPreset impl)
   const preset = getPreset(minutes, followups, liveBlocks);
   const { ring, glow } = colorsByPreset[preset];
 
-  // ticks: 0..6 where 0=30m, 6=120m — from TOTAL minutes
+  // Flip once on first customize; stays true while this component is mounted
+  const [everActivated, setEverActivated] = useState(false);
+  useEffect(() => {
+    if (isActive && !everActivated) setEverActivated(true);
+  }, [isActive, everActivated]);
+
+  const showAffordance = isActive || everActivated; // controls texture + faint border
+
   const litTicks = useMemo(() => {
     const raw = Math.round((totalMinutes - 30) / 15);
     return clampN(raw, 0, TOTAL_TICKS);
   }, [totalMinutes]);
 
-  // in-game contributes 3 ticks per block, capped by litTicks
-  const ingameTicks = useMemo(
-    () => clampN(liveBlocks * 3, 0, litTicks),
-    [liveBlocks, litTicks]
-  );
-  // Right-align in-game ticks within the lit range
+  const ingameTicks = useMemo(() => clampN(liveBlocks * 3, 0, litTicks), [liveBlocks, litTicks]);
   const ingameStart = Math.max(0, litTicks - ingameTicks);
 
   const displayTitle =
-    preset === "vod"       ? "VOD Review" :
-    preset === "instant"   ? "Instant Insight" :
+    preset === "vod" ? "VOD Review" :
+    preset === "instant" ? "Instant Insight" :
     preset === "signature" ? "Signature Session" :
     "Custom Session";
 
   return (
     <div
       className={[
-        "relative rounded-2xl ring-1 p-5",
- "bg-[#0A0B21]/10 ring-[rgba(146,181,255,0.13)]",
- background && background !== "transparent" ? background : "",
+        "relative rounded-2xl p-5 transition-all duration-300",
+        "bg-[#0A0B21]/10",
+        isActive
+          ? "backdrop-blur-[12px] backdrop-brightness-95 backdrop-saturate-90 shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
+          : "backdrop-blur-[4px] shadow-[0_10px_30px_rgba(0,0,0,0.25)]",
         className,
       ].join(" ")}
       {...(layoutId ? { "data-framer-layout-id": layoutId } : {})}
- style={{ boxShadow: "inset 0 0 0 1px rgba(0,0,0,.18), 0 10px 30px rgba(0,0,0,.25)" }}
+      style={{
+        boxShadow: isActive ? "0 16px 40px rgba(0,0,0,.45)" : "0 10px 30px rgba(0,0,0,.25)",
+      }}
     >
-      {/* Top-right emblem */}
+      {/* Micro-texture (appears on first customize and stays while mounted) */}
+      {showAffordance && (
+        <span
+          aria-hidden
+          className="
+            pointer-events-none absolute inset-0 rounded-2xl opacity-[0.06]
+            bg-[radial-gradient(rgba(255,255,255,1)_1px,transparent_1px)]
+            [background-size:14px_14px]
+          "
+        />
+      )}
+
+      {/* Super faint border (same trigger as texture) */}
+      {showAffordance && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-2xl border border-white/10"
+        />
+      )}
+
+      {/* Emblem */}
       <div className="pointer-events-none absolute right-4 top-3">
         <SessionIcon preset={preset} color={ring} glow={glow} />
       </div>
@@ -137,7 +147,7 @@ export default function SessionBlock({
       <div className="text-xs uppercase tracking-wide text-white/65 mb-2">Session</div>
       <h3 className="text-2xl font-extrabold tracking-tight">{displayTitle}</h3>
 
-      {/* Meta — show TOTAL minutes + follow-ups + price (no animation) */}
+      {/* Meta */}
       <div className="mt-8 flex items-center justify-between text-[15px] font-semibold">
         <span className="text-white/90 flex items-center gap-2">
           {totalMinutes} min
@@ -153,7 +163,7 @@ export default function SessionBlock({
         <span className="text-white/90">€{priceEUR}</span>
       </div>
 
-      {/* Ticks — now span the full width via flex growth */}
+      {/* Ticks */}
       <div className="mt-3">
         <div className="flex items-center gap-2">
           {Array.from({ length: TOTAL_TICKS }).map((_, i) => {
@@ -173,7 +183,6 @@ export default function SessionBlock({
               >
                 {isIngame && (
                   <>
-                    {/* dark pass (multiply) */}
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"
                       style={{
@@ -190,7 +199,6 @@ export default function SessionBlock({
                       animate={{ backgroundPosition: ["0px 0px", "32px 0px"] }}
                       transition={{ duration: 1.4, ease: "linear", repeat: Infinity }}
                     />
-                    {/* light pass (screen) */}
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"
                       style={{

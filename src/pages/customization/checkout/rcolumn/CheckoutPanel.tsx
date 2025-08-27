@@ -1,3 +1,4 @@
+// src/pages/customization/checkout/rcolumn/CheckoutPanel.tsx
 "use client";
 
 import { useRef, useState } from "react";
@@ -140,41 +141,53 @@ export default function CheckoutPanel({
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
 
-  // NEW: store withdrawal consent so we can persist it server-side later
   const [waiver, setWaiver] = useState(false);
 
   return (
-    <div className="relative rounded-2xl">
+    <div className="relative rounded-2xl isolate">
+      {/* Subtle orange corner sheen (kept) */}
       <span
-        className="pointer-events-none absolute -inset-[2px] rounded-2xl
-                   bg-[radial-gradient(120%_80%_at_50%_-20%,rgba(255,163,50,0.25),transparent_60%)]
-                   blur-md"
+        aria-hidden
+        className="pointer-events-none absolute -top-2 -right-2 h-16 w-16 rounded-full blur-[28px] opacity-25
+                   bg-[radial-gradient(circle_at_center,#ff8b2a_0%,transparent_65%)]"
       />
+
       <div
         className="
-          relative rounded-2xl p-5 md:p-6 
-          backdrop-blur-xl
-          bg-[linear-gradient(135deg,rgba(25,32,52,0.55),rgba(25,32,52,0.35))]
-          shadow-[0_12px_40px_rgba(0,0,0,0.6)]
-          ring-1 ring-white/10
+          relative rounded-2xl p-5 md:p-6
+          bg-[linear-gradient(135deg,#11182a_0%,#0e1526_45%,#0c1322_100%)]
+          border border-[rgba(146,180,255,0.12)]
+          ring-1 ring-[rgba(146,180,255,0.14)]
+          shadow-[0_12px_40px_rgba(0,0,0,0.5)]
         "
       >
-        <div className="relative space-y-2">
-          {/* Session block */}
-          <div className="relative rounded-xl">
-            <div className="absolute inset-0 rounded-xl ring-2 ring-sky-300/60 animate-border-glow pointer-events-none" />
-            <SessionBlock
-              layoutId="session-block"
-              minutes={payload.baseMinutes}
-              liveBlocks={payload.liveBlocks}
-              followups={payload.followups}
-              priceEUR={breakdown.total}
-              className="mb-2 relative"
-            />
-          </div>
+        {/* INNER HALO only (outer glow removed) */}
+        <span
+          aria-hidden
+          className="
+            pointer-events-none absolute inset-0 rounded-2xl
+            bg-[radial-gradient(120%_120%_at_50%_0%,rgba(105,168,255,0.14),transparent_60%)]
+            opacity-80 blur-[10px]
+          "
+        />
 
-          {/* Steps directly in panel */}
-          <div className="relative min-h-[440px] overflow-visible">
+        <div className="relative space-y-3">
+          {/* Session block — force active look so styling is consistent here */}
+          <SessionBlock
+            layoutId="session-block"
+            minutes={payload.baseMinutes}
+            liveBlocks={payload.liveBlocks}
+            followups={payload.followups}
+            priceEUR={breakdown.total}
+            isActive
+            className="mb-5 md:mb-6 relative"
+          />
+
+          {/* SPLIT-SECTION DIVIDER (edge-to-edge inside the card) */}
+          <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
+
+          {/* Steps */}
+          <div className="relative min-h-[440px] overflow-visible pt-1">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
                 <motion.div
@@ -228,7 +241,6 @@ export default function CheckoutPanel({
                   transition={{ duration: 0.22, ease: "easeOut" }}
                   className="absolute inset-0 h-full flex flex-col"
                 >
-                  {/* conditional props for loading/form */}
                   <StepPayDetails
                     {...(clientSecret
                       ? ({
@@ -286,9 +298,9 @@ export default function CheckoutPanel({
             </AnimatePresence>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center gap-3 pt-3 text-white/80">
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 text-xs">
+          {/* Footer badges (kept quiet) */}
+          <div className="flex items-center gap-3 pt-4 text-white/75">
+            <span className="inline-flex items-center gap-1 text-xs">
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="currentColor" opacity=".9" />
                 <path d="M3 7v10l9 5V12L3 7Z" fill="currentColor" opacity=".65" />
@@ -296,7 +308,7 @@ export default function CheckoutPanel({
               </svg>
               3D Secure ready
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/10 text-xs">
+            <span className="inline-flex items-center gap-1 text-xs">
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2 4 6v6c0 4.2 2.7 8 8 10 5.3-2 8-5.8 8-10V6l-8-4Z" fill="currentColor" />
               </svg>

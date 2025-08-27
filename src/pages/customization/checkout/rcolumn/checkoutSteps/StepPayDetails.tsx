@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Elements, useElements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
@@ -5,7 +7,6 @@ import type { Appearance, Stripe } from "@stripe/stripe-js";
 import CardForm from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/CardForm";
 import PaymentSkeleton from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/PaymentSkeleton";
 import { ArrowLeft } from "lucide-react";
-
 
 type Method = "card" | "paypal" | "revolut_pay";
 
@@ -52,12 +53,12 @@ export default function StepPayDetails(props: Props) {
         <div className="mb-3">
           <div className="relative h-7 flex items-center justify-center">
             <button
-  onClick={goBack}
-  className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
->
-  <ArrowLeft className="w-4 h-4" />
-  Back
-</button>
+              onClick={goBack}
+              className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
             <div className="text-sm text-white/80">Payment details</div>
           </div>
           <div className="mt-2 border-t border-white/10" />
@@ -69,7 +70,7 @@ export default function StepPayDetails(props: Props) {
             <PaymentSkeleton method={payMethod ?? "card"} />
           </div>
 
-          <div className="mt-auto pt-3 border-t border-white/10">
+          <div className="mt-auto pt-3">
             <button
               disabled
               className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
@@ -104,12 +105,12 @@ export default function StepPayDetails(props: Props) {
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
-  onClick={goBack}
-  className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
->
-  <ArrowLeft className="w-4 h-4" />
-  Back
-</button>
+            onClick={goBack}
+            className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
           <div className="text-sm text-white/80">Payment details</div>
         </div>
         <div className="mt-2 border-t border-white/10" />
@@ -197,8 +198,8 @@ function FormBody({
         </div>
       </div>
 
-      {/* pinned footer identical to StepSummary (but without legal notice) */}
-      <div className="mt-auto pt-3 border-t border-white/10">
+      {/* pinned footer without divider */}
+      <div className="mt-auto pt-3">
         {err && <p className="text-red-400 text-sm mb-2">{err}</p>}
         <button
           onClick={validateAndContinue}

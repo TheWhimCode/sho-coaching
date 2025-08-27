@@ -1,11 +1,10 @@
-// components/checkout/StepSummary.tsx
 "use client";
 
 import { useElements, useStripe } from "@stripe/react-stripe-js";
 import CardForm from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/CardForm";
 import type { Breakdown } from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/buildBreakdown";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   goBack: () => void;
@@ -24,6 +23,12 @@ type Props = {
   setWaiver: (v: boolean) => void;
 };
 
+// EU country set
+const EU = new Set([
+  "AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT",
+  "LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"
+]);
+
 export default function StepSummary({
   goBack,
   payload,
@@ -35,6 +40,18 @@ export default function StepSummary({
   setWaiver,
 }: Props) {
   const inGameMinutes = payload.liveBlocks * 45;
+
+  const [isEU, setIsEU] = useState<boolean | null>(null);
+
+  // Initial geo guess
+  useEffect(() => {
+    fetch("/api/geo")
+      .then((r) => r.json())
+      .then(({ country }) => {
+        if (country) setIsEU(EU.has(country.toUpperCase()));
+      })
+      .catch(() => setIsEU(null));
+  }, []);
 
   return (
     <div className="h-full flex flex-col pt-2">
@@ -60,13 +77,17 @@ export default function StepSummary({
           email={email}
           activePm={payMethod}
           onElementsReady={() => {}}
+          // Allow CardForm to override country if known
+          onBillingCountryChange={(code: string) =>
+            setIsEU(EU.has(code.toUpperCase()))
+          }
         />
       </div>
 
-      {/* Main breakdown */}
+      
       <div className="flex-1 flex flex-col">
-        <dl className="text-base space-y-0">
-          <div className="flex items-center justify-between px-1 py-3">
+        <dl className="text-base space-y-3">
+          <div className="flex items-center justify-between px-1">
             <dt className="text-white/80">⬩ {payload.baseMinutes} min coaching</dt>
             <dd className="text-white/90">€{b.minutesEUR.toFixed(0)}</dd>
           </div>
@@ -88,12 +109,14 @@ export default function StepSummary({
 
         {/* Bottom section pinned down */}
         <div className="mt-auto pt-3 space-y-4">
-          {/* VAT note — bottom-right, immediately above the divider */}
-          <div className="px-1 text-right text-[10px] leading-tight text-white/55">
-            VAT not charged under §19 UStG
-          </div>
+          {/* VAT note only if EU */}
+          {isEU && (
+            <div className="px-1 text-right text-[10px] leading-tight text-white/55">
+              VAT not charged under §19 UStG
+            </div>
+          )}
 
-          {/* Divider directly below the VAT note */}
+          {/* Divider */}
           <div className="h-px bg-white/10" />
 
           <div className="flex items-center justify-between font-semibold px-1">
@@ -116,14 +139,14 @@ export default function StepSummary({
 
           {/* 2) Compact clickwrap line (AGB + Privacy) */}
           <p className="text-[11px] leading-snug text-white/60 px-1 mt-[2px]">
-            By clicking <span className="text-white/80 font-medium">Pay now</span>,
-            you agree to our{" "}
+            By clicking <span className="text-white/80 font-medium">Pay now</span>, you
+            agree to our{" "}
             <a href="/terms" className="underline hover:text-white">Terms</a> and{" "}
             <a href="/privacy" className="underline hover:text-white">Privacy Policy</a>.
           </p>
 
-          {/* 3) Button — cancel the parent's space-y gap for this last pair */}
-          <div className="-mt-4">
+          {/* 3) Button */}
+          <div className="-mt-2">
             <PayButton email={email} disabled={!waiver} />
           </div>
         </div>

@@ -16,6 +16,8 @@ type Props = {
   isCustomizing?: boolean; // drawer open/close
   followups?: number;      // 0–2
   liveBlocks?: number;     // number of 45m in-game blocks (0..2)
+  /** Optional: match/stagger page enter timing */
+  enterDelay?: number;
 };
 
 /* ===================== Stat Rules ===================== */
@@ -30,19 +32,14 @@ function depthOfInsight(baseMin: number, liveBlocks: number): 1|2|3|4|5 {
   return clamp15(v);
 }
 
-// UPDATED: cap of 4 only applies to the +1 from live blocks; signature remains 5 by default
 function clarityStructure(baseMin: number, preset: Preset, liveBlocks: number): 1|2|3|4|5 {
-  // Base clarity & structure
   let v = preset === "signature" ? 5
         : baseMin <= 45 ? 4
         : baseMin <= 75 ? 3
         : baseMin <= 105 ? 2
         : 1;
 
-  // Live blocks add +1 ONLY if current value is 3 or less
-  // (so 4 stays 4; signature stays 5)
   if (liveBlocks >= 1 && v <= 3) v += 1;
-
   return clamp15(v);
 }
 
@@ -166,23 +163,21 @@ export default function CenterSessionPanel({
   isCustomizing = false,
   followups = 0,
   liveBlocks = 0,
+  enterDelay = 0.05,
 }: Props) {
   const baseOnly = baseMinutes;
 
-  // Unified minutes (base + 45 per live block)
   const liveMinutes = useMemo(
     () => baseOnly + (liveBlocks ?? 0) * 45,
     [baseOnly, liveBlocks]
   );
 
-  // Preset flips to custom if any live block is added
   const preset = useMemo(
     () => getPreset(baseOnly, followups, liveBlocks),
     [baseOnly, followups, liveBlocks]
   );
   const { ring, glow } = colorsByPreset[preset];
 
-  // Dynamic price preview
   const pricePreview = useMemo(
     () => computePriceEUR(liveMinutes, followups).priceEUR,
     [liveMinutes, followups]
@@ -208,18 +203,17 @@ export default function CenterSessionPanel({
 
   const STATS_AREA_HEIGHT = 160;
 
+  // Top-aligned placeholder (no extra spacer)
   const placeholder = (
-    <>
-      <div className="h-[18px] mb-3" />
-      <div className="space-y-2 text-sm text-white/80">
-        <p>Customize to reveal what this session emphasizes.</p>
-        <ul className="space-y-1 list-disc list-inside text-white/75">
-          <li>Depth vs. structure</li>
-          <li>Expected lasting impact</li>
-          <li>Format flexibility</li>
-        </ul>
-      </div>
-    </>
+    <div className="space-y-2 text-sm text-white/80">
+      <p className="font-medium text-white/90">The most important mistakes to focus on are:</p>
+      <ul className="space-y-1 list-disc list-inside text-white/75">
+        <li>Patterns you repeat every game</li>
+        <li>Quick fixes with big payoff</li>
+        <li>Skills you personally value most</li>
+      </ul>
+      <p className="mt-3 text-white/70">Find out where you should start improving.</p>
+    </div>
   );
 
   const statsContent = (
@@ -239,7 +233,12 @@ export default function CenterSessionPanel({
   );
 
   return (
-    <div className="relative w-full max-w-md">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: enterDelay }}
+      className="relative w-full max-w-md"
+    >
       <div className="rounded-2xl backdrop-blur-[1px] p-6 bg-[#0B1220]/10 ring-1 ring-[rgba(146,180,255,.10)]">
         <SessionBlock
           title={title}
@@ -269,6 +268,6 @@ export default function CenterSessionPanel({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

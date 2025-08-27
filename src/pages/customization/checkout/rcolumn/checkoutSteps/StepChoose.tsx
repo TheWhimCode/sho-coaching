@@ -65,12 +65,12 @@ export default function StepChoose({ goBack, onChoose }: Props) {
           animate={{
             textShadow: [
               "0 0 0px rgba(255,255,255,0)",
-              "0 0 12px rgba(255, 255, 255, 1)",
+              "0 0 8px rgba(255, 255, 255, 1)",
               "0 0 0px rgba(255,255,255,0)",
             ],
           }}
           transition={{
-            duration: 1.8,
+            duration: 3,
             ease: "easeInOut",
             repeat: Infinity, // <-- loop glow forever
           }}
