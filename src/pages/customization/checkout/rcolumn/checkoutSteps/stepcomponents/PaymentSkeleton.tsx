@@ -4,6 +4,7 @@ type Method = "card" | "paypal" | "revolut_pay";
 
 export default function PaymentSkeleton({ method }: { method: Method }) {
   if (method !== "card") {
+    // Unchanged (PayPal/Revolut)
     return (
       <div className="rounded-2xl ring-1 ring-gray-800 bg-gray-900 px-5 py-5 space-y-8">
         {/* OUTER: small icon + label */}
@@ -38,37 +39,31 @@ export default function PaymentSkeleton({ method }: { method: Method }) {
     );
   }
 
-  // Card form skeleton
+  // Card-only skeleton — top padding added, rows 52px, extra vertical spacing
   return (
-    <div className="rounded-2xl ring-1 ring-gray-800 bg-gray-900 p-4 space-y-5">
-      {/* header row (icon + "Card") */}
-      <div className="flex items-center gap-2">
-        <div className="h-5 w-5 rounded-md bg-gray-700 shimmer" />
-        <div className="h-3 w-14 rounded bg-gray-700 shimmer" />
-      </div>
-
+    <div className="pt-[6px] space-y-[14px]">
       {/* Card number */}
-      <div className="space-y-2">
-        <div className="h-3 w-24 rounded bg-gray-700 shimmer" />
-        <div className="h-11 rounded-lg bg-gray-700 shimmer" />
+      <div className="space-y-[8px]">
+        <div className="h-3 w-24 rounded bg-white/12 shimmer" />
+        <div className="h-[52px] rounded-lg bg-white/[.05] ring-1 ring-white/12 shimmer" />
       </div>
 
-      {/* Expiration + CVC side by side */}
-      <div className="flex gap-3">
-        <div className="flex-1 space-y-2">
-          <div className="h-3 w-20 rounded bg-gray-700 shimmer" />
-          <div className="h-11 rounded-lg bg-gray-700 shimmer" />
+      {/* Expiry + CVC */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-[8px]">
+          <div className="h-3 w-20 rounded bg-white/12 shimmer" />
+          <div className="h-[52px] rounded-lg bg-white/[.05] ring-1 ring-white/12 shimmer" />
         </div>
-        <div className="flex-1 space-y-2">
-          <div className="h-3 w-24 rounded bg-gray-700 shimmer" />
-          <div className="h-11 rounded-lg bg-gray-700 shimmer" />
+        <div className="space-y-[8px]">
+          <div className="h-3 w-24 rounded bg-white/12 shimmer" />
+          <div className="h-[52px] rounded-lg bg-white/[.05] ring-1 ring-white/12 shimmer" />
         </div>
       </div>
 
       {/* Country */}
-      <div className="space-y-2">
-        <div className="h-3 w-24 rounded bg-gray-700 shimmer" />
-        <div className="h-11 rounded-lg bg-gray-700 shimmer" />
+      <div className="space-y-[8px]">
+        <div className="h-3 w-24 rounded bg-white/12 shimmer" />
+        <div className="h-[52px] rounded-lg bg-white/[.05] ring-1 ring-white/12 shimmer" />
       </div>
 
       <ShimmerStyles />
@@ -94,10 +89,10 @@ function ShimmerStyles() {
         background: linear-gradient(
           90deg,
           rgba(255, 255, 255, 0) 0%,
-          rgba(255, 255, 255, 0.15) 50%,
+          rgba(255, 255, 255, 0.12) 50%,
           rgba(255, 255, 255, 0) 100%
         );
-        animation: shimmer 1.2s linear infinite;
+        animation: shimmer 1.2s linear infinite.
       }
       @keyframes shimmer {
         0% {

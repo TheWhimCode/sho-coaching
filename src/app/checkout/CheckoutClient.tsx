@@ -40,7 +40,7 @@ function deriveBaseMinutes({
   return clampN(lm - liveBlocks * LIVEBLOCK_MIN, MIN, MAX);
 }
 function mergedMinutes(baseMinutes: number, liveBlocks: number) {
-  return clampN(baseMinutes + liveBlocks * LIVEBLOCK_MIN, MIN, MAX);
+  return Math.min(MAX, Math.max(MIN, baseMinutes + liveBlocks * LIVEBLOCK_MIN));
 }
 
 /** === Animations (subtle, smooth, product-like) === */
@@ -60,15 +60,6 @@ const rightCol: Variants = {
   show: {
     y: 0,
     opacity: 1,
-    transition: { duration: 0.42, ease: EASE },
-  },
-};
-
-/** Background brightness overlay */
-const bgDim: Variants = {
-  bright: { opacity: 0.8 },
-  dim: {
-    opacity: 0.25,
     transition: { duration: 0.42, ease: EASE },
   },
 };
@@ -133,12 +124,11 @@ export default function CheckoutClient() {
   /** Orchestrate sequence */
   const pageCtrl = useAnimationControls();
   const rightCtrl = useAnimationControls();
-  const bgCtrl = useAnimationControls();
 
   useEffect(() => {
     (async () => {
       await pageCtrl.start("show");
-      await Promise.all([rightCtrl.start("show"), bgCtrl.start("dim")]);
+      await rightCtrl.start("show");
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -155,39 +145,18 @@ export default function CheckoutClient() {
         overflow-x-hidden overflow-y-hidden
       "
     >
-      {/* === Background: very dark navy/azure/purple === */}
+      {/* === Background (horizontal gradient, subtle brightness on right) === */}
       <div className="absolute inset-0 -z-10 pointer-events-none isolate overflow-hidden">
-        {/* Deepened base gradient (navy) */}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,#070b16_0%,#060a15_55%,#050913_100%)]" />
-        {/* Soft vignette */}
-        <div className="absolute inset-0 [mask-image:radial-gradient(78%_78%_at_50%_40%,black,transparent)] bg-black/75" />
-        {/* Azure wash (L) */}
-        <div className="absolute -left-40 top-[24%] h-[40rem] w-[40rem] rounded-full blur-[160px] opacity-15 bg-[radial-gradient(circle_at_center,#7FB6FF_0%,#4c7dff_35%,transparent_72%)]" />
-        {/* Purple wash (R) */}
-        <div className="absolute right-[-18%] bottom-[-8%] h-[36rem] w-[36rem] rounded-full blur-[160px] opacity-15 bg-[radial-gradient(circle_at_center,#7a5cff_0%,#5a46e8_35%,transparent_75%)]" />
-        {/* Ultra-low conic edge tint */}
-        <div className="absolute inset-0 opacity-[0.06] bg-[conic-gradient(from_200deg_at_50%_50%,#203a86_0deg,#7fb6ff_120deg,#7a5cff_240deg,#203a86_360deg)]" />
-
-        {/* Brightness overlay that we DIM after the page slide finishes */}
-        <motion.div
-          variants={bgDim}
-          initial="bright"
-          animate={bgCtrl}
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(70% 60% at 50% 35%, rgba(127,182,255,0.30) 0%, rgba(124,95,255,0.22) 45%, rgba(0,0,0,0) 80%)",
-            mixBlendMode: "screen" as any,
-          }}
-        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070f_0%,#070c18_40%,#0c1528_70%,#16264a_100%)]" />
+        <div className="absolute inset-0 [mask-image:radial-gradient(80%_80%_at_50%_50%,black,transparent)] bg-black/60" />
       </div>
 
       {/* === Content === */}
       <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
         <div className="flex justify-center">
           <div className="inline-grid lg:grid-cols-[minmax(0,1fr)_auto_420px] gap-8 items-start lg:justify-items-stretch min-h-[70vh]">
-            {/* Left column */}
-            <div className="w-full lg:max-w-none xl:max-w-[820px]">
+            {/* Left column (nudged left on large screens) */}
+            <div className="w-full lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
               <UsefulToKnow />
             </div>
 

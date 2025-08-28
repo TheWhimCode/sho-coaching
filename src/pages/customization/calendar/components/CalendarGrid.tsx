@@ -19,7 +19,10 @@ type Props = {
   onMonthChange: (m: Date) => void;
   selectedDate: Date | null;
   onSelectDate: (d: Date) => void;
+  /** Raw count of *any* valid starts (e.g., 15-min slots). */
   validStartCountByDay: Map<string, number>;
+  /** Days that have at least one *displayable* start (e.g., 30-min). If provided, this is authoritative. */
+  displayableDayKeys?: Set<string>;
   loading: boolean;
   error: string | null;
 };
@@ -37,6 +40,7 @@ export default function CalendarGrid({
   selectedDate,
   onSelectDate,
   validStartCountByDay,
+  displayableDayKeys,
   loading,
   error,
 }: Props) {
@@ -90,11 +94,19 @@ export default function CalendarGrid({
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
               const key = dayKeyLocal(d);
-              const hasAvail = (validStartCountByDay.get(key) ?? 0) > 0;
+
+              // If displayableDayKeys is provided, only days with a displayable start are "available".
+              const hasAvailDisplayable = displayableDayKeys?.has(key) ?? false;
+              const hasAvailLegacy = (validStartCountByDay.get(key) ?? 0) > 0;
+              const hasAvail = displayableDayKeys
+                ? hasAvailDisplayable
+                : hasAvailLegacy;
+
               const selected = !!selectedDate && isSameDay(d, selectedDate);
               const outside = !isSameMonth(d, month);
               const today = isToday(d);
 
+              // booking window: tomorrow through +14 days (inclusive)
               const tmr = new Date();
               tmr.setDate(tmr.getDate() + 1);
               tmr.setHours(0, 0, 0, 0);
@@ -106,8 +118,7 @@ export default function CalendarGrid({
               const base =
                 "aspect-square rounded-xl text-sm transition-all ring-1 ring-[rgba(146,180,255,.18)] relative overflow-hidden";
               const enabled = "bg-[#0d1b34] hover:bg-[#15284a] text-white/90";
-              const selectedCls =
-                "shadow-[0_0_8px_2px_#fc8803]"; // orange glow only
+              const selectedCls = "shadow-[0_0_8px_2px_#fc8803]";
               const disabled = "bg-[#0b1220] opacity-45 cursor-not-allowed";
               const outsideCls = outside ? "opacity-35" : "";
 

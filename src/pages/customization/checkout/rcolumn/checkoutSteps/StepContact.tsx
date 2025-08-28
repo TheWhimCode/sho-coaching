@@ -1,7 +1,6 @@
 "use client";
 import * as React from "react";
 
-// accept either kind of ref (works with useRef)
 type InputRef =
   | React.MutableRefObject<HTMLInputElement | null>
   | React.RefObject<HTMLInputElement>;
@@ -19,6 +18,18 @@ type Props = {
   onSubmit: () => void;
 };
 
+function isValidEmail(v: string) {
+  const s = v.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+function isValidDiscord(v: string) {
+  const s = v.trim();
+  const newStyle = /^[a-z0-9._]{2,32}$/.test(s);
+  const legacy = /^[A-Za-z0-9 _.\-]{2,32}#\d{4}$/.test(s);
+  return newStyle || legacy;
+}
+
 export default function StepContact({
   email,
   discord,
@@ -26,13 +37,23 @@ export default function StepContact({
   setEmail,
   setDiscord,
   setNotes,
-  contactErr,
+  contactErr, // kept for API
   emailInputRef,
   discordInputRef,
   onSubmit,
 }: Props) {
+  const [submitted, setSubmitted] = React.useState(false);
+
+  const emailInvalid = email.trim() === "" || !isValidEmail(email);
+  const discordInvalid = discord.trim() === "" || !isValidDiscord(discord);
+
+  const baseInput =
+    "mt-1 w-full rounded-lg bg-white/[.05] ring-1 px-4 py-3 text-base text-white/90 outline-none transition";
+  const okRing = "ring-white/12 focus:ring-white/25";
+  const badRing = "ring-red-500/70 focus:ring-red-500";
+
   return (
-<div className="h-full flex flex-col pt-2">
+    <div className="h-full flex flex-col pt-2">
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <div className="text-sm text-white/80">Contact details</div>
@@ -41,9 +62,14 @@ export default function StepContact({
       </div>
 
       <form
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit();
+          setSubmitted(true);
+
+          if (!emailInvalid && !discordInvalid) {
+            onSubmit();
+          }
         }}
         className="flex-1 flex flex-col"
       >
@@ -56,10 +82,13 @@ export default function StepContact({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email address"
-              className="mt-1 w-full rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 text-base text-white/90 outline-none focus:ring-white/25"
-              required
+              aria-invalid={submitted && emailInvalid}
+              className={`${baseInput} ${
+                submitted && emailInvalid ? badRing : okRing
+              }`}
             />
           </label>
+
           <label className="block">
             <span className="text-xs text-white/65">Discord</span>
             <input
@@ -68,22 +97,25 @@ export default function StepContact({
               value={discord}
               onChange={(e) => setDiscord(e.target.value)}
               placeholder="Discord"
-              pattern="^[A-Za-z0-9][A-Za-z0-9._]{1,31}$"
-              className="mt-1 w-full rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 text-base text-white/90 outline-none focus:ring-white/25"
-              required
+              aria-invalid={submitted && discordInvalid}
+              className={`${baseInput} ${
+                submitted && discordInvalid ? badRing : okRing
+              }`}
             />
           </label>
+
           <label className="block">
-            <span className="text-xs text-white/65">Anything you want me to know</span>
+            <span className="text-xs text-white/65">
+              Anything you want me to know
+            </span>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="(Optional)"
-              className="mt-1 w-full rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 text-base text-white/90 outline-none focus:ring-white/25 resize-none min-h-[110px]"
+              className={`${baseInput} ${okRing} resize-none min-h-[110px]`}
             />
           </label>
-          {contactErr && <p className="text-sm text-red-400">{contactErr}</p>}
         </div>
 
         <button

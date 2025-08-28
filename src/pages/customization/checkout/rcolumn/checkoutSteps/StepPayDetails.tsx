@@ -1,14 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { Elements, useElements } from "@stripe/react-stripe-js";
+import { useState, useEffect } from "react";
+import {
+  Elements,
+  useElements,
+  useStripe,
+  CardNumberElement,
+} from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
 
 import CardForm from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/CardForm";
 import PaymentSkeleton from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/PaymentSkeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CreditCard } from "lucide-react";
 
 type Method = "card" | "paypal" | "revolut_pay";
+
+type SavedCard = {
+  id: string;
+  brand: string | null;
+  last4: string | null;
+  exp_month: number | null;
+  exp_year: number | null;
+};
 
 /** ---------- Props (discriminated union) ---------- */
 
@@ -20,7 +33,6 @@ type Common = {
 type LoadingProps = Common & {
   mode: "loading";
   loadingIntent?: boolean;
-  // Stripe props optional in loading mode
   stripePromise?: Promise<Stripe | null>;
   appearance?: Appearance;
   clientSecret?: string | null;
@@ -33,10 +45,14 @@ type FormProps = Common & {
   onContinue: () => void;
   piId?: string | null;
 
-  // Required in form mode
+  // collect/store PM id + display for Step 3 and for back-navigation summary
+  setCardPmId: (id: string) => void;
+  setSavedCard: (c: SavedCard | null) => void;
+  savedCard: SavedCard | null;
+
   stripePromise: Promise<Stripe | null>;
   appearance: Appearance;
-  clientSecret: string; // non-null when in "form"
+  clientSecret: string;
 };
 
 type Props = LoadingProps | FormProps;
@@ -97,6 +113,9 @@ export default function StepPayDetails(props: Props) {
     stripePromise,
     appearance,
     clientSecret,
+    setCardPmId,
+    setSavedCard,
+    savedCard,
   } = props;
 
   return (
@@ -116,7 +135,7 @@ export default function StepPayDetails(props: Props) {
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      {/* body + pinned footer */}
+      {/* body */}
       <div className="flex-1 flex flex-col">
         <div className="flex-1 relative min-h-[280px]">
           <Elements
@@ -128,6 +147,9 @@ export default function StepPayDetails(props: Props) {
               payMethod={payMethod}
               piId={piId}
               onContinue={onContinue}
+              setCardPmId={setCardPmId}
+              setSavedCard={setSavedCard}
+              savedCard={savedCard}
             />
           </Elements>
         </div>
@@ -143,22 +165,92 @@ function FormBody({
   payMethod,
   piId,
   onContinue,
+  setCardPmId,
+  setSavedCard,
+  savedCard,
 }: {
   email: string;
   payMethod: Method;
   piId?: string | null;
   onContinue: () => void;
+  setCardPmId: (id: string) => void;
+  setSavedCard: (c: SavedCard | null) => void;
+  savedCard: SavedCard | null;
 }) {
+  const stripe = useStripe();
   const elements = useElements();
   const [peReady, setPeReady] = useState(false);
   const [checking, setChecking] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // show red only after submit
+  const [submitted, setSubmitted] = useState(false);
+
+  // If we have a saved card (summary mode), there is no onReady event.
+  // Ensure skeleton is hidden in that case.
+  useEffect(() => {
+    if (payMethod === "card" && savedCard) setPeReady(true);
+  }, [payMethod, savedCard]);
+
   async function validateAndContinue() {
-    if (!elements) return;
+    if (!stripe) return;
+    setSubmitted(true);
     setChecking(true);
     setErr(null);
 
+    if (payMethod === "card") {
+      // If already saved, just continue.
+      if (savedCard?.id) {
+        setChecking(false);
+        onContinue();
+        return;
+      }
+
+      if (!elements) {
+        setErr("Payment form not ready.");
+        setChecking(false);
+        return;
+      }
+
+      const card = elements.getElement(CardNumberElement);
+      if (!card) {
+        setErr("Card field not ready.");
+        setChecking(false);
+        return;
+      }
+
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: "card",
+        card,
+        billing_details: { email: email || undefined },
+      });
+
+      if (error || !paymentMethod) {
+        setErr(error?.message ?? "Please complete the card details.");
+        setChecking(false);
+        return;
+      }
+
+      setCardPmId(paymentMethod.id);
+      setSavedCard({
+        id: paymentMethod.id,
+        brand: paymentMethod.card?.brand ?? null,
+        last4: paymentMethod.card?.last4 ?? null,
+        exp_month: paymentMethod.card?.exp_month ?? null,
+        exp_year: paymentMethod.card?.exp_year ?? null,
+      });
+
+      setChecking(false);
+      onContinue();
+      return;
+    }
+
+    // Non-card methods: validate Payment Element
+    if (!elements) {
+      setErr("Payment form not ready.");
+      setChecking(false);
+      return;
+    }
     const { error } = await elements.submit();
     if (error) {
       setErr(error.message ?? "Please complete the required payment details.");
@@ -170,22 +262,107 @@ function FormBody({
     onContinue();
   }
 
+  // ---------- Saved card UI ----------
+
+  function SavedCardPanel() {
+    if (!savedCard) return null;
+
+    const brand = savedCard.brand ? savedCard.brand.toUpperCase() : "CARD";
+    const last4 = savedCard.last4 ?? "••••";
+    const exp =
+      savedCard.exp_month && savedCard.exp_year
+        ? `${String(savedCard.exp_month).padStart(2, "0")}/${String(
+            savedCard.exp_year
+          ).slice(-2)}`
+        : null;
+
+    return (
+      <div
+        className="
+          relative rounded-xl p-4
+          bg-[linear-gradient(140deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))]
+          ring-1 ring-white/12
+          shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02),0_10px_30px_rgba(0,0,0,0.25)]
+        "
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-white/[.08] flex items-center justify-center ring-1 ring-white/10">
+              <CreditCard className="w-[18px] h-[18px] text-white/85" />
+            </div>
+
+            <div className="leading-tight">
+              <div className="text-white/90 font-semibold tracking-wide">
+                •••• {last4}
+              </div>
+              <div className="text-xs text-white/65">
+                {brand}
+                {exp ? ` · exp ${exp}` : ""}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPeReady(false); // show skeleton while Elements remount
+              setSavedCard(null); // return to editable fields
+            }}
+            className="
+              inline-flex items-center gap-1.5
+              text-sm font-medium
+              px-3 py-1.5 rounded-lg
+              bg-white/5 hover:bg-white/8
+              ring-1 ring-white/12
+              text-white/85 hover:text-white
+              transition
+            "
+          >
+            Change
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-full">
+    // ⬇️ Form wrapper so pressing Enter submits
+    <form
+      className="flex flex-col h-full"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!checking) validateAndContinue();
+      }}
+    >
       {/* layered real form + skeleton */}
       <div className="relative flex-1 min-h-[280px]">
-        {/* Real elements */}
+        {/* Real content */}
         <div
           className={`absolute inset-0 transition-opacity duration-150 ${
             peReady ? "opacity-100" : "opacity-0"
           }`}
         >
-          <CardForm
-            piId={piId}
-            email={email}
-            activePm={payMethod}
-            onElementsReady={() => setPeReady(true)}
-          />
+          {payMethod === "card" ? (
+            savedCard ? (
+              <SavedCardPanel />
+            ) : (
+              <CardForm
+                piId={piId}
+                email={email}
+                activePm={payMethod}
+                submitted={submitted}
+                onPaymentChange={() => {}}
+                onElementsReady={() => setPeReady(true)}
+              />
+            )
+          ) : (
+            <CardForm
+              piId={piId}
+              email={email}
+              activePm={payMethod}
+              onElementsReady={() => setPeReady(true)}
+            />
+          )}
         </div>
 
         {/* Skeleton overlay */}
@@ -198,12 +375,13 @@ function FormBody({
         </div>
       </div>
 
-      {/* pinned footer without divider */}
+      {/* pinned footer */}
       <div className="mt-auto pt-3">
-        {err && <p className="text-red-400 text-sm mb-2">{err}</p>}
+        {/* a11y-only; no visible helper text */}
+        {err && <p className="sr-only">{err}</p>}
         <button
-          onClick={validateAndContinue}
-          disabled={!elements || checking || !peReady}
+          type="submit" // <-- Enter submits the form
+          disabled={!stripe || checking || !peReady}
           className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
                      bg-[#fc8803] hover:bg-[#f8a81a] transition
                      shadow-[0_10px_28px_rgba(245,158,11,.35)]
@@ -213,6 +391,6 @@ function FormBody({
           {checking ? "Checking…" : "Continue"}
         </button>
       </div>
-    </div>
+    </form>
   );
 }

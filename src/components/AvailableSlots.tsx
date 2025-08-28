@@ -5,7 +5,7 @@ export type Slot = {
   startISO: string;
   durationMin: number;
   status: SlotStatus;           // free | blocked | taken
-  label?: string;               // 👈 NEW (optional)
+  label?: string;               // optional
 };
 
 function dayDiffLocal(a: Date, b: Date) {
@@ -13,6 +13,7 @@ function dayDiffLocal(a: Date, b: Date) {
   const db = new Date(b); db.setHours(0,0,0,0);
   return Math.round((da.getTime() - db.getTime()) / 86_400_000);
 }
+
 function niceDayLabel(dt: Date) {
   const now = new Date();
   const diff = dayDiffLocal(dt, now);
@@ -31,32 +32,36 @@ export default function AvailableSlots({
 }) {
   return (
     <div className="mt-1 grid grid-cols-1 gap-2">
-      {slots.map((s) => {
-        const dt = new Date(s.startISO);
-        const day = niceDayLabel(dt);
-        const time = dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-        const disabled = s.status !== SlotStatus.free;
-        return (
-<button
-  key={s.id}
-  disabled={disabled}
-  onClick={() => onPick?.(s.id)}
-  className="h-10 w-full rounded-xl px-3 text-sm ring-1 ring-white/10 
-             hover:ring-white/30 disabled:opacity-40 text-left transition-colors"
-  title={dt.toLocaleString()}
->
-  <div className="flex items-center justify-between">
-    <div>
-      <span className="font-medium">{day}</span>
-      <span className="mx-1 text-white/40">•</span>
-      <span>{time}</span>
-    </div>
-    {s.label && <span className="text-xs text-white/60">{s.label}</span>}
-  </div>
-</button>
-
-);
-      })}
+      {slots
+        // ✅ only keep slots that are free and aligned to 30-min grid
+        .filter(
+          (s) =>
+            s.status === SlotStatus.free &&
+            [0, 30].includes(new Date(s.startISO).getMinutes())
+        )
+        .map((s) => {
+          const dt = new Date(s.startISO);
+          const day = niceDayLabel(dt);
+          const time = dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+          return (
+            <button
+              key={s.id}
+              onClick={() => onPick?.(s.id)}
+              className="h-10 w-full rounded-xl px-3 text-sm ring-1 ring-white/10 
+                         hover:ring-white/30 text-left transition-colors"
+              title={dt.toLocaleString()}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-medium">{day}</span>
+                  <span className="mx-1 text-white/40">•</span>
+                  <span>{time}</span>
+                </div>
+                {s.label && <span className="text-xs text-white/60">{s.label}</span>}
+              </div>
+            </button>
+          );
+        })}
     </div>
   );
 }

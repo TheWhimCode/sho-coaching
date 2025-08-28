@@ -1,42 +1,51 @@
 // src/lib/booking/quickPicks.ts
 export type QuickIn = { id: string; startISO: string };
-export type QuickOut = QuickIn & { label: "Soonest" | "Weekend" | "Next week" };
+export type QuickOut = QuickIn & { label?: "ASAP" | "Weekend" }; 
+// label optional now
 
 export function computeQuickPicks(slots: QuickIn[], now = new Date()): QuickOut[] {
-  const sorted = [...slots].sort(
+  // ✅ only consider slots aligned to :00 / :30
+  const aligned = slots.filter((s) => {
+    const m = new Date(s.startISO).getMinutes();
+    return m === 0 || m === 30;
+  });
+
+  const sorted = [...aligned].sort(
     (a, b) => new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
   );
   if (!sorted.length) return [];
 
-  const soonest = sorted[0];
-  const soonestTs = new Date(soonest.startISO).getTime();
+  const out: QuickOut[] = [];
 
+  // 1) Soonest
+  const ASAP = sorted[0];
+  out.push({ ...ASAP, label: "ASAP" });
+
+  const ASAPTs = new Date(ASAP.startISO).getTime();
+
+  // 2) Weekend
   const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
-
-  // Weekend: first Sat/Sun strictly after the soonest slot
   const wknd = sorted.find((s) => {
     const d = new Date(s.startISO);
-    return d.getTime() > soonestTs && isWeekend(d);
+    return d.getTime() > ASAPTs && isWeekend(d);
   });
+  if (wknd) out.push({ ...wknd, label: "Weekend" });
 
-  // Next week: first slot on/after start-of-today + 7 days, strictly after soonest
+  // 3) In 4+ days (no label)
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
-  const nextWeekThreshold = new Date(startOfToday);
-  nextWeekThreshold.setDate(startOfToday.getDate() + 7);
-  const nextWeekTs = nextWeekThreshold.getTime();
+  const threshold = new Date(startOfToday);
+  threshold.setDate(startOfToday.getDate() + 4); // >= 4 days after today
+  const thresholdTs = threshold.getTime();
 
-  const nxtWeek = sorted.find((s) => {
+  const fourPlus = sorted.find((s) => {
     const t = new Date(s.startISO).getTime();
-    return (
-      t >= nextWeekTs &&
-      t > soonestTs &&
-      (!wknd || s.id !== wknd.id)
-    );
+    return t >= thresholdTs && t > ASAPTs && (!wknd || s.id !== wknd.id);
   });
+  if (fourPlus) out.push({ ...fourPlus }); // 👈 no label here
 
-  const out: QuickOut[] = [{ ...soonest, label: "Soonest" }];
-  if (wknd) out.push({ ...wknd, label: "Weekend" });
-  if (nxtWeek) out.push({ ...nxtWeek, label: "Next week" });
-  return out;
+  // ✅ Sort by actual date so order always feels natural
+  return out.sort(
+    (a, b) => new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
+  );
 }

@@ -1,11 +1,11 @@
-// e.g. src/lib/stripe/appearanceDarkBrand.ts
+// src/lib/checkout/stripeAppearance.ts
 import type { Appearance } from "@stripe/stripe-js";
 
 export const appearanceDarkBrand: Appearance = {
   theme: "night",
   variables: {
     colorPrimary: "#fc8803",
-    colorBackground: "#151527ff",
+    colorBackground: "#0e1527",
     colorText: "rgba(255,255,255,0.92)",
     colorTextSecondary: "rgba(255,255,255,0.65)",
     colorDanger: "#ff6b6b",
@@ -14,12 +14,21 @@ export const appearanceDarkBrand: Appearance = {
     fontSizeBase: "15px",
   },
   rules: {
+    // Wrapper around methods
     ".Tab, .Block": {
       padding: "20px 20px",
-      backgroundColor: "rgba(255,255,255,0.04)",
+      backgroundColor: "#0e1527",
       borderColor: "rgba(146,180,255,0.18)",
     },
-    ".Tab": { minHeight: "40px" },
+    ".Tab--selected": { backgroundColor: "#0e1527" },
+
+    // Inner selected panel
+    ".Block--highlight": {
+      backgroundColor: "#0e1527",
+      borderColor: "rgba(146,180,255,0.22)",
+    },
+
+    // Inputs
     ".Input": {
       padding: "14px 14px",
       backgroundColor: "rgba(255,255,255,0.05)",
@@ -27,19 +36,15 @@ export const appearanceDarkBrand: Appearance = {
       boxShadow: "none",
     },
     ".Input:focus": { borderColor: "rgba(252,136,3,0.6)" },
+    ".Input--invalid": { borderColor: "rgba(146,180,255,0.22)", boxShadow: "none" },
+
     ".Button": { padding: "12px 14px", borderRadius: "12px" },
     ".Label": { fontSize: "13px", color: "rgba(255,255,255,0.75)" },
-    ".Text":  { fontSize: "14px", color: "rgba(255,255,255,0.88)" },
-    ".Block--highlight": {
-      backgroundColor: "rgba(15,29,55,0.55)",
-      borderColor: "rgba(105,168,255,0.25)",
-    },
+    ".Text": { fontSize: "14px", color: "rgba(255,255,255,0.88)" },
 
-    // 🔴 Only red inputs; hide helper text
+    // Hide helper/error text
     ".Error": { display: "none" },
-    ".Input--invalid": {
-      borderColor: "#ff6b6b",
-      boxShadow: "0 0 0 1px #ff6b6b inset",
-    },
+    ".ErrorIcon": { display: "none" },
+    ".Text--error": { display: "none" },
   },
 };

@@ -17,6 +17,8 @@ type Props = {
   className?: string;
   layoutId?: string;
   liveBlocks?: number; // 0..2 (45m each)
+  /** Selected start time of the session (local Date) */
+  selectedDate?: Date | null;
 };
 
 const TICK_H = 8;
@@ -76,6 +78,7 @@ export default function SessionBlock({
   className = "",
   layoutId,
   liveBlocks = 0,
+  selectedDate = null,
 }: Props) {
   const totalMinutes = minutes + liveBlocks * 45;
   const preset = getPreset(minutes, followups, liveBlocks);
@@ -102,6 +105,21 @@ export default function SessionBlock({
     preset === "instant" ? "Instant Insight" :
     preset === "signature" ? "Signature Session" :
     "Custom Session";
+
+  const dateLabel = useMemo(() => {
+    if (!selectedDate) return null;
+    try {
+      return selectedDate.toLocaleString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return null;
+    }
+  }, [selectedDate]);
 
   return (
     <div
@@ -143,8 +161,17 @@ export default function SessionBlock({
         <SessionIcon preset={preset} color={ring} glow={glow} />
       </div>
 
-      {/* Header */}
-      <div className="text-xs uppercase tracking-wide text-white/65 mb-2">Session</div>
+      {/* Header row: 'Session' on the left; selected date on the right, same style */}
+      <div className="mb-2 flex items-center justify-between pr-10">
+        <div className="text-xs uppercase tracking-wide text-white/65">Session</div>
+        {dateLabel && (
+          <div className="text-xs uppercase tracking-wide text-white/65 text-right">
+            {dateLabel}
+          </div>
+        )}
+      </div>
+
+      {/* Title */}
       <h3 className="text-2xl font-extrabold tracking-tight">{displayTitle}</h3>
 
       {/* Meta */}
