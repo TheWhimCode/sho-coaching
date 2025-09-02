@@ -1,4 +1,3 @@
-// src/app/checkout/CheckoutClient.tsx
 "use client";
 
 import { useEffect, useMemo } from "react";
@@ -48,20 +47,12 @@ const EASE: [number, number, number, number] = [0.22, 0.61, 0.36, 1];
 
 const pageSlide: Variants = {
   hidden: { x: 28, opacity: 0 },
-  show: {
-    x: 0,
-    opacity: 1,
-    transition: { duration: 0.5, ease: EASE },
-  },
+  show: { x: 0, opacity: 1, transition: { duration: 0.5, ease: EASE } },
 };
 
 const rightCol: Variants = {
   hidden: { y: 14, opacity: 0 },
-  show: {
-    y: 0,
-    opacity: 1,
-    transition: { duration: 0.42, ease: EASE },
-  },
+  show: { y: 0, opacity: 1, transition: { duration: 0.42, ease: EASE } },
 };
 
 export default function CheckoutClient() {
@@ -138,34 +129,26 @@ export default function CheckoutClient() {
       variants={pageSlide}
       initial="hidden"
       animate={pageCtrl}
-      className="
-        relative isolate min-h-screen
-        pt-12 md:pt-16 lg:pt-20 pb-10
-        text-white
-        overflow-x-hidden overflow-y-hidden
-      "
+      className="relative isolate min-h-screen pt-12 md:pt-16 lg:pt-20 pb-10 text-white overflow-x-hidden overflow-y-hidden"
     >
-      {/* === Background (horizontal gradient, subtle brightness on right) === */}
+      {/* Background */}
       <div className="absolute inset-0 -z-10 pointer-events-none isolate overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070f_0%,#070c18_40%,#0c1528_70%,#16264a_100%)]" />
         <div className="absolute inset-0 [mask-image:radial-gradient(80%_80%_at_50%_50%,black,transparent)] bg-black/60" />
       </div>
 
-      {/* === Content === */}
+      {/* Content */}
       <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
         <div className="flex justify-center">
           <div className="inline-grid lg:grid-cols-[minmax(0,1fr)_auto_420px] gap-8 items-start lg:justify-items-stretch min-h-[70vh]">
-            {/* Left column (nudged left on large screens) */}
             <div className="w-full lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
               <UsefulToKnow />
             </div>
 
-            {/* Divider */}
             <div className="hidden lg:flex items-stretch mx-2 px-4">
               <div className="w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
             </div>
 
-            {/* Right column (fixed width, aligned right) */}
             <motion.div
               variants={rightCol}
               initial="hidden"

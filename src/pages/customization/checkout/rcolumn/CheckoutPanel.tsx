@@ -1,17 +1,18 @@
-// src/pages/customization/checkout/rcolumn/CheckoutPanel.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
+import dynamic from "next/dynamic";
 
 import SessionBlock from "@/pages/customization/components/SessionBlock";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 
+// Keep Choose/Contact/Summary SSR-safe; make PayDetails client-only (Stripe)
 import StepContact from "./checkoutSteps/StepContact";
 import StepChoose from "./checkoutSteps/StepChoose";
-import StepPayDetails from "./checkoutSteps/StepPayDetails";
+const StepPayDetails = dynamic(() => import("./checkoutSteps/StepPayDetails"), { ssr: false });
 import StepSummary from "./checkoutSteps/StepSummary";
 
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
@@ -47,6 +48,19 @@ type SavedCard = {
   exp_year: number | null;
 };
 
+// ✅ Default safe payload for SSR
+const DEFAULT_PAYLOAD: Payload = {
+  slotId: "",
+  sessionType: "",
+  baseMinutes: 60,
+  liveMinutes: 60,
+  followups: 0,
+  liveBlocks: 0,
+  discord: "",
+  preset: "",
+  holdKey: "",
+};
+
 export default function CheckoutPanel({
   payload,
   breakdown,
@@ -56,17 +70,14 @@ export default function CheckoutPanel({
 }: Props) {
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
 
+  // ✅ Merge defaults with real payload
+  const safePayload: Payload = { ...DEFAULT_PAYLOAD, ...payload };
+
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
 
-  const goNext = () => {
-    setDir(1);
-    setStep((s) => (s === 3 ? 3 : (s + 1) as 0 | 1 | 2 | 3));
-  };
-  const goBack = () => {
-    setDir(-1);
-    setStep((s) => (s === 0 ? 0 : (s - 1) as 0 | 1 | 2 | 3));
-  };
+  const goNext = () => { setDir(1); setStep((s) => (s === 3 ? 3 : (s + 1) as 0 | 1 | 2 | 3)); };
+  const goBack = () => { setDir(-1); setStep((s) => (s === 0 ? 0 : (s - 1) as 0 | 1 | 2 | 3)); };
 
   // Contact state
   const [email, setEmail] = useState("");
@@ -110,7 +121,7 @@ export default function CheckoutPanel({
   const [piId, setPiId] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
 
-  // NEW: saved PaymentMethod (for summary + back navigation)
+  // Saved PaymentMethod
   const [cardPmId, setCardPmId] = useState<string | null>(null);
   const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
 
@@ -122,7 +133,7 @@ export default function CheckoutPanel({
     setPayMethod(m);
     currentMethodRef.current = m;
 
-    // reset all Stripe state on method change
+    // reset Stripe state on method change
     setClientSecret(null);
     setPiId(null);
     setCardPmId(null);
@@ -167,19 +178,13 @@ export default function CheckoutPanel({
   useEffect(() => {
     function coerceToDate(v: unknown): Date | null {
       if (v == null) return null;
-      if (typeof v === "number") {
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? null : d;
-      }
-      if (typeof v === "string") {
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? null : d;
-      }
+      if (typeof v === "number") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+      if (typeof v === "string") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
       return null;
     }
 
     const fromPayloadBackend = coerceToDate(payloadForBackend?.startTime);
-    const fromPayload = coerceToDate((payload as any)?.startTime);
+    const fromPayload = coerceToDate((safePayload as any)?.startTime);
 
     if (fromPayloadBackend) { setSelectedStart(fromPayloadBackend); return; }
     if (fromPayload) { setSelectedStart(fromPayload); return; }
@@ -214,132 +219,132 @@ export default function CheckoutPanel({
         <div className="relative space-y-3">
           <SessionBlock
             layoutId="session-block"
-            minutes={payload.baseMinutes}
-            liveBlocks={payload.liveBlocks}
-            followups={payload.followups}
+            minutes={safePayload.baseMinutes}
+            liveBlocks={safePayload.liveBlocks}
+            followups={safePayload.followups}
             priceEUR={breakdown.total}
             isActive
             className="mb-5 md:mb-6 relative"
             selectedDate={selectedStart}
           />
 
-        <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
+          <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-        <div className="relative min-h-[440px] md:min-h-[440px] overflow-visible pt-1">
-          <AnimatePresence custom={dir} mode="wait" initial={false}>
-            {step === 0 && (
-              <motion.div
-                key="step-contact"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0 h-full flex flex-col"
-              >
-                <StepContact
-                  email={email}
-                  discord={discord}
-                  notes={notes}
-                  setEmail={setEmail}
-                  setDiscord={setDiscord}
-                  setNotes={setNotes}
-                  contactErr={contactErr}
-                  emailInputRef={emailRef}
-                  discordInputRef={discordRef}
-                  onSubmit={() => validateContact() && goNext()}
-                />
-              </motion.div>
-            )}
-
-            {step === 1 && (
-              <motion.div
-                key="step-choose"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0 h-full flex flex-col"
-              >
-                <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
-              </motion.div>
-            )}
-
-            {step === 2 && (
-              <motion.div
-                key="step-2"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0 h-full flex flex-col"
-              >
-                <StepPayDetails
-                  {...(clientSecret
-                    ? ({
-                        mode: "form",
-                        goBack,
-                        email,
-                        payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
-                        onContinue: goNext,
-                        piId,
-                        stripePromise,
-                        appearance: appearanceToUse,
-                        clientSecret,
-                        setCardPmId,            // NEW
-                        setSavedCard,           // NEW
-                        savedCard,              // NEW
-                      } as const)
-                    : ({
-                        mode: "loading",
-                        goBack,
-                        payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
-                        loadingIntent,
-                        stripePromise,
-                        appearance: appearanceToUse,
-                        clientSecret,
-                      } as const))}
-                />
-              </motion.div>
-            )}
-
-            {step === 3 && clientSecret && (
-              <motion.div
-                key="step-summary"
-                custom={dir}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                className="absolute inset-0 h-full flex flex-col"
-              >
-                <Elements
-                  stripe={stripePromise}
-                  options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
+          <div className="relative min-h-[440px] md:min-h-[440px] overflow-visible pt-1">
+            <AnimatePresence custom={dir} mode="wait" initial={false}>
+              {step === 0 && (
+                <motion.div
+                  key="step-contact"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="absolute inset-0 h-full flex flex-col"
                 >
-                  <StepSummary
-                    goBack={goBack}
-                    payload={payload}
-                    breakdown={breakdown}
-                    payMethod={payMethod || "card"}
+                  <StepContact
                     email={email}
-                    piId={piId}
-                    waiver={waiver}
-                    setWaiver={setWaiver}
-                    clientSecret={clientSecret!}
-                    cardPmId={cardPmId}
+                    discord={discord}
+                    notes={notes}
+                    setEmail={setEmail}
+                    setDiscord={setDiscord}
+                    setNotes={setNotes}
+                    contactErr={contactErr}
+                    emailInputRef={emailRef}
+                    discordInputRef={discordRef}
+                    onSubmit={() => validateContact() && goNext()}
                   />
-                </Elements>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                </motion.div>
+              )}
+
+              {step === 1 && (
+                <motion.div
+                  key="step-choose"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="absolute inset-0 h-full flex flex-col"
+                >
+                  <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
+                </motion.div>
+              )}
+
+              {step === 2 && (
+                <motion.div
+                  key="step-2"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="absolute inset-0 h-full flex flex-col"
+                >
+                  <StepPayDetails
+                    {...(clientSecret
+                      ? ({
+                          mode: "form",
+                          goBack,
+                          email,
+                          payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
+                          onContinue: goNext,
+                          piId,
+                          stripePromise,
+                          appearance: appearanceToUse,
+                          clientSecret,
+                          setCardPmId,
+                          setSavedCard,
+                          savedCard,
+                        } as const)
+                      : ({
+                          mode: "loading",
+                          goBack,
+                          payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
+                          loadingIntent,
+                          stripePromise,
+                          appearance: appearanceToUse,
+                          clientSecret,
+                        } as const))}
+                  />
+                </motion.div>
+              )}
+
+              {step === 3 && clientSecret && (
+                <motion.div
+                  key="step-summary"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="absolute inset-0 h-full flex flex-col"
+                >
+                  <Elements
+                    stripe={stripePromise}
+                    options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
+                  >
+                    <StepSummary
+                      goBack={goBack}
+                      payload={safePayload}
+                      breakdown={breakdown}
+                      payMethod={payMethod || "card"}
+                      email={email}
+                      piId={piId}
+                      waiver={waiver}
+                      setWaiver={setWaiver}
+                      clientSecret={clientSecret!}
+                      cardPmId={cardPmId}
+                    />
+                  </Elements>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Footer badges */}
           <div className="flex items-center gap-3 pt-4 text-white/75">
