@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useElements, useStripe } from "@stripe/react-stripe-js";
-import type { Breakdown } from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/buildBreakdown";
+import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import CardForm from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/CardForm";
 import { ArrowLeft } from "lucide-react";
 

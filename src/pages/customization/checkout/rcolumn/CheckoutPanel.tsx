@@ -7,7 +7,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
 
 import SessionBlock from "@/pages/customization/components/SessionBlock";
-import type { Breakdown } from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/buildBreakdown";
+import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 
 import StepContact from "./checkoutSteps/StepContact";
 import StepChoose from "./checkoutSteps/StepChoose";

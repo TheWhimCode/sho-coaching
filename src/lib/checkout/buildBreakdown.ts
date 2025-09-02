@@ -1,4 +1,3 @@
-// components/checkout/buildBreakdown.ts
 import { computePriceEUR } from "@/lib/pricing";
 
 export type Breakdown = {

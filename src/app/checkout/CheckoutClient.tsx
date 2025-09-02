@@ -5,7 +5,7 @@ import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 import UsefulToKnow from "@/pages/customization/checkout/lcolumn/UsefulToKnow";
-import { buildBreakdown } from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/buildBreakdown";
+import { buildBreakdown } from "@/lib/checkout/buildBreakdown";
 import CheckoutPanel from "@/pages/customization/checkout/rcolumn/CheckoutPanel";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 
