@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
@@ -48,7 +48,6 @@ type SavedCard = {
   exp_year: number | null;
 };
 
-// ✅ Default safe payload for SSR
 const DEFAULT_PAYLOAD: Payload = {
   slotId: "",
   sessionType: "",
@@ -70,8 +69,11 @@ export default function CheckoutPanel({
 }: Props) {
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
 
-  // ✅ Merge defaults with real payload
-  const safePayload: Payload = { ...DEFAULT_PAYLOAD, ...payload };
+  // ✅ Memoized payload to avoid new object every render
+  const safePayload = useMemo(
+    () => ({ ...DEFAULT_PAYLOAD, ...payload }),
+    [payload]
+  );
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
@@ -192,9 +194,11 @@ export default function CheckoutPanel({
     if (typeof window !== "undefined") {
       const s = new URLSearchParams(window.location.search).get("startTime");
       const fromQuery = coerceToDate(s || undefined);
-      if (fromQuery) setSelectedStart(fromQuery);
+      if (fromQuery && (!selectedStart || +selectedStart !== +fromQuery)) {
+        setSelectedStart(fromQuery);
+      }
     }
-  }, [payloadForBackend, payload]);
+  }, [payloadForBackend, safePayload, selectedStart]);
 
   return (
     <div className="relative rounded-2xl isolate">
@@ -222,7 +226,7 @@ export default function CheckoutPanel({
             minutes={safePayload.baseMinutes}
             liveBlocks={safePayload.liveBlocks}
             followups={safePayload.followups}
-            priceEUR={breakdown.total}
+            priceEUR={breakdown?.total ?? 0}
             isActive
             className="mb-5 md:mb-6 relative"
             selectedDate={selectedStart}
