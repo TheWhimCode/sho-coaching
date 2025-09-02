@@ -6,9 +6,9 @@ type InputRef =
   | React.RefObject<HTMLInputElement>;
 
 type Props = {
-  email: string;
-  discord: string;
-  notes: string;
+  email?: string;                // ← may be undefined on first render
+  discord?: string;              // ← same
+  notes?: string;
   setEmail: (v: string) => void;
   setDiscord: (v: string) => void;
   setNotes: (v: string) => void;
@@ -22,7 +22,6 @@ function isValidEmail(v: string) {
   const s = v.trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
-
 function isValidDiscord(v: string) {
   const s = v.trim();
   const newStyle = /^[a-z0-9._]{2,32}$/.test(s);
@@ -42,10 +41,15 @@ export default function StepContact({
   discordInputRef,
   onSubmit,
 }: Props) {
+  // ✅ safe defaults so .trim() never crashes
+  const emailVal = email ?? "";
+  const discordVal = discord ?? "";
+  const notesVal = notes ?? "";
+
   const [submitted, setSubmitted] = React.useState(false);
 
-  const emailInvalid = email.trim() === "" || !isValidEmail(email);
-  const discordInvalid = discord.trim() === "" || !isValidDiscord(discord);
+  const emailInvalid = emailVal.trim() === "" || !isValidEmail(emailVal);
+  const discordInvalid = discordVal.trim() === "" || !isValidDiscord(discordVal);
 
   const baseInput =
     "mt-1 w-full rounded-lg bg-white/[.05] ring-1 px-4 py-3 text-base text-white/90 outline-none transition";
@@ -66,10 +70,7 @@ export default function StepContact({
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
-
-          if (!emailInvalid && !discordInvalid) {
-            onSubmit();
-          }
+          if (!emailInvalid && !discordInvalid) onSubmit();
         }}
         className="flex-1 flex flex-col"
       >
@@ -79,13 +80,11 @@ export default function StepContact({
             <input
               ref={emailInputRef}
               type="email"
-              value={email}
+              value={emailVal}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email address"
               aria-invalid={submitted && emailInvalid}
-              className={`${baseInput} ${
-                submitted && emailInvalid ? badRing : okRing
-              }`}
+              className={`${baseInput} ${submitted && emailInvalid ? badRing : okRing}`}
             />
           </label>
 
@@ -94,22 +93,18 @@ export default function StepContact({
             <input
               ref={discordInputRef}
               type="text"
-              value={discord}
+              value={discordVal}
               onChange={(e) => setDiscord(e.target.value)}
               placeholder="Discord"
               aria-invalid={submitted && discordInvalid}
-              className={`${baseInput} ${
-                submitted && discordInvalid ? badRing : okRing
-              }`}
+              className={`${baseInput} ${submitted && discordInvalid ? badRing : okRing}`}
             />
           </label>
 
           <label className="block">
-            <span className="text-xs text-white/65">
-              Anything you want me to know
-            </span>
+            <span className="text-xs text-white/65">Anything you want me to know</span>
             <textarea
-              value={notes}
+              value={notesVal}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="(Optional)"
