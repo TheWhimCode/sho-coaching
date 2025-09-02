@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
@@ -48,18 +48,6 @@ type SavedCard = {
   exp_year: number | null;
 };
 
-const DEFAULT_PAYLOAD: Payload = {
-  slotId: "",
-  sessionType: "",
-  baseMinutes: 60,
-  liveMinutes: 60,
-  followups: 0,
-  liveBlocks: 0,
-  discord: "",
-  preset: "",
-  holdKey: "",
-};
-
 export default function CheckoutPanel({
   payload,
   breakdown,
@@ -69,11 +57,19 @@ export default function CheckoutPanel({
 }: Props) {
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
 
-  // ✅ Memoized payload to avoid new object every render
-  const safePayload = useMemo(
-    () => ({ ...DEFAULT_PAYLOAD, ...payload }),
-    [payload]
-  );
+  // ✅ SSR-safe defaults
+  const DEFAULT_PAYLOAD: Payload = {
+    slotId: "",
+    sessionType: "",
+    baseMinutes: 60,
+    liveMinutes: 60,
+    followups: 0,
+    liveBlocks: 0,
+    discord: "",
+    preset: "",
+    holdKey: "",
+  };
+  const safePayload: Payload = { ...DEFAULT_PAYLOAD, ...payload };
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
@@ -194,11 +190,9 @@ export default function CheckoutPanel({
     if (typeof window !== "undefined") {
       const s = new URLSearchParams(window.location.search).get("startTime");
       const fromQuery = coerceToDate(s || undefined);
-      if (fromQuery && (!selectedStart || +selectedStart !== +fromQuery)) {
-        setSelectedStart(fromQuery);
-      }
+      if (fromQuery) setSelectedStart(fromQuery);
     }
-  }, [payloadForBackend, safePayload, selectedStart]);
+  }, [payloadForBackend, safePayload]);
 
   return (
     <div className="relative rounded-2xl isolate">
@@ -288,32 +282,37 @@ export default function CheckoutPanel({
                   transition={{ duration: 0.22, ease: "easeOut" }}
                   className="absolute inset-0 h-full flex flex-col"
                 >
-                  <StepPayDetails
-                    {...(clientSecret
-                      ? ({
-                          mode: "form",
-                          goBack,
-                          email,
-                          payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
-                          onContinue: goNext,
-                          piId,
-                          stripePromise,
-                          appearance: appearanceToUse,
-                          clientSecret,
-                          setCardPmId,
-                          setSavedCard,
-                          savedCard,
-                        } as const)
-                      : ({
-                          mode: "loading",
-                          goBack,
-                          payMethod: (payMethod || "card") as "card" | "paypal" | "revolut_pay",
-                          loadingIntent,
-                          stripePromise,
-                          appearance: appearanceToUse,
-                          clientSecret,
-                        } as const))}
-                  />
+                  {clientSecret ? (
+                    <Elements
+                      stripe={stripePromise}
+                      options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
+                    >
+                      <StepPayDetails
+                        mode="form"
+                        goBack={goBack}
+                        email={email}
+                        payMethod={(payMethod || "card") as "card" | "paypal" | "revolut_pay"}
+                        onContinue={goNext}
+                        piId={piId}
+                        stripePromise={stripePromise}
+                        appearance={appearanceToUse}
+                        clientSecret={clientSecret}
+                        setCardPmId={setCardPmId}
+                        setSavedCard={setSavedCard}
+                        savedCard={savedCard}
+                      />
+                    </Elements>
+                  ) : (
+                    <StepPayDetails
+                      mode="loading"
+                      goBack={goBack}
+                      payMethod={(payMethod || "card") as "card" | "paypal" | "revolut_pay"}
+                      loadingIntent={loadingIntent}
+                      stripePromise={stripePromise}
+                      appearance={appearanceToUse}
+                      clientSecret={clientSecret}
+                    />
+                  )}
                 </motion.div>
               )}
 
