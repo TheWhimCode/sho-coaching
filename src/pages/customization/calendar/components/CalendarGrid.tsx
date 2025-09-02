@@ -15,7 +15,7 @@ import { useMemo } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 type Props = {
-  month: Date;
+  month: Date | string | number | null | undefined; // widened: SSR may pass a string/number
   onMonthChange: (m: Date) => void;
   selectedDate: Date | null;
   onSelectDate: (d: Date) => void;
@@ -26,6 +26,15 @@ type Props = {
   loading: boolean;
   error: string | null;
 };
+
+function toValidDate(v: unknown, fallback = new Date()) {
+  const d =
+    v instanceof Date ? v :
+    typeof v === "string" ? new Date(v) :
+    typeof v === "number" ? new Date(v) :
+    new Date(NaN);
+  return Number.isNaN(d.getTime()) ? fallback : d;
+}
 
 function dayKeyLocal(d: Date) {
   const y = d.getFullYear();
@@ -44,9 +53,12 @@ export default function CalendarGrid({
   loading,
   error,
 }: Props) {
+  // ✅ Ensure we always work with a valid Date at runtime
+  const safeMonth = toValidDate(month);
+
   const days = useMemo(() => {
-    const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-    const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
+    const start = startOfWeek(startOfMonth(safeMonth), { weekStartsOn: 1 });
+    const end = endOfWeek(endOfMonth(safeMonth), { weekStartsOn: 1 });
     const arr: Date[] = [];
     const cur = new Date(start);
     while (cur <= end) {
@@ -54,21 +66,21 @@ export default function CalendarGrid({
       cur.setDate(cur.getDate() + 1);
     }
     return arr;
-  }, [month]);
+  }, [safeMonth]);
 
   return (
     <div className="text-white">
       {/* header */}
       <div className="flex items-center justify-between mb-3">
         <button
-          onClick={() => onMonthChange(addMonths(month, -1))}
+          onClick={() => onMonthChange(addMonths(safeMonth, -1))}
           className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0d1b34] hover:bg-[#12264a] ring-1 ring-[rgba(146,180,255,.22)] text-white/90"
         >
           <ArrowLeft size={16} />
         </button>
-        <div className="font-semibold">{format(month, "MMMM yyyy")}</div>
+        <div className="font-semibold">{format(safeMonth, "MMMM yyyy")}</div>
         <button
-          onClick={() => onMonthChange(addMonths(month, 1))}
+          onClick={() => onMonthChange(addMonths(safeMonth, 1))}
           className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0d1b34] hover:bg-[#12264a] ring-1 ring-[rgba(146,180,255,.22)] text-white/90"
         >
           <ArrowRight size={16} />
@@ -103,7 +115,7 @@ export default function CalendarGrid({
                 : hasAvailLegacy;
 
               const selected = !!selectedDate && isSameDay(d, selectedDate);
-              const outside = !isSameMonth(d, month);
+              const outside = !isSameMonth(d, safeMonth);
               const today = isToday(d);
 
               // booking window: tomorrow through +14 days (inclusive)
