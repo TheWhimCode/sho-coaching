@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../../../utils/sessionConfig";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
-import DualWipeLR from "@/components/DualWipeLR";
 
 /* ---------- Icons use shared palette ---------- */
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {

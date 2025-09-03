@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import PaymentChooser from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/PaymentChooser";
+import PaymentChooser from "@/app/checkout/_components/checkout-steps/step-components/PaymentChooser";
 import { ArrowLeft } from "lucide-react";
 
 

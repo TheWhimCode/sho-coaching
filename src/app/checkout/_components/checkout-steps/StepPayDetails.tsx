@@ -9,8 +9,8 @@ import {
 } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
 
-import CardForm from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/CardForm";
-import PaymentSkeleton from "@/pages/customization/checkout/rcolumn/checkoutSteps/stepcomponents/PaymentSkeleton";
+import CardForm from "@/app/checkout/_components/checkout-steps/step-components/CardForm";
+import PaymentSkeleton from "@/app/checkout/_components/checkout-steps/step-components/PaymentSkeleton";
 import { ArrowLeft, CreditCard } from "lucide-react";
 
 type Method = "card" | "paypal" | "revolut_pay";

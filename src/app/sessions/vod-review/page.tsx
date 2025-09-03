@@ -1,4 +1,4 @@
-import VODReviewClient from "../../../pages/customization/Client";
+import VODReviewClient from "../../customize/Client";
 export default function Page() {
   return <VODReviewClient />;
 }

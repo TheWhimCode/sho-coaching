@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
 import dynamic from "next/dynamic";
 
-import SessionBlock from "@/pages/customization/components/SessionBlock";
+import SessionBlock from "@/app/customize/_components/SessionBlock";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 
 // Keep Choose/Contact/Summary SSR-safe; make PayDetails client-only (Stripe)
-import StepContact from "./checkoutSteps/StepContact";
-import StepChoose from "./checkoutSteps/StepChoose";
-const StepPayDetails = dynamic(() => import("./checkoutSteps/StepPayDetails"), { ssr: false });
-import StepSummary from "./checkoutSteps/StepSummary";
+import StepContact from "./checkout-steps/StepContact";
+import StepChoose from "./checkout-steps/StepChoose";
+const StepPayDetails = dynamic(() => import("./checkout-steps/StepPayDetails"), { ssr: false });
+import StepSummary from "./checkout-steps/StepSummary";
 
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 
@@ -69,7 +69,12 @@ export default function CheckoutPanel({
     preset: "",
     holdKey: "",
   };
-  const safePayload: Payload = { ...DEFAULT_PAYLOAD, ...payload };
+
+  // ✅ FIX: memoize to avoid a new object each render
+  const safePayload: Payload = useMemo(
+    () => ({ ...DEFAULT_PAYLOAD, ...payload }),
+    [payload]
+  );
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);

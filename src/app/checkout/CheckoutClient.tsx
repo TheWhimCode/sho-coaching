@@ -3,9 +3,9 @@
 import { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
-import UsefulToKnow from "@/pages/customization/checkout/lcolumn/UsefulToKnow";
+import UsefulToKnow from "@/app/checkout/_components/UsefulToKnow";
 import { buildBreakdown } from "@/lib/checkout/buildBreakdown";
-import CheckoutPanel from "@/pages/customization/checkout/rcolumn/CheckoutPanel";
+import CheckoutPanel from "@/app/checkout/_components/CheckoutPanel";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 
 import { loadStripe } from "@stripe/stripe-js";

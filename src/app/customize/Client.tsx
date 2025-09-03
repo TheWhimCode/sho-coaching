@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SessionHero from "@/pages/customization/SessionHero";
-import CalLikeOverlay from "@/pages/customization/calendar/Calendar";
-import CustomizeDrawer from "@/pages/customization/components/CustomizeDrawer";
+import SessionHero from "@/app/customize/SessionHero";
+import CalLikeOverlay from "@/app/calendar/Calendar";
+import CustomizeDrawer from "@/app/customize/_components/CustomizeDrawer";
 import { AnimatePresence, LayoutGroup } from "framer-motion";
 import type { Cfg } from "../../utils/sessionConfig";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";

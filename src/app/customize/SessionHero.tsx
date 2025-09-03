@@ -4,13 +4,13 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Slot as UiSlot } from "@/components/AvailableSlots";
-import CenterSessionPanel from "@/pages/customization/components/CenterSessionPanel";
+import CenterSessionPanel from "@/app/customize/_components/CenterSessionPanel";
 import { fetchSuggestedStarts } from "@/lib/booking/suggest";
 import { SlotStatus } from "@prisma/client";
 import { computeQuickPicks } from "@/lib/booking/quickPicks";
 import { fetchSlots } from "@/utils/api";
-import LeftSteps from "@/pages/customization/components/LeftSteps";
-import RightBookingPanel from "@/pages/customization/components/RightBooking";
+import LeftSteps from "@/app/customize/_components/LeftSteps";
+import RightBookingPanel from "@/app/customize/_components/RightBooking";
 import { getPreset } from "@/lib/sessions/preset";
 import { stepsByPreset } from "@/lib/sessions/steps";
 import { titlesByPreset, taglinesByPreset } from "@/lib/sessions/labels";
