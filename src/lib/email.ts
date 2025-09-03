@@ -4,12 +4,41 @@ import { CFG_SERVER } from "@/lib/config.server";
 import { CFG_PUBLIC } from "@/lib/config.public";
 
 let resendInstance: any;
+
 async function getResend() {
   if (!resendInstance) {
     const { Resend } = await import("resend");
     resendInstance = new Resend(CFG_SERVER.RESEND_API_KEY);
   }
   return resendInstance;
+}
+
+/** Accepts "email@example.com" OR "Name <email@example.com>".
+ *  Also accepts arrays and filters empties. Throws on invalids. */
+function normalizeRecipient(
+  input?: string | string[]
+): string | string[] {
+  if (!input) throw new Error("Missing recipient email");
+
+  const arr = (Array.isArray(input) ? input : [input])
+    .map((s) => (s ?? "").trim())
+    .filter(Boolean);
+
+  if (arr.length === 0) throw new Error("Missing recipient email");
+
+  const cleaned = arr.map((s) => {
+    // Allow "Name <email>" or plain "email"
+    const nameAddr = s.match(/^(.+?)<(.+?)>$/);
+    const addr = (nameAddr ? nameAddr[2] : s).trim();
+
+    // very light check; Resend will do full validation
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) {
+      throw new Error(`Invalid recipient: ${s}`);
+    }
+    return nameAddr ? `${nameAddr[1].trim()} <${addr}>` : addr;
+  });
+
+  return cleaned.length === 1 ? cleaned[0] : cleaned;
 }
 
 type BookingEmailInput = {
@@ -19,11 +48,14 @@ type BookingEmailInput = {
   followups: number;
   priceEUR: number;
   bookingId: string;
-  replyTo?: string;
-  timeZone?: string; // defaults to server tz
+  replyTo?: string | string[];
+  timeZone?: string; // defaults to server tz if omitted
 };
 
-export async function sendBookingEmail(to: string, input: BookingEmailInput) {
+export async function sendBookingEmail(
+  to: string | string[],
+  input: BookingEmailInput
+) {
   const {
     title,
     startISO,
@@ -51,18 +83,26 @@ export async function sendBookingEmail(to: string, input: BookingEmailInput) {
 
   const html = `
     <h2 style="margin:0 0 12px">${title}</h2>
-    <p><b>When:</b> ${whenStr}</p>
-    <p><b>Duration:</b> ${minutes} min · <b>Follow-ups:</b> ${followups}</p>
+    <p><b>When:</b> ${whenStr}${
+      timeZone ? ` <span style="color:#667085">• ${timeZone}</span>` : ""
+    }</p>
+    <p><b>Duration:</b> ${minutes} min${
+      input.followups > 0
+        ? ` · <b>Follow-ups:</b> ${followups}`
+        : ""
+    }</p>
     <p><b>Price:</b> €${priceEUR}</p>
     <p style="margin-top:16px">
-      <a href="${icsUrl}">Add to calendar (.ics)</a>
+      <a href="${icsUrl}">Add to calendar</a>
     </p>
   `;
 
   const text =
     `${title}\n` +
-    `When: ${whenStr}\n` +
-    `Duration: ${minutes} min · Follow-ups: ${followups}\n` +
+    `When: ${whenStr}${timeZone ? ` • ${timeZone}` : ""}\n` +
+    `Duration: ${minutes} min${
+      input.followups > 0 ? ` · Follow-ups: ${followups}` : ""
+    }\n` +
     `Price: €${priceEUR}\n` +
     `Add to calendar: ${icsUrl}`;
 
@@ -70,16 +110,17 @@ export async function sendBookingEmail(to: string, input: BookingEmailInput) {
 
   try {
     const res = await resend.emails.send({
-      from: CFG_SERVER.EMAIL_FROM, // e.g. "Bookings <bookings@yourdomain.com>"
-      to,
-      replyTo,
+      from: CFG_SERVER.EMAIL_FROM, // e.g. "Bookings <bookings@yourdomain.com>" (verified domain)
+      to: normalizeRecipient(to),
+      ...(replyTo ? { replyTo: normalizeRecipient(replyTo) } : {}),
       subject: `Your booking confirmed — ${title}`,
       html,
       text,
     });
-    return res; // contains id/status for logging
-  } catch (err) {
-    // Surface a concise error message up the stack
-    throw new Error(`Email send failed: ${String((err as any)?.message || err)}`);
+    return res; // id/status for logging
+  } catch (err: any) {
+    // Surface concise message and keep original for logs
+    const msg = err?.message || String(err);
+    throw new Error(`Email send failed: ${msg}`);
   }
 }

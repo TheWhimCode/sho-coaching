@@ -7,50 +7,27 @@ import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../../../utils/sessio
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 
+/* NEW: icon imports (match SessionBlock) */
+import { Signature, Scroll, Lightning, PuzzlePiece } from "@phosphor-icons/react";
 /* ---------- Icons use shared palette ---------- */
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const { ring, glow } = colorsByPreset[preset];
-  const common = {
-    width: size,
-    height: size,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    style: { filter: `drop-shadow(0 0 8px ${glow})` },
-  } as const;
+  const style = { filter: `drop-shadow(0 0 8px ${glow})` } as const;
 
   if (preset === "vod") {
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="12" r="6.5" stroke={ring} strokeWidth="1.8" />
-        <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke={ring} strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-    );
+    // Deep knowledge ⇒ Scroll
+    return <Scroll size={size} weight="fill" color={ring} style={style} aria-hidden />;
   }
   if (preset === "instant") {
-    return (
-      <svg {...common}>
-        <path d="M13 2L6 13h5l-1 9 7-11h-5l1-9Z" fill={ring} opacity=".95" />
-      </svg>
-    );
+    // Instant ⇒ Lightning
+    return <Lightning size={size} weight="fill" color={ring} style={style} aria-hidden />;
   }
   if (preset === "signature") {
-    return (
-      <svg {...common}>
-        <path
-          d="M12 3c1.5 2.2 2 3.9 2 5.2 0 1.6-.7 2.7-1.9 3.5.2-1.6-.5-3.2-2.1-4.7-.2 1.3-.7 2.3-1.5 3.1C7.5 11.1 7 12.1 7 13.5 7 16.5 9.2 19 12 19s5-2.5 5-5.5c0-3.5-2.3-6-5-10.5Z"
-          fill={ring}
-          opacity=".95"
-        />
-      </svg>
-    );
+    // Signature ⇒ Blaze (fill only)
+    return <Signature size={size} weight="bold" color={ring} style={style} aria-hidden />;
   }
-  // custom
-  return (
-    <svg {...common}>
-      <path d="M12 4l1.2 2.6L16 8l-2.8 1.4L12 12l-1.2-2.6L8 8l2.8-1.4L12 4Z" fill={ring} />
-      <path d="M18 12l.7 1.6L20 14l-1.3.4L18 16l-.7-1.6L16 14l1.3-.4L18 12Z" fill={ring} opacity=".95" />
-    </svg>
-  );
+  // custom ⇒ Puzzle piece
+  return <PuzzlePiece size={size} weight="fill" color={ring} style={style} aria-hidden />;
 }
 
 /* ---------- Unified +/- 15 logic ---------- */

@@ -1,6 +1,8 @@
 // src/pages/customization/checkout/lcolumn/UsefulToKnow.tsx
 "use client";
 
+import { DiscordLogo, Target, FilmReel } from "@phosphor-icons/react";
+
 export default function UsefulToKnow() {
   return (
     <aside
@@ -21,19 +23,19 @@ export default function UsefulToKnow() {
           color="sky"
           title="Join Discord"
           description="You will meet with Sho on his Discord server, make sure you join! You’ll find some additional resources there as well. Before your session, double-check your mic & audio."
-          icon={<HeadsetIcon className="h-5 w-5" />}
+          icon={<DiscordLogo size={20} weight="regular" />}
         />
         <PrepItem
           color="violet"
           title="Know your goal"
           description="Ask yourself the most important question: Why are you getting coaching? Sho will ask you this. If you know exactly what you want, he will be able to tailor the session to your goals."
-          icon={<TargetIcon className="h-5 w-5" />}
+          icon={<Target size={20} weight="regular" />}
         />
         <PrepItem
           color="orange"
           title="Bring a POV"
           description="Record your point of view of the game you want to review. This way you’ll be able to review the game from your own perspective. There are many softwares to make this easy: Insights.gg, Outplayed, Replays.gg. Upload to Google Drive/Youtube for smooth playback."
-          icon={<VideoIcon className="h-5 w-5" />}
+          icon={<FilmReel size={20} weight="regular" />}
         />
       </ul>
     </aside>
@@ -72,36 +74,5 @@ function PrepItem({
         <p>{description}</p>
       </div>
     </li>
-  );
-}
-
-/* Icons */
-function HeadsetIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path
-        d="M12 4a8 8 0 00-8 8v4a2 2 0 002 2h2v-6H6v-2a6 6 0 0112 0v2h-2v6h2a2 2 0 002-2v-4a8 8 0 00-8-8z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-function TargetIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-function VideoIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <rect x="3" y="5" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M17 10l4-2v8l-4-2v-4z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    </svg>
   );
 }

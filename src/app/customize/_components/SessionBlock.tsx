@@ -7,7 +7,7 @@ import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 
 // Icon libs
-import { Atom, Lightning, PuzzlePiece } from "@phosphor-icons/react";
+import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react";
 import BlazeFillIcon from "remixicon-react/BlazeFillIcon";
 
 type Props = {
@@ -28,26 +28,35 @@ type Props = {
 const TICK_H = 8;
 const TOTAL_TICKS = 6;
 const clampN = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
-
-function SessionIcon({ preset, color, glow }: { preset: Preset; color: string; glow: string }) {
-  const size = 26; // same size
+function SessionIcon({
+  preset,
+  color,
+  glow,
+}: {
+  preset: Preset;
+  color: string;
+  glow: string;
+}) {
+  const size = 26;
   const glowStyle = glow ? { filter: `drop-shadow(0 0 8px ${glow})` } : undefined;
 
   if (preset === "vod") {
-    // Deep knowledge ⇒ Atom
-    return <Atom size={size} weight="light" color={color} style={glowStyle} aria-hidden />;
+    // Deep knowledge ⇒ Scroll (filled)
+    return <Scroll size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
   }
   if (preset === "instant") {
-    // Instant ⇒ Lightning
-    return <Lightning size={size} weight="light" color={color} style={glowStyle} aria-hidden />;
+    // Instant ⇒ Lightning (filled)
+    return <Lightning size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
   }
   if (preset === "signature") {
-    // Signature ⇒ Blaze (fill only)
-    return <BlazeFillIcon size={size} color={color} style={glowStyle} aria-hidden />;
+    // Signature ⇒ Signature (filled)
+    return <Signature size={size} weight="bold" color={color} style={glowStyle} aria-hidden />;
   }
-  // Custom ⇒ Puzzle piece
-  return <PuzzlePiece size={size} weight="light" color={color} style={glowStyle} aria-hidden />;
+  // Custom ⇒ Puzzle piece (filled)
+  return <PuzzlePiece size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
 }
+
+
 
 export default function SessionBlock({
   title,

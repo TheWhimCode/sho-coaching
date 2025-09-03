@@ -1,13 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
+import { sendBookingEmail } from "@/lib/email";
 
 export type FinalizeMeta = {
   slotId?: string;
   slotIds?: string; // CSV
   sessionType?: string;
   liveMinutes?: string;
-  discord?: string;
   followups?: string;
+  discord?: string;
+  email?: string;       // from checkout/stripe
+  timeZone?: string;    // e.g. "Europe/Berlin"
 };
 
 export async function finalizeBooking(
@@ -25,18 +28,23 @@ export async function finalizeBooking(
 
   const sessionType = meta.sessionType ?? "Session";
   const liveMinutes = parseInt(meta.liveMinutes ?? "60", 10);
-  const discord = meta.discord ?? "";
   const followups = parseInt(meta.followups ?? "0", 10);
+  const discord = meta.discord ?? "";
+
+  // capture ISO string to avoid Date typing issues
+  let scheduledStartISO: string | null = null;
+  let processed = false;
 
   await prisma.$transaction(async (tx) => {
-    // Idempotency guard
+    // idempotency guard
     try {
       await tx.processedEvent.create({ data: { id: paymentRef } });
+      processed = true;
     } catch {
       return; // already processed
     }
 
-    // Mark slots taken + clear holds
+    // mark slots
     if (slotIds.length) {
       await tx.slot.updateMany({
         where: { id: { in: slotIds }, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
@@ -49,16 +57,19 @@ export async function finalizeBooking(
       });
     }
 
-    // Snapshot schedule
+    // snapshot schedule
     const startSlot = await tx.slot.findUnique({
       where: { id: firstSlotId },
       select: { startTime: true },
     });
     if (!startSlot) throw new Error("slot not found");
 
-    // ✅ Upsert by paymentRef (unique) and connect the slot relation
+    // save ISO now (no more toISOString() later)
+    scheduledStartISO = new Date(startSlot.startTime as unknown as Date).toISOString();
+
+    // upsert booking
     await tx.booking.upsert({
-      where: { paymentRef }, // idempotent key
+      where: { paymentRef },
       update: {
         status: "paid",
         amountCents,
@@ -72,13 +83,12 @@ export async function finalizeBooking(
       create: {
         sessionType,
         status: "paid",
-        // 🔽 connect relation instead of slotId scalar
         slot: { connect: { id: firstSlotId } },
         liveMinutes,
         followups,
         discord,
         amountCents,
-        currency: currency ?? "eur",
+        currency: (currency ?? "eur").toLowerCase(),
         blockCsv: slotIds.join(","),
         paymentProvider: provider,
         paymentRef,
@@ -88,4 +98,23 @@ export async function finalizeBooking(
       },
     });
   });
+
+  if (!processed) return;
+
+  // email (best-effort)
+  if (meta.email && scheduledStartISO) {
+    try {
+      await sendBookingEmail(meta.email, {
+        title: sessionType,
+        startISO: scheduledStartISO,         // <-- already ISO string
+        minutes: liveMinutes,
+        followups,
+        priceEUR: (amountCents ?? 0) / 100,  // no rounding
+        bookingId: paymentRef,
+        timeZone: meta.timeZone,
+      });
+    } catch (e) {
+      console.error("sendBookingEmail failed:", e);
+    }
+  }
 }

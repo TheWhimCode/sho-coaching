@@ -30,7 +30,7 @@ async function extractEmailFromPI(pi: Stripe.PaymentIntent): Promise<string | un
     return (cRef as Stripe.Customer).email ?? undefined;
   }
 
-  // Latest charge
+  // Latest charge (expanded)
   const piExpanded = await getStripe().paymentIntents.retrieve(pi.id, { expand: ["latest_charge"] });
   const lc = piExpanded.latest_charge as Stripe.Charge | null;
   return lc?.billing_details?.email ?? undefined;
@@ -49,7 +49,6 @@ export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
   if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
-  // Use raw body for signature verification
   const raw = await req.text();
   let event: Stripe.Event;
 
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
   }
 
-  // Small helper with logging and email guarded
+  // Helper to finalize + email (idempotent)
   const handle = async (
     meta: Record<string, string>,
     amount?: number,
@@ -69,36 +68,45 @@ export async function POST(req: Request) {
     email?: string
   ) => {
     if (!meta.slotId && !meta.slotIds) {
-      // This happens with CLI “trigger” events; don’t 500.
+      // Happens with test/trigger events; don't 500.
       console.warn("[webhook] skipping event without booking metadata", { paymentRef });
       return;
     }
 
     console.log("[webhook] finalize start", { paymentRef, amount, currency, meta });
 
-    // Idempotent booking finalization
+    // 1) Idempotent booking finalization
     await finalizeBooking(meta, amount, (currency ?? "eur").toLowerCase(), paymentRef);
 
-    // Mark slots taken (idempotent)
+    // 2) Mark blocks as taken (idempotent)
     await commitTakenSlots(meta.slotIds);
 
     console.log("[webhook] finalize done", { paymentRef });
 
-    // Email is best-effort; never fail the webhook because of it.
+    // 3) Best-effort confirmation email
     if (email && paymentRef) {
       try {
         const booking = await prisma.booking.findFirst({
           where: { paymentRef },
-          select: { id: true, scheduledStart: true, scheduledMinutes: true, sessionType: true, followups: true },
+          select: {
+            id: true,
+            scheduledStart: true,
+            scheduledMinutes: true,
+            sessionType: true,
+            followups: true,
+          },
         });
-        if (booking) {
+
+        if (booking?.scheduledStart) {
+          const startISO = new Date(booking.scheduledStart as unknown as Date).toISOString();
           await sendBookingEmail(email, {
             title: booking.sessionType ?? "Coaching Session",
-            startISO: booking.scheduledStart.toISOString(),
+            startISO,
             minutes: booking.scheduledMinutes,
             followups: booking.followups,
-            priceEUR: Math.round((amount ?? 0) / 100),
+            priceEUR: (amount ?? 0) / 100, // never round
             bookingId: booking.id,
+            timeZone: meta.timeZone || meta.tz, // pass tz if you put it in metadata
           });
           console.log("[webhook] email sent", { paymentRef, email });
         }
@@ -125,7 +133,7 @@ export async function POST(req: Request) {
         break;
       }
       default:
-        // Ignore other events
+        // ignore unneeded events
         break;
     }
     return NextResponse.json({ ok: true });
