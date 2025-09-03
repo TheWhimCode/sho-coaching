@@ -6,6 +6,10 @@ import { motion } from "framer-motion";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 
+// Icon libs
+import { Atom, Lightning, PuzzlePiece } from "@phosphor-icons/react";
+import BlazeFillIcon from "remixicon-react/BlazeFillIcon";
+
 type Props = {
   title?: string;
   minutes: number;
@@ -26,46 +30,23 @@ const TOTAL_TICKS = 6;
 const clampN = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
 function SessionIcon({ preset, color, glow }: { preset: Preset; color: string; glow: string }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    style: { filter: `drop-shadow(0 0 8px ${glow})` },
-  } as const;
+  const size = 26; // same size
+  const glowStyle = glow ? { filter: `drop-shadow(0 0 8px ${glow})` } : undefined;
 
   if (preset === "vod") {
-    return (
-      <svg {...common} aria-hidden>
-        <circle cx="12" cy="12" r="6.5" stroke={color} strokeWidth="1.75" />
-        <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke={color} strokeWidth="1.75" strokeLinecap="round" />
-      </svg>
-    );
+    // Deep knowledge ⇒ Atom
+    return <Atom size={size} weight="light" color={color} style={glowStyle} aria-hidden />;
   }
   if (preset === "instant") {
-    return (
-      <svg {...common} aria-hidden>
-        <path d="M13 2L6 13h5l-1 9 7-11h-5l1-9Z" fill={color} opacity=".95" />
-      </svg>
-    );
+    // Instant ⇒ Lightning
+    return <Lightning size={size} weight="light" color={color} style={glowStyle} aria-hidden />;
   }
   if (preset === "signature") {
-    return (
-      <svg {...common} aria-hidden>
-        <path
-          d="M12 3c1.5 2.2 2 3.9 2 5.2 0 1.6-.7 2.7-1.9 3.5.2-1.6-.5-3.2-2.1-4.7-.2 1.3-.7 2.3-1.5 3.1C7.5 11.1 7 12.1 7 13.5 7 16.5 9.2 19 12 19s5-2.5 5-5.5c0-3.5-2.3-6-5-10.5Z"
-          fill={color}
-          opacity=".95"
-        />
-      </svg>
-    );
+    // Signature ⇒ Blaze (fill only)
+    return <BlazeFillIcon size={size} color={color} style={glowStyle} aria-hidden />;
   }
-  return (
-    <svg {...common} aria-hidden>
-      <path d="M12 4l1.2 2.6L16 8l-2.8 1.4L12 12l-1.2-2.6L8 8l2.8-1.4L12 4Z" fill={color} />
-      <path d="M18 12l.7 1.6L20 14l-1.3.4L18 16l-.7-1.6L16 14l1.3-.4L18 12Z" fill={color} opacity=".95" />
-    </svg>
-  );
+  // Custom ⇒ Puzzle piece
+  return <PuzzlePiece size={size} weight="light" color={color} style={glowStyle} aria-hidden />;
 }
 
 export default function SessionBlock({
@@ -156,26 +137,23 @@ export default function SessionBlock({
         />
       )}
 
-      {/* Emblem */}
-      <div className="pointer-events-none absolute right-4 top-3">
+      {/* Emblem (standalone, slightly lower/left from the corner) */}
+      <div className="pointer-events-none absolute right-6 top-5">
         <SessionIcon preset={preset} color={ring} glow={glow} />
       </div>
 
-      {/* Header row: 'Session' on the left; selected date on the right, same style */}
+      {/* Header row: shows date if present, otherwise 'Session' */}
       <div className="mb-2 flex items-center justify-between pr-10">
-        <div className="text-xs uppercase tracking-wide text-white/65">Session</div>
-        {dateLabel && (
-          <div className="text-xs uppercase tracking-wide text-white/65 text-right">
-            {dateLabel}
-          </div>
-        )}
+        <div className="text-xs uppercase tracking-wide text-white/65">
+          {dateLabel ?? "Session"}
+        </div>
       </div>
 
       {/* Title */}
       <h3 className="text-2xl font-extrabold tracking-tight">{displayTitle}</h3>
 
       {/* Meta */}
-      <div className="mt-8 flex items-center justify-between text-[15px] font-semibold">
+      <div className="mt-10 flex items-center justify-between text-[15px] font-semibold">
         <span className="text-white/90 flex items-center gap-2">
           {totalMinutes} min
           {followups > 0 && (
