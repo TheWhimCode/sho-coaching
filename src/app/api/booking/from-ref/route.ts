@@ -1,30 +1,53 @@
+// src/app/api/booking/from-ref/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const ref = url.searchParams.get("ref");
-  if (!ref) return NextResponse.json({ error: "ref required" }, { status: 400 });
+function isValidRef(ref: string) {
+  if (ref.length > 128) return false;
+  return (
+    /^pi_[a-zA-Z0-9_]+$/.test(ref) ||
+    /^cs_[a-zA-Z0-9_]+$/.test(ref) ||
+    /^[A-Z0-9\-]{8,}$/.test(ref)
+  );
+}
 
-  // Look up by provider-agnostic reference
+export async function GET(req: Request) {
+  if (req.method !== "GET") {
+    return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
+  }
+
+  // derive a simple key (by IP if available, else fallback)
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown";
+  const key = `from-ref:${ip}`;
+
+  if (!rateLimit(key, 30, 60_000)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
+  const url = new URL(req.url);
+  const ref = url.searchParams.get("ref")?.trim();
+  if (!ref || !isValidRef(ref)) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
   const booking = await prisma.booking.findFirst({
     where: {
-      OR: [
-        { paymentRef: ref },        // PayPal orderId or Stripe PI id (new)
-        { stripeSessionId: ref },   // legacy/back-compat
-      ],
+      OR: [{ paymentRef: ref }, { stripeSessionId: ref }],
     },
     include: { slot: true },
   });
 
-  if (!booking || !booking.slot) {
+  if (!booking?.slot) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     id: booking.id,
     sessionType: booking.sessionType,
     liveMinutes: booking.liveMinutes,
@@ -34,4 +57,6 @@ export async function GET(req: Request) {
     amountCents: booking.amountCents ?? null,
     startISO: booking.slot.startTime.toISOString(),
   });
+  res.headers.set("Cache-Control", "no-store");
+  return res;
 }

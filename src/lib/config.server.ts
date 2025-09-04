@@ -10,32 +10,24 @@ const int = (k: string, d: number) => {
   return Number.isFinite(n) ? n : d;
 };
 
-export const CFG_SERVER = {
+export const CFG_SERVER = Object.freeze({
   // Database
   DATABASE_URL: must("DATABASE_URL"),
 
-  // Stripe
+  // Stripe (server)
   STRIPE_SECRET_KEY: must("STRIPE_SECRET_KEY"),
   STRIPE_WEBHOOK_SECRET: must("STRIPE_WEBHOOK_SECRET"),
 
-  // PayPal
-  paypal: {
-    CLIENT_ID: must("PAYPAL_CLIENT_ID"),   // server also needs client ID
-    SECRET: must("PAYPAL_SECRET"),
-    ENV: process.env.PAYPAL_ENV ?? "sandbox", // "sandbox" or "live"
-  },
-
   // Emails
-  RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
-  EMAIL_FROM: process.env.EMAIL_FROM ?? "",
+  RESEND_API_KEY: must("RESEND_API_KEY"),
+  EMAIL_FROM: must("EMAIL_FROM"),
 
-  // Site & Admin
-  SITE_URL: process.env.SITE_URL ?? "",
-  ADMIN_USER: process.env.ADMIN_USER ?? "admin",
-  ADMIN_PASS: process.env.ADMIN_PASS ?? "change-me",
+  // Secrets
+  CRON_SECRET: must("CRON_SECRET"),
+  ICS_SIGN_SECRET: must("ICS_SIGN_SECRET"),
 
   // Booking config
-  booking: {
+  booking: Object.freeze({
     BUFFER_BEFORE_MIN: int("BUFFER_BEFORE_MIN", 15),
     BUFFER_AFTER_MIN:  int("BUFFER_AFTER_MIN", 15),
     LEAD_MINUTES:      int("LEAD_MINUTES", 120),
@@ -43,5 +35,5 @@ export const CFG_SERVER = {
     OPEN_HOUR:         int("OPEN_HOUR", 13),
     CLOSE_HOUR:        int("CLOSE_HOUR", 24),
     PER_DAY_CAP:       int("PER_DAY_CAP", 0),
-  },
-};
+  }),
+});

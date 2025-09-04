@@ -1,0 +1,60 @@
+// next.config.mjs
+/** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV !== 'production';
+
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  isDev ? "'unsafe-eval'" : "",
+  "https://js.stripe.com",
+].filter(Boolean).join(' ');
+
+const connectSrc = [
+  "'self'",
+  "https://api.stripe.com",
+  "https://m.stripe.network",
+  isDev ? "ws:" : "",
+  isDev ? "wss:" : "",
+].filter(Boolean).join(' ');
+
+const imgSrc = ["'self'", "data:", "blob:", "https://*.stripe.com"].join(' ');
+
+const csp = [
+  `default-src 'self'`,
+  `script-src ${scriptSrc}`,
+  `style-src 'self' 'unsafe-inline'`,
+  `img-src ${imgSrc}`,
+  `font-src 'self' data:`,
+  `frame-src https://js.stripe.com https://hooks.stripe.com`,
+  `connect-src ${connectSrc}`,
+  `worker-src 'self' blob:`,
+  `media-src 'self' blob:`,
+  `object-src 'none'`,
+  `base-uri 'self'`,
+  `frame-ancestors 'none'`,
+  `upgrade-insecure-requests`,
+].join('; ');
+
+const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
+          { key: 'X-DNS-Prefetch-Control', value: 'off' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+          { key: 'Content-Security-Policy', value: csp }, // <- comma fixed + CSP last
+        ],
+      },
+    ];
+  },
+};
+
+export default nextConfig;

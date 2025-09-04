@@ -7,6 +7,9 @@ let resendInstance: any;
 
 async function getResend() {
   if (!resendInstance) {
+    if (!CFG_SERVER.RESEND_API_KEY) {
+      throw new Error("Missing RESEND_API_KEY");
+    }
     const { Resend } = await import("resend");
     resendInstance = new Resend(CFG_SERVER.RESEND_API_KEY);
   }
@@ -15,9 +18,7 @@ async function getResend() {
 
 /** Accepts "email@example.com" OR "Name <email@example.com>".
  *  Also accepts arrays and filters empties. Throws on invalids. */
-function normalizeRecipient(
-  input?: string | string[]
-): string | string[] {
+function normalizeRecipient(input?: string | string[]): string | string[] {
   if (!input) throw new Error("Missing recipient email");
 
   const arr = (Array.isArray(input) ? input : [input])
@@ -50,6 +51,7 @@ type BookingEmailInput = {
   bookingId: string;
   replyTo?: string | string[];
   timeZone?: string; // defaults to server tz if omitted
+  icsUrl?: string;   // optional pre-signed ICS URL (preferred if provided)
 };
 
 export async function sendBookingEmail(
@@ -65,11 +67,13 @@ export async function sendBookingEmail(
     bookingId,
     replyTo,
     timeZone,
+    icsUrl: signedIcsUrl,
   } = input;
 
-  const icsUrl = `${CFG_PUBLIC.SITE_URL}/api/ics?bookingId=${encodeURIComponent(
-    bookingId
-  )}`;
+  // Prefer signed URL passed by the webhook; fall back to unsigned (still works if ICS signing disabled)
+  const icsUrl =
+    signedIcsUrl ||
+    `${CFG_PUBLIC.SITE_URL}/api/ics?bookingId=${encodeURIComponent(bookingId)}`;
 
   const whenStr = new Date(startISO).toLocaleString([], {
     weekday: "short",
@@ -87,9 +91,7 @@ export async function sendBookingEmail(
       timeZone ? ` <span style="color:#667085">• ${timeZone}</span>` : ""
     }</p>
     <p><b>Duration:</b> ${minutes} min${
-      input.followups > 0
-        ? ` · <b>Follow-ups:</b> ${followups}`
-        : ""
+      followups > 0 ? ` · <b>Follow-ups:</b> ${followups}` : ""
     }</p>
     <p><b>Price:</b> €${priceEUR}</p>
     <p style="margin-top:16px">
@@ -100,9 +102,7 @@ export async function sendBookingEmail(
   const text =
     `${title}\n` +
     `When: ${whenStr}${timeZone ? ` • ${timeZone}` : ""}\n` +
-    `Duration: ${minutes} min${
-      input.followups > 0 ? ` · Follow-ups: ${followups}` : ""
-    }\n` +
+    `Duration: ${minutes} min${followups > 0 ? ` · Follow-ups: ${followups}` : ""}\n` +
     `Price: €${priceEUR}\n` +
     `Add to calendar: ${icsUrl}`;
 
@@ -119,7 +119,6 @@ export async function sendBookingEmail(
     });
     return res; // id/status for logging
   } catch (err: any) {
-    // Surface concise message and keep original for logs
     const msg = err?.message || String(err);
     throw new Error(`Email send failed: ${msg}`);
   }

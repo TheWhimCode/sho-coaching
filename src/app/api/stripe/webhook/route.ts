@@ -6,22 +6,24 @@ import { finalizeBooking } from "@/lib/booking/finalizeBooking";
 import { sendBookingEmail } from "@/lib/email";
 import { CFG_SERVER } from "@/lib/config.server";
 import { SlotStatus } from "@prisma/client";
+import { sign } from "@/lib/sign";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+if (!CFG_SERVER.STRIPE_SECRET_KEY) throw new Error("Missing STRIPE_SECRET_KEY");
+if (!CFG_SERVER.STRIPE_WEBHOOK_SECRET) throw new Error("Missing STRIPE_WEBHOOK_SECRET");
+
 let stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (stripe) return stripe;
-  if (!CFG_SERVER.STRIPE_SECRET_KEY) throw new Error("Missing STRIPE_SECRET_KEY");
-  stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" });
+  stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-08-27.basil" });
   return stripe;
 }
 
 async function extractEmailFromPI(pi: Stripe.PaymentIntent): Promise<string | undefined> {
   if (pi.receipt_email) return pi.receipt_email;
 
-  // Customer email
   const cRef = pi.customer;
   if (typeof cRef === "string") {
     const cust = await getStripe().customers.retrieve(cRef);
@@ -30,7 +32,6 @@ async function extractEmailFromPI(pi: Stripe.PaymentIntent): Promise<string | un
     return (cRef as Stripe.Customer).email ?? undefined;
   }
 
-  // Latest charge (expanded)
   const piExpanded = await getStripe().paymentIntents.retrieve(pi.id, { expand: ["latest_charge"] });
   const lc = piExpanded.latest_charge as Stripe.Charge | null;
   return lc?.billing_details?.email ?? undefined;
@@ -46,6 +47,10 @@ async function commitTakenSlots(slotIdsCsv: string | undefined) {
 }
 
 export async function POST(req: Request) {
+  if (req.method !== "POST") {
+    return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
+  }
+
   const sig = req.headers.get("stripe-signature");
   if (!sig) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
@@ -53,7 +58,12 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    event = getStripe().webhooks.constructEvent(raw, sig, CFG_SERVER.STRIPE_WEBHOOK_SECRET!);
+    event = getStripe().webhooks.constructEvent(
+      raw,
+      sig,
+      CFG_SERVER.STRIPE_WEBHOOK_SECRET,
+      300 // seconds of timestamp tolerance (anti-replay)
+    );
   } catch (err: any) {
     console.error("[webhook] verify failed:", err?.message || err);
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
@@ -68,7 +78,6 @@ export async function POST(req: Request) {
     email?: string
   ) => {
     if (!meta.slotId && !meta.slotIds) {
-      // Happens with test/trigger events; don't 500.
       console.warn("[webhook] skipping event without booking metadata", { paymentRef });
       return;
     }
@@ -83,7 +92,7 @@ export async function POST(req: Request) {
 
     console.log("[webhook] finalize done", { paymentRef });
 
-    // 3) Best-effort confirmation email
+    // 3) Best-effort confirmation email with signed ICS
     if (email && paymentRef) {
       try {
         const booking = await prisma.booking.findFirst({
@@ -99,6 +108,9 @@ export async function POST(req: Request) {
 
         if (booking?.scheduledStart) {
           const startISO = new Date(booking.scheduledStart as unknown as Date).toISOString();
+          const base = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
+          const icsUrl = `${base}/api/ics?bookingId=${booking.id}&sig=${sign(booking.id)}`;
+
           await sendBookingEmail(email, {
             title: booking.sessionType ?? "Coaching Session",
             startISO,
@@ -106,8 +118,11 @@ export async function POST(req: Request) {
             followups: booking.followups,
             priceEUR: (amount ?? 0) / 100, // never round
             bookingId: booking.id,
-            timeZone: meta.timeZone || meta.tz, // pass tz if you put it in metadata
+            timeZone: meta.timeZone || meta.tz,
+            // new:
+            icsUrl,
           });
+
           console.log("[webhook] email sent", { paymentRef, email });
         }
       } catch (e: any) {
