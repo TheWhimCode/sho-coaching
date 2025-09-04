@@ -1,4 +1,3 @@
-// src/app/api/stripe/webhook/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
@@ -17,7 +16,7 @@ if (!CFG_SERVER.STRIPE_WEBHOOK_SECRET) throw new Error("Missing STRIPE_WEBHOOK_S
 let stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (stripe) return stripe;
-  // use a valid, typed API version (remove custom string)
+  // (left as-is per your file)
   stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
 }
@@ -86,15 +85,11 @@ export async function POST(req: Request) {
 
     console.log("[webhook] finalize start", { paymentRef, amount, currency, meta });
 
-    // 1) Idempotent booking finalization
     await finalizeBooking(meta, amount, (currency ?? "eur").toLowerCase(), paymentRef);
-
-    // 2) Mark blocks as taken (idempotent)
     await commitTakenSlots(meta.slotIds);
 
     console.log("[webhook] finalize done", { paymentRef });
 
-    // 3) Best-effort confirmation email with signed ICS
     if (email && paymentRef) {
       try {
         const booking = await prisma.booking.findFirst({
@@ -109,7 +104,7 @@ export async function POST(req: Request) {
         });
 
         if (booking?.scheduledStart) {
-          const startISO = booking.scheduledStart.toISOString(); // typed Date from Prisma
+          const startISO = booking.scheduledStart.toISOString();
           const base = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
           const icsUrl = `${base}/api/ics?bookingId=${booking.id}&sig=${sign(booking.id)}`;
 
@@ -121,7 +116,6 @@ export async function POST(req: Request) {
             priceEUR: (amount ?? 0) / 100,
             bookingId: booking.id,
             timeZone: meta.timeZone || meta.tz,
-            icsUrl,
           });
 
           console.log("[webhook] email sent", { paymentRef, email });
@@ -138,19 +132,18 @@ export async function POST(req: Request) {
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
         const meta = (pi.metadata ?? {}) as Record<string, string>;
-        const email = await extractEmailFromPI(pi);
+        const email = (await extractEmailFromPI(pi)) || meta.email || undefined; // NEW fallback
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
         break;
       }
       case "checkout.session.completed": {
         const cs = event.data.object as Stripe.Checkout.Session;
         const meta = (cs.metadata ?? {}) as Record<string, string>;
-        const email = cs.customer_details?.email || undefined;
+        const email = cs.customer_details?.email || meta.email || undefined;     // NEW fallback
         await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", cs.id, email);
         break;
       }
       default:
-        // ignore unneeded events
         break;
     }
     return NextResponse.json({ ok: true });

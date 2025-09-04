@@ -1,4 +1,3 @@
-// src/app/api/stripe/checkout/intent/route.ts
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -18,7 +17,7 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   const key = CFG_SERVER.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe not configured");
-  // remove `as any`; use a valid API version type
+  // (left as-is per your file)
   stripe = new Stripe(key, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
   return stripe;
 }
@@ -34,6 +33,9 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
+    // NEW: pick up buyer email from your contact step
+    const email = (body as { email?: string }).email?.trim();
+
     const { payMethod = "card" } = body as { payMethod?: "card" | "paypal" | "revolut_pay" };
 
     const parsed = CheckoutZ.safeParse(body);
@@ -41,15 +43,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     }
 
-    const {
-      slotId,
-      sessionType,
-      liveMinutes,
-      discord,
-      followups,
-      liveBlocks,
-      holdKey,
-    } = parsed.data;
+    const { slotId, sessionType, liveMinutes, discord, followups, liveBlocks, holdKey } = parsed.data;
 
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
@@ -124,7 +118,10 @@ export async function POST(req: Request) {
         amount: amountCents,
         currency: "eur",
         payment_method_types: pmTypes,
+        // NEW: persist buyer email in Stripe
+        receipt_email: email || undefined,
         metadata: {
+          email: email || "",         // fallback for webhook
           slotId,
           slotIds: slotIds.join(","),
           sessionType,
@@ -136,9 +133,7 @@ export async function POST(req: Request) {
           payMethod,
         },
       },
-      {
-        idempotencyKey: `${slotIds.join("|")}:${amountCents}:${effKey}:${payMethod}`,
-      }
+      { idempotencyKey: `${slotIds.join("|")}:${amountCents}:${effKey}:${payMethod}` }
     );
 
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });

@@ -19,8 +19,8 @@ export const CFG_SERVER = Object.freeze({
   STRIPE_WEBHOOK_SECRET: must("STRIPE_WEBHOOK_SECRET"),
 
   // Emails
-  RESEND_API_KEY: must("RESEND_API_KEY"),
-  EMAIL_FROM: must("EMAIL_FROM"),
+  RESEND_API_KEY: process.env.RESEND_API_KEY!,
+  EMAIL_FROM: process.env.EMAIL_FROM!,
 
   // Secrets
   CRON_SECRET: must("CRON_SECRET"),
