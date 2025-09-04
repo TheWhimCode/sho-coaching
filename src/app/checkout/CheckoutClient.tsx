@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 
 import UsefulToKnow from "@/app/checkout/_components/UsefulToKnow";
@@ -9,7 +9,7 @@ import CheckoutPanel from "@/app/checkout/_components/CheckoutPanel";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 
 import { loadStripe } from "@stripe/stripe-js";
-import { motion, type Variants, useAnimationControls } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -42,14 +42,8 @@ function mergedMinutes(baseMinutes: number, liveBlocks: number) {
   return Math.min(MAX, Math.max(MIN, baseMinutes + liveBlocks * LIVEBLOCK_MIN));
 }
 
-/** === Animations (subtle, smooth, product-like) === */
+/** Element-level animation (right column only) */
 const EASE: [number, number, number, number] = [0.22, 0.61, 0.36, 1];
-
-const pageSlide: Variants = {
-  hidden: { x: 28, opacity: 0 },
-  show: { x: 0, opacity: 1, transition: { duration: 0.5, ease: EASE } },
-};
-
 const rightCol: Variants = {
   hidden: { y: 14, opacity: 0 },
   show: { y: 0, opacity: 1, transition: { duration: 0.42, ease: EASE } },
@@ -112,25 +106,8 @@ export default function CheckoutClient() {
     [payload]
   );
 
-  /** Orchestrate sequence */
-  const pageCtrl = useAnimationControls();
-  const rightCtrl = useAnimationControls();
-
-  useEffect(() => {
-    (async () => {
-      await pageCtrl.start("show");
-      await rightCtrl.start("show");
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
-    <motion.section
-      variants={pageSlide}
-      initial="hidden"
-      animate={pageCtrl}
-      className="relative isolate min-h-screen pt-12 md:pt-16 lg:pt-20 pb-10 text-white overflow-x-hidden overflow-y-hidden"
-    >
+    <section className="relative isolate min-h-screen pt-12 md:pt-16 lg:pt-20 pb-10 text-white overflow-x-hidden overflow-y-hidden">
       {/* Background */}
       <div className="absolute inset-0 -z-10 pointer-events-none isolate overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070f_0%,#070c18_40%,#0c1528_70%,#16264a_100%)]" />
@@ -149,10 +126,11 @@ export default function CheckoutClient() {
               <div className="w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
             </div>
 
+            {/* Right column animates in */}
             <motion.div
               variants={rightCol}
               initial="hidden"
-              animate={rightCtrl}
+              animate="show"
               className="w-full lg:w-[400px] relative z-0 lg:justify-self-end"
             >
               <CheckoutPanel
@@ -166,6 +144,6 @@ export default function CheckoutClient() {
           </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }
