@@ -65,9 +65,10 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, ex });
-  } catch (err: any) {
-    console.error("POST /exceptions failed:", err);
-    return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 400 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("POST /exceptions failed:", msg);
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 }
 
@@ -77,9 +78,10 @@ export async function GET() {
       orderBy: { date: "asc" },
     });
     return NextResponse.json(exceptions);
-  } catch (err: any) {
-    console.error("GET /exceptions failed:", err);
-    return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("GET /exceptions failed:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -94,8 +96,9 @@ export async function DELETE(req: Request) {
     // NOTE: We don't auto-"unblock" slots here because there may be other overlapping exceptions.
     // Recompute/cron will regenerate future free slots based on current exceptions.
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
-    console.error("DELETE /exceptions failed:", err);
-    return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 400 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("DELETE /exceptions failed:", msg);
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 }

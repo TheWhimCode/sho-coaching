@@ -5,7 +5,7 @@ import { rateLimit } from "@/lib/rateLimit";
 export const runtime = "edge"; // edge is fine here
 export const dynamic = "force-dynamic";
 
-function noStore(json: any, status = 200) {
+function noStore(json: unknown, status = 200): NextResponse {
   const res = NextResponse.json(json, { status });
   res.headers.set("Cache-Control", "no-store");
   return res;

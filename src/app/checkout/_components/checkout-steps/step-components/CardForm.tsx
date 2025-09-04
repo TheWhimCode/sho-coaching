@@ -12,6 +12,7 @@ import type {
   StripePaymentElementOptions,
   StripeCardExpiryElement,
   StripeCardCvcElement,
+  StripePaymentElementChangeEvent,
 } from "@stripe/stripe-js";
 import * as React from "react";
 
@@ -32,29 +33,7 @@ export default function CardForm({
   onPaymentChange,
   submitted = false,
 }: Props) {
-  // ---------- Non-card methods use Payment Element ----------
-  if (activePm !== "card") {
-    const peOptions: StripePaymentElementOptions = {
-      layout: { type: "accordion" },
-      paymentMethodOrder: activePm === "paypal" ? ["paypal"] : ["revolut_pay"],
-      fields: { billingDetails: { email: "never", phone: "auto", address: "auto" } },
-      wallets: { applePay: "auto", googlePay: "auto", link: "never" as any } as any,
-    };
-    return (
-      <div className="max-w-md">
-        <div className="min-h-[330px]">
-          <PaymentElement
-            id="pe"
-            options={peOptions}
-            onReady={onElementsReady}
-            onChange={(e: any) => onPaymentChange?.({ complete: !!e?.complete })}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // ---------- Cards-only UI (separate Elements) ----------
+  // Always call hooks (no conditional returns before this point)
   const elements = useElements();
   const [ready, setReady] = React.useState({ num: false, exp: false, cvc: false });
   const [done, setDone] = React.useState({ num: false, exp: false, cvc: false });
@@ -120,42 +99,43 @@ export default function CardForm({
     { code: "AU", name: "Australia" },
   ];
 
+  const isCard = activePm === "card";
+
+  // Options for non-card PaymentElement
+  const peOptions: StripePaymentElementOptions = {
+    layout: { type: "accordion" },
+    paymentMethodOrder: activePm === "paypal" ? ["paypal"] : ["revolut_pay"],
+    fields: { billingDetails: { email: "never", phone: "auto", address: "auto" } },
+    // omit `link` to avoid type friction; default behavior is fine
+    wallets: { applePay: "auto", googlePay: "auto" },
+  };
+
   return (
     <div className="max-w-md">
       <div className="min-h-[330px]">
-        <div className="space-y-3">
-          {/* Card number */}
-          <label className="block">
-            <span className="text-xs text-white/65">Card number</span>
-            <div className={`${rowShell} ${submitted && !done.num ? badRing : okRing}`}>
-              <div className={innerWrap}>
-                <div className="w-full">
-                  <CardNumberElement
-                    options={numberOpts}
-                    onReady={() => setReady((s) => ({ ...s, num: true }))}
-                    onChange={(e) => {
-                      setDone((s) => ({ ...s, num: e.complete }));
-                      if (e.complete) focusExpiry();
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </label>
-
-          {/* Expiry + CVC */}
-          <div className="grid grid-cols-2 gap-3">
+        {!isCard ? (
+          <PaymentElement
+            id="pe"
+            options={peOptions}
+            onReady={onElementsReady}
+            onChange={(e: StripePaymentElementChangeEvent) =>
+              onPaymentChange?.({ complete: !!e.complete })
+            }
+          />
+        ) : (
+          <div className="space-y-3">
+            {/* Card number */}
             <label className="block">
-              <span className="text-xs text-white/65">Expiry date</span>
-              <div className={`${rowShell} ${submitted && !done.exp ? badRing : okRing}`}>
+              <span className="text-xs text-white/65">Card number</span>
+              <div className={`${rowShell} ${submitted && !done.num ? badRing : okRing}`}>
                 <div className={innerWrap}>
                   <div className="w-full">
-                    <CardExpiryElement
-                      options={expOpts}
-                      onReady={() => setReady((s) => ({ ...s, exp: true }))}
+                    <CardNumberElement
+                      options={numberOpts}
+                      onReady={() => setReady((s) => ({ ...s, num: true }))}
                       onChange={(e) => {
-                        setDone((s) => ({ ...s, exp: e.complete }));
-                        if (e.complete) focusCvc();
+                        setDone((s) => ({ ...s, num: e.complete }));
+                        if (e.complete) focusExpiry();
                       }}
                     />
                   </div>
@@ -163,38 +143,59 @@ export default function CardForm({
               </div>
             </label>
 
-            <label className="block">
-              <span className="text-xs text-white/65">Security code</span>
-              <div className={`${rowShell} ${submitted && !done.cvc ? badRing : okRing}`}>
-                <div className={innerWrap}>
-                  <div className="w-full">
-                    <CardCvcElement
-                      options={cvcOpts}
-                      onReady={() => setReady((s) => ({ ...s, cvc: true }))}
-                      onChange={(e) => setDone((s) => ({ ...s, cvc: e.complete }))}
-                    />
+            {/* Expiry + CVC */}
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-xs text-white/65">Expiry date</span>
+                <div className={`${rowShell} ${submitted && !done.exp ? badRing : okRing}`}>
+                  <div className={innerWrap}>
+                    <div className="w-full">
+                      <CardExpiryElement
+                        options={expOpts}
+                        onReady={() => setReady((s) => ({ ...s, exp: true }))}
+                        onChange={(e) => {
+                          setDone((s) => ({ ...s, exp: e.complete }));
+                          if (e.complete) focusCvc();
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </label>
+
+              <label className="block">
+                <span className="text-xs text-white/65">Security code</span>
+                <div className={`${rowShell} ${submitted && !done.cvc ? badRing : okRing}`}>
+                  <div className={innerWrap}>
+                    <div className="w-full">
+                      <CardCvcElement
+                        options={cvcOpts}
+                        onReady={() => setReady((s) => ({ ...s, cvc: true }))}
+                        onChange={(e) => setDone((s) => ({ ...s, cvc: e.complete }))} // e has .complete
+                      />
+                    </div>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Country */}
+            <label className="block">
+              <span className="text-xs text-white/65">Country</span>
+              <select
+                className={`mt-1 w-full rounded-lg bg-white/[.05] ring-1 px-4 text-base text-white/90 outline-none transition h-[52px] ${okRing}`}
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+              >
+                {countries.map((c) => (
+                  <option key={c.code} value={c.code} className="bg-[#151527]">
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
-
-          {/* Country */}
-          <label className="block">
-            <span className="text-xs text-white/65">Country</span>
-            <select
-              className={`mt-1 w-full rounded-lg bg-white/[.05] ring-1 px-4 text-base text-white/90 outline-none transition h-[52px] ${okRing}`}
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-            >
-              {countries.map((c) => (
-                <option key={c.code} value={c.code} className="bg-[#151527]">
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        )}
       </div>
     </div>
   );

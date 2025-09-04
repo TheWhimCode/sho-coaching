@@ -17,7 +17,8 @@ if (!CFG_SERVER.STRIPE_WEBHOOK_SECRET) throw new Error("Missing STRIPE_WEBHOOK_S
 let stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (stripe) return stripe;
-  stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" });
+  // use a valid, typed API version (remove custom string)
+  stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
 }
 
@@ -64,8 +65,9 @@ export async function POST(req: Request) {
       CFG_SERVER.STRIPE_WEBHOOK_SECRET,
       300 // seconds of timestamp tolerance (anti-replay)
     );
-  } catch (err: any) {
-    console.error("[webhook] verify failed:", err?.message || err);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[webhook] verify failed:", msg);
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
   }
 
@@ -107,7 +109,7 @@ export async function POST(req: Request) {
         });
 
         if (booking?.scheduledStart) {
-          const startISO = new Date(booking.scheduledStart as unknown as Date).toISOString();
+          const startISO = booking.scheduledStart.toISOString(); // typed Date from Prisma
           const base = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
           const icsUrl = `${base}/api/ics?bookingId=${booking.id}&sig=${sign(booking.id)}`;
 
@@ -116,17 +118,17 @@ export async function POST(req: Request) {
             startISO,
             minutes: booking.scheduledMinutes,
             followups: booking.followups,
-            priceEUR: (amount ?? 0) / 100, // never round
+            priceEUR: (amount ?? 0) / 100,
             bookingId: booking.id,
             timeZone: meta.timeZone || meta.tz,
-            // new:
             icsUrl,
           });
 
           console.log("[webhook] email sent", { paymentRef, email });
         }
-      } catch (e: any) {
-        console.warn("[webhook] email failed (ignored):", e?.message || e);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn("[webhook] email failed (ignored):", msg);
       }
     }
   };
@@ -152,8 +154,9 @@ export async function POST(req: Request) {
         break;
     }
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
-    console.error("[webhook] unhandled error:", err?.message || err);
-    return NextResponse.json({ error: "webhook_error", detail: String(err?.message || err) }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[webhook] unhandled error:", msg);
+    return NextResponse.json({ error: "webhook_error", detail: msg }, { status: 500 });
   }
 }

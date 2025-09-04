@@ -18,7 +18,8 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   const key = CFG_SERVER.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe not configured");
-  stripe = new Stripe(key, { apiVersion: "2025-07-30.basil" as any });
+  // remove `as any`; use a valid API version type
+  stripe = new Stripe(key, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
   return stripe;
 }
 
@@ -50,7 +51,6 @@ export async function POST(req: Request) {
       holdKey,
     } = parsed.data;
 
-    // Clamp minutes (defense-in-depth, even if zod covers it)
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
     }
@@ -88,10 +88,7 @@ export async function POST(req: Request) {
         select: { id: true, startTime: true, status: true, holdKey: true },
       });
 
-      if (
-        !rows.length ||
-        rows.some(r => r.status === SlotStatus.blocked && r.holdKey !== effKey)
-      ) {
+      if (!rows.length || rows.some((r) => r.status === SlotStatus.blocked && r.holdKey !== effKey)) {
         return NextResponse.json({ error: "unavailable" }, { status: 409 });
       }
 
@@ -104,7 +101,7 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: "unavailable" }, { status: 409 });
         }
       }
-      slotIds = rows.map(r => r.id);
+      slotIds = rows.map((r) => r.id);
     }
 
     // 4) Claim/extend hold
@@ -113,21 +110,14 @@ export async function POST(req: Request) {
     await prisma.slot.updateMany({
       where: {
         id: { in: slotIds },
-        OR: [
-          { status: SlotStatus.free },
-          { status: SlotStatus.blocked, holdKey: effKey },
-        ],
+        OR: [{ status: SlotStatus.free }, { status: SlotStatus.blocked, holdKey: effKey }],
       },
       data: { holdKey: effKey, holdUntil, status: SlotStatus.blocked },
     });
 
     // 5) Limit payment methods
     const pmTypes: Array<"card" | "paypal" | "revolut_pay"> =
-      payMethod === "paypal"
-        ? ["paypal"]
-        : payMethod === "revolut_pay"
-        ? ["revolut_pay"]
-        : ["card"];
+      payMethod === "paypal" ? ["paypal"] : payMethod === "revolut_pay" ? ["revolut_pay"] : ["card"];
 
     const pi = await getStripe().paymentIntents.create(
       {
@@ -154,8 +144,9 @@ export async function POST(req: Request) {
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });
     res.headers.set("Cache-Control", "no-store");
     return res;
-  } catch (err: any) {
-    console.error("INTENT_POST_ERROR", err?.message || err);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("INTENT_POST_ERROR", msg);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

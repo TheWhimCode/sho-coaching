@@ -255,8 +255,9 @@ function PayButton({
 
       // For wallets, Stripe may redirect; if not, we’re done.
       setSubmitting(false);
-    } catch (e: any) {
-      setError(e?.message ?? "Payment failed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg ?? "Payment failed");
       setSubmitting(false);
     }
   }

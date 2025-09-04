@@ -1,4 +1,4 @@
-// app/checkout/success/SuccessClient.tsx
+// src/app/checkout/success/SuccessClient.tsx
 "use client";
 
 import { useSearchParams } from "next/navigation";
@@ -15,6 +15,20 @@ type BookingInfo = {
   startISO: string;
 };
 
+function isBookingInfo(v: unknown): v is BookingInfo {
+  if (typeof v !== "object" || v === null) return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.id === "string" &&
+    typeof o.sessionType === "string" &&
+    typeof o.liveMinutes === "number" &&
+    typeof o.followups === "number" &&
+    typeof o.currency === "string" &&
+    (typeof o.amountCents === "number" || o.amountCents === null) &&
+    typeof o.startISO === "string"
+  );
+}
+
 export default function SuccessClient() {
   const sp = useSearchParams();
 
@@ -25,7 +39,7 @@ export default function SuccessClient() {
   const ref = useMemo(() => (intentId ? intentId : undefined), [intentId]);
 
   const [booking, setBooking] = useState<BookingInfo | null>(null);
-  const [loading, setLoading] = useState(!!ref);
+  const [loading, setLoading] = useState<boolean>(!!ref);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,24 +60,38 @@ export default function SuccessClient() {
       attempts += 1;
 
       try {
-        const res = await fetch(`/api/booking/from-ref?ref=${encodeURIComponent(ref)}`, { cache: "no-store" });
+        const res = await fetch(`/api/booking/from-ref?ref=${encodeURIComponent(ref)}`, {
+          cache: "no-store",
+        });
+
         if (res.status === 404) {
           setLoading(true);
         } else if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          if (j?.error === "not_found") setLoading(true);
-          else throw new Error(j?.error || `lookup_failed_${res.status}`);
+          let msg: string | undefined;
+          try {
+            const j = (await res.json()) as unknown;
+            if (typeof j === "object" && j && "error" in (j as any)) {
+              msg = String((j as any).error);
+            }
+          } catch {
+            // ignore JSON parse errors
+          }
+          if (msg === "not_found") setLoading(true);
+          else throw new Error(msg || `lookup_failed_${res.status}`);
         } else {
-          const data = (await res.json()) as BookingInfo;
-          if (!cancelled) {
+          const data = (await res.json()) as unknown;
+          if (!cancelled && isBookingInfo(data)) {
             setBooking(data);
             setErr(null);
             setLoading(false);
             return;
           }
         }
-      } catch (e: any) {
-        if (!cancelled) setErr(e?.message || "lookup_failed");
+      } catch (e: unknown) {
+        if (!cancelled) {
+          const msg = e instanceof Error ? e.message : "lookup_failed";
+          setErr(msg);
+        }
       }
 
       setTimeout(tick, delay);
@@ -73,8 +101,11 @@ export default function SuccessClient() {
     setLoading(true);
     setErr(null);
     tick();
-    return () => { cancelled = true; };
-  }, [ref]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref]);
 
   const paid = redirectStatus === "succeeded";
 
@@ -89,9 +120,13 @@ export default function SuccessClient() {
           <h1 className="text-2xl font-semibold">{statusText}</h1>
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ring-1
-              ${paid ? "bg-sky-400/10 text-sky-300 ring-sky-400/25"
-                     : err ? "bg-rose-400/10 text-rose-300 ring-rose-400/25"
-                           : "bg-white/10 text-white/80 ring-white/15"}`}
+              ${
+                paid
+                  ? "bg-sky-400/10 text-sky-300 ring-sky-400/25"
+                  : err
+                  ? "bg-rose-400/10 text-rose-300 ring-rose-400/25"
+                  : "bg-white/10 text-white/80 ring-white/15"
+              }`}
           >
             <StatusIcon className="w-4 h-4" />
             {paid ? "Succeeded" : err ? "Check status" : "Processing"}
@@ -103,7 +138,9 @@ export default function SuccessClient() {
 
         {/* States */}
         {loading && (
-          <div className="rounded-2xl ring-1 ring-white/15 bg-white/5 p-4 text-white/75">Finalizing your booking…</div>
+          <div className="rounded-2xl ring-1 ring-white/15 bg-white/5 p-4 text-white/75">
+            Finalizing your booking…
+          </div>
         )}
         {err && !loading && !booking && (
           <div className="rounded-2xl ring-1 ring-rose-400/25 bg-rose-400/10 p-4 text-rose-200">{err}</div>

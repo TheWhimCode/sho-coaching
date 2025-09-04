@@ -71,9 +71,10 @@ export default function AdminBookingsPage() {
         if (!res.ok) throw new Error(await res.text());
         const data = (await res.json()) as BookingRow[];
         if (on) setRows(data);
-      } catch (e: any) {
-        if (on) setLog(`❌ Failed to load: ${e?.message || e}`);
-      } finally {
+} catch (err: unknown) {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (on) setLog(`❌ Failed to load: ${msg}`);
+} finally {
         if (on) setLoading(false);
       }
     })();

@@ -1,4 +1,4 @@
-// src/pages/customization/schedule/Calendar.tsx (or your actual path)
+// src/pages/customization/schedule/Calendar.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -28,14 +28,14 @@ type Props = {
 
 const overlay: Variants = {
   hidden: { opacity: 0 },
-  show:   { opacity: 1, transition: { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] } },
-  exit:   { opacity: 0, transition: { duration: 0.12, ease: [0.2, 0.8, 0.2, 1] } },
+  show: { opacity: 1, transition: { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] } },
+  exit: { opacity: 0, transition: { duration: 0.12, ease: [0.2, 0.8, 0.2, 1] } },
 };
 
 const shell: Variants = {
   hidden: { opacity: 0, y: 12, scale: 0.98 },
-  show:   { opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] } },
-  exit:   { opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] } },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] } },
+  exit: { opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] } },
 };
 
 function dayKeyLocal(d: Date) {
@@ -46,7 +46,13 @@ function dayKeyLocal(d: Date) {
 }
 
 export default function Calendar({
-  sessionType, liveMinutes, followups = 0, onClose, initialSlotId = null, prefetchedSlots, liveBlocks = 0,
+  sessionType,
+  liveMinutes,
+  followups = 0,
+  onClose,
+  initialSlotId = null,
+  prefetchedSlots,
+  liveBlocks = 0,
 }: Props) {
   const router = useRouter();
 
@@ -56,9 +62,9 @@ export default function Calendar({
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const DISPLAY_STEP_MIN = 30; // Only show :00/:30 in UI
+  const DISPLAY_STEP_MIN = 30;
 
-  const [slots, setSlots] = useState<Slot[]>([]); // raw slots (15-min granularity)
+  const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,8 +76,6 @@ export default function Calendar({
   const [dErr, setDErr] = useState<string | null>(null);
 
   const goingToCheckout = useRef(false);
-
-  // local open state to allow exit animation
   const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
@@ -80,19 +84,25 @@ export default function Calendar({
     const end = addDays(tomorrow, 14);
     end.setHours(23, 59, 59, 999);
     (async () => {
-      setLoading(true); setError(null);
+      setLoading(true);
+      setError(null);
       try {
-        const data = prefetchedSlots?.length ? prefetchedSlots : await fetchSlots(tomorrow, end, liveMinutes);
+        const data = prefetchedSlots?.length
+          ? prefetchedSlots
+          : await fetchSlots(tomorrow, end, liveMinutes);
         if (!ignore) setSlots(data);
-      } catch (e: any) {
-        if (!ignore) setError(e?.message || "Failed to load availability");
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!ignore) setError(msg || "Failed to load availability");
+      } finally {
+        if (!ignore) setLoading(false);
       }
-      finally { if (!ignore) setLoading(false); }
     })();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, [liveMinutes, prefetchedSlots]);
 
-  // Preselect if initialSlotId provided
   const preselectedOnce = useRef(false);
   useEffect(() => {
     if (preselectedOnce.current || !initialSlotId || !slots.length) return;
@@ -108,7 +118,6 @@ export default function Calendar({
     preselectedOnce.current = true;
   }, [initialSlotId, slots]);
 
-  // Map of all raw starts (15-min) grouped by day
   const startsByDay = useMemo(() => {
     const map = new Map<string, { id: string; local: Date }[]>();
     const tomorrow = addDays(startOfDay(new Date()), 1);
@@ -126,7 +135,6 @@ export default function Calendar({
     return map;
   }, [slots]);
 
-  // ✅ Only count/display slots aligned to DISPLAY_STEP_MIN for CalendarGrid
   const displayableStartCountByDay = useMemo(() => {
     const out = new Map<string, number>();
     for (const [k, arr] of startsByDay.entries()) {
@@ -136,7 +144,6 @@ export default function Calendar({
     return out;
   }, [startsByDay, DISPLAY_STEP_MIN]);
 
-  // ✅ For TimeSlotsList: also only show aligned slots
   const displayableStartsForSelected = useMemo(() => {
     if (!selectedDate) return [];
     const all = startsByDay.get(dayKeyLocal(selectedDate)) ?? [];
@@ -145,7 +152,8 @@ export default function Calendar({
 
   async function submitBooking() {
     if (!selectedSlotId) return;
-    setDErr(null); setPending(true);
+    setDErr(null);
+    setPending(true);
     try {
       const { holdKey: k } = await holdSlot(selectedSlotId, holdKey || undefined);
       setHoldKey(k);
@@ -164,14 +172,12 @@ export default function Calendar({
       url.searchParams.set("holdKey", k);
       if (blocks) url.searchParams.set("liveBlocks", String(blocks));
 
-      // 🔹 ADD the selected start time so checkout can display it
-      // Prefer the 'displayable' list (aligned to :00/:30); fall back to raw slot by id.
       const selectedLocal =
-        displayableStartsForSelected.find(({ id }) => id === selectedSlotId)?.local
-        ?? (() => {
-             const s = slots.find((x) => x.id === selectedSlotId);
-             return s ? new Date(s.startTime) : null;
-           })();
+        displayableStartsForSelected.find(({ id }) => id === selectedSlotId)?.local ??
+        (() => {
+          const s = slots.find((x) => x.id === selectedSlotId);
+          return s ? new Date(s.startTime) : null;
+        })();
 
       if (selectedLocal && !isNaN(selectedLocal.getTime())) {
         url.searchParams.set("startTime", selectedLocal.toISOString());
@@ -179,15 +185,22 @@ export default function Calendar({
 
       goingToCheckout.current = true;
       router.push(url.toString());
-    } catch (e: any) {
-      setDErr(e?.message || "Could not hold the slot");
-    } finally { setPending(false); }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setDErr(msg || "Could not hold the slot");
+    } finally {
+      setPending(false);
+    }
   }
 
   useEffect(() => {
     return () => {
       if (goingToCheckout.current) return;
-      if (selectedSlotId && typeof window !== "undefined" && !window.location.pathname.startsWith("/checkout")) {
+      if (
+        selectedSlotId &&
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/checkout")
+      ) {
         releaseHold(selectedSlotId, holdKey || undefined);
       }
     };
@@ -240,8 +253,11 @@ export default function Calendar({
                       month={month}
                       onMonthChange={setMonth}
                       selectedDate={selectedDate}
-                      onSelectDate={(d) => { setSelectedDate(d); setSelectedSlotId(null); }}
-                      validStartCountByDay={displayableStartCountByDay} // ✅ use displayable
+                      onSelectDate={(d) => {
+                        setSelectedDate(d);
+                        setSelectedSlotId(null);
+                      }}
+                      validStartCountByDay={displayableStartCountByDay}
                       loading={loading}
                       error={error}
                     />
@@ -252,7 +268,7 @@ export default function Calendar({
 
                   <div className="min-h-0 p-4">
                     <TimeSlotsList
-                      slots={displayableStartsForSelected} // ✅ use displayable
+                      slots={displayableStartsForSelected}
                       selectedSlotId={selectedSlotId}
                       onSelectSlot={setSelectedSlotId}
                       showTimezoneNote
@@ -285,7 +301,6 @@ export default function Calendar({
                 </button>
               </div>
             </div>
-
           </motion.div>
         </motion.div>
       )}

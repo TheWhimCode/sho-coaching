@@ -59,15 +59,15 @@ export default function CheckoutClient() {
   const sp = useSearchParams();
   const spKey = sp?.toString() ?? "";
 
-  const getStr = (k: string, fallback = "") => sp?.get(k) ?? fallback;
-  const getNum = (k: string, fallback: number) => {
-    const v = sp?.get(k);
-    if (v == null) return fallback;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
-  };
-
   const payload = useMemo(() => {
+    const getStr = (k: string, fallback = "") => sp?.get(k) ?? fallback;
+    const getNum = (k: string, fallback: number) => {
+      const v = sp?.get(k);
+      if (v == null) return fallback;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    };
+
     const liveBlocks = getNum("liveBlocks", 0);
     const liveMinRaw = sp?.get("liveMin");
     const liveMinutesRaw = sp?.get("liveMinutes");

@@ -19,8 +19,9 @@ function fold(line: string) {
   for (let i = 0; i < line.length; i += 70) out.push(i ? " " + line.slice(i, i + 70) : line.slice(i, i + 70));
   return out.join("\r\n");
 }
-function noStore(body: any, status = 200, headers: Record<string,string> = {}) {
-  return new NextResponse(typeof body === "string" ? body : JSON.stringify(body), {
+function noStore(body: unknown, status = 200, headers: Record<string, string> = {}): NextResponse {
+  const payload = typeof body === "string" ? body : JSON.stringify(body);
+  return new NextResponse(payload, {
     status,
     headers: { "Cache-Control": "no-store", ...headers },
   });

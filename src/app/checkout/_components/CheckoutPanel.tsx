@@ -32,12 +32,33 @@ type Payload = {
   startTime?: string | number;
 };
 
+// payload shape we POST to the backend (plus optional startTime for display)
+type PayloadForBackend = Pick<
+  Payload,
+  "slotId" | "sessionType" | "liveMinutes" | "followups" | "liveBlocks" | "discord" | "preset" | "holdKey"
+> & {
+  startTime?: string | number | Date;
+};
+
 type Props = {
   payload: Payload;
   breakdown: Breakdown;
   stripePromise: Promise<Stripe | null>;
   appearance?: Appearance;
-  payloadForBackend: any;
+  payloadForBackend: PayloadForBackend;
+};
+
+// ✅ SSR-safe defaults (hoisted so it's stable and not a missing dep)
+const DEFAULT_PAYLOAD: Payload = {
+  slotId: "",
+  sessionType: "",
+  baseMinutes: 60,
+  liveMinutes: 60,
+  followups: 0,
+  liveBlocks: 0,
+  discord: "",
+  preset: "",
+  holdKey: "",
 };
 
 type SavedCard = {
@@ -57,30 +78,20 @@ export default function CheckoutPanel({
 }: Props) {
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
 
-  // ✅ SSR-safe defaults
-  const DEFAULT_PAYLOAD: Payload = {
-    slotId: "",
-    sessionType: "",
-    baseMinutes: 60,
-    liveMinutes: 60,
-    followups: 0,
-    liveBlocks: 0,
-    discord: "",
-    preset: "",
-    holdKey: "",
-  };
-
-  // ✅ FIX: memoize to avoid a new object each render
-  const safePayload: Payload = useMemo(
-    () => ({ ...DEFAULT_PAYLOAD, ...payload }),
-    [payload]
-  );
+  // ✅ memoize to avoid a new object each render (no missing-deps warning now that DEFAULT_PAYLOAD is hoisted)
+  const safePayload: Payload = useMemo(() => ({ ...DEFAULT_PAYLOAD, ...payload }), [payload]);
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
 
-  const goNext = () => { setDir(1); setStep((s) => (s === 3 ? 3 : (s + 1) as 0 | 1 | 2 | 3)); };
-  const goBack = () => { setDir(-1); setStep((s) => (s === 0 ? 0 : (s - 1) as 0 | 1 | 2 | 3)); };
+  const goNext = () => {
+    setDir(1);
+    setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3)));
+  };
+  const goBack = () => {
+    setDir(-1);
+    setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
+  };
 
   // Contact state
   const [email, setEmail] = useState("");
@@ -181,16 +192,29 @@ export default function CheckoutPanel({
   useEffect(() => {
     function coerceToDate(v: unknown): Date | null {
       if (v == null) return null;
-      if (typeof v === "number") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
-      if (typeof v === "string") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+      if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+      if (typeof v === "number") {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      if (typeof v === "string") {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      }
       return null;
     }
 
     const fromPayloadBackend = coerceToDate(payloadForBackend?.startTime);
-    const fromPayload = coerceToDate((safePayload as any)?.startTime);
+    const fromPayload = coerceToDate(safePayload.startTime);
 
-    if (fromPayloadBackend) { setSelectedStart(fromPayloadBackend); return; }
-    if (fromPayload) { setSelectedStart(fromPayload); return; }
+    if (fromPayloadBackend) {
+      setSelectedStart(fromPayloadBackend);
+      return;
+    }
+    if (fromPayload) {
+      setSelectedStart(fromPayload);
+      return;
+    }
 
     if (typeof window !== "undefined") {
       const s = new URLSearchParams(window.location.search).get("startTime");
