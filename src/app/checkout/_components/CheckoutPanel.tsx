@@ -78,7 +78,7 @@ export default function CheckoutPanel({
 }: Props) {
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
 
-  // ✅ memoize to avoid a new object each render (no missing-deps warning now that DEFAULT_PAYLOAD is hoisted)
+  // ✅ memoize to avoid a new object each render
   const safePayload: Payload = useMemo(() => ({ ...DEFAULT_PAYLOAD, ...payload }), [payload]);
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -141,6 +141,8 @@ export default function CheckoutPanel({
 
   const currentMethodRef = useRef<PayMethod>("");
 
+  const [waiver, setWaiver] = useState(false);
+
   async function chooseAndGo(m: PayMethod) {
     if (!m) return;
     setDir(1);
@@ -160,7 +162,15 @@ export default function CheckoutPanel({
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payloadForBackend, payMethod: m }),
+        body: JSON.stringify({
+          ...payloadForBackend,
+          // ensure freshest values from current step state override any defaults
+          discord,          // ← from StepContact state
+          email,            // ← from StepContact state
+          notes,            // ← from StepContact state (optional)
+          waiverAccepted: waiver, // ← from StepSummary (default false until checked)
+          payMethod: m,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (currentMethodRef.current !== m) return;
@@ -183,8 +193,6 @@ export default function CheckoutPanel({
     center: { x: 0, opacity: 1 },
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
-
-  const [waiver, setWaiver] = useState(false);
 
   // Selected start time → show in SessionBlock header
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
@@ -257,7 +265,7 @@ export default function CheckoutPanel({
 
           <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-          <div className="relative min-h-[440px] md:min-h-[440px] overflow-visible pt-1">
+          <div className="relative min-h-[440px] md:minh-[440px] overflow-visible pt-1">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
                 <motion.div

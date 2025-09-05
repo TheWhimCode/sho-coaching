@@ -56,7 +56,7 @@ model Booking {
   status           String     @default("unpaid")
   slotId           String?    @unique   // may be null (snapshot used)
   liveMinutes      Int
-  inGame           Boolean    @default(false)
+  liveBlocks       Int        @default(0)   // replaces outdated inGame boolean
   followups        Int        @default(0)
   discord          String
   notes            String?
@@ -68,6 +68,11 @@ model Booking {
   currency         String     @default("eur")
   blockCsv         String?
   customerEmail    String?
+
+  // Waiver info
+  waiverAccepted   Boolean    @default(false)
+  waiverAcceptedAt DateTime?
+  waiverIp         String?
 
   // Permanent schedule snapshot
   scheduledStart   DateTime

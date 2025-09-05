@@ -13,7 +13,7 @@ const connectSrc = [
   "'self'",
   "https://api.stripe.com",
   "https://m.stripe.network",
-  "https://r.stripe.com", // Stripe analytics/pixel
+  "https://r.stripe.com",
   isDev ? "ws:" : "",
   isDev ? "wss:" : "",
 ].filter(Boolean).join(" ");
@@ -22,10 +22,10 @@ const imgSrc = [
   "'self'",
   "data:",
   "blob:",
-  "https://*.stripe.com", // covers r.stripe.com too
+  "https://*.stripe.com",
 ].join(" ");
 
-// Build CSP parts without upgrade-insecure-requests in dev
+// Build CSP parts (dev: no upgrade-insecure-requests)
 const cspParts = [
   `default-src 'self'`,
   `script-src ${scriptSrc}`,
@@ -39,22 +39,21 @@ const cspParts = [
   `object-src 'none'`,
   `base-uri 'self'`,
   `frame-ancestors 'none'`,
+  `form-action 'self'`,
+  `manifest-src 'self'`,
 ];
-if (!isDev) {
-  cspParts.push(`upgrade-insecure-requests`);
-}
+if (!isDev) cspParts.push(`upgrade-insecure-requests`);
 
 const csp = cspParts.join("; ");
 
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true }, // lets you deploy while we fix lint
+  eslint: { ignoreDuringBuilds: true },
 
   async headers() {
     const baseHeaders = [
       { key: "X-Frame-Options", value: "DENY" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-      // Stripe/OAuth popups play nicer with allow-popups:
       { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
       { key: "Cross-Origin-Resource-Policy", value: "same-site" },
       { key: "X-DNS-Prefetch-Control", value: "off" },
@@ -66,20 +65,20 @@ const nextConfig = {
       { key: "Content-Security-Policy", value: csp }, // keep CSP last
     ];
 
-    // ✅ only send HSTS in production
+    // HSTS only in prod
     if (!isDev) {
       baseHeaders.unshift({
         key: "Strict-Transport-Security",
         value: "max-age=63072000; includeSubDomains; preload",
       });
+      // TEMP: Report-Only for a week—watch logs, then remove this block
+      baseHeaders.push({
+        key: "Content-Security-Policy-Report-Only",
+        value: `${csp}; report-uri /api/csp/report`,
+      });
     }
 
-    return [
-      {
-        source: "/(.*)",
-        headers: baseHeaders,
-      },
-    ];
+    return [{ source: "/(.*)", headers: baseHeaders }];
   },
 };
 

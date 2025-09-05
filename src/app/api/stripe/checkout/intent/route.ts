@@ -17,33 +17,48 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   const key = CFG_SERVER.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe not configured");
-  // (left as-is per your file)
-  stripe = new Stripe(key, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
+  stripe = new Stripe(key, {
+    apiVersion: "2024-06-20" as Stripe.LatestApiVersion,
+  });
   return stripe;
 }
 
 export async function POST(req: Request) {
   try {
     // Rate limit: 20/min/IP
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
     if (!rateLimit(`intent:${ip}`, 20, 60_000)) {
       return NextResponse.json({ error: "rate_limited" }, { status: 429 });
     }
 
     const body = await req.json().catch(() => null);
-    if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    if (!body)
+      return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
-    // NEW: pick up buyer email from your contact step
+    // Pick up buyer info from contact step
     const email = (body as { email?: string }).email?.trim();
+    const notes = (body as { notes?: string }).notes?.trim();
+    const waiver = (body as { waiver?: boolean }).waiver === true;
 
-    const { payMethod = "card" } = body as { payMethod?: "card" | "paypal" | "revolut_pay" };
+    const { payMethod = "card" } = body as {
+      payMethod?: "card" | "paypal" | "revolut_pay";
+    };
 
     const parsed = CheckoutZ.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     }
 
-    const { slotId, sessionType, liveMinutes, discord, followups, liveBlocks, holdKey } = parsed.data;
+    const {
+      slotId,
+      sessionType,
+      liveMinutes,
+      discord,
+      followups,
+      liveBlocks,
+      holdKey,
+    } = parsed.data;
 
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
@@ -56,9 +71,16 @@ export async function POST(req: Request) {
       where: { id: slotId },
       select: { id: true, startTime: true, status: true, holdKey: true },
     });
-    if (!anchor) return NextResponse.json({ error: "unavailable" }, { status: 409 });
-    if (anchor.status === SlotStatus.taken) return NextResponse.json({ error: "unavailable" }, { status: 409 });
-    if (anchor.status === SlotStatus.blocked && anchor.holdKey && holdKey && anchor.holdKey !== holdKey) {
+    if (!anchor)
+      return NextResponse.json({ error: "unavailable" }, { status: 409 });
+    if (anchor.status === SlotStatus.taken)
+      return NextResponse.json({ error: "unavailable" }, { status: 409 });
+    if (
+      anchor.status === SlotStatus.blocked &&
+      anchor.holdKey &&
+      holdKey &&
+      anchor.holdKey !== holdKey
+    ) {
       return NextResponse.json({ error: "unavailable" }, { status: 409 });
     }
 
@@ -70,8 +92,13 @@ export async function POST(req: Request) {
     // 3) Fallback (only if held by us)
     if (!slotIds) {
       const { BUFFER_BEFORE_MIN, BUFFER_AFTER_MIN } = CFG_SERVER.booking;
-      const windowStart = new Date(anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000);
-      const windowEnd = new Date(anchor.startTime.getTime() + (liveMinutes + BUFFER_AFTER_MIN) * 60_000);
+      const windowStart = new Date(
+        anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000
+      );
+      const windowEnd = new Date(
+        anchor.startTime.getTime() +
+          (liveMinutes + BUFFER_AFTER_MIN) * 60_000
+      );
 
       const rows = await prisma.slot.findMany({
         where: {
@@ -82,16 +109,27 @@ export async function POST(req: Request) {
         select: { id: true, startTime: true, status: true, holdKey: true },
       });
 
-      if (!rows.length || rows.some((r) => r.status === SlotStatus.blocked && r.holdKey !== effKey)) {
+      if (
+        !rows.length ||
+        rows.some(
+          (r) => r.status === SlotStatus.blocked && r.holdKey !== effKey
+        )
+      ) {
         return NextResponse.json({ error: "unavailable" }, { status: 409 });
       }
 
-      const expected = Math.round((liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN) / SLOT_SIZE_MIN);
-      if (rows.length !== expected) return NextResponse.json({ error: "unavailable" }, { status: 409 });
+      const expected = Math.round(
+        (liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN) / SLOT_SIZE_MIN
+      );
+      if (rows.length !== expected)
+        return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
       const stepMs = SLOT_SIZE_MIN * 60_000;
       for (let i = 1; i < rows.length; i++) {
-        if (rows[i].startTime.getTime() !== rows[i - 1].startTime.getTime() + stepMs) {
+        if (
+          rows[i].startTime.getTime() !==
+          rows[i - 1].startTime.getTime() + stepMs
+        ) {
           return NextResponse.json({ error: "unavailable" }, { status: 409 });
         }
       }
@@ -104,36 +142,48 @@ export async function POST(req: Request) {
     await prisma.slot.updateMany({
       where: {
         id: { in: slotIds },
-        OR: [{ status: SlotStatus.free }, { status: SlotStatus.blocked, holdKey: effKey }],
+        OR: [
+          { status: SlotStatus.free },
+          { status: SlotStatus.blocked, holdKey: effKey },
+        ],
       },
       data: { holdKey: effKey, holdUntil, status: SlotStatus.blocked },
     });
 
     // 5) Limit payment methods
     const pmTypes: Array<"card" | "paypal" | "revolut_pay"> =
-      payMethod === "paypal" ? ["paypal"] : payMethod === "revolut_pay" ? ["revolut_pay"] : ["card"];
+      payMethod === "paypal"
+        ? ["paypal"]
+        : payMethod === "revolut_pay"
+        ? ["revolut_pay"]
+        : ["card"];
 
+    // 6) Create PaymentIntent
     const pi = await getStripe().paymentIntents.create(
       {
         amount: amountCents,
         currency: "eur",
         payment_method_types: pmTypes,
-        // NEW: persist buyer email in Stripe
         receipt_email: email || undefined,
         metadata: {
-          email: email || "",         // fallback for webhook
+          email: email || "",
+          discord: discord ?? "",
+          notes: notes ?? "",
+          waiverAccepted: String(waiver),
+          waiverIp: ip,
           slotId,
           slotIds: slotIds.join(","),
           sessionType,
           liveMinutes: String(liveMinutes),
-          discord: discord ?? "",
-          followups: String(followups ?? 0),
           liveBlocks: String(liveBlocks ?? 0),
+          followups: String(followups ?? 0),
           priceEUR: String(priceEUR),
           payMethod,
         },
       },
-      { idempotencyKey: `${slotIds.join("|")}:${amountCents}:${effKey}:${payMethod}` }
+      {
+        idempotencyKey: `${slotIds.join("|")}:${amountCents}:${effKey}:${payMethod}`,
+      }
     );
 
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });

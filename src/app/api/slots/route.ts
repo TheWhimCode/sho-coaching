@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
   // per-IP rate limit (30/min)
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!rateLimit(`slots:${ip}`, 30, 60_000)) {
+  if (!rateLimit(`slots:${ip}`, 300, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 

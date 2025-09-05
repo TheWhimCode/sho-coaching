@@ -9,8 +9,12 @@ export type FinalizeMeta = {
   liveMinutes?: string;
   followups?: string;
   discord?: string;
-  email?: string;       // from checkout/stripe
-  timeZone?: string;    // e.g. "Europe/Berlin"
+  notes?: string;
+  email?: string;        // from checkout/stripe
+  timeZone?: string;     // e.g. "Europe/Berlin"
+  liveBlocks?: string;
+  waiverAccepted?: string; // "true"/"false"
+  waiverIp?: string;
 };
 
 export async function finalizeBooking(
@@ -29,7 +33,12 @@ export async function finalizeBooking(
   const sessionType = meta.sessionType ?? "Session";
   const liveMinutes = parseInt(meta.liveMinutes ?? "60", 10);
   const followups = parseInt(meta.followups ?? "0", 10);
+  const liveBlocks = parseInt(meta.liveBlocks ?? "0", 10);
   const discord = meta.discord ?? "";
+  const notes = meta.notes?.trim() || undefined;
+
+  const waiverAccepted = meta.waiverAccepted === "true";
+  const waiverIp = meta.waiverIp || undefined;
 
   // capture ISO string to avoid Date typing issues
   let scheduledStartISO: string | null = null;
@@ -47,7 +56,10 @@ export async function finalizeBooking(
     // mark slots
     if (slotIds.length) {
       await tx.slot.updateMany({
-        where: { id: { in: slotIds }, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
+        where: {
+          id: { in: slotIds },
+          status: { in: [SlotStatus.free, SlotStatus.blocked] },
+        },
         data: { status: SlotStatus.taken, holdUntil: null, holdKey: null },
       });
     } else {
@@ -64,8 +76,9 @@ export async function finalizeBooking(
     });
     if (!startSlot) throw new Error("slot not found");
 
-    // save ISO now (no more toISOString() later)
-    scheduledStartISO = new Date(startSlot.startTime as unknown as Date).toISOString();
+    scheduledStartISO = new Date(
+      startSlot.startTime as unknown as Date
+    ).toISOString();
 
     // upsert booking
     await tx.booking.upsert({
@@ -79,6 +92,14 @@ export async function finalizeBooking(
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
         scheduledStart: startSlot.startTime,
         scheduledMinutes: liveMinutes,
+        // new fields
+        discord,
+        notes,
+        liveBlocks,
+        customerEmail: meta.email ?? undefined,
+        waiverAccepted,
+        waiverAcceptedAt: waiverAccepted ? new Date() : undefined,
+        waiverIp,
       },
       create: {
         sessionType,
@@ -86,7 +107,9 @@ export async function finalizeBooking(
         slot: { connect: { id: firstSlotId } },
         liveMinutes,
         followups,
+        liveBlocks,
         discord,
+        notes,
         amountCents,
         currency: (currency ?? "eur").toLowerCase(),
         blockCsv: slotIds.join(","),
@@ -95,6 +118,10 @@ export async function finalizeBooking(
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
         scheduledStart: startSlot.startTime,
         scheduledMinutes: liveMinutes,
+        customerEmail: meta.email ?? undefined,
+        waiverAccepted,
+        waiverAcceptedAt: waiverAccepted ? new Date() : undefined,
+        waiverIp,
       },
     });
   });
@@ -106,10 +133,10 @@ export async function finalizeBooking(
     try {
       await sendBookingEmail(meta.email, {
         title: sessionType,
-        startISO: scheduledStartISO,         // <-- already ISO string
+        startISO: scheduledStartISO, // already ISO string
         minutes: liveMinutes,
         followups,
-        priceEUR: (amountCents ?? 0) / 100,  // no rounding
+        priceEUR: (amountCents ?? 0) / 100,
         bookingId: paymentRef,
         timeZone: meta.timeZone,
       });

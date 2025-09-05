@@ -16,7 +16,6 @@ if (!CFG_SERVER.STRIPE_WEBHOOK_SECRET) throw new Error("Missing STRIPE_WEBHOOK_S
 let stripe: Stripe | null = null;
 function getStripe(): Stripe {
   if (stripe) return stripe;
-  // (left as-is per your file)
   stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
 }
@@ -46,7 +45,7 @@ async function commitTakenSlots(slotIdsCsv: string | undefined) {
   });
 }
 
-// --- NEW: tiny helper to detect Prisma unique-violation (duplicate event) ---
+// --- helper to detect Prisma unique-violation (duplicate event) ---
 function isUniqueViolation(e: unknown): boolean {
   return typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002";
 }
@@ -67,7 +66,7 @@ export async function POST(req: Request) {
       raw,
       sig,
       CFG_SERVER.STRIPE_WEBHOOK_SECRET,
-      300 // seconds of timestamp tolerance (anti-replay)
+      300 // seconds tolerance
     );
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -75,7 +74,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
   }
 
-  // --- NEW: Idempotency guard (skip duplicates) ---
+  // --- Idempotency guard ---
   try {
     await prisma.processedEvent.create({ data: { id: event.id } });
   } catch (e: unknown) {
@@ -83,7 +82,7 @@ export async function POST(req: Request) {
     throw e;
   }
 
-  // Helper to finalize + email (idempotent)
+  // finalize helper
   const handle = async (
     meta: Record<string, string>,
     amount?: number,
@@ -98,7 +97,14 @@ export async function POST(req: Request) {
 
     console.log("[webhook] finalize start", { paymentRef, amount, currency, meta });
 
-    await finalizeBooking(meta, amount, (currency ?? "eur").toLowerCase(), paymentRef);
+    // pass all meta + email into finalizeBooking
+    await finalizeBooking(
+      { ...meta, email }, // includes notes, discord, waiverAccepted, etc.
+      amount,
+      (currency ?? "eur").toLowerCase(),
+      paymentRef,
+      "stripe"
+    );
     await commitTakenSlots(meta.slotIds);
 
     console.log("[webhook] finalize done", { paymentRef });
@@ -129,7 +135,7 @@ export async function POST(req: Request) {
             priceEUR: (amount ?? 0) / 100,
             bookingId: booking.id,
             timeZone: meta.timeZone || meta.tz,
-            // if your email.ts accepts icsUrl, add: icsUrl,
+            // icsUrl if supported by your mailer
           });
 
           console.log("[webhook] email sent", { paymentRef, email });
@@ -146,7 +152,7 @@ export async function POST(req: Request) {
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
         const meta = (pi.metadata ?? {}) as Record<string, string>;
-        const email = (await extractEmailFromPI(pi)) || meta.email || undefined; // fallback to metadata.email
+        const email = (await extractEmailFromPI(pi)) || meta.email || undefined;
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
         break;
       }
