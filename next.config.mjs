@@ -25,7 +25,8 @@ const imgSrc = [
   "https://*.stripe.com", // covers r.stripe.com too
 ].join(" ");
 
-const csp = [
+// Build CSP parts without upgrade-insecure-requests in dev
+const cspParts = [
   `default-src 'self'`,
   `script-src ${scriptSrc}`,
   `style-src 'self' 'unsafe-inline'`,
@@ -38,8 +39,12 @@ const csp = [
   `object-src 'none'`,
   `base-uri 'self'`,
   `frame-ancestors 'none'`,
-  `upgrade-insecure-requests`,
-].join("; ");
+];
+if (!isDev) {
+  cspParts.push(`upgrade-insecure-requests`);
+}
+
+const csp = cspParts.join("; ");
 
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true }, // lets you deploy while we fix lint
