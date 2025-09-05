@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useElements, useStripe } from "@stripe/react-stripe-js";
+import type { PaymentIntentResult } from "@stripe/stripe-js";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import CardForm from "@/app/checkout/_components/checkout-steps/step-components/CardForm";
 import { ArrowLeft } from "lucide-react";
@@ -18,16 +19,22 @@ type Props = {
   };
   breakdown: Breakdown;
   payMethod: Method;
+
+  // contact + context
   email: string;
+  discord?: string;
+  notes?: string;
+  sessionType?: string;
+
   piId?: string | null;
 
   // consent props
   waiver: boolean;
   setWaiver: (v: boolean) => void;
 
-  // NEW: needed to confirm
-  clientSecret: string;              // required on this step
-  cardPmId?: string | null;          // saved PM id for cards
+  // Needed to confirm
+  clientSecret: string;
+  cardPmId?: string | null;
 };
 
 // EU country set
@@ -42,6 +49,9 @@ export default function StepSummary({
   breakdown: b,
   payMethod,
   email,
+  discord = "",
+  notes = "",
+  sessionType = "Session",
   piId,
   waiver,
   setWaiver,
@@ -49,6 +59,7 @@ export default function StepSummary({
   cardPmId,
 }: Props) {
   const inGameMinutes = payload.liveBlocks * 45;
+  const liveMinutes = Math.max(30, payload.baseMinutes + inGameMinutes);
 
   const [isEU, setIsEU] = useState<boolean | null>(null);
 
@@ -152,7 +163,14 @@ export default function StepSummary({
           <div className="-mt-2">
             <PayButton
               email={email}
+              discord={discord}
+              notes={notes}
+              sessionType={sessionType}
+              liveMinutes={liveMinutes}
+              liveBlocks={payload.liveBlocks}
+              followups={payload.followups}
               disabled={!waiver}
+              waiverAccepted={waiver}
               payMethod={payMethod}
               clientSecret={clientSecret}
               cardPmId={cardPmId ?? null}
@@ -166,12 +184,26 @@ export default function StepSummary({
 
 function PayButton({
   email,
+  discord = "",
+  notes = "",
+  sessionType = "Session",
+  liveMinutes,
+  liveBlocks,
+  followups,
+  waiverAccepted,
   disabled = false,
   payMethod,
   clientSecret,
   cardPmId,
 }: {
   email: string;
+  discord?: string;
+  notes?: string;
+  sessionType?: string;
+  liveMinutes: number;
+  liveBlocks: number;
+  followups: number;
+  waiverAccepted: boolean;
   disabled?: boolean;
   payMethod: Method;
   clientSecret: string;
@@ -182,6 +214,29 @@ function PayButton({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Make sure PI has the latest metadata (incl. waiver) before confirm
+  async function patchPI() {
+    const res = await fetch("/api/stripe/checkout/intent/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientSecret,
+        email,
+        discord,
+        notes,
+        sessionType,
+        liveMinutes,
+        liveBlocks,
+        followups,
+        waiverAccepted,
+      }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j?.detail || "Failed to update payment intent");
+    }
+  }
+
   async function handlePay() {
     if (!stripe || disabled) return;
     setSubmitting(true);
@@ -190,6 +245,9 @@ function PayButton({
     const returnUrl = `${window.location.origin}/checkout/success`;
 
     try {
+      // 1) Update PI metadata (captures waiver + latest contact fields)
+      await patchPI();
+
       if (payMethod === "card") {
         if (!cardPmId) {
           setError("Card details are missing.");
@@ -197,25 +255,25 @@ function PayButton({
           return;
         }
 
-        const { error, paymentIntent } = await stripe.confirmPayment({
+        const result = (await stripe.confirmPayment({
           clientSecret,
           confirmParams: {
             return_url: returnUrl,
-            payment_method: cardPmId, // no Elements needed
+            payment_method: cardPmId,
           },
           redirect: "if_required",
-        });
+        })) as PaymentIntentResult;
 
-        if (error) {
-          setError(error.message ?? "Payment failed");
+        if (result.error) {
+          setError(result.error.message ?? "Payment failed");
           setSubmitting(false);
           return;
         }
 
-        if (paymentIntent?.status === "succeeded") {
+        if (result.paymentIntent && result.paymentIntent.status === "succeeded") {
           window.location.href =
             `/checkout/success?provider=stripe&payment_intent=${encodeURIComponent(
-              paymentIntent.id
+              result.paymentIntent.id
             )}&redirect_status=succeeded`;
           return;
         }
@@ -224,14 +282,13 @@ function PayButton({
         return;
       }
 
-      // ---- PayPal / Revolut Pay path (needs a mounted Payment Element) ----
+      // ---- PayPal / Revolut Pay path (Payment Element) ----
       if (!elements) {
         setError("Payment form not ready.");
         setSubmitting(false);
         return;
       }
 
-      // Validate wallet element then confirm
       const { error: submitError } = await elements.submit();
       if (submitError) {
         setError(submitError.message ?? "Please complete the required payment details.");
@@ -239,21 +296,20 @@ function PayButton({
         return;
       }
 
-      const { error } = await stripe.confirmPayment({
+      const res = (await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: returnUrl,
           payment_method_data: { billing_details: { email: email || undefined } },
         },
-      });
+      })) as PaymentIntentResult;
 
-      if (error) {
-        setError(error.message ?? "Payment failed");
+      if (res.error) {
+        setError(res.error.message ?? "Payment failed");
         setSubmitting(false);
         return;
       }
 
-      // For wallets, Stripe may redirect; if not, we’re done.
       setSubmitting(false);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

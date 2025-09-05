@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
@@ -17,48 +18,55 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   const key = CFG_SERVER.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe not configured");
-  stripe = new Stripe(key, {
-    apiVersion: "2024-06-20" as Stripe.LatestApiVersion,
-  });
+  stripe = new Stripe(key, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
   return stripe;
+}
+
+function makeIdempotencyKey(slotIds: string[], amount: number, effKey: string, payMethod: string) {
+  const hash = crypto.createHash("sha1").update(slotIds.join("|")).digest("hex").slice(0, 32);
+  return `${hash}:${amount}:${effKey}:${payMethod}`;
 }
 
 export async function POST(req: Request) {
   try {
     // Rate limit: 20/min/IP
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
     if (!rateLimit(`intent:${ip}`, 20, 60_000)) {
       return NextResponse.json({ error: "rate_limited" }, { status: 429 });
     }
 
     const body = await req.json().catch(() => null);
-    if (!body)
-      return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
-    // Pick up buyer info from contact step
-    const email = (body as { email?: string }).email?.trim();
-    const notes = (body as { notes?: string }).notes?.trim();
-    const waiver = (body as { waiver?: boolean }).waiver === true;
+    // Live values coming from the contact/checkout step
+    const emailRaw = (body as { email?: string }).email?.trim();
+    const notesRaw = (body as { notes?: string }).notes?.trim();
+    const discordRaw = (body as { discord?: string }).discord?.trim();
+    const sessionTypeRaw = (body as { sessionType?: string }).sessionType?.trim();
+    const waiverAccepted =
+      (body as { waiverAccepted?: boolean }).waiverAccepted === true ||
+      (body as { waiver?: boolean }).waiver === true;
 
-    const { payMethod = "card" } = body as {
-      payMethod?: "card" | "paypal" | "revolut_pay";
-    };
+    const { payMethod = "card" } = body as { payMethod?: "card" | "paypal" | "revolut_pay" };
 
     const parsed = CheckoutZ.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     }
 
+    // Prefer live values from body; fall back to validated payload
     const {
       slotId,
-      sessionType,
+      sessionType: stFromSchema,
       liveMinutes,
-      discord,
       followups,
       liveBlocks,
       holdKey,
+      discord: discordFromSchema,
     } = parsed.data;
+
+    const sessionType = sessionTypeRaw || stFromSchema || "Session";
+    const discord = discordRaw ?? discordFromSchema ?? "";
 
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
@@ -71,16 +79,9 @@ export async function POST(req: Request) {
       where: { id: slotId },
       select: { id: true, startTime: true, status: true, holdKey: true },
     });
-    if (!anchor)
-      return NextResponse.json({ error: "unavailable" }, { status: 409 });
-    if (anchor.status === SlotStatus.taken)
-      return NextResponse.json({ error: "unavailable" }, { status: 409 });
-    if (
-      anchor.status === SlotStatus.blocked &&
-      anchor.holdKey &&
-      holdKey &&
-      anchor.holdKey !== holdKey
-    ) {
+    if (!anchor) return NextResponse.json({ error: "unavailable" }, { status: 409 });
+    if (anchor.status === SlotStatus.taken) return NextResponse.json({ error: "unavailable" }, { status: 409 });
+    if (anchor.status === SlotStatus.blocked && anchor.holdKey && holdKey && anchor.holdKey !== holdKey) {
       return NextResponse.json({ error: "unavailable" }, { status: 409 });
     }
 
@@ -92,13 +93,8 @@ export async function POST(req: Request) {
     // 3) Fallback (only if held by us)
     if (!slotIds) {
       const { BUFFER_BEFORE_MIN, BUFFER_AFTER_MIN } = CFG_SERVER.booking;
-      const windowStart = new Date(
-        anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000
-      );
-      const windowEnd = new Date(
-        anchor.startTime.getTime() +
-          (liveMinutes + BUFFER_AFTER_MIN) * 60_000
-      );
+      const windowStart = new Date(anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000);
+      const windowEnd = new Date(anchor.startTime.getTime() + (liveMinutes + BUFFER_AFTER_MIN) * 60_000);
 
       const rows = await prisma.slot.findMany({
         where: {
@@ -109,31 +105,26 @@ export async function POST(req: Request) {
         select: { id: true, startTime: true, status: true, holdKey: true },
       });
 
-      if (
-        !rows.length ||
-        rows.some(
-          (r) => r.status === SlotStatus.blocked && r.holdKey !== effKey
-        )
-      ) {
+      if (!rows.length || rows.some((r) => r.status === SlotStatus.blocked && r.holdKey !== effKey)) {
         return NextResponse.json({ error: "unavailable" }, { status: 409 });
       }
 
       const expected = Math.round(
         (liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN) / SLOT_SIZE_MIN
       );
-      if (rows.length !== expected)
-        return NextResponse.json({ error: "unavailable" }, { status: 409 });
+      if (rows.length !== expected) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
       const stepMs = SLOT_SIZE_MIN * 60_000;
       for (let i = 1; i < rows.length; i++) {
-        if (
-          rows[i].startTime.getTime() !==
-          rows[i - 1].startTime.getTime() + stepMs
-        ) {
+        if (rows[i].startTime.getTime() !== rows[i - 1].startTime.getTime() + stepMs) {
           return NextResponse.json({ error: "unavailable" }, { status: 409 });
         }
       }
       slotIds = rows.map((r) => r.id);
+    }
+
+    if (!slotIds || slotIds.length === 0) {
+      return NextResponse.json({ error: "unavailable" }, { status: 409 });
     }
 
     // 4) Claim/extend hold
@@ -142,37 +133,32 @@ export async function POST(req: Request) {
     await prisma.slot.updateMany({
       where: {
         id: { in: slotIds },
-        OR: [
-          { status: SlotStatus.free },
-          { status: SlotStatus.blocked, holdKey: effKey },
-        ],
+        OR: [{ status: SlotStatus.free }, { status: SlotStatus.blocked, holdKey: effKey }],
       },
       data: { holdKey: effKey, holdUntil, status: SlotStatus.blocked },
     });
 
     // 5) Limit payment methods
     const pmTypes: Array<"card" | "paypal" | "revolut_pay"> =
-      payMethod === "paypal"
-        ? ["paypal"]
-        : payMethod === "revolut_pay"
-        ? ["revolut_pay"]
-        : ["card"];
+      payMethod === "paypal" ? ["paypal"] : payMethod === "revolut_pay" ? ["revolut_pay"] : ["card"];
 
-    // 6) Create PaymentIntent
+    // 6) Create PaymentIntent (short idempotency key)
+    const idemKey = makeIdempotencyKey(slotIds, amountCents, effKey, payMethod);
+
     const pi = await getStripe().paymentIntents.create(
       {
         amount: amountCents,
         currency: "eur",
         payment_method_types: pmTypes,
-        receipt_email: email || undefined,
+        receipt_email: emailRaw || undefined,
         metadata: {
-          email: email || "",
-          discord: discord ?? "",
-          notes: notes ?? "",
-          waiverAccepted: String(waiver),
+          email: emailRaw || "",
+          discord,
+          notes: notesRaw ?? "",
+          waiverAccepted: String(waiverAccepted),
           waiverIp: ip,
           slotId,
-          slotIds: slotIds.join(","),
+          slotIds: slotIds.join(","), // ok in metadata
           sessionType,
           liveMinutes: String(liveMinutes),
           liveBlocks: String(liveBlocks ?? 0),
@@ -181,9 +167,7 @@ export async function POST(req: Request) {
           payMethod,
         },
       },
-      {
-        idempotencyKey: `${slotIds.join("|")}:${amountCents}:${effKey}:${payMethod}`,
-      }
+      { idempotencyKey: idemKey }
     );
 
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });
@@ -191,7 +175,7 @@ export async function POST(req: Request) {
     return res;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("INTENT_POST_ERROR", msg);
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    console.error("INTENT_POST_ERROR", msg, err);
+    return NextResponse.json({ error: "internal_error", detail: msg }, { status: 500 });
   }
 }

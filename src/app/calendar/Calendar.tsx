@@ -18,12 +18,12 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 type Props = {
   sessionType: string;
-  liveMinutes: number;
+  liveMinutes: number;     // ← drives availability query
   followups?: number;
   onClose?: () => void;
   initialSlotId?: string | null;
-  prefetchedSlots?: Slot[];
-  liveBlocks?: number;
+  prefetchedSlots?: Slot[]; // kept for compatibility, no longer used for filtering
+  liveBlocks?: number;     // (45 min each) used only for summary/checkout URL
 };
 
 const overlay: Variants = {
@@ -51,7 +51,7 @@ export default function Calendar({
   followups = 0,
   onClose,
   initialSlotId = null,
-  prefetchedSlots,
+  prefetchedSlots, // not used to avoid stale availability
   liveBlocks = 0,
 }: Props) {
   const router = useRouter();
@@ -78,36 +78,48 @@ export default function Calendar({
   const goingToCheckout = useRef(false);
   const [isOpen, setIsOpen] = useState(true);
 
+  // -------- Availability fetch (debounced, duration-aware) --------
   useEffect(() => {
     let ignore = false;
     const tomorrow = addDays(startOfDay(new Date()), 1);
     const end = addDays(tomorrow, 14);
     end.setHours(23, 59, 59, 999);
-    (async () => {
+
+    // Debounce to avoid spamming while user changes duration
+    const t = setTimeout(async () => {
       setLoading(true);
       setError(null);
       try {
-        const data = prefetchedSlots?.length
-          ? prefetchedSlots
-          : await fetchSlots(tomorrow, end, liveMinutes);
-        if (!ignore) setSlots(data);
+        // ALWAYS fetch with the current liveMinutes so results are duration-valid
+        const data = await fetchSlots(tomorrow, end, liveMinutes);
+        if (!ignore) {
+          setSlots(data);
+          // If current selection is no longer valid for this duration, clear it
+          if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
+            setSelectedSlotId(null);
+          }
+        }
       } catch (e: unknown) {
+        if (ignore) return;
         const msg = e instanceof Error ? e.message : String(e);
-        if (!ignore) setError(msg || "Failed to load availability");
+        setError(msg || "Failed to load availability");
       } finally {
         if (!ignore) setLoading(false);
       }
-    })();
+    }, 200);
+
     return () => {
       ignore = true;
+      clearTimeout(t);
     };
-  }, [liveMinutes, prefetchedSlots]);
+  }, [liveMinutes, selectedSlotId]); // ← no prefetchedSlots dependency to avoid stale lists
 
+  // -------- Preselect a provided slot once (if still valid) --------
   const preselectedOnce = useRef(false);
   useEffect(() => {
     if (preselectedOnce.current || !initialSlotId || !slots.length) return;
     const hit = slots.find((s) => s.id === initialSlotId);
-    if (!hit) return;
+    if (!hit) return; // initial not valid for this duration
     const dt = new Date(hit.startTime);
     const m = new Date(dt);
     m.setDate(1);
@@ -118,6 +130,7 @@ export default function Calendar({
     preselectedOnce.current = true;
   }, [initialSlotId, slots]);
 
+  // -------- Build per-day starts (only FREE, in the next 14 days) --------
   const startsByDay = useMemo(() => {
     const map = new Map<string, { id: string; local: Date }[]>();
     const tomorrow = addDays(startOfDay(new Date()), 1);
@@ -150,6 +163,7 @@ export default function Calendar({
     return all.filter(({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0);
   }, [selectedDate, startsByDay]);
 
+  // -------- Continue to checkout (hold + navigate) --------
   async function submitBooking() {
     if (!selectedSlotId) return;
     setDErr(null);
@@ -193,6 +207,7 @@ export default function Calendar({
     }
   }
 
+  // -------- Release hold if user closes instead of continuing --------
   useEffect(() => {
     return () => {
       if (goingToCheckout.current) return;

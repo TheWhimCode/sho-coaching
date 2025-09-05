@@ -32,7 +32,7 @@ type Payload = {
   startTime?: string | number;
 };
 
-// payload shape we POST to the backend (plus optional startTime for display)
+// payload we POST to backend (plus optional startTime for display)
 type PayloadForBackend = Pick<
   Payload,
   "slotId" | "sessionType" | "liveMinutes" | "followups" | "liveBlocks" | "discord" | "preset" | "holdKey"
@@ -48,7 +48,7 @@ type Props = {
   payloadForBackend: PayloadForBackend;
 };
 
-// ✅ SSR-safe defaults (hoisted so it's stable and not a missing dep)
+// SSR-safe defaults
 const DEFAULT_PAYLOAD: Payload = {
   slotId: "",
   sessionType: "",
@@ -78,7 +78,6 @@ export default function CheckoutPanel({
 }: Props) {
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
 
-  // ✅ memoize to avoid a new object each render
   const safePayload: Payload = useMemo(() => ({ ...DEFAULT_PAYLOAD, ...payload }), [payload]);
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
@@ -163,16 +162,22 @@ export default function CheckoutPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...payloadForBackend,
-          // ensure freshest values from current step state override any defaults
-          discord,          // ← from StepContact state
-          email,            // ← from StepContact state
-          notes,            // ← from StepContact state (optional)
-          waiverAccepted: waiver, // ← from StepSummary (default false until checked)
+          ...payloadForBackend, // slotId, sessionType, liveMinutes, followups, liveBlocks, discord, preset, holdKey
           payMethod: m,
+          email,               // ensure latest email
+          discord,             // ensure latest discord
+          notes,               // optional notes
         }),
       });
-      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 409) {
+        console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
+        setStep(0);
+        setLoadingIntent(false);
+        return;
+      }
+
+      const data = await res.json().catch(() => ({} as any));
       if (currentMethodRef.current !== m) return;
 
       if (res.ok && data?.clientSecret) {
@@ -265,7 +270,7 @@ export default function CheckoutPanel({
 
           <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-          <div className="relative min-h-[440px] md:minh-[440px] overflow-visible pt-1">
+          <div className="relative min-h-[440px] md:min-h-[440px] overflow-visible pt-1">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
                 <motion.div
@@ -374,6 +379,9 @@ export default function CheckoutPanel({
                       breakdown={breakdown}
                       payMethod={payMethod || "card"}
                       email={email}
+                      discord={discord}                      // pass along for update endpoint
+                      notes={notes}                          // pass along for update endpoint
+                      sessionType={safePayload.sessionType}  // pass along for update endpoint
                       piId={piId}
                       waiver={waiver}
                       setWaiver={setWaiver}

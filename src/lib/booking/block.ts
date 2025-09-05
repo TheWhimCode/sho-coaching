@@ -4,6 +4,9 @@ import { SlotStatus } from "@prisma/client";
 
 export const SLOT_SIZE_MIN = 15;
 
+// Toggle verbose logging with DEBUG_BOOKING=1
+const DEBUG = process.env.DEBUG_BOOKING === "1";
+
 export function addMin(d: Date, m: number) {
   return new Date(d.getTime() + m * 60_000);
 }
@@ -56,9 +59,7 @@ export async function getBlockIdsByTime(
   const block = await tx.slot.findMany({
     where: {
       startTime: { gte: windowStart, lt: windowEnd },
-      // status must be free (we only hard-block at intent/order time)
       status: SlotStatus.free,
-      // and either not soft-held, or soft-held by this user
       OR: [
         { holdUntil: null },
         { holdUntil: { lt: now } },
@@ -68,14 +69,45 @@ export async function getBlockIdsByTime(
     orderBy: { startTime: "asc" },
   });
 
+  if (DEBUG) {
+    try {
+      // eslint-disable-next-line no-console
+      console.info("[block:dbg]", {
+        start: startTime.toISOString(),
+        windowStart: windowStart.toISOString(),
+        windowEnd: windowEnd.toISOString(),
+        liveMinutes,
+        expected,
+        found: block.length,
+        first: block[0]?.startTime?.toISOString?.(),
+        last: block[block.length - 1]?.startTime?.toISOString?.(),
+      });
+    } catch {}
+  }
+
   if (block.length !== expected) return null;
 
   // contiguous 15-min chain check
   for (let i = 1; i < block.length; i++) {
     const want = addMin(block[i - 1].startTime, SLOT_SIZE_MIN).getTime();
-    if (block[i].startTime.getTime() !== want) return null;
+    const got = block[i].startTime.getTime();
+    if (got !== want) {
+      if (DEBUG) {
+        try {
+          // eslint-disable-next-line no-console
+          console.warn("[block:gap]", {
+            at: i,
+            prev: block[i - 1].startTime.toISOString(),
+            curr: block[i].startTime.toISOString(),
+            deltaMin: (got - want) / 60_000,
+          });
+        } catch {}
+      }
+      return null;
+    }
   }
-  return block.map(s => s.id);
+
+  return block.map((s) => s.id);
 }
 
 export async function canStartAtTime(startTime: Date, liveMinutes: number, tx = prisma) {
