@@ -1,3 +1,4 @@
+// src/app/api/ics/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
@@ -12,14 +13,23 @@ function fmtUTC(d: Date) {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 function esc(s = "") {
-  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
 }
 function fold(line: string) {
   const out: string[] = [];
-  for (let i = 0; i < line.length; i += 70) out.push(i ? " " + line.slice(i, i + 70) : line.slice(i, i + 70));
+  for (let i = 0; i < line.length; i += 70)
+    out.push(i ? " " + line.slice(i, i + 70) : line.slice(i, i + 70));
   return out.join("\r\n");
 }
-function noStore(body: unknown, status = 200, headers: Record<string, string> = {}): NextResponse {
+function noStore(
+  body: unknown,
+  status = 200,
+  headers: Record<string, string> = {}
+): NextResponse {
   const payload = typeof body === "string" ? body : JSON.stringify(body);
   return new NextResponse(payload, {
     status,
@@ -28,12 +38,24 @@ function noStore(body: unknown, status = 200, headers: Record<string, string> = 
 }
 
 export async function GET(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!rateLimit(`ics:${ip}`, 30, 60_000)) return noStore("not found", 404, { "Content-Type": "text/plain" });
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
+  // per-IP: 60/min
+  if (!rateLimit(`ics:${ip}`, 60, 60_000)) {
+    return noStore("not found", 404, { "Content-Type": "text/plain" });
+  }
 
   const u = new URL(req.url);
   const id = u.searchParams.get("bookingId")?.trim() || "";
   const sig = u.searchParams.get("sig")?.trim() || "";
+
+  // per-bookingId: 20/min (only if id looks valid)
+  if (UUID_RX.test(id)) {
+    if (!rateLimit(`ics:booking:${id}`, 20, 60_000)) {
+      return noStore("not found", 404, { "Content-Type": "text/plain" });
+    }
+  }
 
   // signed link + basic id sanity
   if (!UUID_RX.test(id) || !sig || !verify(id, sig)) {
@@ -47,7 +69,9 @@ export async function GET(req: Request) {
 
   const start = b.scheduledStart;
   const end = new Date(start.getTime() + b.scheduledMinutes * 60_000);
-  const site = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "") || "https://sho.example";
+  const site =
+    (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "") ||
+    "https://sho.example";
   const summary = b.sessionType || "Coaching Session";
   const description = `Booking #${b.id} • Follow-ups: ${b.followups ?? 0}`;
 

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const CRON_SECRET = process.env.CRON_SECRET;
+const IS_PROD = process.env.NODE_ENV === "production";
 
 // constant-time compare (tiny hardening)
 function ctEqual(a: Uint8Array, b: Uint8Array) {
@@ -20,12 +21,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Enforce HTTPS if behind a proxy
-  const proto = req.headers.get("x-forwarded-proto");
-  if (proto && proto !== "https") {
-    const httpsURL = new URL(req.nextUrl);
-    httpsURL.protocol = "https:";
-    return NextResponse.redirect(httpsURL);
+  // Enforce HTTPS only in production (avoid localhost SSL errors)
+  if (IS_PROD) {
+    const proto = req.headers.get("x-forwarded-proto");
+    if (proto && proto !== "https") {
+      const httpsURL = new URL(req.nextUrl);
+      httpsURL.protocol = "https:";
+      return NextResponse.redirect(httpsURL);
+    }
   }
 
   // Allow login/logout/auth endpoints to pass through

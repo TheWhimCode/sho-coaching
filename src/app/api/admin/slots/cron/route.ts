@@ -1,3 +1,4 @@
+// src/app/api/admin/slots/cron/route.ts
 import { prisma } from "@/lib/prisma";
 import { getDayAvailability } from "@/lib/booking/availability";
 import { SLOT_SIZE_MIN } from "@/lib/booking/block";
@@ -12,10 +13,20 @@ const utcMidnight = (d = new Date()) => {
   return t;
 };
 
-export async function GET(req: Request) {
-  const auth = req.headers.get("authorization") || "";
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
+function unauthorized() {
+  return new Response("Unauthorized", {
+    status: 401,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
+export async function POST(req: Request) {
+  const auth = req.headers.get("authorization") ?? "";
+  const match = /^Bearer\s+(.+)$/.exec(auth);
+  const token = match?.[1] ?? "";
+
+  if (!process.env.CRON_SECRET || token !== process.env.CRON_SECRET) {
+    return unauthorized();
   }
 
   const today = utcMidnight();
@@ -48,15 +59,16 @@ export async function GET(req: Request) {
         batch.push({ startTime: t, duration: SLOT_SIZE_MIN, status: SlotStatus.free });
       }
     }
+
     if (batch.length) {
       const res = await prisma.slot.createMany({ data: batch, skipDuplicates: true });
       created += res.count;
     }
   }
 
-  return Response.json({
-    ok: true,
-    deleted: delPast.count + delFuture.count,
-    created,
-  });
+  const res = Response.json(
+    { ok: true, deleted: delPast.count + delFuture.count, created },
+    { headers: { "Cache-Control": "no-store" } }
+  );
+  return res;
 }

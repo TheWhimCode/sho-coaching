@@ -1,7 +1,7 @@
 // components/HeroSection/CenterSessionPanel.tsx
 "use client";
 
-import SessionBlock from "@/app/customize/_components/SessionBlock";
+import SessionBlock from "@/app/coaching/_components/SessionBlock";
 import DualWipeLR from "@/components/DualWipeLR";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";

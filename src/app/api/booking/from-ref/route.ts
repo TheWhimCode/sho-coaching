@@ -26,7 +26,8 @@ export async function GET(req: Request) {
     "unknown";
   const key = `from-ref:${ip}`;
 
-  if (!rateLimit(key, 30, 60_000)) {
+  // per-IP: 60/min
+  if (!rateLimit(key, 60, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 

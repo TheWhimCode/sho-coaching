@@ -1,16 +1,16 @@
-// components/HeroSection/SessionHero.tsx
+// src/app/coaching/_components/SessionHero.tsx
 "use client";
 
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Slot as UiSlot } from "@/components/AvailableSlots";
-import CenterSessionPanel from "@/app/customize/_components/CenterSessionPanel";
+import CenterSessionPanel from "./CenterSessionPanel";
 import { fetchSuggestedStarts } from "@/lib/booking/suggest";
 import { SlotStatus } from "@prisma/client";
 import { computeQuickPicks } from "@/lib/booking/quickPicks";
 import { fetchSlots } from "@/utils/api";
-import LeftSteps from "@/app/customize/_components/LeftSteps";
-import RightBookingPanel from "@/app/customize/_components/RightBooking";
+import LeftSteps from "./LeftSteps";
+import RightBookingPanel from "./RightBooking";
 import { getPreset } from "@/lib/sessions/preset";
 import { stepsByPreset } from "@/lib/sessions/steps";
 import { titlesByPreset, taglinesByPreset } from "@/lib/sessions/labels";
@@ -28,45 +28,26 @@ type Props = {
   isCustomizingCenter?: boolean;
   isDrawerOpen?: boolean;
   liveBlocks?: number; // number of 45m in-game blocks (0..2)
+  /** Force preset from route or client state so headings/steps react to customization */
+  presetOverride?: "vod" | "signature" | "instant" | "custom";
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const TITLE_DELAY = 0.25;
 const TAGLINE_DELAY = 0.5;
 
-// panel enter delays (left < center < right)
-const PANEL_DELAY = {
-  left: 0.25,
-  center: 0.40,
-  right: 0.65,
-} as const;
+const PANEL_DELAY = { left: 0.25, center: 0.4, right: 0.65 } as const;
 
 const titleVariants = {
   hidden: { opacity: 0, x: -24 },
-  show: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.4, ease: EASE, delay: TITLE_DELAY },
-  },
-  exit: {
-    opacity: 0,
-    x: 24,
-    transition: { duration: 0.2, ease: EASE },
-  },
+  show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE, delay: TITLE_DELAY } },
+  exit: { opacity: 0, x: 24, transition: { duration: 0.2, ease: EASE } },
 };
 
 const taglineVariants = {
   hidden: { opacity: 0, x: -20 },
-  show: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.38, ease: EASE, delay: TAGLINE_DELAY },
-  },
-  exit: {
-    opacity: 0,
-    x: 20,
-    transition: { duration: 0.18, ease: EASE },
-  },
+  show: { opacity: 1, x: 0, transition: { duration: 0.38, ease: EASE, delay: TAGLINE_DELAY } },
+  exit: { opacity: 0, x: 20, transition: { duration: 0.18, ease: EASE } },
 };
 
 export default function SessionHero({
@@ -81,23 +62,24 @@ export default function SessionHero({
   isCustomizingCenter = false,
   isDrawerOpen = false,
   liveBlocks = 0,
+  presetOverride,
 }: Props) {
   const [autoSlots, setAutoSlots] = useState<UiSlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [quickPool, setQuickPool] = useState<{ id: string; startISO: string }[]>(
-    []
-  );
+  const [quickPool, setQuickPool] = useState<{ id: string; startISO: string }[]>([]);
   const [drawerW, setDrawerW] = useState(0); // px
 
   // BASE minutes only
   const baseOnly = baseMinutes ?? 60;
 
-  // UNIFIED duration for availability/checkout, clamped to 30..120
+  // Unified duration for availability/checkout, clamped 30..120
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
   const liveMinutes = Math.min(120, Math.max(30, liveMinutesRaw));
 
-  // Preset is based on BASE minutes, flips to custom if liveBlocks > 0
-  const preset = getPreset(baseOnly, followups ?? 0, liveBlocks ?? 0);
+  // Preset (computed from cfg, but allow caller to override so it reacts to customization)
+  const computedPreset = getPreset(baseOnly, followups ?? 0, liveBlocks ?? 0);
+  const preset = presetOverride ?? computedPreset;
+
   const leftSteps = stepsByPreset[preset];
 
   // match CustomizeDrawer width: w-[min(440px,92vw)]
@@ -114,27 +96,16 @@ export default function SessionHero({
     (async () => {
       try {
         const now = new Date();
-        const tomorrow = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() + 1
-        );
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
         const end = new Date(tomorrow);
         end.setDate(end.getDate() + 21);
         end.setHours(23, 59, 59, 999);
         const rows = await fetchSlots(tomorrow, end, liveMinutes);
         if (!on) return;
-        setQuickPool(
-          rows.map((r: any) => ({
-            id: r.id,
-            startISO: r.startTime ?? r.startISO,
-          }))
-        );
+        setQuickPool(rows.map((r: any) => ({ id: r.id, startISO: r.startTime ?? r.startISO })));
       } catch {}
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, [liveMinutes]);
 
   // fetch autoslots
@@ -157,9 +128,7 @@ export default function SessionHero({
         if (on) setLoading(false);
       }
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, [liveMinutes]);
 
   const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
@@ -224,18 +193,18 @@ export default function SessionHero({
               </AnimatePresence>
             </header>
 
-            {/* LEFT — uses its own enterDelay prop */}
+            {/* LEFT */}
             <div className="self-start">
               <LeftSteps
                 steps={leftSteps}
                 title="How it works"
-                animKey={preset}   // ← animKey for list swap
-                preset={preset}     // ← for glow color
+                animKey={preset}   // retrigger on preset switch
+                preset={preset}     // color/glow per preset
                 enterDelay={PANEL_DELAY.left}
               />
             </div>
 
-            {/* CENTER — wrapped to add staggered enter */}
+            {/* CENTER */}
             <motion.div
               className="self-start"
               initial={{ opacity: 0, y: 10 }}
@@ -251,7 +220,7 @@ export default function SessionHero({
               />
             </motion.div>
 
-            {/* RIGHT — wrapped to add the longest delay */}
+            {/* RIGHT */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

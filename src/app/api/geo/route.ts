@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
     req.headers.get("cf-connecting-ip") ||
     "unknown";
 
-  if (!rateLimit(`geo:${ip}`, 60, 60_000)) {
+  // per-IP: 120/min
+  if (!rateLimit(`geo:${ip}`, 120, 60_000)) {
     return noStore({ error: "rate_limited" }, 429);
   }
 

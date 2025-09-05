@@ -46,6 +46,11 @@ async function commitTakenSlots(slotIdsCsv: string | undefined) {
   });
 }
 
+// --- NEW: tiny helper to detect Prisma unique-violation (duplicate event) ---
+function isUniqueViolation(e: unknown): boolean {
+  return typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002";
+}
+
 export async function POST(req: Request) {
   if (req.method !== "POST") {
     return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
@@ -68,6 +73,14 @@ export async function POST(req: Request) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[webhook] verify failed:", msg);
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
+  }
+
+  // --- NEW: Idempotency guard (skip duplicates) ---
+  try {
+    await prisma.processedEvent.create({ data: { id: event.id } });
+  } catch (e: unknown) {
+    if (isUniqueViolation(e)) return NextResponse.json({ ok: true }); // already handled
+    throw e;
   }
 
   // Helper to finalize + email (idempotent)
@@ -116,6 +129,7 @@ export async function POST(req: Request) {
             priceEUR: (amount ?? 0) / 100,
             bookingId: booking.id,
             timeZone: meta.timeZone || meta.tz,
+            // if your email.ts accepts icsUrl, add: icsUrl,
           });
 
           console.log("[webhook] email sent", { paymentRef, email });
@@ -132,14 +146,14 @@ export async function POST(req: Request) {
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
         const meta = (pi.metadata ?? {}) as Record<string, string>;
-        const email = (await extractEmailFromPI(pi)) || meta.email || undefined; // NEW fallback
+        const email = (await extractEmailFromPI(pi)) || meta.email || undefined; // fallback to metadata.email
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
         break;
       }
       case "checkout.session.completed": {
         const cs = event.data.object as Stripe.Checkout.Session;
         const meta = (cs.metadata ?? {}) as Record<string, string>;
-        const email = cs.customer_details?.email || meta.email || undefined;     // NEW fallback
+        const email = cs.customer_details?.email || meta.email || undefined;
         await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", cs.id, email);
         break;
       }

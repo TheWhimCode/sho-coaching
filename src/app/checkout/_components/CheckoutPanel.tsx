@@ -6,7 +6,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
 import dynamic from "next/dynamic";
 
-import SessionBlock from "@/app/customize/_components/SessionBlock";
+import SessionBlock from "@/app/coaching/_components/SessionBlock";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 
 // Keep Choose/Contact/Summary SSR-safe; make PayDetails client-only (Stripe)
