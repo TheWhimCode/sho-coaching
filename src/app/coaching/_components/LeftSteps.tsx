@@ -121,7 +121,7 @@ export default function LeftSteps({
 
       {/* Footer */}
       <p className="mt-2 text-[13px] text-white/60">
-        For more information — scroll down on the previous page.
+        For more information — reach out to Sho directly.
       </p>
 
       {/* corner glow */}

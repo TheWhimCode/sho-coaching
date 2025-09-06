@@ -16,8 +16,12 @@ function ctEqual(a: Uint8Array, b: Uint8Array) {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Only guard /admin UI + /api/admin APIs
-  if (!(pathname.startsWith("/admin") || pathname.startsWith("/api/admin"))) {
+  // Only guard /admin, /api/admin, and root /coaching
+  const isAdmin = pathname.startsWith("/admin");
+  const isAdminApi = pathname.startsWith("/api/admin");
+  const isCoachingRoot = pathname === "/coaching";
+
+  if (!(isAdmin || isAdminApi || isCoachingRoot)) {
     return NextResponse.next();
   }
 
@@ -66,5 +70,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/coaching"],
 };
