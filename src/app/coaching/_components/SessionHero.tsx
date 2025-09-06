@@ -24,7 +24,6 @@ type Props = {
   children?: ReactNode;
   followups?: number;
   onCustomize?: () => void;
-  // onOpenCalendar stays optional; we’ll handle it here if parent doesn’t.
   onOpenCalendar?: (opts: { slotId?: string; liveMinutes: number }) => void;
   slots?: UiSlot[];
   baseMinutes?: number;
@@ -166,37 +165,69 @@ export default function SessionHero({
         transition={{ duration: 0.35, ease: EASE }}
       >
         <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
-          <div className="grid md:grid-cols-[1.2fr_1.1fr_.95fr] gap-5 items-start">
+          {/* Mobile: 1 column. Desktop: custom 3 columns */}
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
             <header className="md:col-span-3 mb-2 md:mb-4">
               <AnimatePresence mode="wait">
-                <motion.h1 key={preset} variants={titleVariants} initial="hidden" animate="show" exit="exit"
-                  className="text-5xl font-extrabold leading-tight md:text-6xl lg:text-5xl">
+                <motion.h1
+                  key={preset}
+                  variants={titleVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                  className="text-4xl font-extrabold leading-tight md:text-6xl lg:text-5xl"
+                >
                   {titlesByPreset[preset]}
                 </motion.h1>
               </AnimatePresence>
               <AnimatePresence mode="wait">
-                <motion.p key={preset + "-tag"} variants={taglineVariants} initial="hidden" animate="show" exit="exit"
-                  className="mt-2 text-white/80 text-2xl italic">
+                <motion.p
+                  key={preset + "-tag"}
+                  variants={taglineVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
+                  className="mt-2 text-white/80 text-xl md:text-2xl italic"
+                >
                   {taglinesByPreset[preset]}
                 </motion.p>
               </AnimatePresence>
             </header>
 
-            {/* LEFT */}
-            <div className="self-start">
-              <LeftSteps steps={leftSteps} title="How it works" animKey={preset} preset={preset} enterDelay={PANEL_DELAY.left} />
+            {/* LEFT — hidden on mobile */}
+            <div className="hidden md:block self-start">
+              <LeftSteps
+                steps={leftSteps}
+                title="How it works"
+                animKey={preset}
+                preset={preset}
+                enterDelay={PANEL_DELAY.left}
+              />
             </div>
 
             {/* CENTER */}
-            <motion.div className="self-start" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: PANEL_DELAY.center }}>
-              <CenterSessionPanel title={title} baseMinutes={baseMinutes} isCustomizing={isCustomizingCenter}
-                followups={followups ?? 0} liveBlocks={liveBlocks} />
+            <motion.div
+              className="self-start /* order-2 md:order-none */"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: PANEL_DELAY.center }}
+            >
+              <CenterSessionPanel
+                title={title}
+                baseMinutes={baseMinutes}
+                isCustomizing={isCustomizingCenter}
+                followups={followups ?? 0}
+                liveBlocks={liveBlocks}
+              />
             </motion.div>
 
             {/* RIGHT */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: PANEL_DELAY.right }}>
+            <motion.div
+              /* className="order-1 md:order-none"  // ← uncomment to show Right above Center on mobile */
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
+            >
               <RightBookingPanel
                 liveMinutes={liveMinutes}
                 loading={loading}
@@ -214,8 +245,8 @@ export default function SessionHero({
         <Calendar
           sessionType={titlesByPreset[preset]}
           liveMinutes={liveMinutes}
-          prefetchedSlots={seedSlots}       // instant render, no spinner
-          initialSlotId={initialSlotId}     // highlights quick-pick
+          prefetchedSlots={seedSlots}
+          initialSlotId={initialSlotId}
           onClose={() => setShowCal(false)}
           liveBlocks={liveBlocks}
           followups={followups ?? 0}

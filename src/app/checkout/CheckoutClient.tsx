@@ -118,10 +118,12 @@ export default function CheckoutClient() {
       <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
         <div className="flex justify-center">
           <div className="inline-grid lg:grid-cols-[minmax(0,1fr)_auto_420px] gap-8 items-start lg:justify-items-stretch min-h-[70vh]">
-            <div className="w-full lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
+            {/* Hide UsefulToKnow on mobile */}
+            <div className="hidden md:block w-full lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
               <UsefulToKnow />
             </div>
 
+            {/* Divider only visible on large screens */}
             <div className="hidden lg:flex items-stretch mx-2 px-4">
               <div className="w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
             </div>
