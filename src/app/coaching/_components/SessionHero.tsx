@@ -66,16 +66,13 @@ export default function SessionHero({
   const [autoSlots, setAutoSlots] = useState<UiSlot[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // keep FULL slots for seeding the overlay instantly
   const [seedSlots, setSeedSlots] = useState<Slot[]>([]);
   const [quickPool, setQuickPool] = useState<{ id: string; startISO: string }[]>([]);
 
-  // overlay state
   const [showCal, setShowCal] = useState(false);
   const [initialSlotId, setInitialSlotId] = useState<string | null>(null);
 
   const [drawerW, setDrawerW] = useState(0);
-  const [isDesktop, setIsDesktop] = useState(false);
 
   const baseOnly = baseMinutes ?? 60;
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
@@ -85,17 +82,21 @@ export default function SessionHero({
   const preset = presetOverride ?? computedPreset;
   const leftSteps = stepsByPreset[preset];
 
+  const [isDesktop, setIsDesktop] = useState(false);
   useEffect(() => {
-    const calc = () => {
-      setDrawerW(Math.min(440, window.innerWidth * 0.92));
-      setIsDesktop(window.innerWidth >= 768); // md breakpoint
-    };
+    const check = () => setIsDesktop(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
     calc();
     window.addEventListener("resize", calc);
     return () => window.removeEventListener("resize", calc);
   }, []);
 
-  // fetch availability once per liveMinutes — used for quick-picks AND calendar seed
   useEffect(() => {
     let on = true;
     (async () => {
@@ -107,16 +108,13 @@ export default function SessionHero({
         end.setHours(23, 59, 59, 999);
         const rows = await fetchSlots(tomorrow, end, liveMinutes);
         if (!on) return;
-        setSeedSlots(rows); // full Slot[]
+        setSeedSlots(rows);
         setQuickPool(rows.map(r => ({ id: r.id, startISO: r.startTime ?? (r as any).startISO })));
       } catch {}
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, [liveMinutes]);
 
-  // fetch autoslots
   useEffect(() => {
     let on = true;
     setLoading(true);
@@ -136,9 +134,7 @@ export default function SessionHero({
         if (on) setLoading(false);
       }
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, [liveMinutes]);
 
   const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
@@ -150,16 +146,15 @@ export default function SessionHero({
     label: q.label,
   }));
 
-  const shiftX = isDrawerOpen ? drawerW / 2 : 0;
+  const shiftX = isDrawerOpen && isDesktop ? drawerW / 2 : 0;
 
-  // default handler if parent didn’t provide one
   const handleOpenCalendar = (opts: { slotId?: string; liveMinutes: number }) => {
     setInitialSlotId(opts.slotId ?? null);
     setShowCal(true);
   };
 
   return (
-    <section className="relative isolate h-[100svh] overflow-hidden text-white vignette">
+    <section className="relative isolate min-h-screen md:h-[100svh] overflow-hidden text-white vignette">
       {/* background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
         <video
@@ -176,11 +171,10 @@ export default function SessionHero({
       {/* content — animated */}
       <motion.div
         className="relative z-20 h-full flex items-center py-10 md:py-14"
-        animate={{ x: isDesktop ? shiftX : 0 }}
+        animate={{ x: shiftX }}
         transition={{ duration: 0.35, ease: EASE }}
       >
         <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
-          {/* Mobile: 1 column (Center first, then Right). Desktop: 3 columns */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
             <header className="md:col-span-3 mb-2 md:mb-4">
               <AnimatePresence mode="wait">
@@ -220,9 +214,9 @@ export default function SessionHero({
               />
             </div>
 
-            {/* CENTER always comes first */}
+            {/* CENTER */}
             <motion.div
-              className="self-start order-1"
+              className="self-start"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.center }}
@@ -236,9 +230,8 @@ export default function SessionHero({
               />
             </motion.div>
 
-            {/* RIGHT always comes after Center on mobile */}
+            {/* RIGHT */}
             <motion.div
-              className="order-2"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
@@ -255,7 +248,7 @@ export default function SessionHero({
         </div>
       </motion.div>
 
-      {/* ✅ Calendar overlay */}
+      {/* Calendar overlay */}
       {showCal && (
         <Calendar
           sessionType={titlesByPreset[preset]}

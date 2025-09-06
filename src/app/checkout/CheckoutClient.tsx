@@ -133,7 +133,7 @@ export default function CheckoutClient() {
               variants={rightCol}
               initial="hidden"
               animate="show"
-              className="w-full max-w-md mx-auto lg:w-[400px] relative z-0 lg:justify-self-end"
+className="w-full mx-auto lg:w-[400px] relative z-0 lg:justify-self-end"
             >
               <CheckoutPanel
                 payload={payload}
