@@ -90,20 +90,25 @@ export async function POST(req: Request) {
     paymentRef?: string,
     email?: string
   ) => {
-    if (!meta.slotId && !meta.slotIds) {
-      console.warn("[webhook] skipping event without booking metadata", { paymentRef });
+    const hasIdentifier = Boolean(meta.bookingId || meta.slotId || meta.slotIds);
+    if (!hasIdentifier) {
+      console.warn("[webhook] skipping event without identifiers (bookingId/slotId/slotIds)", { paymentRef });
       return;
     }
 
     console.log("[webhook] finalize start", { paymentRef, amount, currency, meta });
 
+    // We no longer rely on notes/discord in metadata.
+    // finalizeBooking should fetch missing details from your DB via bookingId/slotIds.
     await finalizeBooking(
-      { ...meta, email }, // includes notes, discord, waiverAccepted, sessionType, etc.
+      { ...meta, email }, // meta now expected to be minimal; DB holds the rich fields
       amount,
       (currency ?? "eur").toLowerCase(),
       paymentRef,
       "stripe"
     );
+
+    // Mark slots as taken if provided
     await commitTakenSlots(meta.slotIds);
 
     console.log("[webhook] finalize done", { paymentRef });
@@ -153,7 +158,7 @@ export async function POST(req: Request) {
         const piEvent = event.data.object as Stripe.PaymentIntent;
         const pi = await getStripe().paymentIntents.retrieve(piEvent.id);
         const meta = (pi.metadata ?? {}) as Record<string, string>;
-        const email = (await extractEmailFromPI(pi)) || meta.email || undefined;
+        const email = (await extractEmailFromPI(pi)) || undefined; // no longer rely on meta.email
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
         break;
       }
@@ -178,7 +183,6 @@ export async function POST(req: Request) {
         const email =
           (await (pi ? extractEmailFromPI(pi) : Promise.resolve<string | undefined>(undefined))) ||
           cs.customer_details?.email ||
-          meta.email ||
           undefined;
 
         await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", cs.id, email);

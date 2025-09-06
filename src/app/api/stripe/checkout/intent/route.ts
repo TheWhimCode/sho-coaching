@@ -38,12 +38,7 @@ export async function POST(req: Request) {
     if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
     const emailRaw = (body as { email?: string }).email?.trim();
-    const notesRaw = (body as { notes?: string }).notes?.trim();
-    const discordRaw = (body as { discord?: string }).discord?.trim();
     const sessionTypeRaw = (body as { sessionType?: string }).sessionType?.trim();
-    const waiverAccepted =
-      (body as { waiverAccepted?: boolean }).waiverAccepted === true ||
-      (body as { waiver?: boolean }).waiver === true;
 
     const { payMethod = "card" } = body as { payMethod?: "card" | "paypal" | "revolut_pay" };
 
@@ -52,19 +47,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     }
 
-    // ⚠️ IMPORTANT: DO NOT use `sessionType` from the schema (URL preset). We only trust the client-passed title.
     const {
       slotId,
-      // sessionType: stFromSchema,            // ← removed; URL preset is not the source of truth
       liveMinutes,
       followups,
       liveBlocks,
       holdKey,
-      discord: discordFromSchema,
     } = parsed.data;
 
-    const discord = discordRaw ?? discordFromSchema ?? "";
-    const sessionType = (sessionTypeRaw || "").trim(); // ← trust only what CheckoutPanel sends
+    const sessionType = (sessionTypeRaw || "").trim();
 
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
@@ -141,22 +132,13 @@ export async function POST(req: Request) {
     // 6) Create PaymentIntent
     const idemKey = makeIdempotencyKey(slotIds, amountCents, effKey, payMethod);
 
+    // ⚠️ Only keep minimal metadata
     const metadata: Record<string, string> = {
-      email: emailRaw || "",
-      discord,
-      notes: notesRaw ?? "",
-      waiverAccepted: String(waiverAccepted),
-      waiverIp: ip,
       slotId,
       slotIds: slotIds.join(","),
-      liveMinutes: String(liveMinutes),
-      liveBlocks: String(liveBlocks ?? 0),
-      followups: String(followups ?? 0),
-      priceEUR: String(priceEUR),
-      payMethod,
     };
     if (sessionType) {
-      metadata.sessionType = sessionType; // exact title from SessionBlock / CheckoutPanel
+      metadata.sessionType = sessionType;
     }
 
     const pi = await getStripe().paymentIntents.create(
