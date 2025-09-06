@@ -35,6 +35,7 @@ export async function POST(req: Request) {
   const notes = (body.notes ?? "").trim() || null;     // optional
   const waiverAccepted = body.waiverAccepted === true || body.waiver === true;
   const waiverIp = waiverAccepted ? ip : null;
+  const waiverAcceptedAt = waiverAccepted ? new Date() : null;
   const customerEmail = (body.email ?? "").trim() || null;
 
   // required fields guard
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
       // Waiver
       waiverAccepted,
       waiverIp,
+      waiverAcceptedAt,
       // Leave: status (defaults to "unpaid"), liveBlocks (default 0)
     },
     select: { id: true },

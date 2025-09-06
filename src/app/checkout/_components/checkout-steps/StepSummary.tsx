@@ -21,7 +21,7 @@ type Props = {
   email: string;
   discord?: string;
   notes?: string;
-  sessionType?: string; // ← pass in the title that SessionBlock shows
+  sessionType?: string;
   piId?: string | null;
 
   // consent props
@@ -31,6 +31,9 @@ type Props = {
   // Needed to confirm
   clientSecret: string;
   cardPmId?: string | null;
+
+  // new
+  bookingId: string | null;
 };
 
 // EU country set
@@ -53,6 +56,7 @@ export default function StepSummary({
   setWaiver,
   clientSecret,
   cardPmId,
+  bookingId,
 }: Props) {
   const inGameMinutes = payload.liveBlocks * 45;
   const [isEU, setIsEU] = useState<boolean | null>(null);
@@ -181,7 +185,7 @@ export default function StepSummary({
               email={email}
               discord={discord ?? ""}
               notes={notes ?? ""}
-              sessionType={sessionType ?? ""} // ← pass-through (can be "")
+              sessionType={sessionType ?? ""}
               baseMinutes={payload.baseMinutes}
               liveBlocks={payload.liveBlocks}
               followups={payload.followups}
@@ -190,6 +194,7 @@ export default function StepSummary({
               payMethod={payMethod}
               clientSecret={clientSecret}
               cardPmId={cardPmId ?? null}
+              bookingId={bookingId}
             />
           </div>
         </div>
@@ -211,11 +216,12 @@ function PayButton({
   payMethod,
   clientSecret,
   cardPmId,
+  bookingId,
 }: {
   email: string;
   discord: string;
   notes: string;
-  sessionType: string; // may be ""
+  sessionType: string;
   baseMinutes: number;
   liveBlocks: number;
   followups: number;
@@ -224,28 +230,24 @@ function PayButton({
   payMethod: Method;
   clientSecret: string;
   cardPmId: string | null;
+  bookingId: string | null;
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function patchPI() {
-    await fetch("/api/stripe/checkout/intent/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientSecret,
-        email,
-        discord,
-        notes,
-        sessionType, // ← send EXACT title from SessionBlock
-        liveMinutes: baseMinutes + liveBlocks * 45,
-        liveBlocks,
-        followups,
-        waiverAccepted,
-      }),
-    }).catch(() => {});
+  async function updateWaiver() {
+    if (!bookingId) return;
+    try {
+      await fetch("/api/booking/update-waiver", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId, waiverAccepted }),
+      });
+    } catch {
+      // swallow error; payment will still proceed
+    }
   }
 
   async function handlePay() {
@@ -256,7 +258,8 @@ function PayButton({
     const returnUrl = `${window.location.origin}/checkout/success`;
 
     try {
-      await patchPI();
+      // 🔹 update waiver in DB before confirming payment
+      await updateWaiver();
 
       if (payMethod === "card") {
         if (!cardPmId) {

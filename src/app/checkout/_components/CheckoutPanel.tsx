@@ -23,7 +23,7 @@ type PayMethod = "" | "card" | "paypal" | "revolut_pay";
 
 type Payload = {
   slotId: string;
-  sessionType: string; // (may be preset from URL; we will NOT use it for Stripe)
+  sessionType: string;
   baseMinutes: number;
   liveMinutes: number;
   followups: number;
@@ -34,7 +34,6 @@ type Payload = {
   startTime?: string | number;
 };
 
-// payload we POST to backend (plus optional startTime for display)
 type PayloadForBackend = Pick<
   Payload,
   "slotId" | "sessionType" | "liveMinutes" | "followups" | "liveBlocks" | "discord" | "preset" | "holdKey"
@@ -50,7 +49,6 @@ type Props = {
   payloadForBackend: PayloadForBackend;
 };
 
-// SSR-safe defaults
 const DEFAULT_PAYLOAD: Payload = {
   slotId: "",
   sessionType: "",
@@ -82,7 +80,6 @@ export default function CheckoutPanel({
 
   const safePayload: Payload = useMemo(() => ({ ...DEFAULT_PAYLOAD, ...payload }), [payload]);
 
-  // Compute the EXACT title the SessionBlock shows (single source of truth)
   const sessionBlockTitle = useMemo(() => {
     const p = getPreset(safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks);
     return p === "vod"
@@ -94,7 +91,6 @@ export default function CheckoutPanel({
       : "Custom Session";
   }, [safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks]);
 
-  // Keep server math aligned (base + in-game)
   const totalLiveMinutes = useMemo(
     () => safePayload.baseMinutes + safePayload.liveBlocks * 45,
     [safePayload.baseMinutes, safePayload.liveBlocks]
@@ -153,8 +149,8 @@ export default function CheckoutPanel({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [piId, setPiId] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
 
-  // Saved PaymentMethod
   const [cardPmId, setCardPmId] = useState<string | null>(null);
   const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
 
@@ -168,7 +164,6 @@ export default function CheckoutPanel({
     setPayMethod(m);
     currentMethodRef.current = m;
 
-    // reset Stripe state on method change
     setClientSecret(null);
     setPiId(null);
     setCardPmId(null);
@@ -178,17 +173,37 @@ export default function CheckoutPanel({
 
     setLoadingIntent(true);
     try {
+      // 1) Create booking in DB
+      const make = await fetch("/api/booking/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionType: sessionBlockTitle,
+          slotId: safePayload.slotId,
+          liveMinutes: totalLiveMinutes,
+          followups: safePayload.followups,
+          discord,
+          notes,
+          waiverAccepted: waiver,
+          email,
+        }),
+      });
+      if (!make.ok) {
+        console.error("CREATE_BOOKING_FAILED", await make.json().catch(() => ({})));
+        setLoadingIntent(false);
+        return;
+      }
+      const { bookingId: bid } = await make.json();
+      setBookingId(bid);
+
+      // 2) Create Stripe intent with only bookingId + email
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...payloadForBackend,              // may include a stale sessionType, but server ignores schema-preset now
-          liveMinutes: totalLiveMinutes,     // ensure server sees total minutes
-          sessionType: sessionBlockTitle,    // ← ALWAYS send the computed title
-          payMethod: m,
+          bookingId: bid,
           email,
-          discord,
-          notes,
+          payMethod: m,
         }),
       });
 
@@ -221,9 +236,7 @@ export default function CheckoutPanel({
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
 
-  // Selected start time → show in SessionBlock header
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
-
   useEffect(() => {
     function coerceToDate(v: unknown): Date | null {
       if (v == null) return null;
@@ -295,16 +308,7 @@ export default function CheckoutPanel({
           <div className="relative min-h-[440px] md:min_h-[440px] overflow-visible pt-1">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
-                <motion.div
-                  key="step-contact"
-                  custom={dir}
-                  variants={variants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 h-full flex flex-col"
-                >
+                <motion.div key="step-contact" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
                   <StepContact
                     email={email}
                     discord={discord}
@@ -321,36 +325,15 @@ export default function CheckoutPanel({
               )}
 
               {step === 1 && (
-                <motion.div
-                  key="step-choose"
-                  custom={dir}
-                  variants={variants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 h-full flex flex-col"
-                >
+                <motion.div key="step-choose" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
                   <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
                 </motion.div>
               )}
 
               {step === 2 && (
-                <motion.div
-                  key="step-2"
-                  custom={dir}
-                  variants={variants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 h-full flex flex-col"
-                >
+                <motion.div key="step-2" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
                   {clientSecret ? (
-                    <Elements
-                      stripe={stripePromise}
-                      options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
-                    >
+                    <Elements stripe={stripePromise} options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}>
                       <StepPayDetails
                         mode="form"
                         goBack={goBack}
@@ -381,20 +364,8 @@ export default function CheckoutPanel({
               )}
 
               {step === 3 && clientSecret && (
-                <motion.div
-                  key="step-summary"
-                  custom={dir}
-                  variants={variants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="absolute inset-0 h-full flex flex-col"
-                >
-                  <Elements
-                    stripe={stripePromise}
-                    options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
-                  >
+                <motion.div key="step-summary" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
+                  <Elements stripe={stripePromise} options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}>
                     <StepSummary
                       goBack={goBack}
                       payload={safePayload}
@@ -403,12 +374,14 @@ export default function CheckoutPanel({
                       email={email}
                       discord={discord}
                       notes={notes}
-                      sessionType={sessionBlockTitle}  // ← always the computed title
+                      sessionType={sessionBlockTitle}
                       piId={piId}
                       waiver={waiver}
                       setWaiver={setWaiver}
                       clientSecret={clientSecret!}
                       cardPmId={cardPmId}
+                      bookingId={bookingId}   
+
                     />
                   </Elements>
                 </motion.div>
@@ -416,39 +389,27 @@ export default function CheckoutPanel({
             </AnimatePresence>
           </div>
 
-{/* Footer badges */}
-<div className="flex items-center gap-3 pt-4 text-white/75">
-  <span className="inline-flex items-center gap-1 text-xs">
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="text-violet-400"  // distinct accent for 3D Secure
-    >
-      <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="currentColor" opacity=".9" />
-      <path d="M3 7v10l9 5V12L3 7Z" fill="currentColor" opacity=".65" />
-      <path d="M21 7v10l-9 5V12l9-5Z" fill="currentColor" opacity=".5" />
-    </svg>
-    3D Secure ready
-  </span>
+          {/* Footer badges */}
+          <div className="flex items-center gap-3 pt-4 text-white/75">
+            <span className="inline-flex items-center gap-1 text-xs">
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="text-violet-400">
+                <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="currentColor" opacity=".9" />
+                <path d="M3 7v10l9 5V12L3 7Z" fill="currentColor" opacity=".65" />
+                <path d="M21 7v10l-9 5V12l9-5Z" fill="currentColor" opacity=".5" />
+              </svg>
+              3D Secure ready
+            </span>
 
-  <span className="inline-flex items-center gap-1 text-xs">
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="text-blue-400"  // neutral blue shield
-    >
-      <path d="M12 2 4 6v6c0 4.2 2.7 8 8 10 5.3-2 8-5.8 8-10V6l-8-4Z" fill="currentColor" />
-    </svg>
-    Buyer protection
-  </span>
-</div>
-
+            <span className="inline-flex items-center gap-1 text-xs">
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="text-blue-400">
+                <path d="M12 2 4 6v6c0 4.2 2.7 8 8 10 5.3-2 8-5.8 8-10V6l-8-4Z" fill="currentColor" />
+              </svg>
+              Buyer protection
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+ 

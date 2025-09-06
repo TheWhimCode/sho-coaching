@@ -37,31 +37,51 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
-    const emailRaw = (body as { email?: string }).email?.trim();
-    const sessionTypeRaw = (body as { sessionType?: string }).sessionType?.trim();
-
+    const bookingId = (body as { bookingId?: string }).bookingId?.trim() || null;
+    const emailRaw = (body as { email?: string }).email?.trim() || undefined;
     const { payMethod = "card" } = body as { payMethod?: "card" | "paypal" | "revolut_pay" };
 
-    const parsed = CheckoutZ.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+    // ---- Load inputs either from DB (preferred: bookingId) or from request (legacy path) ----
+    let slotId: string;
+    let liveMinutes: number;
+    let followups: number;
+    let sessionType: string;
+
+    if (bookingId) {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        select: { slotId: true, liveMinutes: true, followups: true, sessionType: true, customerEmail: true },
+      });
+      if (!booking || !booking.slotId) {
+        return NextResponse.json({ error: "booking_not_found" }, { status: 404 });
+      }
+      slotId = booking.slotId;
+      liveMinutes = booking.liveMinutes;
+      followups = booking.followups;
+      sessionType = booking.sessionType?.trim() || "";
+      // prefer explicit email from request; else fallback to booking snapshot
+      if (!emailRaw && booking.customerEmail) {
+        (body as any).email = booking.customerEmail;
+      }
+    } else {
+      // Legacy: still support direct payload (CheckoutZ) for backwards compatibility
+      const parsed = CheckoutZ.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+      }
+      const d = parsed.data;
+      slotId = d.slotId;
+      liveMinutes = d.liveMinutes;
+      followups = d.followups ?? 0;
+      sessionType = ((body as { sessionType?: string }).sessionType ?? "").trim();
     }
 
-    const {
-      slotId,
-      liveMinutes,
-      followups,
-      liveBlocks,
-      holdKey,
-    } = parsed.data;
-
-    const sessionType = (sessionTypeRaw || "").trim();
-
+    // Sanity guard
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
     }
 
-    const { amountCents, priceEUR } = computePriceEUR(liveMinutes, followups);
+    const { amountCents } = computePriceEUR(liveMinutes, followups);
 
     // 1) Anchor slot
     const anchor = await prisma.slot.findUnique({
@@ -70,16 +90,13 @@ export async function POST(req: Request) {
     });
     if (!anchor) return NextResponse.json({ error: "unavailable" }, { status: 409 });
     if (anchor.status === SlotStatus.taken) return NextResponse.json({ error: "unavailable" }, { status: 409 });
-    if (anchor.status === SlotStatus.blocked && anchor.holdKey && holdKey && anchor.holdKey !== holdKey) {
-      return NextResponse.json({ error: "unavailable" }, { status: 409 });
-    }
 
-    const effKey = holdKey || anchor.holdKey || crypto.randomUUID();
+    const effKey = anchor.holdKey || crypto.randomUUID();
 
     // 2) Contiguous block check
     let slotIds = await getBlockIdsByTime(anchor.startTime, liveMinutes, prisma);
 
-    // 3) Fallback (only if held by us)
+    // 3) Fallback window check (only if held by us or free)
     if (!slotIds) {
       const { BUFFER_BEFORE_MIN, BUFFER_AFTER_MIN } = CFG_SERVER.booking;
       const windowStart = new Date(anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000);
@@ -94,7 +111,10 @@ export async function POST(req: Request) {
         select: { id: true, startTime: true, status: true, holdKey: true },
       });
 
-      if (!rows.length || rows.some((r) => r.status === SlotStatus.blocked && r.holdKey !== effKey)) {
+      if (
+        !rows.length ||
+        rows.some((r) => r.status === SlotStatus.blocked && r.holdKey && r.holdKey !== anchor.holdKey)
+      ) {
         return NextResponse.json({ error: "unavailable" }, { status: 409 });
       }
 
@@ -110,9 +130,7 @@ export async function POST(req: Request) {
       slotIds = rows.map((r) => r.id);
     }
 
-    if (!slotIds || slotIds.length === 0) {
-      return NextResponse.json({ error: "unavailable" }, { status: 409 });
-    }
+    if (!slotIds?.length) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
     // 4) Claim/extend hold
     const now = new Date();
@@ -120,9 +138,9 @@ export async function POST(req: Request) {
     await prisma.slot.updateMany({
       where: {
         id: { in: slotIds },
-        OR: [{ status: SlotStatus.free }, { status: SlotStatus.blocked, holdKey: effKey }],
+        OR: [{ status: SlotStatus.free }, { status: SlotStatus.blocked, holdKey: anchor.holdKey ?? effKey }],
       },
-      data: { holdKey: effKey, holdUntil, status: SlotStatus.blocked },
+      data: { holdKey: anchor.holdKey ?? effKey, holdUntil, status: SlotStatus.blocked },
     });
 
     // 5) Limit payment methods
@@ -130,16 +148,15 @@ export async function POST(req: Request) {
       payMethod === "paypal" ? ["paypal"] : payMethod === "revolut_pay" ? ["revolut_pay"] : ["card"];
 
     // 6) Create PaymentIntent
-    const idemKey = makeIdempotencyKey(slotIds, amountCents, effKey, payMethod);
+    const idemKey = makeIdempotencyKey(slotIds, amountCents, anchor.holdKey ?? effKey, payMethod);
 
-    // ⚠️ Only keep minimal metadata
+    // Minimal metadata only
     const metadata: Record<string, string> = {
+      bookingId: bookingId ?? "", // empty if using legacy path; webhook handles slotIds fallback
       slotId,
       slotIds: slotIds.join(","),
     };
-    if (sessionType) {
-      metadata.sessionType = sessionType;
-    }
+    if (sessionType) metadata.sessionType = sessionType;
 
     const pi = await getStripe().paymentIntents.create(
       {

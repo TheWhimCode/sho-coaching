@@ -15,18 +15,14 @@ function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const style = { filter: `drop-shadow(0 0 8px ${glow})` } as const;
 
   if (preset === "vod") {
-    // Deep knowledge ⇒ Scroll
     return <Scroll size={size} weight="fill" color={ring} style={style} aria-hidden />;
   }
   if (preset === "instant") {
-    // Instant ⇒ Lightning
     return <Lightning size={size} weight="fill" color={ring} style={style} aria-hidden />;
   }
   if (preset === "signature") {
-    // Signature ⇒ Blaze (fill only)
     return <Signature size={size} weight="bold" color={ring} style={style} aria-hidden />;
   }
-  // custom ⇒ Puzzle piece
   return <PuzzlePiece size={size} weight="fill" color={ring} style={style} aria-hidden />;
 }
 
@@ -52,7 +48,6 @@ type Props = { open: boolean; onClose: () => void; cfg: Cfg; onChange: (c: Cfg) 
 export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props) {
   const [hoverPreset, setHoverPreset] = useState<Preset | null>(null);
 
-  // IMPORTANT: preset should be based on TOTAL live minutes (base + in-game)
   const baseOnly = cfg.liveMin;
   const currentPreset = useMemo(
     () => getPreset(baseOnly, cfg.followups, cfg.liveBlocks),
@@ -70,7 +65,6 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
     <div className="my-4 h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent" />
   );
 
-  // 🔷 Square “glass” buttons (no texture)
   const squareBtn =
     "w-12 h-12 grid place-items-center rounded-[10px] text-[15px] font-semibold text-white/95 " +
     "bg-white/[.08] supports-[backdrop-filter]:backdrop-blur-md " +
@@ -104,13 +98,10 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
             {/* Header */}
             <div className="mb-1 flex items-center justify-between">
               <h3 className="text-xl md:text-2xl font-extrabold tracking-tight">Customize your session</h3>
-              {/* X removed as requested */}
             </div>
 
-            {/* Spacer matching the existing Divider */}
             <Divider />
 
-            {/* Controls */}
             <div>
               {/* Add/remove time */}
               <section>
@@ -127,7 +118,6 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                   >
                     −15
                   </button>
-
                   <button
                     className={squareBtn}
                     onClick={() => onChange(incDuration(cfg))}
@@ -144,8 +134,29 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
               {/* In-game coaching */}
               <section>
                 <div className="flex items-center justify-between">
-                  <span className="text-[15px] md:text-[16px] font-semibold">In-game coaching</span>
-                  <span className="text-sm opacity-80">{cfg.liveBlocks} × 45 min</span>
+                  <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
+                    In-game coaching
+                    <div className="relative group">
+                      <button
+                        className="w-4 h-4 rounded-full bg-white/20 text-[11px] font-bold flex items-center justify-center"
+                        aria-label="What is in-game coaching?"
+                      >
+                        ?
+                      </button>
+                      <div
+                        className="absolute left-full top-1/2 ml-2 -translate-y-1/2
+                                   w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
+                                   group-hover:opacity-100 transition pointer-events-none shadow-lg
+                                   z-50"
+                      >
+                        Receive coaching while playing.{" "}
+                        <span className="text-red-400 font-semibold">
+                          Warning, in-game coaching is very stressful and often less informative than regular coaching!
+                        </span>
+                      </div>
+                    </div>
+                  </span>
+                  <span className="text-sm opacity-80 relative z-0">{cfg.liveBlocks} × 45 min</span>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
@@ -172,8 +183,26 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
               {/* Follow-ups */}
               <section>
                 <div className="flex items-center justify-between">
-                  <span className="text-[15px] md:text-[16px] font-semibold">Follow-up recordings</span>
-                  <span className="text-sm opacity-80">{cfg.followups} × 15 min</span>
+                  <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
+                    Follow-up recordings
+                    <div className="relative group">
+                      <button
+                        className="w-4 h-4 rounded-full bg-white/20 text-[11px] font-bold flex items-center justify-center"
+                        aria-label="What are follow-ups?"
+                      >
+                        ?
+                      </button>
+                      <div
+                        className="absolute left-full top-1/2 ml-2 -translate-y-1/2
+                                   w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
+                                   group-hover:opacity-100 transition pointer-events-none shadow-lg
+                                   z-50"
+                      >
+                        A few days after your session, Sho will create a Follow-up recording to review your progress and give new input. You may request when and what game to review.
+                      </div>
+                    </div>
+                  </span>
+                  <span className="text-sm opacity-80 relative z-0">{cfg.followups} × 15 min</span>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
