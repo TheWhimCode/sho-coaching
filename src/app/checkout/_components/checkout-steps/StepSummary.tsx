@@ -1,4 +1,3 @@
-// src/pages/customization/checkout/rcolumn/checkoutSteps/StepSummary.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,13 +18,10 @@ type Props = {
   };
   breakdown: Breakdown;
   payMethod: Method;
-
-  // contact + context
   email: string;
   discord?: string;
   notes?: string;
-  sessionType?: string;
-
+  sessionType?: string; // ← pass in the title that SessionBlock shows
   piId?: string | null;
 
   // consent props
@@ -49,9 +45,9 @@ export default function StepSummary({
   breakdown: b,
   payMethod,
   email,
-  discord = "",
-  notes = "",
-  sessionType = "Session",
+  discord,
+  notes,
+  sessionType,
   piId,
   waiver,
   setWaiver,
@@ -59,11 +55,8 @@ export default function StepSummary({
   cardPmId,
 }: Props) {
   const inGameMinutes = payload.liveBlocks * 45;
-  const liveMinutes = Math.max(30, payload.baseMinutes + inGameMinutes);
-
   const [isEU, setIsEU] = useState<boolean | null>(null);
 
-  // Initial geo guess
   useEffect(() => {
     fetch("/api/geo")
       .then((r) => r.json())
@@ -126,14 +119,12 @@ export default function StepSummary({
 
         {/* Bottom section pinned down */}
         <div className="mt-auto pt-3 space-y-4">
-          {/* VAT note only if EU */}
           {isEU && (
             <div className="px-1 text-right text-[10px] leading-tight text-white/55">
               VAT not charged under §19 UStG
             </div>
           )}
 
-          {/* Divider */}
           <div className="h-px bg-white/10" />
 
           <div className="flex items-center justify-between font-semibold px-1">
@@ -150,27 +141,52 @@ export default function StepSummary({
               className="mt-0.5 h-4 w-4 accent-[#fc8803]"
             />
             <span>
-              I request immediate service and accept that my 14-day withdrawal right ends with full performance.
+              I request immediate service and accept that my{" "}
+              <a
+                href="/withdrawal"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-white"
+              >
+                14-day withdrawal right
+              </a>{" "}
+              ends with full performance.
             </span>
           </label>
 
           <p className="text-[11px] leading-snug text-white/60 px-1 mt-[2px]">
             By clicking <span className="text-white/80 font-medium">Pay now</span>, you
-            agree to our <a href="/terms" className="underline hover:text-white">Terms</a> and{" "}
-            <a href="/privacy" className="underline hover:text-white">Privacy Policy</a>.
+            agree to our{" "}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-white"
+            >
+              Terms
+            </a>{" "}
+            and{" "}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-white"
+            >
+              Privacy Policy
+            </a>.
           </p>
 
           <div className="-mt-2">
             <PayButton
               email={email}
-              discord={discord}
-              notes={notes}
-              sessionType={sessionType}
-              liveMinutes={liveMinutes}
+              discord={discord ?? ""}
+              notes={notes ?? ""}
+              sessionType={sessionType ?? ""} // ← pass-through (can be "")
+              baseMinutes={payload.baseMinutes}
               liveBlocks={payload.liveBlocks}
               followups={payload.followups}
-              disabled={!waiver}
               waiverAccepted={waiver}
+              disabled={!waiver}
               payMethod={payMethod}
               clientSecret={clientSecret}
               cardPmId={cardPmId ?? null}
@@ -184,10 +200,10 @@ export default function StepSummary({
 
 function PayButton({
   email,
-  discord = "",
-  notes = "",
-  sessionType = "Session",
-  liveMinutes,
+  discord,
+  notes,
+  sessionType,
+  baseMinutes,
   liveBlocks,
   followups,
   waiverAccepted,
@@ -197,10 +213,10 @@ function PayButton({
   cardPmId,
 }: {
   email: string;
-  discord?: string;
-  notes?: string;
-  sessionType?: string;
-  liveMinutes: number;
+  discord: string;
+  notes: string;
+  sessionType: string; // may be ""
+  baseMinutes: number;
   liveBlocks: number;
   followups: number;
   waiverAccepted: boolean;
@@ -214,9 +230,8 @@ function PayButton({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Make sure PI has the latest metadata (incl. waiver) before confirm
   async function patchPI() {
-    const res = await fetch("/api/stripe/checkout/intent/update", {
+    await fetch("/api/stripe/checkout/intent/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -224,17 +239,13 @@ function PayButton({
         email,
         discord,
         notes,
-        sessionType,
-        liveMinutes,
+        sessionType, // ← send EXACT title from SessionBlock
+        liveMinutes: baseMinutes + liveBlocks * 45,
         liveBlocks,
         followups,
         waiverAccepted,
       }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      throw new Error(j?.detail || "Failed to update payment intent");
-    }
+    }).catch(() => {});
   }
 
   async function handlePay() {
@@ -245,7 +256,6 @@ function PayButton({
     const returnUrl = `${window.location.origin}/checkout/success`;
 
     try {
-      // 1) Update PI metadata (captures waiver + latest contact fields)
       await patchPI();
 
       if (payMethod === "card") {
@@ -257,11 +267,7 @@ function PayButton({
 
         const result = (await stripe.confirmPayment({
           clientSecret,
-          confirmParams: {
-            return_url: returnUrl,
-            payment_method: cardPmId,
-          },
-          redirect: "if_required",
+          confirmParams: { return_url: returnUrl, payment_method: cardPmId },
         })) as PaymentIntentResult;
 
         if (result.error) {
@@ -282,7 +288,7 @@ function PayButton({
         return;
       }
 
-      // ---- PayPal / Revolut Pay path (Payment Element) ----
+      // PayPal / Revolut Pay
       if (!elements) {
         setError("Payment form not ready.");
         setSubmitting(false);

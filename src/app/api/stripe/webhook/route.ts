@@ -97,9 +97,8 @@ export async function POST(req: Request) {
 
     console.log("[webhook] finalize start", { paymentRef, amount, currency, meta });
 
-    // pass all meta + email into finalizeBooking
     await finalizeBooking(
-      { ...meta, email }, // includes notes, discord, waiverAccepted, etc.
+      { ...meta, email }, // includes notes, discord, waiverAccepted, sessionType, etc.
       amount,
       (currency ?? "eur").toLowerCase(),
       paymentRef,
@@ -150,16 +149,38 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "payment_intent.succeeded": {
-        const pi = event.data.object as Stripe.PaymentIntent;
+        // Re-retrieve PI to ensure freshest metadata (avoids race with intent.update)
+        const piEvent = event.data.object as Stripe.PaymentIntent;
+        const pi = await getStripe().paymentIntents.retrieve(piEvent.id);
         const meta = (pi.metadata ?? {}) as Record<string, string>;
         const email = (await extractEmailFromPI(pi)) || meta.email || undefined;
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
         break;
       }
       case "checkout.session.completed": {
-        const cs = event.data.object as Stripe.Checkout.Session;
-        const meta = (cs.metadata ?? {}) as Record<string, string>;
-        const email = cs.customer_details?.email || meta.email || undefined;
+        // Re-retrieve CS (expand payment_intent) and prefer PI metadata
+        const csEvent = event.data.object as Stripe.Checkout.Session;
+        const cs = await getStripe().checkout.sessions.retrieve(csEvent.id, { expand: ["payment_intent"] });
+        let pi: Stripe.PaymentIntent | null = null;
+
+        if (typeof cs.payment_intent === "string") {
+          pi = await getStripe().paymentIntents.retrieve(cs.payment_intent);
+        } else if (cs.payment_intent && (cs.payment_intent as any).object === "payment_intent") {
+          pi = cs.payment_intent as Stripe.PaymentIntent;
+        }
+
+        const piMeta = (pi?.metadata ?? {}) as Record<string, string>;
+        const csMeta = (cs.metadata ?? {}) as Record<string, string>;
+
+        // Merge: prefer PI metadata (client patched right before confirm)
+        const meta = { ...csMeta, ...piMeta };
+
+        const email =
+          (await (pi ? extractEmailFromPI(pi) : Promise.resolve<string | undefined>(undefined))) ||
+          cs.customer_details?.email ||
+          meta.email ||
+          undefined;
+
         await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", cs.id, email);
         break;
       }

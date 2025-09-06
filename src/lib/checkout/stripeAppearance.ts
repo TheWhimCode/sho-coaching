@@ -4,8 +4,8 @@ import type { Appearance } from "@stripe/stripe-js";
 export const appearanceDarkBrand: Appearance = {
   theme: "night",
   variables: {
-    colorPrimary: "#fc8803",
-    colorBackground: "#0e1527",
+    colorPrimary: "#ffffffff",
+    colorBackground: "#141E3B",
     colorText: "rgba(255,255,255,0.92)",
     colorTextSecondary: "rgba(255,255,255,0.65)",
     colorDanger: "#ff6b6b",
@@ -17,7 +17,7 @@ export const appearanceDarkBrand: Appearance = {
     // Wrapper around methods
     ".Tab, .Block": {
       padding: "20px 20px",
-      backgroundColor: "#0e1527",
+      backgroundColor: "#141E3B",
       borderColor: "rgba(146,180,255,0.18)",
     },
     ".Tab--selected": { backgroundColor: "#0e1527" },

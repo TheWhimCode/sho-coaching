@@ -22,10 +22,20 @@ function isValidEmail(v: string) {
   const s = v.trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
+
 function isValidDiscord(v: string) {
   const s = v.trim();
-  const newStyle = /^[a-z0-9._]{2,32}$/.test(s);
+
+  // New global usernames (no discriminator)
+  //  - lowercase only
+  //  - 2–32 chars
+  //  - allowed: a–z, 0–9, underscore, period
+  //  - no two consecutive periods
+  const newStyle = /^(?!.*\.\.)[a-z0-9._]{2,32}$/.test(s);
+
+  // Legacy usernames with discriminator (#1234)
   const legacy = /^[A-Za-z0-9 _.\-]{2,32}#\d{4}$/.test(s);
+
   return newStyle || legacy;
 }
 

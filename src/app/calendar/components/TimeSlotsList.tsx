@@ -42,8 +42,9 @@ export default function TimeSlotsList({
                     onClick={() => onSelectSlot(id)}
                     className={[
                       "w-full px-3.5 py-3 rounded-xl text-sm transition ring-1 supports-[backdrop-filter]:backdrop-blur-md",
+                      // keep the same base ring as inactive; add the same light-blue glow when active
                       isActive
-                        ? "ring-[rgba(120,160,255,.55)] bg-[#0d1b34] text-white shadow-[0_0_6px_rgba(56,124,255,.35)]"
+                        ? "ring-[rgba(146,180,255,.18)] bg-[#0d1b34] text-white shadow-[0_0_10px_1px_#8FB8E6]"
                         : "ring-[rgba(146,180,255,.18)] bg-[#0d1b34] hover:bg-[#15284a] text-white/90",
                     ].join(" ")}
                   >

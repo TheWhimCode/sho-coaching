@@ -1,4 +1,3 @@
-// src/pages/customization/schedule/Calendar.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -18,12 +17,13 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 type Props = {
   sessionType: string;
-  liveMinutes: number;     // ← drives availability query
+  liveMinutes: number;
   followups?: number;
   onClose?: () => void;
   initialSlotId?: string | null;
-  prefetchedSlots?: Slot[]; // kept for compatibility, no longer used for filtering
-  liveBlocks?: number;     // (45 min each) used only for summary/checkout URL
+  /** seed with already-fetched availability (kept up to date by parent) */
+  prefetchedSlots?: Slot[];
+  liveBlocks?: number;
 };
 
 const overlay: Variants = {
@@ -51,7 +51,7 @@ export default function Calendar({
   followups = 0,
   onClose,
   initialSlotId = null,
-  prefetchedSlots, // not used to avoid stale availability
+  prefetchedSlots,
   liveBlocks = 0,
 }: Props) {
   const router = useRouter();
@@ -64,8 +64,12 @@ export default function Calendar({
   });
   const DISPLAY_STEP_MIN = 30;
 
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [loading, setLoading] = useState(true);
+  /** Seed from prefetched slots so UI is instant */
+  const [slots, setSlots] = useState<Slot[]>(() => prefetchedSlots ?? []);
+  /** Only show spinner if we truly have nothing to show */
+  const [loading, setLoading] = useState<boolean>(() => !(prefetchedSlots?.length));
+  /** Optional “silent refresh” flag (no UI use here, but kept if you want to show a tiny badge) */
+  const [hydrating, setHydrating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -78,48 +82,63 @@ export default function Calendar({
   const goingToCheckout = useRef(false);
   const [isOpen, setIsOpen] = useState(true);
 
-  // -------- Availability fetch (debounced, duration-aware) --------
+  /** Keep state in sync if parent refreshes prefetchedSlots (e.g., duration changes) */
+  useEffect(() => {
+    if (!prefetchedSlots) return;
+    setSlots(prefetchedSlots);
+    setLoading(false); // we already have data; never show spinner on open
+    // clear selection if now invalid
+    if (selectedSlotId && !prefetchedSlots.some((s) => s.id === selectedSlotId)) {
+      setSelectedSlotId(null);
+    }
+  }, [prefetchedSlots]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // -------- Availability fetch (silent, duration-aware) --------
   useEffect(() => {
     let ignore = false;
     const tomorrow = addDays(startOfDay(new Date()), 1);
     const end = addDays(tomorrow, 14);
     end.setHours(23, 59, 59, 999);
 
-    // Debounce to avoid spamming while user changes duration
+    // If slots are already seeded, hydrate silently without toggling the loading spinner.
+    const doSpinner = slots.length === 0;
+
     const t = setTimeout(async () => {
-      setLoading(true);
+      if (doSpinner) setLoading(true);
+      setHydrating(true);
       setError(null);
       try {
-        // ALWAYS fetch with the current liveMinutes so results are duration-valid
         const data = await fetchSlots(tomorrow, end, liveMinutes);
         if (!ignore) {
           setSlots(data);
-          // If current selection is no longer valid for this duration, clear it
           if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
             setSelectedSlotId(null);
           }
         }
       } catch (e: unknown) {
-        if (ignore) return;
-        const msg = e instanceof Error ? e.message : String(e);
-        setError(msg || "Failed to load availability");
+        if (!ignore) setError(e instanceof Error ? e.message : String(e));
       } finally {
-        if (!ignore) setLoading(false);
+        if (!ignore) {
+          setHydrating(false);
+          if (doSpinner) setLoading(false);
+        }
       }
-    }, 200);
+    }, 0);
 
     return () => {
       ignore = true;
       clearTimeout(t);
     };
-  }, [liveMinutes, selectedSlotId]); // ← no prefetchedSlots dependency to avoid stale lists
+    // NOTE: do NOT depend on selectedSlotId to avoid flicker when picking a time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveMinutes]);
 
   // -------- Preselect a provided slot once (if still valid) --------
   const preselectedOnce = useRef(false);
   useEffect(() => {
     if (preselectedOnce.current || !initialSlotId || !slots.length) return;
     const hit = slots.find((s) => s.id === initialSlotId);
-    if (!hit) return; // initial not valid for this duration
+    if (!hit) return;
     const dt = new Date(hit.startTime);
     const m = new Date(dt);
     m.setDate(1);
@@ -130,7 +149,7 @@ export default function Calendar({
     preselectedOnce.current = true;
   }, [initialSlotId, slots]);
 
-  // -------- Build per-day starts (only FREE, in the next 14 days) --------
+  // -------- Build per-day starts (FREE, next 14 days) --------
   const startsByDay = useMemo(() => {
     const map = new Map<string, { id: string; local: Date }[]>();
     const tomorrow = addDays(startOfDay(new Date()), 1);
@@ -155,7 +174,7 @@ export default function Calendar({
       if (displayables.length > 0) out.set(k, displayables.length);
     }
     return out;
-  }, [startsByDay, DISPLAY_STEP_MIN]);
+  }, [startsByDay]);
 
   const displayableStartsForSelected = useMemo(() => {
     if (!selectedDate) return [];
@@ -163,7 +182,7 @@ export default function Calendar({
     return all.filter(({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0);
   }, [selectedDate, startsByDay]);
 
-  // -------- Continue to checkout (hold + navigate) --------
+  // -------- Continue to checkout --------
   async function submitBooking() {
     if (!selectedSlotId) return;
     setDErr(null);
@@ -207,7 +226,7 @@ export default function Calendar({
     }
   }
 
-  // -------- Release hold if user closes instead of continuing --------
+  // -------- Release hold if user closes --------
   useEffect(() => {
     return () => {
       if (goingToCheckout.current) return;
@@ -273,7 +292,7 @@ export default function Calendar({
                         setSelectedSlotId(null);
                       }}
                       validStartCountByDay={displayableStartCountByDay}
-                      loading={loading}
+                      loading={loading && slots.length === 0} // 👈 only show if truly empty
                       error={error}
                     />
                   </div>

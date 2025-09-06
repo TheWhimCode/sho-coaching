@@ -1,4 +1,3 @@
-// src/app/api/stripe/checkout/intent/update/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { CFG_SERVER } from "@/lib/config.server";
@@ -28,11 +27,10 @@ function piIdFromClientSecret(secret?: string | null): string | null {
 type Body = {
   clientSecret?: string | null;
   piId?: string | null;
-  // optional metadata patches
   email?: string | null;
   notes?: string | null;
   discord?: string | null;
-  sessionType?: string | null;
+  sessionType?: string | null; // ← bring this through
   liveMinutes?: number | null;
   liveBlocks?: number | null;
   followups?: number | null;
@@ -41,7 +39,6 @@ type Body = {
 
 export async function POST(req: Request) {
   try {
-    // simple rate limit: 30/min per IP
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
     if (!rateLimit(`intent_update:${ip}`, 30, 60_000)) {
       return NextResponse.json({ error: "rate_limited" }, { status: 429 });
@@ -53,32 +50,28 @@ export async function POST(req: Request) {
     const piId = body.piId || piIdFromClientSecret(body.clientSecret || null);
     if (!piId) return NextResponse.json({ error: "missing_pi" }, { status: 400 });
 
-    // fetch current PI so we can merge metadata (Stripe replaces metadata wholesale)
     const pi = await getStripe().paymentIntents.retrieve(piId);
     if (!pi || (pi as any).object !== "payment_intent") {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
 
-    // Build merged metadata; stringify everything for Stripe metadata (string map)
     const current = (pi.metadata ?? {}) as Record<string, string>;
-
     const patch: Record<string, string> = {};
+
     if (typeof body.email === "string") patch.email = body.email.trim();
     if (typeof body.notes === "string") patch.notes = body.notes.trim();
     if (typeof body.discord === "string") patch.discord = body.discord.trim();
-    if (typeof body.sessionType === "string") patch.sessionType = body.sessionType;
+    if (typeof body.sessionType === "string") patch.sessionType = body.sessionType.trim();
     if (typeof body.liveMinutes === "number") patch.liveMinutes = String(body.liveMinutes);
     if (typeof body.liveBlocks === "number") patch.liveBlocks = String(body.liveBlocks);
     if (typeof body.followups === "number") patch.followups = String(body.followups);
     if (typeof body.waiverAccepted === "boolean") patch.waiverAccepted = String(body.waiverAccepted);
 
-    // If you want to capture the IP at confirm-time as well:
-    const waiverIp = ip;
+    // capture IP for waiver at confirm time
     if (typeof body.waiverAccepted === "boolean") {
-      patch.waiverIp = waiverIp;
+      patch.waiverIp = ip;
     }
 
-    // Only set receipt_email if provided; otherwise keep existing
     const updateParams: Stripe.PaymentIntentUpdateParams = {
       metadata: { ...current, ...patch },
     };
@@ -87,7 +80,6 @@ export async function POST(req: Request) {
     }
 
     await getStripe().paymentIntents.update(piId, updateParams);
-
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

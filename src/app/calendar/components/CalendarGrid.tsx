@@ -15,13 +15,11 @@ import { useMemo } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 type Props = {
-  month: Date | string | number | null | undefined; // widened: SSR may pass a string/number
+  month: Date | string | number | null | undefined;
   onMonthChange: (m: Date) => void;
   selectedDate: Date | null;
   onSelectDate: (d: Date) => void;
-  /** Raw count of *any* valid starts (e.g., 15-min slots). */
   validStartCountByDay: Map<string, number>;
-  /** Days that have at least one *displayable* start (e.g., 30-min). If provided, this is authoritative. */
   displayableDayKeys?: Set<string>;
   loading: boolean;
   error: string | null;
@@ -35,7 +33,6 @@ function toValidDate(v: unknown, fallback = new Date()) {
     new Date(NaN);
   return Number.isNaN(d.getTime()) ? fallback : d;
 }
-
 function dayKeyLocal(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -53,7 +50,6 @@ export default function CalendarGrid({
   loading,
   error,
 }: Props) {
-  // ✅ Ensure we always work with a valid Date at runtime
   const safeMonth = toValidDate(month);
 
   const days = useMemo(() => {
@@ -88,13 +84,9 @@ export default function CalendarGrid({
       </div>
 
       {loading ? (
-        <div className="h-[300px] grid place-items-center text-white/60">
-          Loading…
-        </div>
+        <div className="h-[300px] grid place-items-center text-white/60">Loading…</div>
       ) : error ? (
-        <div className="h-[300px] grid place-items-center text-rose-400">
-          {error}
-        </div>
+        <div className="h-[300px] grid place-items-center text-rose-400">{error}</div>
       ) : (
         <>
           <div className="grid grid-cols-7 text-center text-[11px] text-white/60 mb-1">
@@ -106,19 +98,14 @@ export default function CalendarGrid({
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
               const key = dayKeyLocal(d);
-
-              // If displayableDayKeys is provided, only days with a displayable start are "available".
               const hasAvailDisplayable = displayableDayKeys?.has(key) ?? false;
               const hasAvailLegacy = (validStartCountByDay.get(key) ?? 0) > 0;
-              const hasAvail = displayableDayKeys
-                ? hasAvailDisplayable
-                : hasAvailLegacy;
+              const hasAvail = displayableDayKeys ? hasAvailDisplayable : hasAvailLegacy;
 
               const selected = !!selectedDate && isSameDay(d, selectedDate);
               const outside = !isSameMonth(d, safeMonth);
               const today = isToday(d);
 
-              // booking window: tomorrow through +14 days (inclusive)
               const tmr = new Date();
               tmr.setDate(tmr.getDate() + 1);
               tmr.setHours(0, 0, 0, 0);
@@ -130,7 +117,8 @@ export default function CalendarGrid({
               const base =
                 "aspect-square rounded-xl text-sm transition-all ring-1 ring-[rgba(146,180,255,.18)] relative overflow-hidden";
               const enabled = "bg-[#0d1b34] hover:bg-[#15284a] text-white/90";
-              const selectedCls = "shadow-[0_0_8px_2px_#fc8803]";
+              // unified, slightly softer light-blue glow
+              const selectedCls = "shadow-[0_0_10px_1px_#8FB8E6]";
               const disabled = "bg-[#0b1220] opacity-45 cursor-not-allowed";
               const outsideCls = outside ? "opacity-35" : "";
 
@@ -139,22 +127,13 @@ export default function CalendarGrid({
                   key={key}
                   disabled={!hasAvail || !inWindow}
                   onClick={() => onSelectDate(d)}
-                  className={[
-                    base,
-                    outsideCls,
-                    hasAvail && inWindow ? enabled : disabled,
-                    selected ? selectedCls : "",
-                  ].join(" ")}
+                  className={[base, outsideCls, hasAvail && inWindow ? enabled : disabled, selected ? selectedCls : ""].join(" ")}
                 >
                   <div className="flex h-full w-full items-center justify-center relative">
                     <span className="text-white">{format(d, "d")}</span>
-
                     {today && (
-                      <span className="absolute top-0.5 inset-x-0 text-[9px] text-[#8FB8E6] font-medium">
-                        Today
-                      </span>
+                      <span className="absolute top-0.5 inset-x-0 text-[9px] text-[#8FB8E6] font-medium">Today</span>
                     )}
-
                     {hasAvail && inWindow && (
                       <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#fc8803]" />
                     )}

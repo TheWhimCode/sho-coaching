@@ -1,21 +1,35 @@
 import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
-import { sendBookingEmail } from "@/lib/email";
+import { getPreset } from "@/lib/sessions/preset";
 
 export type FinalizeMeta = {
   slotId?: string;
-  slotIds?: string; // CSV
+  slotIds?: string;
   sessionType?: string;
   liveMinutes?: string;
   followups?: string;
   discord?: string;
   notes?: string;
-  email?: string;        // from checkout/stripe
-  timeZone?: string;     // e.g. "Europe/Berlin"
+  email?: string;
+  timeZone?: string;
   liveBlocks?: string;
-  waiverAccepted?: string; // "true"/"false"
+  waiverAccepted?: string;
   waiverIp?: string;
 };
+
+function titleFromPreset(baseMinutes: number, followups: number, liveBlocks: number): string {
+  const preset = getPreset(baseMinutes, followups, liveBlocks);
+  switch (preset) {
+    case "vod":
+      return "VOD Review";
+    case "instant":
+      return "Instant Insight";
+    case "signature":
+      return "Signature Session";
+    default:
+      return "Custom Session";
+  }
+}
 
 export async function finalizeBooking(
   meta: FinalizeMeta,
@@ -30,36 +44,34 @@ export async function finalizeBooking(
   const firstSlotId = meta.slotId || slotIds[0];
   if (!firstSlotId) throw new Error("slotId missing");
 
-  const sessionType = meta.sessionType ?? "Session";
   const liveMinutes = parseInt(meta.liveMinutes ?? "60", 10);
   const followups = parseInt(meta.followups ?? "0", 10);
   const liveBlocks = parseInt(meta.liveBlocks ?? "0", 10);
+  const baseMinutes = Math.max(30, liveMinutes - liveBlocks * 45);
+
+  const providedTitle = (meta.sessionType ?? "").trim();
+  const computedTitle = titleFromPreset(baseMinutes, followups, liveBlocks);
+  const sessionType = providedTitle || computedTitle; // ← trust client when provided
+
   const discord = meta.discord ?? "";
   const notes = meta.notes?.trim() || undefined;
 
   const waiverAccepted = meta.waiverAccepted === "true";
   const waiverIp = meta.waiverIp || undefined;
 
-  // capture ISO string to avoid Date typing issues
-  let scheduledStartISO: string | null = null;
   let processed = false;
 
   await prisma.$transaction(async (tx) => {
-    // idempotency guard
     try {
       await tx.processedEvent.create({ data: { id: paymentRef } });
       processed = true;
     } catch {
-      return; // already processed
+      return;
     }
 
-    // mark slots
     if (slotIds.length) {
       await tx.slot.updateMany({
-        where: {
-          id: { in: slotIds },
-          status: { in: [SlotStatus.free, SlotStatus.blocked] },
-        },
+        where: { id: { in: slotIds }, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
         data: { status: SlotStatus.taken, holdUntil: null, holdKey: null },
       });
     } else {
@@ -69,21 +81,16 @@ export async function finalizeBooking(
       });
     }
 
-    // snapshot schedule
     const startSlot = await tx.slot.findUnique({
       where: { id: firstSlotId },
       select: { startTime: true },
     });
     if (!startSlot) throw new Error("slot not found");
 
-    scheduledStartISO = new Date(
-      startSlot.startTime as unknown as Date
-    ).toISOString();
-
-    // upsert booking
     await tx.booking.upsert({
       where: { paymentRef },
       update: {
+        sessionType,
         status: "paid",
         amountCents,
         currency,
@@ -92,7 +99,6 @@ export async function finalizeBooking(
         stripeSessionId: provider === "stripe" ? paymentRef : undefined,
         scheduledStart: startSlot.startTime,
         scheduledMinutes: liveMinutes,
-        // new fields
         discord,
         notes,
         liveBlocks,
@@ -127,21 +133,4 @@ export async function finalizeBooking(
   });
 
   if (!processed) return;
-
-  // email (best-effort)
-  if (meta.email && scheduledStartISO) {
-    try {
-      await sendBookingEmail(meta.email, {
-        title: sessionType,
-        startISO: scheduledStartISO, // already ISO string
-        minutes: liveMinutes,
-        followups,
-        priceEUR: (amountCents ?? 0) / 100,
-        bookingId: paymentRef,
-        timeZone: meta.timeZone,
-      });
-    } catch (e) {
-      console.error("sendBookingEmail failed:", e);
-    }
-  }
 }

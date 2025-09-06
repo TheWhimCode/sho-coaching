@@ -29,7 +29,6 @@ function makeIdempotencyKey(slotIds: string[], amount: number, effKey: string, p
 
 export async function POST(req: Request) {
   try {
-    // Rate limit: 20/min/IP
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
     if (!rateLimit(`intent:${ip}`, 20, 60_000)) {
       return NextResponse.json({ error: "rate_limited" }, { status: 429 });
@@ -38,7 +37,6 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
-    // Live values coming from the contact/checkout step
     const emailRaw = (body as { email?: string }).email?.trim();
     const notesRaw = (body as { notes?: string }).notes?.trim();
     const discordRaw = (body as { discord?: string }).discord?.trim();
@@ -54,10 +52,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     }
 
-    // Prefer live values from body; fall back to validated payload
+    // ⚠️ IMPORTANT: DO NOT use `sessionType` from the schema (URL preset). We only trust the client-passed title.
     const {
       slotId,
-      sessionType: stFromSchema,
+      // sessionType: stFromSchema,            // ← removed; URL preset is not the source of truth
       liveMinutes,
       followups,
       liveBlocks,
@@ -65,8 +63,8 @@ export async function POST(req: Request) {
       discord: discordFromSchema,
     } = parsed.data;
 
-    const sessionType = sessionTypeRaw || stFromSchema || "Session";
     const discord = discordRaw ?? discordFromSchema ?? "";
+    const sessionType = (sessionTypeRaw || "").trim(); // ← trust only what CheckoutPanel sends
 
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
@@ -109,9 +107,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "unavailable" }, { status: 409 });
       }
 
-      const expected = Math.round(
-        (liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN) / SLOT_SIZE_MIN
-      );
+      const expected = Math.round((liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN) / SLOT_SIZE_MIN);
       if (rows.length !== expected) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
       const stepMs = SLOT_SIZE_MIN * 60_000;
@@ -142,8 +138,26 @@ export async function POST(req: Request) {
     const pmTypes: Array<"card" | "paypal" | "revolut_pay"> =
       payMethod === "paypal" ? ["paypal"] : payMethod === "revolut_pay" ? ["revolut_pay"] : ["card"];
 
-    // 6) Create PaymentIntent (short idempotency key)
+    // 6) Create PaymentIntent
     const idemKey = makeIdempotencyKey(slotIds, amountCents, effKey, payMethod);
+
+    const metadata: Record<string, string> = {
+      email: emailRaw || "",
+      discord,
+      notes: notesRaw ?? "",
+      waiverAccepted: String(waiverAccepted),
+      waiverIp: ip,
+      slotId,
+      slotIds: slotIds.join(","),
+      liveMinutes: String(liveMinutes),
+      liveBlocks: String(liveBlocks ?? 0),
+      followups: String(followups ?? 0),
+      priceEUR: String(priceEUR),
+      payMethod,
+    };
+    if (sessionType) {
+      metadata.sessionType = sessionType; // exact title from SessionBlock / CheckoutPanel
+    }
 
     const pi = await getStripe().paymentIntents.create(
       {
@@ -151,21 +165,7 @@ export async function POST(req: Request) {
         currency: "eur",
         payment_method_types: pmTypes,
         receipt_email: emailRaw || undefined,
-        metadata: {
-          email: emailRaw || "",
-          discord,
-          notes: notesRaw ?? "",
-          waiverAccepted: String(waiverAccepted),
-          waiverIp: ip,
-          slotId,
-          slotIds: slotIds.join(","), // ok in metadata
-          sessionType,
-          liveMinutes: String(liveMinutes),
-          liveBlocks: String(liveBlocks ?? 0),
-          followups: String(followups ?? 0),
-          priceEUR: String(priceEUR),
-          payMethod,
-        },
+        metadata,
       },
       { idempotencyKey: idemKey }
     );

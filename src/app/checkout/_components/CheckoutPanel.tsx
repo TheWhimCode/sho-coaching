@@ -1,3 +1,4 @@
+// src/pages/customization/checkout/rcolumn/CheckoutPanel.tsx
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
@@ -16,12 +17,13 @@ const StepPayDetails = dynamic(() => import("./checkout-steps/StepPayDetails"), 
 import StepSummary from "./checkout-steps/StepSummary";
 
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
+import { getPreset } from "@/lib/sessions/preset";
 
 type PayMethod = "" | "card" | "paypal" | "revolut_pay";
 
 type Payload = {
   slotId: string;
-  sessionType: string;
+  sessionType: string; // (may be preset from URL; we will NOT use it for Stripe)
   baseMinutes: number;
   liveMinutes: number;
   followups: number;
@@ -79,6 +81,24 @@ export default function CheckoutPanel({
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
 
   const safePayload: Payload = useMemo(() => ({ ...DEFAULT_PAYLOAD, ...payload }), [payload]);
+
+  // Compute the EXACT title the SessionBlock shows (single source of truth)
+  const sessionBlockTitle = useMemo(() => {
+    const p = getPreset(safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks);
+    return p === "vod"
+      ? "VOD Review"
+      : p === "instant"
+      ? "Instant Insight"
+      : p === "signature"
+      ? "Signature Session"
+      : "Custom Session";
+  }, [safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks]);
+
+  // Keep server math aligned (base + in-game)
+  const totalLiveMinutes = useMemo(
+    () => safePayload.baseMinutes + safePayload.liveBlocks * 45,
+    [safePayload.baseMinutes, safePayload.liveBlocks]
+  );
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
@@ -162,11 +182,13 @@ export default function CheckoutPanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...payloadForBackend, // slotId, sessionType, liveMinutes, followups, liveBlocks, discord, preset, holdKey
+          ...payloadForBackend,              // may include a stale sessionType, but server ignores schema-preset now
+          liveMinutes: totalLiveMinutes,     // ensure server sees total minutes
+          sessionType: sessionBlockTitle,    // ← ALWAYS send the computed title
           payMethod: m,
-          email,               // ensure latest email
-          discord,             // ensure latest discord
-          notes,               // optional notes
+          email,
+          discord,
+          notes,
         }),
       });
 
@@ -270,7 +292,7 @@ export default function CheckoutPanel({
 
           <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-          <div className="relative min-h-[440px] md:min-h-[440px] overflow-visible pt-1">
+          <div className="relative min-h-[440px] md:min_h-[440px] overflow-visible pt-1">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
                 <motion.div
@@ -379,9 +401,9 @@ export default function CheckoutPanel({
                       breakdown={breakdown}
                       payMethod={payMethod || "card"}
                       email={email}
-                      discord={discord}                      // pass along for update endpoint
-                      notes={notes}                          // pass along for update endpoint
-                      sessionType={safePayload.sessionType}  // pass along for update endpoint
+                      discord={discord}
+                      notes={notes}
+                      sessionType={sessionBlockTitle}  // ← always the computed title
                       piId={piId}
                       waiver={waiver}
                       setWaiver={setWaiver}
@@ -394,23 +416,37 @@ export default function CheckoutPanel({
             </AnimatePresence>
           </div>
 
-          {/* Footer badges */}
-          <div className="flex items-center gap-3 pt-4 text-white/75">
-            <span className="inline-flex items-center gap-1 text-xs">
-              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="currentColor" opacity=".9" />
-                <path d="M3 7v10l9 5V12L3 7Z" fill="currentColor" opacity=".65" />
-                <path d="M21 7v10l-9 5V12l9-5Z" fill="currentColor" opacity=".5" />
-              </svg>
-              3D Secure ready
-            </span>
-            <span className="inline-flex items-center gap-1 text-xs">
-              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2 4 6v6c0 4.2 2.7 8 8 10 5.3-2 8-5.8 8-10V6l-8-4Z" fill="currentColor" />
-              </svg>
-              Buyer protection
-            </span>
-          </div>
+{/* Footer badges */}
+<div className="flex items-center gap-3 pt-4 text-white/75">
+  <span className="inline-flex items-center gap-1 text-xs">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="text-violet-400"  // distinct accent for 3D Secure
+    >
+      <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="currentColor" opacity=".9" />
+      <path d="M3 7v10l9 5V12L3 7Z" fill="currentColor" opacity=".65" />
+      <path d="M21 7v10l-9 5V12l9-5Z" fill="currentColor" opacity=".5" />
+    </svg>
+    3D Secure ready
+  </span>
+
+  <span className="inline-flex items-center gap-1 text-xs">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="text-blue-400"  // neutral blue shield
+    >
+      <path d="M12 2 4 6v6c0 4.2 2.7 8 8 10 5.3-2 8-5.8 8-10V6l-8-4Z" fill="currentColor" />
+    </svg>
+    Buyer protection
+  </span>
+</div>
+
         </div>
       </div>
     </div>
