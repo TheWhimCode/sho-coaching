@@ -75,6 +75,7 @@ export default function SessionHero({
   const [initialSlotId, setInitialSlotId] = useState<string | null>(null);
 
   const [drawerW, setDrawerW] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const baseOnly = baseMinutes ?? 60;
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
@@ -85,7 +86,10 @@ export default function SessionHero({
   const leftSteps = stepsByPreset[preset];
 
   useEffect(() => {
-    const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
+    const calc = () => {
+      setDrawerW(Math.min(440, window.innerWidth * 0.92));
+      setIsDesktop(window.innerWidth >= 768); // md breakpoint
+    };
     calc();
     window.addEventListener("resize", calc);
     return () => window.removeEventListener("resize", calc);
@@ -107,7 +111,9 @@ export default function SessionHero({
         setQuickPool(rows.map(r => ({ id: r.id, startISO: r.startTime ?? (r as any).startISO })));
       } catch {}
     })();
-    return () => { on = false; };
+    return () => {
+      on = false;
+    };
   }, [liveMinutes]);
 
   // fetch autoslots
@@ -130,7 +136,9 @@ export default function SessionHero({
         if (on) setLoading(false);
       }
     })();
-    return () => { on = false; };
+    return () => {
+      on = false;
+    };
   }, [liveMinutes]);
 
   const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
@@ -154,18 +162,25 @@ export default function SessionHero({
     <section className="relative isolate h-[100svh] overflow-hidden text-white vignette">
       {/* background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <video src="/videos/Particle1_slow.webm" autoPlay muted loop playsInline className="h-full w-full object-cover" />
+        <video
+          src="/videos/Particle1_slow.webm"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="h-full w-full object-cover object-left md:object-center"
+        />
         <div className="absolute inset-0 bg-black/30" />
       </div>
 
       {/* content — animated */}
       <motion.div
         className="relative z-20 h-full flex items-center py-10 md:py-14"
-        animate={{ x: shiftX }}
+        animate={{ x: isDesktop ? shiftX : 0 }}
         transition={{ duration: 0.35, ease: EASE }}
       >
         <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
-          {/* Mobile: 1 column. Desktop: custom 3 columns */}
+          {/* Mobile: 1 column (Center first, then Right). Desktop: 3 columns */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
             <header className="md:col-span-3 mb-2 md:mb-4">
               <AnimatePresence mode="wait">
@@ -205,9 +220,9 @@ export default function SessionHero({
               />
             </div>
 
-            {/* CENTER */}
+            {/* CENTER always comes first */}
             <motion.div
-              className="self-start /* order-2 md:order-none */"
+              className="self-start order-1"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.center }}
@@ -221,9 +236,9 @@ export default function SessionHero({
               />
             </motion.div>
 
-            {/* RIGHT */}
+            {/* RIGHT always comes after Center on mobile */}
             <motion.div
-              /* className="order-1 md:order-none"  // ← uncomment to show Right above Center on mobile */
+              className="order-2"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
@@ -240,7 +255,7 @@ export default function SessionHero({
         </div>
       </motion.div>
 
-      {/* ✅ Calendar overlay mounted here, seeded with prefetched slots */}
+      {/* ✅ Calendar overlay */}
       {showCal && (
         <Calendar
           sessionType={titlesByPreset[preset]}

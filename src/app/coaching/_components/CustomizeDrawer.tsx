@@ -7,33 +7,22 @@ import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../../../utils/sessio
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 
-/* NEW: icon imports (match SessionBlock) */
-import { Signature, Scroll, Lightning, PuzzlePiece } from "@phosphor-icons/react";
-/* ---------- Icons use shared palette ---------- */
+/* NEW: icon imports */
+import { Signature, Scroll, Lightning, PuzzlePiece, X } from "@phosphor-icons/react";
+
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const { ring, glow } = colorsByPreset[preset];
   const style = { filter: `drop-shadow(0 0 8px ${glow})` } as const;
 
-  if (preset === "vod") {
-    return <Scroll size={size} weight="fill" color={ring} style={style} aria-hidden />;
-  }
-  if (preset === "instant") {
-    return <Lightning size={size} weight="fill" color={ring} style={style} aria-hidden />;
-  }
-  if (preset === "signature") {
-    return <Signature size={size} weight="bold" color={ring} style={style} aria-hidden />;
-  }
+  if (preset === "vod") return <Scroll size={size} weight="fill" color={ring} style={style} aria-hidden />;
+  if (preset === "instant") return <Lightning size={size} weight="fill" color={ring} style={style} aria-hidden />;
+  if (preset === "signature") return <Signature size={size} weight="bold" color={ring} style={style} aria-hidden />;
   return <PuzzlePiece size={size} weight="fill" color={ring} style={style} aria-hidden />;
 }
 
-/* ---------- Unified +/- 15 logic ---------- */
 function decDuration(cfg: Cfg): Cfg {
-  if (cfg.liveMin > 30) {
-    return { ...cfg, liveMin: Math.max(30, cfg.liveMin - 15) };
-  }
-  if (cfg.liveBlocks > 0) {
-    return { ...cfg, liveBlocks: cfg.liveBlocks - 1 };
-  }
+  if (cfg.liveMin > 30) return { ...cfg, liveMin: Math.max(30, cfg.liveMin - 15) };
+  if (cfg.liveBlocks > 0) return { ...cfg, liveBlocks: cfg.liveBlocks - 1 };
   return cfg;
 }
 function incDuration(cfg: Cfg): Cfg {
@@ -42,7 +31,6 @@ function incDuration(cfg: Cfg): Cfg {
   return { ...cfg, liveMin: cfg.liveMin + 15 };
 }
 
-/* ---------- Drawer ---------- */
 type Props = { open: boolean; onClose: () => void; cfg: Cfg; onChange: (c: Cfg) => void };
 
 export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props) {
@@ -95,9 +83,18 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
+            {/* Header with close button */}
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="text-xl md:text-2xl font-extrabold tracking-tight">Customize your session</h3>
+              <h3 className="text-xl md:text-2xl font-extrabold tracking-tight">
+                Customize your session
+              </h3>
+              <button
+                onClick={onClose}
+                aria-label="Close customization drawer"
+                className="p-2 rounded-md hover:bg-white/10 transition"
+              >
+                <X size={22} weight="bold" />
+              </button>
             </div>
 
             <Divider />
@@ -143,12 +140,10 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                       >
                         ?
                       </button>
-                      <div
-                        className="absolute left-full top-1/2 ml-2 -translate-y-1/2
-                                   w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
-                                   group-hover:opacity-100 transition pointer-events-none shadow-lg
-                                   z-50"
-                      >
+                      <div className="absolute left-full top-1/2 ml-2 -translate-y-1/2
+                                      w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
+                                      group-hover:opacity-100 transition pointer-events-none shadow-lg
+                                      z-50">
                         Receive coaching while playing.{" "}
                         <span className="text-red-400 font-semibold">
                           Warning, in-game coaching is very stressful and often less informative than regular coaching!
@@ -156,7 +151,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                       </div>
                     </div>
                   </span>
-                  <span className="text-sm opacity-80 relative z-0">{cfg.liveBlocks} × 45 min</span>
+                  <span className="text-sm opacity-80">{cfg.liveBlocks} × 45 min</span>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
@@ -192,17 +187,15 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                       >
                         ?
                       </button>
-                      <div
-                        className="absolute left-full top-1/2 ml-2 -translate-y-1/2
-                                   w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
-                                   group-hover:opacity-100 transition pointer-events-none shadow-lg
-                                   z-50"
-                      >
-                        A few days after your session, Sho will create a Follow-up recording to review your progress and give new input. You may request when and what game to review.
+                      <div className="absolute left-full top-1/2 ml-2 -translate-y-1/2
+                                      w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
+                                      group-hover:opacity-100 transition pointer-events-none shadow-lg
+                                      z-50">
+                        A few days after your session, Sho will create a Follow-up recording to review your progress and give new input.
                       </div>
                     </div>
                   </span>
-                  <span className="text-sm opacity-80 relative z-0">{cfg.followups} × 15 min</span>
+                  <span className="text-sm opacity-80">{cfg.followups} × 15 min</span>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button
@@ -252,7 +245,6 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
   );
 }
 
-/* preset button with active light-blue glow */
 function PresetButton({
   label, sub, price, preset, active, onClick, onHover,
 }: {
@@ -271,11 +263,6 @@ function PresetButton({
           ? "ring-[rgba(120,160,255,.55)] shadow-[0_0_6px_rgba(56,124,255,.35)]"
           : "ring-white/12",
       ].join(" ")}
-      style={{
-        backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
-        backgroundSize: "12px 12px",
-        backgroundBlendMode: "overlay",
-      }}
     >
       <div className="flex items-center">
         <div className="grow">

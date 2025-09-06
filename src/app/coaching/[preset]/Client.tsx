@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import SessionHero from "../_components/SessionHero";
 import CalLikeOverlay from "@/app/calendar/Calendar";
 import CustomizeDrawer from "../_components/CustomizeDrawer";
-import { AnimatePresence, LayoutGroup } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Cfg } from "../../../utils/sessionConfig";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { computePriceEUR } from "@/lib/pricing";
@@ -18,10 +18,10 @@ export default function Client({ preset }: { preset: string }) {
       case "signature":
         return { title: "Signature Session", cfg: { liveMin: 45, liveBlocks: 0, followups: 1 } as Cfg };
       case "instant":
-        return { title: "Instant Insight",  cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "Instant Insight", cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
       case "vod":
       default:
-        return { title: "VOD Review",       cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "VOD Review", cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
     }
   }, [preset]);
 
@@ -39,6 +39,15 @@ export default function Client({ preset }: { preset: string }) {
     if (preset === "vod" || preset === "signature" || preset === "instant") return preset as Preset;
     return getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks);
   });
+
+  // Track desktop vs mobile
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 768); // md breakpoint
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Reset cfg on route preset change
   useEffect(() => {
@@ -71,7 +80,9 @@ export default function Client({ preset }: { preset: string }) {
         if (on) setPrefetchedSlots(data);
       } catch {}
     })();
-    return () => { on = false; };
+    return () => {
+      on = false;
+    };
   }, [cfg.liveMin]);
 
   const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;
@@ -110,6 +121,21 @@ export default function Client({ preset }: { preset: string }) {
               followups={cfg.followups}
               liveBlocks={cfg.liveBlocks}
               onClose={() => setCalendarOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Mobile-only backdrop when drawer is open */}
+        <AnimatePresence>
+          {!isDesktop && drawerOpen && (
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-40 bg-black"
+              onClick={() => setDrawerOpen(false)}
             />
           )}
         </AnimatePresence>
