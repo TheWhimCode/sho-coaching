@@ -18,7 +18,7 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   const key = CFG_SERVER.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe not configured");
-  stripe = new Stripe(key, { apiVersion: "2024-06-20" as Stripe.LatestApiVersion });
+  stripe = new Stripe(key, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
 }
 
