@@ -272,7 +272,7 @@ export default function CheckoutPanel({
   }, [payloadForBackend, safePayload]);
 
   return (
-    <div className="relative rounded-2xl isolate">
+    <div className="relative rounded-2xl isolate w-full">
       <div
         className="
           relative rounded-2xl p-5 md:p-6
@@ -305,10 +305,20 @@ export default function CheckoutPanel({
 
           <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-          <div className="relative min-h-[440px] md:min_h-[440px] overflow-visible pt-1">
+          {/* ✅ Steps wrapper — mobile: relative natural height, desktop: absolute full height */}
+          <div className="relative min-h-[440px] overflow-visible pt-1 md:min-h-[440px]">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
-                <motion.div key="step-contact" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
+                <motion.div
+                  key="step-contact"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+                >
                   <StepContact
                     email={email}
                     discord={discord}
@@ -325,13 +335,31 @@ export default function CheckoutPanel({
               )}
 
               {step === 1 && (
-                <motion.div key="step-choose" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
+                <motion.div
+                  key="step-choose"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+                >
                   <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
                 </motion.div>
               )}
 
               {step === 2 && (
-                <motion.div key="step-2" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
+                <motion.div
+                  key="step-2"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+                >
                   {clientSecret ? (
                     <Elements stripe={stripePromise} options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}>
                       <StepPayDetails
@@ -364,7 +392,16 @@ export default function CheckoutPanel({
               )}
 
               {step === 3 && clientSecret && (
-                <motion.div key="step-summary" custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.22, ease: "easeOut" }} className="absolute inset-0 h-full flex flex-col">
+                <motion.div
+                  key="step-summary"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+                >
                   <Elements stripe={stripePromise} options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}>
                     <StepSummary
                       goBack={goBack}
@@ -380,8 +417,7 @@ export default function CheckoutPanel({
                       setWaiver={setWaiver}
                       clientSecret={clientSecret!}
                       cardPmId={cardPmId}
-                      bookingId={bookingId}   
-
+                      bookingId={bookingId}
                     />
                   </Elements>
                 </motion.div>
@@ -412,4 +448,3 @@ export default function CheckoutPanel({
     </div>
   );
 }
- 
