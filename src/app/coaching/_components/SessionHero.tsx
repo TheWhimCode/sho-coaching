@@ -157,13 +157,20 @@ export default function SessionHero({
     <section className="relative isolate min-h-screen md:h-[100svh] overflow-hidden text-white vignette">
       {/* background */}
       <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        {/* Desktop: video */}
         <video
           src="/videos/Particle1_slow.webm"
           autoPlay
           muted
           loop
           playsInline
-          className="h-full w-full object-cover object-left md:object-center"
+          className="hidden md:block h-full w-full object-cover object-left md:object-center"
+        />
+        {/* Mobile: still image */}
+        <img
+          src="/images/Particle1_frame.jpg" 
+          alt=""
+          className="block md:hidden h-full w-full object-cover object-left"
         />
         <div className="absolute inset-0 bg-black/30" />
       </div>
