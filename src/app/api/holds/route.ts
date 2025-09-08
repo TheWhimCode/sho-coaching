@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { SlotStatus } from "@prisma/client";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,6 @@ export async function POST(req: Request) {
   if (req.method !== "POST") return noStore({ error: "method_not_allowed" }, 405);
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  // per-IP: 60/min for POST
   if (!rateLimit(`holds:post:${ip}`, 60, 60_000)) {
     return noStore({ error: "rate_limited" }, 429);
   }

@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import SessionBlock from "@/app/coaching/_components/SessionBlock";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 
-// Keep Choose/Contact/Summary SSR-safe; make PayDetails client-only (Stripe)
+// SSR-safe steps
 import StepContact from "./checkout-steps/StepContact";
 import StepChoose from "./checkout-steps/StepChoose";
 const StepPayDetails = dynamic(() => import("./checkout-steps/StepPayDetails"), { ssr: false });
@@ -77,7 +77,6 @@ export default function CheckoutPanel({
   payloadForBackend,
 }: Props) {
   const appearanceToUse = appearanceProp ?? appearanceDarkBrand;
-
   const safePayload: Payload = useMemo(() => ({ ...DEFAULT_PAYLOAD, ...payload }), [payload]);
 
   const sessionBlockTitle = useMemo(() => {
@@ -103,8 +102,23 @@ export default function CheckoutPanel({
     setDir(1);
     setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3)));
   };
+
+  // Reset intent state when going back so users can switch methods cleanly
+  const [payMethod, setPayMethod] = useState<PayMethod>("");
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [piId, setPiId] = useState<string | null>(null);
+  const [loadingIntent, setLoadingIntent] = useState(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+
+  const [cardPmId, setCardPmId] = useState<string | null>(null);
+  const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
+
   const goBack = () => {
     setDir(-1);
+    setClientSecret(null);
+    setPiId(null);
+    setCardPmId(null);
+    setSavedCard(null);
     setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
   };
 
@@ -144,36 +158,29 @@ export default function CheckoutPanel({
     return true;
   }
 
-  // Payment / Stripe
-  const [payMethod, setPayMethod] = useState<PayMethod>("");
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [piId, setPiId] = useState<string | null>(null);
-  const [loadingIntent, setLoadingIntent] = useState(false);
-  const [bookingId, setBookingId] = useState<string | null>(null);
-
-  const [cardPmId, setCardPmId] = useState<string | null>(null);
-  const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
-
   const currentMethodRef = useRef<PayMethod>("");
-
   const [waiver, setWaiver] = useState(false);
 
-  async function chooseAndGo(m: PayMethod) {
-    if (!m) return;
-    setDir(1);
-    setPayMethod(m);
-    currentMethodRef.current = m;
+async function chooseAndGo(m: PayMethod) {
+  if (!m) return;
+  setDir(1);
+  setPayMethod(m);
+  currentMethodRef.current = m;
 
-    setClientSecret(null);
-    setPiId(null);
-    setCardPmId(null);
-    setSavedCard(null);
+  // reset Stripe state on method change
+  setClientSecret(null);
+  setPiId(null);
+  setCardPmId(null);
+  setSavedCard(null);
 
-    setStep(2);
+  setStep(2);
+  setLoadingIntent(true);
 
-    setLoadingIntent(true);
-    try {
-      // 1) Create booking in DB
+  try {
+    let bid = bookingId;
+
+    // ✅ Only create the booking once
+    if (!bid) {
       const make = await fetch("/api/booking/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -188,47 +195,52 @@ export default function CheckoutPanel({
           email,
         }),
       });
+
       if (!make.ok) {
         console.error("CREATE_BOOKING_FAILED", await make.json().catch(() => ({})));
         setLoadingIntent(false);
         return;
       }
-      const { bookingId: bid } = await make.json();
+
+      const j = await make.json();
+      bid = j.bookingId as string;
       setBookingId(bid);
-
-      // 2) Create Stripe intent with only bookingId + email
-      const res = await fetch("/api/stripe/checkout/intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: bid,
-          email,
-          payMethod: m,
-        }),
-      });
-
-      if (res.status === 409) {
-        console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
-        setStep(0);
-        setLoadingIntent(false);
-        return;
-      }
-
-      const data = await res.json().catch(() => ({} as any));
-      if (currentMethodRef.current !== m) return;
-
-      if (res.ok && data?.clientSecret) {
-        setClientSecret(data.clientSecret);
-        setPiId(String(data.clientSecret).split("_secret")[0] || null);
-      } else {
-        console.error("INTENT_FAIL", data);
-        setClientSecret(null);
-        setPiId(null);
-      }
-    } finally {
-      if (currentMethodRef.current === m) setLoadingIntent(false);
     }
+
+    // ✅ For each method change, just make a new PI using the SAME bookingId
+    const res = await fetch("/api/stripe/checkout/intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingId: bid,
+        email,
+        payMethod: m,
+      }),
+    });
+
+    if (res.status === 409) {
+      console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
+      setStep(0);
+      setLoadingIntent(false);
+      return;
+    }
+
+    const data = await res.json().catch(() => ({} as any));
+    if (currentMethodRef.current !== m) return;
+
+    if (res.ok && data?.clientSecret) {
+      setClientSecret(data.clientSecret);
+      setPiId(String(data.clientSecret).split("_secret")[0] || null);
+    } else {
+      console.error("INTENT_FAIL", data);
+      setClientSecret(null);
+      setPiId(null);
+    }
+  } finally {
+    if (currentMethodRef.current === m) setLoadingIntent(false);
   }
+}
+
 
   const variants = {
     enter: (d: 1 | -1) => ({ x: d * 40, opacity: 0 }),
@@ -290,7 +302,7 @@ export default function CheckoutPanel({
             opacity-100 blur-[14px]
           "
         />
-
+        {/* OPEN: content wrapper */}
         <div className="relative space-y-3">
           <SessionBlock
             layoutId="session-block"
@@ -305,7 +317,7 @@ export default function CheckoutPanel({
 
           <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-          {/* ✅ Steps wrapper — mobile: relative natural height, desktop: absolute full height */}
+          {/* Steps */}
           <div className="relative min-h-[440px] overflow-visible pt-1 md:min-h-[440px]">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
@@ -361,7 +373,11 @@ export default function CheckoutPanel({
                   className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
                 >
                   {clientSecret ? (
-                    <Elements stripe={stripePromise} options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}>
+                    <Elements
+                      key={clientSecret || "loading-step2"}
+                      stripe={stripePromise}
+                      options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
+                    >
                       <StepPayDetails
                         mode="form"
                         goBack={goBack}
@@ -402,7 +418,11 @@ export default function CheckoutPanel({
                   transition={{ duration: 0.22, ease: "easeOut" }}
                   className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
                 >
-                  <Elements stripe={stripePromise} options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}>
+                  <Elements
+                    key={clientSecret || "loading-step3"}
+                    stripe={stripePromise}
+                    options={{ clientSecret, appearance: appearanceToUse, loader: "never" }}
+                  >
                     <StepSummary
                       goBack={goBack}
                       payload={safePayload}
@@ -444,7 +464,10 @@ export default function CheckoutPanel({
             </span>
           </div>
         </div>
+        {/* CLOSE: content wrapper */}
       </div>
+      {/* CLOSE inner container */}
     </div>
+    /* CLOSE outer wrapper */
   );
 }

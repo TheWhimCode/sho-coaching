@@ -132,15 +132,22 @@ export async function POST(req: Request) {
 
     if (!slotIds?.length) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
-    // 4) Claim/extend hold
+    // 4) Claim/extend hold (NO status flip)
     const now = new Date();
     const holdUntil = new Date(now.getTime() + HOLD_TTL_MIN * 60_000);
     await prisma.slot.updateMany({
       where: {
         id: { in: slotIds },
-        OR: [{ status: SlotStatus.free }, { status: SlotStatus.blocked, holdKey: anchor.holdKey ?? effKey }],
+        OR: [
+          { status: SlotStatus.free },
+          { status: SlotStatus.blocked, holdKey: anchor.holdKey ?? effKey }, // allow extending our own previous hold
+        ],
       },
-      data: { holdKey: anchor.holdKey ?? effKey, holdUntil, status: SlotStatus.blocked },
+      data: {
+        holdKey: anchor.holdKey ?? effKey,
+        holdUntil,
+        // NOTE: no status change here (no blocked)
+      },
     });
 
     // 5) Limit payment methods
