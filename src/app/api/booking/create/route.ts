@@ -17,67 +17,106 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
-  // validate shape you already use elsewhere
   const parsed = CheckoutZ.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const {
-    slotId,
-    liveMinutes,
-    followups,
-    // liveBlocks,  // optional in model; defaults to 0
-  } = parsed.data;
+  const { slotId, liveMinutes, followups } = parsed.data;
 
   const sessionType = (body.sessionType ?? "").trim();
-  const discord = (body.discord ?? "").trim();        // model requires String (not null)
-  const notes = (body.notes ?? "").trim() || null;     // optional
+  const discord = (body.discord ?? "").trim();
+  const notes = (body.notes ?? "").trim() || null;
   const waiverAccepted = body.waiverAccepted === true || body.waiver === true;
   const waiverIp = waiverAccepted ? ip : null;
   const waiverAcceptedAt = waiverAccepted ? new Date() : null;
   const customerEmail = (body.email ?? "").trim() || null;
 
-  // required fields guard
   if (!sessionType || !discord) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  // fetch slot to get scheduledStart and ensure it’s not taken
+  // get slot & reject if already taken
   const slot = await prisma.slot.findUnique({ where: { id: slotId } });
   if (!slot || slot.status === SlotStatus.taken) {
     return NextResponse.json({ error: "slot_unavailable" }, { status: 409 });
   }
 
-  // compute and persist price snapshot (optional in model)
   const { amountCents } = computePriceEUR(liveMinutes, followups);
 
-  // create pending booking (Stripe will finalize later)
-  const booking = await prisma.booking.create({
-    data: {
-      sessionType,
-      slotId,                         // unique in Booking
-      liveMinutes,
-      followups,
-      discord,
-      notes,
-      // Snapshot schedule
-      scheduledStart: slot.startTime,
-      scheduledMinutes: liveMinutes,
-      // Payment snapshot
-      currency: "eur",
-      amountCents,
-      customerEmail,
-      // Waiver
-      waiverAccepted,
-      waiverIp,
-      waiverAcceptedAt,
-      // Leave: status (defaults to "unpaid"), liveBlocks (default 0)
-    },
+  // ---- Reuse-or-create to avoid P2002 on Booking.slotId ----
+  const existing = await prisma.booking.findFirst({
+    where: { slotId, status: "unpaid" },
     select: { id: true },
   });
 
-  const res = NextResponse.json({ bookingId: booking.id });
-  res.headers.set("Cache-Control", "no-store");
-  return res;
+  try {
+    // Update existing unpaid booking for this slot (preferred)
+    if (existing) {
+      const b = await prisma.booking.update({
+        where: { id: existing.id },
+        data: {
+          sessionType,
+          liveMinutes,
+          followups,
+          discord,
+          notes,
+          scheduledStart: slot.startTime,
+          scheduledMinutes: liveMinutes,
+          currency: "eur",
+          amountCents,
+          customerEmail,
+          waiverAccepted,
+          waiverIp,
+          waiverAcceptedAt,
+        },
+        select: { id: true },
+      });
+
+      const res = NextResponse.json({ bookingId: b.id });
+      res.headers.set("Cache-Control", "no-store");
+      return res;
+    }
+
+    // Otherwise create a fresh unpaid booking
+    const b = await prisma.booking.create({
+      data: {
+        sessionType,
+        slotId, // still unique; there will be at most one unpaid row per slot
+        liveMinutes,
+        followups,
+        discord,
+        notes,
+        scheduledStart: slot.startTime,
+        scheduledMinutes: liveMinutes,
+        currency: "eur",
+        amountCents,
+        customerEmail,
+        waiverAccepted,
+        waiverIp,
+        waiverAcceptedAt,
+      },
+      select: { id: true },
+    });
+
+    const res = NextResponse.json({ bookingId: b.id });
+    res.headers.set("Cache-Control", "no-store");
+    return res;
+  } catch (e: any) {
+    // Handle race: if another request just created the unpaid booking, reuse it.
+    if (e?.code === "P2002") {
+      const again = await prisma.booking.findFirst({
+        where: { slotId, status: "unpaid" },
+        select: { id: true },
+      });
+      if (again) {
+        const res = NextResponse.json({ bookingId: again.id });
+        res.headers.set("Cache-Control", "no-store");
+        return res;
+      }
+    }
+    // Unknown error
+    console.error("BOOKING_CREATE_ERROR", e);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }
