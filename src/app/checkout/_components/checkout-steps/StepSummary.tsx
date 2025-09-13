@@ -1,3 +1,4 @@
+// src/pages/customization/checkout/rcolumn/checkout-steps/StepSummary.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +8,7 @@ import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import CardForm from "@/app/checkout/_components/checkout-steps/step-components/CardForm";
 import { ArrowLeft } from "lucide-react";
 
-type Method = "card" | "paypal" | "revolut_pay";
+type Method = "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
 
 type Props = {
   goBack: () => void;
@@ -90,12 +91,7 @@ export default function StepSummary({
       {/* Keep a Payment Element mounted (hidden) for non-card methods */}
       {payMethod !== "card" && (
         <div aria-hidden className="sr-only">
-          <CardForm
-            piId={piId}
-            email={email}
-            activePm={payMethod}
-            onElementsReady={() => {}}
-          />
+          <CardForm email={email} activePm={payMethod} onElementsReady={() => {}} />
         </div>
       )}
 
@@ -291,7 +287,7 @@ function PayButton({
         return;
       }
 
-      // PayPal / Revolut Pay
+      // PayPal / Revolut Pay / Klarna / Wallet (Apple/Google Pay) via Payment Element
       if (!elements) {
         setError("Payment form not ready.");
         setSubmitting(false);

@@ -38,7 +38,7 @@ export default function WithdrawalPage() {
               The withdrawal period is 14 days from the day of the conclusion of the contract.
             </p>
             <p>
-              To exercise your right of withdrawal, you must inform us (
+              To exercise your right of withdrawal, you must inform me (
               <span className="font-medium">[Your Name / Company, Address, Email]</span>) by means of a clear
               statement (e.g. a letter sent by post or email). You may use the model withdrawal form below, but this is
               not obligatory.
@@ -50,14 +50,14 @@ export default function WithdrawalPage() {
 
             <h2 className="text-xl font-semibold">Consequences of Withdrawal</h2>
             <p>
-              If you withdraw from this contract, we shall reimburse you all payments received from you without undue
-              delay and at the latest within 14 days from the day on which we receive notification of your withdrawal.
-              We will use the same means of payment you used for the original transaction, unless expressly agreed
+              If you withdraw from this contract, I shall reimburse you all payments received from you without undue
+              delay and at the latest within 14 days from the day on which I receive notification of your withdrawal.
+              I will use the same means of payment you used for the original transaction, unless expressly agreed
               otherwise.
             </p>
             <p>
-              If you requested that the service should begin during the withdrawal period, you shall pay us an amount
-              proportionate to the services provided up to the time you informed us of the exercise of the right of
+              If you requested that the service should begin during the withdrawal period, you shall pay me an amount
+              proportionate to the services provided up to the time you informed me of the exercise of the right of
               withdrawal.
             </p>
 

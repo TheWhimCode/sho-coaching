@@ -39,7 +39,12 @@ export async function POST(req: Request) {
 
     const bookingId = (body as { bookingId?: string }).bookingId?.trim() || null;
     const emailRaw = (body as { email?: string }).email?.trim() || undefined;
-    const { payMethod = "card" } = body as { payMethod?: "card" | "paypal" | "revolut_pay" };
+    const postalCode = (body as { postalCode?: string }).postalCode?.trim() || undefined;
+
+    // ⬇️ extended payMethod union (adds klarna + wallet)
+    const { payMethod = "card" } = body as {
+      payMethod?: "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
+    };
 
     // ---- Load inputs either from DB (preferred: bookingId) or from request (legacy path) ----
     let slotId: string;
@@ -59,12 +64,10 @@ export async function POST(req: Request) {
       liveMinutes = booking.liveMinutes;
       followups = booking.followups;
       sessionType = booking.sessionType?.trim() || "";
-      // prefer explicit email from request; else fallback to booking snapshot
       if (!emailRaw && booking.customerEmail) {
         (body as any).email = booking.customerEmail;
       }
     } else {
-      // Legacy: still support direct payload (CheckoutZ) for backwards compatibility
       const parsed = CheckoutZ.safeParse(body);
       if (!parsed.success) {
         return NextResponse.json({ error: "invalid_body" }, { status: 400 });
@@ -96,7 +99,7 @@ export async function POST(req: Request) {
     // 2) Contiguous block check
     let slotIds = await getBlockIdsByTime(anchor.startTime, liveMinutes, prisma);
 
-    // 3) Fallback window check (only if held by us or free)
+    // 3) Fallback window check
     if (!slotIds) {
       const { BUFFER_BEFORE_MIN, BUFFER_AFTER_MIN } = CFG_SERVER.booking;
       const windowStart = new Date(anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000);
@@ -140,30 +143,34 @@ export async function POST(req: Request) {
         id: { in: slotIds },
         OR: [
           { status: SlotStatus.free },
-          { status: SlotStatus.blocked, holdKey: anchor.holdKey ?? effKey }, // allow extending our own previous hold
+          { status: SlotStatus.blocked, holdKey: anchor.holdKey ?? effKey },
         ],
       },
       data: {
         holdKey: anchor.holdKey ?? effKey,
         holdUntil,
-        // NOTE: no status change here (no blocked)
       },
     });
 
-    // 5) Limit payment methods
-    const pmTypes: Array<"card" | "paypal" | "revolut_pay"> =
-      payMethod === "paypal" ? ["paypal"] : payMethod === "revolut_pay" ? ["revolut_pay"] : ["card"];
+    // 5) Limit payment methods — include Klarna and map Wallet -> card
+    const pmTypes: Array<"card" | "paypal" | "revolut_pay" | "klarna"> =
+      payMethod === "paypal"
+        ? ["paypal"]
+        : payMethod === "revolut_pay"
+        ? ["revolut_pay"]
+        : payMethod === "klarna"
+        ? ["klarna"]
+        : /* "card" and "wallet" both resolve to card rail */ ["card"];
 
     // 6) Create PaymentIntent
     const idemKey = makeIdempotencyKey(slotIds, amountCents, anchor.holdKey ?? effKey, payMethod);
 
-    // Minimal metadata only
     const metadata: Record<string, string> = {
-      bookingId: bookingId ?? "", // empty if using legacy path; webhook handles slotIds fallback
+      bookingId: bookingId ?? "",
       slotId,
       slotIds: slotIds.join(","),
+      ...(sessionType ? { sessionType } : {}),
     };
-    if (sessionType) metadata.sessionType = sessionType;
 
     const pi = await getStripe().paymentIntents.create(
       {
@@ -172,6 +179,15 @@ export async function POST(req: Request) {
         payment_method_types: pmTypes,
         receipt_email: emailRaw || undefined,
         metadata,
+        // Forward postal code if provided
+        ...(postalCode
+          ? {
+              shipping: {
+                address: { postal_code: postalCode, country: "DE" }, // you can adapt country if you collect it
+                name: emailRaw || "Customer",
+              },
+            }
+          : {}),
       },
       { idempotencyKey: idemKey }
     );

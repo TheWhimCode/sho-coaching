@@ -19,7 +19,8 @@ import StepSummary from "./checkout-steps/StepSummary";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 import { getPreset } from "@/lib/sessions/preset";
 
-type PayMethod = "" | "card" | "paypal" | "revolut_pay";
+// 🔹 Extend with Klarna + Wallet
+type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
 
 type Payload = {
   slotId: string;
@@ -342,20 +343,26 @@ export default function CheckoutPanel({
                 </motion.div>
               )}
 
-              {step === 1 && (
-                <motion.div
-                  key="step-choose"
-                  custom={dir}
-                  variants={variants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
-                >
-                  <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
-                </motion.div>
-              )}
+{step === 1 && (
+  <motion.div
+    key="step-choose"
+    custom={dir}
+    variants={variants}
+    initial="enter"
+    animate="center"
+    exit="exit"
+    transition={{ duration: 0.22, ease: "easeOut" }}
+    className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+  >
+    <Elements
+      stripe={stripePromise}
+      options={{ appearance: appearanceToUse, loader: "never" }}
+    >
+      <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
+    </Elements>
+  </motion.div>
+)}
+
 
               {step === 2 && (
                 <motion.div
@@ -378,7 +385,7 @@ export default function CheckoutPanel({
                         mode="form"
                         goBack={goBack}
                         email={email}
-                        payMethod={(payMethod || "card") as "card" | "paypal" | "revolut_pay"}
+                        payMethod={(payMethod || "card") as Exclude<PayMethod, "">}
                         onContinue={goNext}
                         piId={piId}
                         setCardPmId={setCardPmId}
@@ -390,7 +397,7 @@ export default function CheckoutPanel({
                     <StepPayDetails
                       mode="loading"
                       goBack={goBack}
-                      payMethod={(payMethod || "card") as "card" | "paypal" | "revolut_pay"}
+                      payMethod={(payMethod || "card") as Exclude<PayMethod, "">}
                       loadingIntent={loadingIntent}
                     />
                   )}
@@ -417,7 +424,7 @@ export default function CheckoutPanel({
                       goBack={goBack}
                       payload={safePayload}
                       breakdown={breakdown}
-                      payMethod={payMethod || "card"}
+                      payMethod={(payMethod || "card") as Exclude<PayMethod, "">}
                       email={email}
                       discord={discord}
                       notes={notes}

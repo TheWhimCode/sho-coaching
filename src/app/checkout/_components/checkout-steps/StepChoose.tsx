@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import PaymentChooser from "@/app/checkout/_components/checkout-steps/step-components/PaymentChooser";
+import PaymentChooser, { PayMethod } from "@/app/checkout/_components/checkout-steps/step-components/PaymentChooser";
 import { ArrowLeft } from "lucide-react";
-
 
 type Props = {
   goBack: () => void;
-  onChoose: (m: string) => void;
+  onChoose: (m: PayMethod) => void;
 };
 
 const BEFORE = "🔒 Checkout is secure — handled by ";
@@ -30,12 +29,12 @@ export default function StepChoose({ goBack, onChoose }: Props) {
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
-  onClick={goBack}
-  className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
->
-  <ArrowLeft className="w-4 h-4" />
-  Back
-</button>
+            onClick={goBack}
+            className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
           <div className="text-sm text-white/80">Choose payment</div>
         </div>
         <div className="mt-2 border-t border-white/10" />
@@ -69,11 +68,7 @@ export default function StepChoose({ goBack, onChoose }: Props) {
               "0 0 0px rgba(255,255,255,0)",
             ],
           }}
-          transition={{
-            duration: 3,
-            ease: "easeInOut",
-            repeat: Infinity, // <-- loop glow forever
-          }}
+          transition={{ duration: 3, ease: "easeInOut", repeat: Infinity }}
         >
           {BEFORE}
           <span className="font-semibold text-white">{STRIPE}</span>

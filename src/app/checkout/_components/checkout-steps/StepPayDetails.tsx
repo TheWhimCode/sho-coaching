@@ -1,4 +1,3 @@
-// src/pages/customization/checkout/rcolumn/checkout-steps/StepPayDetails.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +7,7 @@ import CardForm from "@/app/checkout/_components/checkout-steps/step-components/
 import PaymentSkeleton from "@/app/checkout/_components/checkout-steps/step-components/PaymentSkeleton";
 import { ArrowLeft, CreditCard } from "lucide-react";
 
-type Method = "card" | "paypal" | "revolut_pay";
+type Method = "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
 
 type SavedCard = {
   id: string;
@@ -18,43 +17,28 @@ type SavedCard = {
   exp_year: number | null;
 };
 
-/** ---------- Props (discriminated union) ---------- */
-
-type Common = {
-  goBack: () => void;
-  payMethod?: Method;
-};
-
-type LoadingProps = Common & {
-  mode: "loading";
-  loadingIntent?: boolean;
-};
-
+type Common = { goBack: () => void; payMethod?: Method };
+type LoadingProps = Common & { mode: "loading"; loadingIntent?: boolean };
 type FormProps = Common & {
   mode: "form";
   email: string;
   payMethod: Method;
   onContinue: () => void;
   piId?: string | null;
-
-  // collect/store PM id + display for Step 3 and for back-navigation summary
   setCardPmId: (id: string) => void;
   setSavedCard: (c: SavedCard | null) => void;
   savedCard: SavedCard | null;
 };
-
 type Props = LoadingProps | FormProps;
-
-/** ---------- Component ---------- */
 
 export default function StepPayDetails(props: Props) {
   if (props.mode === "loading") {
     const { goBack, payMethod } = props;
 
     return (
-      <div className="h-full flex flex-col pt-2">
+      <div className="h-full flex flex-col pt-1">
         {/* header */}
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="relative h-7 flex items-center justify-center">
             <button
               onClick={goBack}
@@ -65,16 +49,16 @@ export default function StepPayDetails(props: Props) {
             </button>
             <div className="text-sm text-white/80">Payment details</div>
           </div>
-          <div className="mt-2 border-t border-white/10" />
+          <div className="mt-1 border-t border-white/10" />
         </div>
 
         {/* body + pinned footer */}
         <div className="flex-1 flex flex-col">
-          <div className="flex-1 min-h-[280px]">
+          <div className="flex-1 min-h-[260px]">
             <PaymentSkeleton method={payMethod ?? "card"} />
           </div>
 
-          <div className="mt-auto pt-3">
+          <div className="mt-auto pt-2">
             <button
               disabled
               className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
@@ -95,9 +79,9 @@ export default function StepPayDetails(props: Props) {
   const { goBack, email, payMethod, onContinue, piId, setCardPmId, setSavedCard, savedCard } = props;
 
   return (
-    <div className="h-full flex flex-col pt-2">
+    <div className="h-full flex flex-col pt-1">
       {/* header */}
-      <div className="mb-3">
+      <div className="mb-2">
         <div className="relative h-7 flex items-center justify-center">
           <button
             onClick={goBack}
@@ -108,12 +92,12 @@ export default function StepPayDetails(props: Props) {
           </button>
           <div className="text-sm text-white/80">Payment details</div>
         </div>
-        <div className="mt-2 border-t border-white/10" />
+        <div className="mt-1 border-t border-white/10" />
       </div>
 
       {/* body */}
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 relative min-h-[280px]">
+        <div className="flex-1 relative min-h-[260px]">
           <FormBody
             email={email}
             payMethod={payMethod}
@@ -161,6 +145,7 @@ function FormBody({
   useEffect(() => {
     if (payMethod === "card" && savedCard) setPeReady(true);
     else if (payMethod === "card" && !savedCard) setPeReady(false);
+    else if (payMethod !== "card") setPeReady(false);
   }, [payMethod, savedCard]);
 
   async function validateAndContinue() {
@@ -194,6 +179,7 @@ function FormBody({
         type: "card",
         card,
         billing_details: { email: email || undefined },
+        
       });
 
       if (error || !paymentMethod) {
@@ -216,7 +202,7 @@ function FormBody({
       return;
     }
 
-    // Non-card methods: validate Payment Element
+    // Non-card methods (paypal, revolut_pay, klarna, wallet): validate Payment Element
     if (!elements) {
       setErr("Payment form not ready.");
       setChecking(false);
@@ -310,16 +296,15 @@ function FormBody({
               <SavedCardPanel />
             ) : (
               <CardForm
-                piId={piId}
                 email={email}
-                activePm={payMethod}
+                activePm="card"
                 submitted={submitted}
                 onPaymentChange={() => {}}
                 onElementsReady={() => setPeReady(true)}
               />
             )
           ) : (
-            <CardForm piId={piId} email={email} activePm={payMethod} onElementsReady={() => setPeReady(true)} />
+            <CardForm email={email} activePm={payMethod} onElementsReady={() => setPeReady(true)} />
           )}
         </div>
 
@@ -329,13 +314,14 @@ function FormBody({
             peReady ? "opacity-0 pointer-events-none" : "opacity-100"
           }`}
         >
-          <PaymentSkeleton method={payMethod} />
+          <PaymentSkeleton method={payMethod ?? "card"} />
         </div>
       </div>
 
       {/* pinned footer */}
       <div className="mt-auto pt-3">
         {/* a11y-only; no visible helper text */}
+        {/* err intentionally SR-only */}
         {err && <p className="sr-only">{err}</p>}
         <button
           type="submit"
