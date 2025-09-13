@@ -1,13 +1,8 @@
+// src/pages/customization/checkout/rcolumn/checkout-steps/StepPayDetails.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Elements,
-  useElements,
-  useStripe,
-  CardNumberElement,
-} from "@stripe/react-stripe-js";
-import type { Appearance, Stripe } from "@stripe/stripe-js";
+import { useElements, useStripe, CardNumberElement } from "@stripe/react-stripe-js";
 
 import CardForm from "@/app/checkout/_components/checkout-steps/step-components/CardForm";
 import PaymentSkeleton from "@/app/checkout/_components/checkout-steps/step-components/PaymentSkeleton";
@@ -33,9 +28,6 @@ type Common = {
 type LoadingProps = Common & {
   mode: "loading";
   loadingIntent?: boolean;
-  stripePromise?: Promise<Stripe | null>;
-  appearance?: Appearance;
-  clientSecret?: string | null;
 };
 
 type FormProps = Common & {
@@ -49,10 +41,6 @@ type FormProps = Common & {
   setCardPmId: (id: string) => void;
   setSavedCard: (c: SavedCard | null) => void;
   savedCard: SavedCard | null;
-
-  stripePromise: Promise<Stripe | null>;
-  appearance: Appearance;
-  clientSecret: string;
 };
 
 type Props = LoadingProps | FormProps;
@@ -104,19 +92,7 @@ export default function StepPayDetails(props: Props) {
   }
 
   // ---- FORM MODE ----
-  const {
-    goBack,
-    email,
-    payMethod,
-    onContinue,
-    piId,
-    stripePromise,
-    appearance,
-    clientSecret,
-    setCardPmId,
-    setSavedCard,
-    savedCard,
-  } = props;
+  const { goBack, email, payMethod, onContinue, piId, setCardPmId, setSavedCard, savedCard } = props;
 
   return (
     <div className="h-full flex flex-col pt-2">
@@ -138,27 +114,22 @@ export default function StepPayDetails(props: Props) {
       {/* body */}
       <div className="flex-1 flex flex-col">
         <div className="flex-1 relative min-h-[280px]">
-          <Elements
-            stripe={stripePromise}
-            options={{ clientSecret, appearance, loader: "never" }}
-          >
-            <FormBody
-              email={email}
-              payMethod={payMethod}
-              piId={piId}
-              onContinue={onContinue}
-              setCardPmId={setCardPmId}
-              setSavedCard={setSavedCard}
-              savedCard={savedCard}
-            />
-          </Elements>
+          <FormBody
+            email={email}
+            payMethod={payMethod}
+            piId={piId}
+            onContinue={onContinue}
+            setCardPmId={setCardPmId}
+            setSavedCard={setSavedCard}
+            savedCard={savedCard}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-/** ---------- Inner form body (inside <Elements>) ---------- */
+/** ---------- Inner form body (uses parent <Elements> context) ---------- */
 
 function FormBody({
   email,
@@ -186,10 +157,10 @@ function FormBody({
   // show red only after submit
   const [submitted, setSubmitted] = useState(false);
 
-  // If we have a saved card (summary mode), there is no onReady event.
-  // Ensure skeleton is hidden in that case.
+  // If we have a saved card, ensure skeleton is hidden; if removed, show again until PE is ready
   useEffect(() => {
     if (payMethod === "card" && savedCard) setPeReady(true);
+    else if (payMethod === "card" && !savedCard) setPeReady(false);
   }, [payMethod, savedCard]);
 
   async function validateAndContinue() {
@@ -271,9 +242,7 @@ function FormBody({
     const last4 = savedCard.last4 ?? "••••";
     const exp =
       savedCard.exp_month && savedCard.exp_year
-        ? `${String(savedCard.exp_month).padStart(2, "0")}/${String(
-            savedCard.exp_year
-          ).slice(-2)}`
+        ? `${String(savedCard.exp_month).padStart(2, "0")}/${String(savedCard.exp_year).slice(-2)}`
         : null;
 
     return (
@@ -292,9 +261,7 @@ function FormBody({
             </div>
 
             <div className="leading-tight">
-              <div className="text-white/90 font-semibold tracking-wide">
-                •••• {last4}
-              </div>
+              <div className="text-white/90 font-semibold tracking-wide">•••• {last4}</div>
               <div className="text-xs text-white/65">
                 {brand}
                 {exp ? ` · exp ${exp}` : ""}
@@ -305,7 +272,7 @@ function FormBody({
           <button
             type="button"
             onClick={() => {
-              setPeReady(false); // show skeleton while Elements remount
+              setPeReady(false); // show skeleton while Payment Element re-initializes
               setSavedCard(null); // return to editable fields
             }}
             className="
@@ -337,11 +304,7 @@ function FormBody({
       {/* layered real form + skeleton */}
       <div className="relative flex-1 min-h-[280px]">
         {/* Real content */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-150 ${
-            peReady ? "opacity-100" : "opacity-0"
-          }`}
-        >
+        <div className={`absolute inset-0 transition-opacity duration-150 ${peReady ? "opacity-100" : "opacity-0"}`}>
           {payMethod === "card" ? (
             savedCard ? (
               <SavedCardPanel />
@@ -356,12 +319,7 @@ function FormBody({
               />
             )
           ) : (
-            <CardForm
-              piId={piId}
-              email={email}
-              activePm={payMethod}
-              onElementsReady={() => setPeReady(true)}
-            />
+            <CardForm piId={piId} email={email} activePm={payMethod} onElementsReady={() => setPeReady(true)} />
           )}
         </div>
 
@@ -380,7 +338,7 @@ function FormBody({
         {/* a11y-only; no visible helper text */}
         {err && <p className="sr-only">{err}</p>}
         <button
-          type="submit" // <-- Enter submits the form
+          type="submit"
           disabled={!stripe || checking || !peReady}
           className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
                      bg-[#fc8803] hover:bg-[#f8a81a] transition

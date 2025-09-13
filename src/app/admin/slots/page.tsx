@@ -13,6 +13,7 @@ type Exception = {
 };
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const TZ = "Europe/Berlin";
 
 // --- time helpers ---
 function minToHHMM(m: number) {
@@ -26,15 +27,41 @@ function hhmmToMin(str: string) {
 }
 const clampMin = (n: number) => Math.max(0, Math.min(1440, n));
 
-// NEW: for <input type="time">, never show 24:00 (invalid). Use 23:59.
-function minToInputHHMM(m: number) {
-  if (m >= 1440) return "23:59";
-  return minToHHMM(m);
+// UTC <-> Local (Europe/Berlin) conversions
+function utcMinToLocalHHMM(ymd: string, utcMin: number) {
+  const utcMid = new Date(`${ymd}T00:00:00Z`);
+  const utcTime = new Date(utcMid.getTime() + utcMin * 60_000);
+  return utcTime.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: TZ,
+  });
+}
+function localHHMMtoUtcMin(ymd: string, hhmm: string) {
+  const [h, m] = hhmm.split(":").map(Number);
+  // Local midnight for that YMD in Europe/Berlin
+  const localMid = new Date(
+    new Date(`${ymd}T00:00:00`).toLocaleString("en-US", { timeZone: TZ })
+  );
+  const localTime = new Date(localMid);
+  localTime.setHours(h, m, 0, 0);
+  const utcMid = new Date(`${ymd}T00:00:00Z`).getTime();
+  return Math.round((localTime.getTime() - utcMid) / 60_000);
 }
 
-// defaults if a weekday had no rule in DB yet
+// defaults if no rule
 const DEFAULT_OPEN = 13 * 60; // 13:00
 const DEFAULT_CLOSE = 24 * 60; // 24:00
+
+// pick anchor date dynamically (so DST is respected automatically)
+function getAnchorYMDForWeekday(weekday: number) {
+  const today = new Date();
+  const diff = (weekday - today.getDay() + 7) % 7;
+  const anchor = new Date(today);
+  anchor.setDate(today.getDate() + diff);
+  return anchor.toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
 
 export default function AdminSlotsPage() {
   const [rules, setRules] = useState<Rule[]>([]);
@@ -43,8 +70,10 @@ export default function AdminSlotsPage() {
   const [log, setLog] = useState("");
 
   // new exception form
-  const [exDate, setExDate] = useState("");
-  const [exOpen, setExOpen] = useState("13:00");
+const [exDate, setExDate] = useState(() => {
+  const today = new Date();
+  return today.toISOString().slice(0, 10); // e.g. "2025-09-13"
+});  const [exOpen, setExOpen] = useState("13:00");
   const [exClose, setExClose] = useState("15:00");
   const [exBlocked, setExBlocked] = useState(false);
 
@@ -57,11 +86,9 @@ export default function AdminSlotsPage() {
         fetch("/api/admin/availability/exceptions").then((r) => r.json()),
       ]);
 
-      // r is an array of {weekday, openMinute, closeMinute} but may be missing some weekdays
       const byDay = new Map<number, Rule>();
       (r as Rule[]).forEach((row) => byDay.set(row.weekday, row));
 
-      // ensure 7 entries, fill with default if missing
       const normalized: Rule[] = Array.from({ length: 7 }, (_, weekday) => {
         const u = byDay.get(weekday);
         return {
@@ -77,20 +104,19 @@ export default function AdminSlotsPage() {
     })();
   }, []);
 
-  // Save rules: transform to the POST schema your server expects (7 HH:MM strings, Sun→Sat)
+  // Save rules
   async function saveRules() {
-    // order: Sun..Sat
-const ordered = [...rules].sort((a, b) => a.weekday - b.weekday);
-const body = {
-  rules: ordered.map((r) => {
-    const open = minToHHMM(clampMin(r.openMinute));
-    // if UI showed 23:59 because it was 24:00, restore "24:00" for API
-    const closeWasFullDay = r.closeMinute >= 1440;
-    const close = closeWasFullDay ? "24:00" : minToHHMM(clampMin(r.closeMinute));
-    return { open, close };
-  }),
-};
-
+    const ordered = [...rules].sort((a, b) => a.weekday - b.weekday);
+    const body = {
+      rules: ordered.map((r) => {
+        const open = minToHHMM(clampMin(r.openMinute));
+        const closeWasFullDay = r.closeMinute >= 1440;
+        const close = closeWasFullDay
+          ? "24:00"
+          : minToHHMM(clampMin(r.closeMinute));
+        return { open, close };
+      }),
+    };
 
     const res = await fetch("/api/admin/availability/rules", {
       method: "POST",
@@ -107,13 +133,17 @@ const body = {
     setLog("✨ Weekly rules saved.");
   }
 
-  // Create/Update exception
+  // Create exception
   async function addException() {
     const body = {
-      date: exDate, // "YYYY-MM-DD"
-      open: exBlocked ? undefined : exOpen,
-      close: exBlocked ? undefined : exClose,
+      date: exDate,
       blocked: exBlocked,
+      open: exBlocked
+        ? undefined
+        : minToHHMM(localHHMMtoUtcMin(exDate, exOpen)),
+      close: exBlocked
+        ? undefined
+        : minToHHMM(localHHMMtoUtcMin(exDate, exClose)),
     };
 
     const res = await fetch("/api/admin/availability/exceptions", {
@@ -128,15 +158,19 @@ const body = {
       return;
     }
 
-    // refresh list
-    const e = await fetch("/api/admin/availability/exceptions").then((r) => r.json());
+    const e = await fetch("/api/admin/availability/exceptions").then((r) =>
+      r.json()
+    );
     setExceptions(e as Exception[]);
     setLog("🪄 Exception saved.");
   }
 
-  // Delete exception (your DELETE route accepts ?id=)
+  // Delete exception
   async function deleteException(id: string) {
-    const res = await fetch(`/api/admin/availability/exceptions?id=${id}`, { method: "DELETE" });
+    const res = await fetch(
+      `/api/admin/availability/exceptions?id=${id}`,
+      { method: "DELETE" }
+    );
     if (!res.ok) {
       const txt = await res.text();
       setLog(`❌ Failed to delete: ${txt}`);
@@ -146,7 +180,7 @@ const body = {
     setLog("💨 Exception deleted.");
   }
 
-  // Regenerate future slots from current rules/exceptions (same logic as nightly cron)
+  // Recompute slots
   async function regenerateSlots() {
     const res = await fetch("/api/admin/slots/recompute", { method: "POST" });
     if (!res.ok) {
@@ -155,20 +189,20 @@ const body = {
       return;
     }
     const data = await res.json();
-    setLog(`🔮 Re-summoned future slots. Deleted: ${data.deleted}, Created: ${data.created}`);
+    setLog(`🔮 Re-summoned. Deleted: ${data.deleted}, Created: ${data.created}`);
   }
-function formatLocalDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
-  const prettyTZ = useMemo(
-    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
-    []
-  );
+
+  function formatLocalDate(iso: string) {
+    const d = new Date(iso);
+    return d.toLocaleDateString("de-DE", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: TZ,
+    });
+  }
+
+  const prettyTZ = useMemo(() => TZ, []);
 
   if (loading) {
     return (
@@ -188,45 +222,53 @@ function formatLocalDate(iso: string) {
         >
           🧙 Master Wizard Panel
         </motion.h1>
-        <p className="text-center text-purple-300">Times are interpreted in your timezone: <span className="text-purple-100 font-medium">{prettyTZ}</span></p>
+        <p className="text-center text-purple-300">
+          Times shown in:{" "}
+          <span className="text-purple-100 font-medium">{prettyTZ}</span>
+        </p>
 
         {/* Weekly Rules */}
-<section className="relative bg-neutral-900/70 rounded-2xl p-6 shadow-lg overflow-hidden">
-  <h2 className="text-2xl font-semibold mb-4">📜 Weekly Rules</h2>
-  <div className="grid gap-3">
-    {weekdays.map((d, i) => {
-      const rule = rules.find((r) => r.weekday === i)!;
-      return (
-        <div key={i} className="flex gap-3 items-center">
-          <span className="w-10">{d}</span>
-          {/* Start time (openMinute) */}
-          <input
-            type="time"
-            value={minToInputHHMM(rule.openMinute)}   // ✅ use openMinute
-            onChange={(e) => {
-              const copy = [...rules];
-              const idx = copy.findIndex((r) => r.weekday === i);
-              copy[idx] = { ...copy[idx], openMinute: clampMin(hhmmToMin(e.target.value)) }; // ✅ update openMinute
-              setRules(copy);
-            }}
-            className="bg-neutral-800 px-2 py-1 rounded"
-          />
-          <span>–</span>
-          {/* End time (closeMinute) */}
-          <input
-            type="time"
-            value={minToInputHHMM(rule.closeMinute)}  // ✅ use closeMinute
-            onChange={(e) => {
-              const copy = [...rules];
-              const idx = copy.findIndex((r) => r.weekday === i);
-              copy[idx] = { ...copy[idx], closeMinute: clampMin(hhmmToMin(e.target.value)) }; // ✅ update closeMinute
-              setRules(copy);
-            }}
-            className="bg-neutral-800 px-2 py-1 rounded"
-          />
-        </div>
-      );
-    })}
+        <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
+          <h2 className="text-2xl font-semibold mb-4">📜 Weekly Rules</h2>
+          <div className="grid gap-3">
+            {weekdays.map((d, i) => {
+              const rule = rules.find((r) => r.weekday === i)!;
+              const ymd = getAnchorYMDForWeekday(i); // dynamic anchor
+              return (
+                <div key={i} className="flex gap-3 items-center">
+                  <span className="w-10">{d}</span>
+                  <input
+                    type="time"
+                    value={utcMinToLocalHHMM(ymd, rule.openMinute)}
+                    onChange={(e) => {
+                      const copy = [...rules];
+                      const idx = copy.findIndex((r) => r.weekday === i);
+                      copy[idx] = {
+                        ...copy[idx],
+                        openMinute: localHHMMtoUtcMin(ymd, e.target.value),
+                      };
+                      setRules(copy);
+                    }}
+                    className="bg-neutral-800 px-2 py-1 rounded"
+                  />
+                  <span>–</span>
+                  <input
+                    type="time"
+                    value={utcMinToLocalHHMM(ymd, rule.closeMinute)}
+                    onChange={(e) => {
+                      const copy = [...rules];
+                      const idx = copy.findIndex((r) => r.weekday === i);
+                      copy[idx] = {
+                        ...copy[idx],
+                        closeMinute: localHHMMtoUtcMin(ymd, e.target.value),
+                      };
+                      setRules(copy);
+                    }}
+                    className="bg-neutral-800 px-2 py-1 rounded"
+                  />
+                </div>
+              );
+            })}
           </div>
           <button
             onClick={saveRules}
@@ -249,13 +291,17 @@ function formatLocalDate(iso: string) {
                 className="flex justify-between items-center bg-neutral-800/70 px-3 py-2 rounded-lg border border-purple-700/40"
               >
                 <span>
-  {formatLocalDate(ex.date)} —{" "}
-  {ex.blocked
-    ? "❌ Blocked all day"
-    : `${minToHHMM(ex.openMinute ?? 0)}–${minToHHMM(
-        ex.closeMinute ?? 24 * 60
-      )}`}
-</span>
+                  {formatLocalDate(ex.date)} —{" "}
+                  {ex.blocked
+                    ? "❌ Blocked all day"
+                    : `${utcMinToLocalHHMM(
+                        ex.date.slice(0, 10),
+                        ex.openMinute ?? 0
+                      )}–${utcMinToLocalHHMM(
+                        ex.date.slice(0, 10),
+                        ex.closeMinute ?? 1440
+                      )}`}
+                </span>
                 <button
                   onClick={() => deleteException(ex.id)}
                   className="text-rose-400 hover:text-rose-300"

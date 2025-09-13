@@ -103,7 +103,7 @@ export default function CheckoutPanel({
     setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3)));
   };
 
-  // Reset intent state when going back so users can switch methods cleanly
+  // Payment/intent state
   const [payMethod, setPayMethod] = useState<PayMethod>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [piId, setPiId] = useState<string | null>(null);
@@ -113,12 +113,9 @@ export default function CheckoutPanel({
   const [cardPmId, setCardPmId] = useState<string | null>(null);
   const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
 
+  // ⬇️ Do NOT clear payment state when going back — preserves card details and avoids stuck skeleton
   const goBack = () => {
     setDir(-1);
-    setClientSecret(null);
-    setPiId(null);
-    setCardPmId(null);
-    setSavedCard(null);
     setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
   };
 
@@ -161,86 +158,85 @@ export default function CheckoutPanel({
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
 
-async function chooseAndGo(m: PayMethod) {
-  if (!m) return;
-  setDir(1);
-  setPayMethod(m);
-  currentMethodRef.current = m;
+  async function chooseAndGo(m: PayMethod) {
+    if (!m) return;
+    setDir(1);
+    setPayMethod(m);
+    currentMethodRef.current = m;
 
-  // reset Stripe state on method change
-  setClientSecret(null);
-  setPiId(null);
-  setCardPmId(null);
-  setSavedCard(null);
+    // Reset Stripe state ONLY when the user changes the method
+    setClientSecret(null);
+    setPiId(null);
+    setCardPmId(null);
+    setSavedCard(null);
 
-  setStep(2);
-  setLoadingIntent(true);
+    setStep(2);
+    setLoadingIntent(true);
 
-  try {
-    let bid = bookingId;
+    try {
+      let bid = bookingId;
 
-    // ✅ Only create the booking once
-    if (!bid) {
-      const make = await fetch("/api/booking/create", {
+      // Create the booking once
+      if (!bid) {
+        const make = await fetch("/api/booking/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionType: sessionBlockTitle,
+            slotId: safePayload.slotId,
+            liveMinutes: totalLiveMinutes,
+            followups: safePayload.followups,
+            discord,
+            notes,
+            waiverAccepted: waiver,
+            email,
+          }),
+        });
+
+        if (!make.ok) {
+          console.error("CREATE_BOOKING_FAILED", await make.json().catch(() => ({})));
+          setLoadingIntent(false);
+          return;
+        }
+
+        const j = await make.json();
+        bid = j.bookingId as string;
+        setBookingId(bid);
+      }
+
+      // Create a PI for this booking & method
+      const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionType: sessionBlockTitle,
-          slotId: safePayload.slotId,
-          liveMinutes: totalLiveMinutes,
-          followups: safePayload.followups,
-          discord,
-          notes,
-          waiverAccepted: waiver,
+          bookingId: bid,
           email,
+          payMethod: m,
         }),
       });
 
-      if (!make.ok) {
-        console.error("CREATE_BOOKING_FAILED", await make.json().catch(() => ({})));
+      if (res.status === 409) {
+        console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
+        setStep(0);
         setLoadingIntent(false);
         return;
       }
 
-      const j = await make.json();
-      bid = j.bookingId as string;
-      setBookingId(bid);
+      const data = await res.json().catch(() => ({} as any));
+      if (currentMethodRef.current !== m) return;
+
+      if (res.ok && data?.clientSecret) {
+        setClientSecret(data.clientSecret);
+        setPiId(String(data.clientSecret).split("_secret")[0] || null);
+      } else {
+        console.error("INTENT_FAIL", data);
+        setClientSecret(null);
+        setPiId(null);
+      }
+    } finally {
+      if (currentMethodRef.current === m) setLoadingIntent(false);
     }
-
-    // ✅ For each method change, just make a new PI using the SAME bookingId
-    const res = await fetch("/api/stripe/checkout/intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bookingId: bid,
-        email,
-        payMethod: m,
-      }),
-    });
-
-    if (res.status === 409) {
-      console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
-      setStep(0);
-      setLoadingIntent(false);
-      return;
-    }
-
-    const data = await res.json().catch(() => ({} as any));
-    if (currentMethodRef.current !== m) return;
-
-    if (res.ok && data?.clientSecret) {
-      setClientSecret(data.clientSecret);
-      setPiId(String(data.clientSecret).split("_secret")[0] || null);
-    } else {
-      console.error("INTENT_FAIL", data);
-      setClientSecret(null);
-      setPiId(null);
-    }
-  } finally {
-    if (currentMethodRef.current === m) setLoadingIntent(false);
   }
-}
-
 
   const variants = {
     enter: (d: 1 | -1) => ({ x: d * 40, opacity: 0 }),
@@ -385,9 +381,6 @@ async function chooseAndGo(m: PayMethod) {
                         payMethod={(payMethod || "card") as "card" | "paypal" | "revolut_pay"}
                         onContinue={goNext}
                         piId={piId}
-                        stripePromise={stripePromise}
-                        appearance={appearanceToUse}
-                        clientSecret={clientSecret}
                         setCardPmId={setCardPmId}
                         setSavedCard={setSavedCard}
                         savedCard={savedCard}
@@ -399,9 +392,6 @@ async function chooseAndGo(m: PayMethod) {
                       goBack={goBack}
                       payMethod={(payMethod || "card") as "card" | "paypal" | "revolut_pay"}
                       loadingIntent={loadingIntent}
-                      stripePromise={stripePromise}
-                      appearance={appearanceToUse}
-                      clientSecret={clientSecret}
                     />
                   )}
                 </motion.div>

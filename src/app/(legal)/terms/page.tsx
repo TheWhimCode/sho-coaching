@@ -26,80 +26,158 @@ export default function TermsPage() {
             space-y-6
           "
         >
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Terms & Conditions</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Terms &amp; Conditions</h1>
 
-          <div className="space-y-4 text-white/90 leading-relaxed">
-            <p className="text-sm uppercase tracking-wider text-white/60">
-              General Terms and Conditions (AGB)
-            </p>
+          {/* At-a-glance summary */}
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+            <p className="text-sm uppercase tracking-wider text-white/70">In short</p>
+            <ul className="list-disc pl-5 space-y-1 text-white/90">
+              <li>Paid 1:1 coaching via Discord, booked on this site and paid in advance via Stripe.</li>
+              <li>Reschedule/cancel free of charge up to 24h before start; after that, no refunds. I may make exceptions at my discretion.</li>
+              <li>No guarantees of rank or performance outcomes. I give advice, you apply it.</li>
+              <li>You’re responsible for your own setup (internet, Discord, mic).</li>
+              <li>Materials I share remain my IP; you can use/share them for personal, non-commercial purposes.</li>
+            </ul>
+          </div>
 
-            <h2 className="text-xl font-semibold">1. Scope</h2>
+          <div className="space-y-6 text-white/90 leading-relaxed">
+            <p className="text-sm uppercase tracking-wider text-white/60">General Terms and Conditions (AGB)</p>
+
+            <h2 className="text-xl font-semibold">1. Scope &amp; Parties</h2>
             <p>
-              These Terms & Conditions apply to all contracts concluded between{" "}
-              <span className="font-medium">[Your Name / Company]</span> and the customer for coaching and related
-              services offered on this website.
+              These Terms &amp; Conditions apply to all contracts for coaching services offered on this website between{" "}
+              <span className="font-medium">[Your Full Name] / Sho Coaching</span> (“I”, “me”) and you as the customer.
+              Any deviating terms require my written agreement.
             </p>
 
             <h2 className="text-xl font-semibold">2. Services</h2>
             <p>
-              We provide digital coaching sessions, analyses, and related services as described in the booking system.
-              The exact scope of services is determined by the booking confirmation.
+              I currently offer <span className="font-medium">paid online coaching sessions</span> (e.g., gameplay review,
+              live coaching) delivered via Discord. The exact scope, duration and price are as shown in the booking flow
+              and the booking confirmation.
             </p>
 
-            <h2 className="text-xl font-semibold">3. Conclusion of contract</h2>
+            <h2 className="text-xl font-semibold">3. Booking &amp; Contract Formation</h2>
             <p>
-              By clicking “Pay now” in the checkout, you submit a binding offer. The contract is concluded once you
-              receive a booking confirmation via email.
+              By completing checkout you submit a binding offer to purchase a session. A contract is concluded when you
+              receive my booking confirmation email.
             </p>
 
-            <h2 className="text-xl font-semibold">4. Prices & Payment</h2>
+            <h2 className="text-xl font-semibold">4. Prices &amp; Payment</h2>
             <p>
-              All prices are stated in EUR and include VAT where applicable. Payment is handled securely via our payment
-              provider (Stripe, PayPal, etc.).
+              Prices are shown in EUR. According to §19 UStG (Kleinunternehmerregelung), no VAT is charged. Payment is due in advance via{" "}
+              <span className="font-medium">Stripe</span> (Stripe Elements). Services begin only after successful payment.
             </p>
 
-            <h2 className="text-xl font-semibold">5. Right of withdrawal</h2>
+            <h2 className="text-xl font-semibold">5. Rescheduling, Cancellation &amp; Refunds</h2>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                You may reschedule or cancel <span className="font-medium">up to 24 hours</span> before the scheduled start
+                without additional charge.
+              </li>
+              <li>
+                If you cancel later than 24 hours before start, arrive late by more than 15 minutes, or do not attend,
+                the session is deemed performed and the <span className="font-medium">full fee remains due</span>;{" "}
+                <span className="font-medium">no refund</span> is provided.
+              </li>
+              <li>
+                I may, at my <span className="font-medium">sole discretion</span>, offer a refund or rescheduling even
+                if the above conditions are not met.
+              </li>
+              <li>
+                If I must cancel for reasons within my control, you may choose between a refund or a new appointment.
+              </li>
+            </ul>
+
+            <h2 className="text-xl font-semibold">6. Customer Obligations (Technical &amp; Conduct)</h2>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                Ensure a working setup <span className="font-medium">before</span> the session: stable internet, a functioning
+                microphone/headset, Discord account, and access to any required game clients.
+              </li>
+              <li>
+                Maintain respectful conduct. I may refuse or terminate a session in cases of harassment, hate speech,
+                or other inappropriate behavior; Section 5 applies to fees.
+              </li>
+              <li>
+                Age: You must be <span className="font-medium">18+</span> or have verifiable{" "}
+                <span className="font-medium">parental/guardian consent</span> if you are 16–17. I do not contract with persons
+                under 16.
+              </li>
+            </ul>
+
+            <h2 className="text-xl font-semibold">7. Intellectual Property &amp; Session Materials</h2>
             <p>
-              Consumers have a statutory right of withdrawal (see{" "}
-              <a href="/withdrawal" className="underline decoration-white/40 hover:decoration-white">
-                Withdrawal Policy
-              </a>
-              ).
+              Any materials I provide (e.g., session recordings, notes, graphics, documents) remain my{" "}
+              <span className="font-medium">intellectual property</span>. I grant you a{" "}
+              <span className="font-medium">non-exclusive, non-transferable, royalty-free</span> license to use and share
+              these materials for <span className="font-medium">personal, non-commercial</span> purposes. Any commercial use,
+              public posting/redistribution outside normal personal sharing, or removal of attributions requires my prior
+              written consent.
             </p>
 
-            <h2 className="text-xl font-semibold">6. Performance of services</h2>
+            <h2 className="text-xl font-semibold">8. No Guarantee of Outcomes</h2>
             <p>
-              Coaching sessions take place at the agreed time via online communication platforms (e.g. Discord). You
-              are responsible for providing the necessary technical setup.
+              Coaching provides advice and training, but results depend on many factors beyond my control. I make{" "}
+              <span className="font-medium">no guarantees</span> regarding rank, win rate, or other performance outcomes, and
+              I am not responsible for negative in-game results. 
             </p>
 
-            <h2 className="text-xl font-semibold">7. Rebooking & cancellation</h2>
+            <h2 className="text-xl font-semibold">9. Availability of Third-Party Services</h2>
             <p>
-              Sessions may be rescheduled up to [e.g. 24 hours] before the start without additional charge. Short-notice
-              cancellations or no-shows count as performed services.
+              Coaching sessions rely on third-party platforms (e.g., Discord, game servers, payment providers). I am not liable
+              for outages or limitations of such services. If a session cannot proceed due to a platform outage, I will
+              reschedule at no cost.
             </p>
 
-            <h2 className="text-xl font-semibold">8. Liability</h2>
+            <h2 className="text-xl font-semibold">10. Liability</h2>
             <p>
-              We are liable only for intent and gross negligence. In case of slight negligence, liability exists only
-              for damages from injury to life, body, or health, or for breach of essential contractual obligations
-              (cardinal duties).
+              I am liable without limitation for intent and gross negligence and for injury to life, body, or health.
+              For slight negligence, liability exists only for breach of essential contractual obligations (cardinal duties),
+              and then limited to the foreseeable, typical damage. Mandatory statutory liability remains unaffected.
             </p>
 
-            <h2 className="text-xl font-semibold">9. Final provisions</h2>
+            <h2 className="text-xl font-semibold">11. Termination / Refusal of Service</h2>
             <p>
-              German law applies. If you are a consumer, this choice of law only applies insofar as it does not deprive
-              you of mandatory consumer protection rights of your country of residence. The European Commission provides
-              a platform for Online Dispute Resolution (ODR):{" "}
+              I may refuse or terminate services for justified reasons (e.g., abuse, non-payment, violation of these
+              Terms). Fees follow Section 5.
+            </p>
+
+            <h2 className="text-xl font-semibold">12. Right of Withdrawal (Consumers)</h2>
+            <p>
+              Consumers may have a statutory right of withdrawal. Details and the waiver for early performance of digital
+              services are provided here:{" "}
+              <a
+                href="/withdrawal"
+                className="underline decoration-white/40 hover:decoration-white"
+              >
+                Withdrawal Information / Waiver
+              </a>.
+            </p>
+
+            <h2 className="text-xl font-semibold">13. Contract Language</h2>
+            <p>
+              The contract language is <span className="font-medium">English</span>.
+            </p>
+
+            <h2 className="text-xl font-semibold">14. Governing Law &amp; Dispute Resolution</h2>
+            <p>
+              German law applies. If you are a consumer, mandatory protections of your habitual residence remain unaffected.
+              The European Commission provides an Online Dispute Resolution (ODR) platform:{" "}
               <a
                 href="https://ec.europa.eu/consumers/odr/"
-                className="underline decoration-white/40 hover:decoration-white"
                 target="_blank"
                 rel="noreferrer"
+                className="underline decoration-white/40 hover:decoration-white"
               >
                 https://ec.europa.eu/consumers/odr/
-              </a>
-              .
+              </a>.
+            </p>
+
+            <h2 className="text-xl font-semibold">15. Contact</h2>
+            <p>
+              Sho Coaching – [Your Full Name]<br />
+              [Your Address] • im.sho@yahoo.com
             </p>
           </div>
 

@@ -57,7 +57,7 @@ export default function RightBookingPanel({
             onClick={() => onOpenCalendar?.({ liveMinutes })}
             className="relative z-10 w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
           >
-            Book now
+            Choose Time
           </button>
         </div>
 
