@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image"; // 👈 for logo
 import { Menu, X, Youtube } from "lucide-react";
 import { FaDiscord, FaTiktok } from "react-icons/fa";
 
@@ -32,12 +33,19 @@ export default function NavBar({ className = "" }: { className?: string }) {
   return (
     <header className={`sticky top-0 z-40 w-full ${className}`}>
       {/* Logo icon (always visible, positioned above fading bar) */}
-      <Link
-        href="/"
-        className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 z-20 flex items-center"
-      >
-        <div className="h-7 w-7 rounded-md bg-white" />
-      </Link>
+<Link
+  href="/"
+  className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 z-20 flex items-center"
+>
+  <Image
+    src="/images/Logo_orange.png"
+    alt="Sho Coaching Logo"
+    width={38}   // ⬅️ increased size
+    height={38}  // ⬅️ increased size
+    className="rounded-md"
+  />
+</Link>
+
 
       {/* Fading nav bar spans full width */}
       <div
@@ -48,7 +56,7 @@ export default function NavBar({ className = "" }: { className?: string }) {
         <div className="absolute inset-0 -z-10 bg-[#0B0F1A]/70 backdrop-blur-md border-b border-white/10" />
 
         <nav className="w-full">
-          <div className="h-16 md:h-20 flex items-center justify-between pl-10 md:pl-15 pr-4 md:pr-6">
+          <div className="h-16 md:h-20 flex items-center justify-between pl-12 md:pl-18 pr-4 md:pr-6">
             {/* Logo title */}
             <span className="text-lg md:text-xl font-semibold tracking-tight">
               Sho Coaching
