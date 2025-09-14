@@ -62,7 +62,21 @@ export default function Calendar({
     d.setHours(0, 0, 0, 0);
     return d;
   });
-  const DISPLAY_STEP_MIN = 30;
+const DISPLAY_STEP_MIN = 30;
+const LEAD_HOURS = 18;
+
+function roundUpToStep(d: Date, stepMin: number) {
+  const m = d.getMinutes();
+  const up = Math.ceil(m / stepMin) * stepMin;
+  d.setMinutes(up === 60 ? 0 : up, 0, 0);
+  if (up === 60) d.setHours(d.getHours() + 1);
+  return d;
+}
+
+function startBoundaryNowPlusLead() {
+  const s = new Date(Date.now() + LEAD_HOURS * 60 * 60 * 1000);
+  return roundUpToStep(s, DISPLAY_STEP_MIN);
+}
 
   /** Seed from prefetched slots so UI is instant */
   const [slots, setSlots] = useState<Slot[]>(() => prefetchedSlots ?? []);
@@ -94,44 +108,36 @@ export default function Calendar({
   }, [prefetchedSlots]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // -------- Availability fetch (silent, duration-aware) --------
-  useEffect(() => {
-    let ignore = false;
-    const tomorrow = addDays(startOfDay(new Date()), 1);
-    const end = addDays(tomorrow, 14);
-    end.setHours(23, 59, 59, 999);
+useEffect(() => {
+  let ignore = false;
+  const startBoundary = startBoundaryNowPlusLead();
+  const end = addDays(startOfDay(startBoundary), 14);
+  end.setHours(23, 59, 59, 999);
 
-    // If slots are already seeded, hydrate silently without toggling the loading spinner.
-    const doSpinner = slots.length === 0;
+  const doSpinner = slots.length === 0;
 
-    const t = setTimeout(async () => {
-      if (doSpinner) setLoading(true);
-      setHydrating(true);
-      setError(null);
-      try {
-        const data = await fetchSlots(tomorrow, end, liveMinutes);
-        if (!ignore) {
-          setSlots(data);
-          if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
-            setSelectedSlotId(null);
-          }
-        }
-      } catch (e: unknown) {
-        if (!ignore) setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        if (!ignore) {
-          setHydrating(false);
-          if (doSpinner) setLoading(false);
+  (async () => {
+    if (doSpinner) setLoading(true);
+    setHydrating(true); setError(null);
+    try {
+      const data = await fetchSlots(startBoundary, end, liveMinutes);
+      if (!ignore) {
+        setSlots(data);
+        if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
+          setSelectedSlotId(null);
         }
       }
-    }, 0);
+    } catch (e) {
+      if (!ignore) setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      if (!ignore) { setHydrating(false); if (doSpinner) setLoading(false); }
+    }
+  })();
 
-    return () => {
-      ignore = true;
-      clearTimeout(t);
-    };
-    // NOTE: do NOT depend on selectedSlotId to avoid flicker when picking a time
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveMinutes]);
+  return () => { ignore = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [liveMinutes]);
+
 
   // -------- Preselect a provided slot once (if still valid) --------
   const preselectedOnce = useRef(false);
@@ -150,22 +156,24 @@ export default function Calendar({
   }, [initialSlotId, slots]);
 
   // -------- Build per-day starts (FREE, next 14 days) --------
-  const startsByDay = useMemo(() => {
-    const map = new Map<string, { id: string; local: Date }[]>();
-    const tomorrow = addDays(startOfDay(new Date()), 1);
-    const end = addDays(tomorrow, 14);
-    end.setHours(23, 59, 59, 999);
-    for (const s of slots) {
-      if (s.status !== SlotStatus.free) continue;
-      const dt = new Date(s.startTime);
-      if (dt < tomorrow || dt > end) continue;
-      const key = dayKeyLocal(dt);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push({ id: s.id, local: dt });
-    }
-    for (const arr of map.values()) arr.sort((a, b) => a.local.getTime() - b.local.getTime());
-    return map;
-  }, [slots]);
+const startsByDay = useMemo(() => {
+  const map = new Map<string, { id: string; local: Date }[]>();
+  const startBoundary = startBoundaryNowPlusLead();
+  const end = addDays(startOfDay(startBoundary), 14);
+  end.setHours(23, 59, 59, 999);
+
+  for (const s of slots) {
+    if (s.status !== SlotStatus.free) continue;
+    const dt = new Date(s.startTime);
+    if (dt < startBoundary || dt > end) continue;           // 👈 18h lead enforced
+    const key = dayKeyLocal(dt);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push({ id: s.id, local: dt });
+  }
+  for (const arr of map.values()) arr.sort((a, b) => a.local.getTime() - b.local.getTime());
+  return map;
+}, [slots]);
+
 
   const displayableStartCountByDay = useMemo(() => {
     const out = new Map<string, number>();

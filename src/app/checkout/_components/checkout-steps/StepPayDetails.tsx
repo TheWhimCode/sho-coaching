@@ -41,7 +41,7 @@ export default function StepPayDetails(props: Props) {
     return (
       <div className="h-full flex flex-col pt-1">
         {/* header */}
-        <div className="mb-2">
+        <div className="mb-3">
           <div className="relative h-7 flex items-center justify-center">
             <button
               onClick={goBack}
@@ -52,7 +52,7 @@ export default function StepPayDetails(props: Props) {
             </button>
             <div className="text-sm text-white/80">Payment details</div>
           </div>
-          <div className="mt-1 border-t border-white/10" />
+          <div className="mt-2 border-t border-white/10" />
         </div>
 
         {/* body + pinned footer */}
@@ -84,7 +84,7 @@ export default function StepPayDetails(props: Props) {
   return (
     <div className="h-full flex flex-col pt-1">
       {/* header */}
-      <div className="mb-2">
+      <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
             onClick={goBack}
@@ -95,7 +95,7 @@ export default function StepPayDetails(props: Props) {
           </button>
           <div className="text-sm text-white/80">Payment details</div>
         </div>
-        <div className="mt-1 border-t border-white/10" />
+        <div className="mt-2 border-t border-white/10" />
       </div>
 
       {/* body */}

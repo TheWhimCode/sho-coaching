@@ -42,7 +42,6 @@ export async function POST(req: Request) {
     const emailRaw = (body as { email?: string }).email?.trim() || undefined;
     const postalCode = (body as { postalCode?: string }).postalCode?.trim() || undefined;
 
-    // Wallet removed
     const { payMethod = "card" } = body as {
       payMethod?: "card" | "paypal" | "revolut_pay" | "klarna";
     };
