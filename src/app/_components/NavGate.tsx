@@ -4,6 +4,10 @@ import { usePathname } from "next/navigation";
 
 export default function NavGate({ children }: { children: React.ReactNode }) {
   const p = usePathname() || "";
-  const hide = /^\/coaching\/[^/]+$/.test(p); // matches /coaching/vod etc.
+
+  // Hide on /coaching/[something] and /checkout (with all subroutes)
+  const hide =
+    /^\/coaching\/[^/]+$/.test(p) || /^\/checkout(\/.*)?$/.test(p);
+
   return hide ? null : <>{children}</>;
 }
