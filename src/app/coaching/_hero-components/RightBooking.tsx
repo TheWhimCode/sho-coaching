@@ -55,7 +55,7 @@ export default function RightBookingPanel({
           <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
           <button
             onClick={() => onOpenCalendar?.({ liveMinutes })}
-            className="relative z-10 w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
+            className="relative z-10 w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A] bg-[#fc8003] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
           >
             Choose Time
           </button>
