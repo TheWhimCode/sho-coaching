@@ -1,13 +1,14 @@
+// src/pages/customization/checkout/rcolumn/checkout-steps/StepPayDetails.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useElements, useStripe, CardNumberElement } from "@stripe/react-stripe-js";
 
 import CardForm from "@/app/checkout/_components/checkout-steps/step-components/CardForm";
 import PaymentSkeleton from "@/app/checkout/_components/checkout-steps/step-components/PaymentSkeleton";
 import { ArrowLeft, CreditCard } from "lucide-react";
 
-type Method = "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
+type Method = "card" | "paypal" | "revolut_pay" | "klarna";
 
 type SavedCard = {
   id: string;
@@ -25,10 +26,12 @@ type FormProps = Common & {
   payMethod: Method;
   onContinue: () => void;
   piId?: string | null;
+
   setCardPmId: (id: string) => void;
   setSavedCard: (c: SavedCard | null) => void;
   savedCard: SavedCard | null;
 };
+
 type Props = LoadingProps | FormProps;
 
 export default function StepPayDetails(props: Props) {
@@ -55,7 +58,7 @@ export default function StepPayDetails(props: Props) {
         {/* body + pinned footer */}
         <div className="flex-1 flex flex-col">
           <div className="flex-1 min-h-[260px]">
-            <PaymentSkeleton method={payMethod ?? "card"} />
+            <PaymentSkeleton method={(payMethod ?? "card") as Method} />
           </div>
 
           <div className="mt-auto pt-2">
@@ -114,7 +117,6 @@ export default function StepPayDetails(props: Props) {
 }
 
 /** ---------- Inner form body (uses parent <Elements> context) ---------- */
-
 function FormBody({
   email,
   payMethod,
@@ -134,19 +136,24 @@ function FormBody({
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [peReady, setPeReady] = useState(false);
+
+  // Show skeleton once until Stripe Elements report ready.
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  const readyLocked = useRef(false); // guards multiple onReady calls in dev/StrictMode
+
+  // When method changes, re-show skeleton only if we're not using a saved card.
+  useEffect(() => {
+    if (payMethod === "card" && savedCard) {
+      setShowSkeleton(false);
+    } else {
+      setShowSkeleton(true);
+      readyLocked.current = false;
+    }
+  }, [payMethod, savedCard]);
+
   const [checking, setChecking] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-
-  // show red only after submit
   const [submitted, setSubmitted] = useState(false);
-
-  // If we have a saved card, ensure skeleton is hidden; if removed, show again until PE is ready
-  useEffect(() => {
-    if (payMethod === "card" && savedCard) setPeReady(true);
-    else if (payMethod === "card" && !savedCard) setPeReady(false);
-    else if (payMethod !== "card") setPeReady(false);
-  }, [payMethod, savedCard]);
 
   async function validateAndContinue() {
     if (!stripe) return;
@@ -161,13 +168,11 @@ function FormBody({
         onContinue();
         return;
       }
-
       if (!elements) {
         setErr("Payment form not ready.");
         setChecking(false);
         return;
       }
-
       const card = elements.getElement(CardNumberElement);
       if (!card) {
         setErr("Card field not ready.");
@@ -179,7 +184,6 @@ function FormBody({
         type: "card",
         card,
         billing_details: { email: email || undefined },
-        
       });
 
       if (error || !paymentMethod) {
@@ -202,7 +206,7 @@ function FormBody({
       return;
     }
 
-    // Non-card methods (paypal, revolut_pay, klarna, wallet): validate Payment Element
+    // Non-card methods (paypal, revolut_pay, klarna): validate Payment Element
     if (!elements) {
       setErr("Payment form not ready.");
       setChecking(false);
@@ -218,8 +222,6 @@ function FormBody({
     setChecking(false);
     onContinue();
   }
-
-  // ---------- Saved card UI ----------
 
   function SavedCardPanel() {
     if (!savedCard) return null;
@@ -258,8 +260,9 @@ function FormBody({
           <button
             type="button"
             onClick={() => {
-              setPeReady(false); // show skeleton while Payment Element re-initializes
-              setSavedCard(null); // return to editable fields
+              setSavedCard(null);          // return to editable fields
+              setShowSkeleton(true);       // show skeleton while Elements re-mount
+              readyLocked.current = false; // allow next onReady to hide it
             }}
             className="
               inline-flex items-center gap-1.5
@@ -279,7 +282,6 @@ function FormBody({
   }
 
   return (
-    // ⬇️ Form wrapper so pressing Enter submits
     <form
       className="flex flex-col h-full"
       onSubmit={(e) => {
@@ -288,9 +290,9 @@ function FormBody({
       }}
     >
       {/* layered real form + skeleton */}
-      <div className="relative flex-1 min-h-[280px]">
+      <div className="relative flex-1 min-h-[260px]">
         {/* Real content */}
-        <div className={`absolute inset-0 transition-opacity duration-150 ${peReady ? "opacity-100" : "opacity-0"}`}>
+        <div className={`absolute inset-0 transition-opacity duration-150 ${showSkeleton ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
           {payMethod === "card" ? (
             savedCard ? (
               <SavedCardPanel />
@@ -300,32 +302,42 @@ function FormBody({
                 activePm="card"
                 submitted={submitted}
                 onPaymentChange={() => {}}
-                onElementsReady={() => setPeReady(true)}
+                onElementsReady={() => {
+                  if (!readyLocked.current) {
+                    readyLocked.current = true;
+                    setShowSkeleton(false);
+                  }
+                }}
               />
             )
           ) : (
-            <CardForm email={email} activePm={payMethod} onElementsReady={() => setPeReady(true)} />
+            <CardForm
+              email={email}
+              activePm={payMethod}
+              onElementsReady={() => {
+                if (!readyLocked.current) {
+                  readyLocked.current = true;
+                  setShowSkeleton(false);
+                }
+              }}
+            />
           )}
         </div>
 
-        {/* Skeleton overlay */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-150 ${
-            peReady ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
-          <PaymentSkeleton method={payMethod ?? "card"} />
-        </div>
+        {/* Skeleton overlay (single, guarded) */}
+        {showSkeleton && (
+          <div className="absolute inset-0">
+            <PaymentSkeleton method={payMethod} />
+          </div>
+        )}
       </div>
 
       {/* pinned footer */}
       <div className="mt-auto pt-3">
-        {/* a11y-only; no visible helper text */}
-        {/* err intentionally SR-only */}
         {err && <p className="sr-only">{err}</p>}
         <button
           type="submit"
-          disabled={!stripe || checking || !peReady}
+          disabled={!stripe || checking || showSkeleton}
           className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
                      bg-[#fc8803] hover:bg-[#f8a81a] transition
                      shadow-[0_10px_28px_rgba(245,158,11,.35)]

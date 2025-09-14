@@ -17,7 +17,7 @@ import type {
 } from "@stripe/stripe-js";
 import * as React from "react";
 
-type ActivePM = "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
+type ActivePM = "card" | "paypal" | "revolut_pay" | "klarna";
 
 type Props = {
   piId?: string | null;
@@ -106,6 +106,7 @@ export default function CardForm({
 
   const isCard = activePm === "card";
 
+  // Non-card PaymentElement configuration
   const paymentMethodOrder =
     activePm === "paypal"
       ? ["paypal"]
@@ -113,15 +114,12 @@ export default function CardForm({
       ? ["revolut_pay"]
       : activePm === "klarna"
       ? ["klarna"]
-      : activePm === "wallet"
-      ? ["apple_pay", "google_pay"]
       : ["card"];
 
   const peOptions: StripePaymentElementOptions = {
     layout: { type: "accordion" },
     paymentMethodOrder,
     fields: { billingDetails: { email: "auto", phone: "auto", address: "auto" } },
-    wallets: { applePay: "auto", googlePay: "auto" },
   };
 
   return (

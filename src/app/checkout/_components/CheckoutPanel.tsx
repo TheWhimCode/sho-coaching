@@ -19,8 +19,8 @@ import StepSummary from "./checkout-steps/StepSummary";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 import { getPreset } from "@/lib/sessions/preset";
 
-// 🔹 Extend with Klarna + Wallet
-type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
+// 🔹 Extend with Klarna 
+type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna";
 
 type Payload = {
   slotId: string;

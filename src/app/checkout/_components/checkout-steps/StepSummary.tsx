@@ -8,7 +8,7 @@ import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import CardForm from "@/app/checkout/_components/checkout-steps/step-components/CardForm";
 import { ArrowLeft } from "lucide-react";
 
-type Method = "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
+type Method = "card" | "paypal" | "revolut_pay" | "klarna";
 
 type Props = {
   goBack: () => void;
@@ -287,7 +287,6 @@ function PayButton({
         return;
       }
 
-      // PayPal / Revolut Pay / Klarna / Wallet (Apple/Google Pay) via Payment Element
       if (!elements) {
         setError("Payment form not ready.");
         setSubmitting(false);

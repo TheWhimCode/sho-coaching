@@ -1,3 +1,4 @@
+// src/app/api/stripe/checkout/intent/route.ts
 import Stripe from "stripe";
 import crypto from "crypto";
 import { NextResponse } from "next/server";
@@ -41,12 +42,12 @@ export async function POST(req: Request) {
     const emailRaw = (body as { email?: string }).email?.trim() || undefined;
     const postalCode = (body as { postalCode?: string }).postalCode?.trim() || undefined;
 
-    // ⬇️ extended payMethod union (adds klarna + wallet)
+    // Wallet removed
     const { payMethod = "card" } = body as {
-      payMethod?: "card" | "paypal" | "revolut_pay" | "klarna" | "wallet";
+      payMethod?: "card" | "paypal" | "revolut_pay" | "klarna";
     };
 
-    // ---- Load inputs either from DB (preferred: bookingId) or from request (legacy path) ----
+    // ---- Load inputs either from DB (preferred: bookingId) or from request (legacy path)
     let slotId: string;
     let liveMinutes: number;
     let followups: number;
@@ -152,7 +153,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 5) Limit payment methods — include Klarna and map Wallet -> card
+    // 5) Limit payment methods — include Klarna
     const pmTypes: Array<"card" | "paypal" | "revolut_pay" | "klarna"> =
       payMethod === "paypal"
         ? ["paypal"]
@@ -160,7 +161,7 @@ export async function POST(req: Request) {
         ? ["revolut_pay"]
         : payMethod === "klarna"
         ? ["klarna"]
-        : /* "card" and "wallet" both resolve to card rail */ ["card"];
+        : ["card"];
 
     // 6) Create PaymentIntent
     const idemKey = makeIdempotencyKey(slotIds, amountCents, anchor.holdKey ?? effKey, payMethod);
@@ -179,11 +180,12 @@ export async function POST(req: Request) {
         payment_method_types: pmTypes,
         receipt_email: emailRaw || undefined,
         metadata,
-        // Forward postal code if provided
+        // NOTE: AVS checks billing postal code, which must be set on the PaymentMethod at confirm time.
+        // We optionally include shipping here for your records, but it won't affect AVS.
         ...(postalCode
           ? {
               shipping: {
-                address: { postal_code: postalCode, country: "DE" }, // you can adapt country if you collect it
+                address: { postal_code: postalCode, country: "DE" }, // adjust country if you collect it
                 name: emailRaw || "Customer",
               },
             }
