@@ -1,4 +1,3 @@
-// coaching/_coaching-components/CoachingExamples.tsx
 "use client";
 
 import React from "react";
@@ -23,25 +22,30 @@ const items: ExampleItem[] = [
 export default function CoachingExamples() {
   return (
     <section className="relative">
-      {/* Outer container — wider, with much smaller vertical padding */}
-      <div className="mx-auto max-w-7xl px-4 md:px-6 pt-8 md:pt-10 pb-2 md:pb-4">
-        {/* Two-column grid: left flexible, right auto; slightly tighter gap */}
+      {/* Keep width, align left edge to PresetCards content */}
+      <div
+        className="
+          max-w-7xl
+          pl-6
+          lg:pl-[calc((min(100vw,80rem)-72rem)/2+1.5rem)]
+          pr-4 md:pr-6
+        "
+      >
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] items-center gap-8 md:gap-10">
-          {/* Left: text, can shrink/wrap */}
+          {/* Left: text */}
           <div className="min-w-0">
             <h2 className="text-2xl md:text-3xl font-semibold">
-              Coaching session examples
+              Need an example?
             </h2>
-            <p className="mt-3 text-white/70 text-sm md:text-base">
-              One per role. Become a free member on Patreon and watch full
-              examples of real coaching sessions.
+            <p className="mt-2 text-white/70 text-sm md:text-base">
+              Watch some of Shos coaching sessions for free on Patreon.
             </p>
             <p className="mt-2 text-xs text-white/50">
               Top, Jungle, Mid, ADC, Support.
             </p>
           </div>
 
-          {/* Right: 5 square buttons, intrinsic width */}
+          {/* Right: 5 square buttons */}
           <div className="min-w-0">
             <div className="flex flex-nowrap gap-3 overflow-x-auto md:overflow-visible">
               {items.map((item) => (
@@ -52,15 +56,12 @@ export default function CoachingExamples() {
                   rel="noopener noreferrer"
                   className="group relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 lg:w-28 lg:h-28 rounded-xl overflow-hidden border border-white/10"
                 >
-                  {/* Background */}
                   <div
                     className="absolute inset-0 bg-center bg-cover transition-transform duration-300 group-hover:scale-105"
                     style={{ backgroundImage: `url(${item.bg})` }}
                     aria-hidden
                   />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/25 transition" aria-hidden />
-
-                  {/* Icon & role */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                     <img
                       src={item.icon}
@@ -69,8 +70,6 @@ export default function CoachingExamples() {
                     />
                     <span className="text-[11px] font-medium">{item.role}</span>
                   </div>
-
-                  {/* Hover hint */}
                   <motion.div
                     initial={{ opacity: 0, y: 6 }}
                     whileHover={{ opacity: 1, y: 0 }}

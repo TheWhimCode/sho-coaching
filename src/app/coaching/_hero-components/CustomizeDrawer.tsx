@@ -1,4 +1,3 @@
-// components/CustomizeDrawer.tsx
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -9,6 +8,7 @@ import { colorsByPreset } from "@/lib/sessions/colors";
 
 /* NEW: icon imports */
 import { Signature, Scroll, Lightning, PuzzlePiece, X } from "@phosphor-icons/react";
+import InfoTooltip from "@/app/_components/small/InfoTooltip";
 
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const { ring, glow } = colorsByPreset[preset];
@@ -133,23 +133,14 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                 <div className="flex items-center justify-between">
                   <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
                     In-game coaching
-                    <div className="relative group">
-                      <button
-                        className="w-4 h-4 rounded-full bg-white/20 text-[11px] font-bold flex items-center justify-center"
-                        aria-label="What is in-game coaching?"
-                      >
-                        ?
-                      </button>
-                      <div className="absolute left-full top-1/2 ml-2 -translate-y-1/2
-                                      w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
-                                      group-hover:opacity-100 transition pointer-events-none shadow-lg
-                                      z-50">
+                    <InfoTooltip ariaLabel="What is in-game coaching?">
+                      <>
                         Receive coaching while playing.{" "}
                         <span className="text-red-400 font-semibold">
                           Warning, in-game coaching is very stressful and often less informative than regular coaching!
                         </span>
-                      </div>
-                    </div>
+                      </>
+                    </InfoTooltip>
                   </span>
                   <span className="text-sm opacity-80">{cfg.liveBlocks} × 45 min</span>
                 </div>
@@ -180,20 +171,9 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                 <div className="flex items-center justify-between">
                   <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
                     Follow-up recordings
-                    <div className="relative group">
-                      <button
-                        className="w-4 h-4 rounded-full bg-white/20 text-[11px] font-bold flex items-center justify-center"
-                        aria-label="What are follow-ups?"
-                      >
-                        ?
-                      </button>
-                      <div className="absolute left-full top-1/2 ml-2 -translate-y-1/2
-                                      w-52 rounded-md bg-black/80 text-xs text-white p-2 opacity-0
-                                      group-hover:opacity-100 transition pointer-events-none shadow-lg
-                                      z-50">
-                        A few days after your session, Sho will create a Follow-up recording to review your progress and give new input.
-                      </div>
-                    </div>
+                    <InfoTooltip ariaLabel="What are follow-ups?">
+                      A few days after your session, Sho will create a Follow-up recording to review your progress and give new input.
+                    </InfoTooltip>
                   </span>
                   <span className="text-sm opacity-80">{cfg.followups} × 15 min</span>
                 </div>
@@ -263,6 +243,7 @@ function PresetButton({
           ? "ring-[rgba(120,160,255,.55)] shadow-[0_0_6px_rgba(56,124,255,.35)]"
           : "ring-white/12",
       ].join(" ")}
+      type="button"
     >
       <div className="flex items-center">
         <div className="grow">

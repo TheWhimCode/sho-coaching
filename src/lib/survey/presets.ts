@@ -20,32 +20,32 @@ export type SurveyAnswerMap = Record<string, string>;
 export const SURVEY: SurveyQuestion[] = [
   {
     id: "time",
-    question: "How much time do you have for a session?",
+    question: "What kind of advice are you looking for?",
     options: [
-      { label: "30 minutes", value: "t_30", preset: "instant" },
-      { label: "60 minutes", value: "t_60", preset: "vod" },
-      { label: "45 + follow-up", value: "t_sig", preset: "signature" },
-      { label: "I’m not sure", value: "t_custom", preset: "custom" },
+      { label: "I just have some questions", value: "t_30", preset: "instant" },
+      { label: "I want an analysis on my early, mid and lategame", value: "t_60", preset: "vod" },
+      { label: "I want Sho to figure out my biggest mistakes", value: "t_sig", preset: "signature" },
+      { label: "I wanna just start a session and see where it goes", value: "t_custom", preset: "custom" },
     ],
   },
   {
     id: "goal",
-    question: "What’s your main coaching goal?",
+    question: "What's your goal?",
     options: [
-      { label: "Quick answers to pressing questions", value: "g_quick", preset: "instant" },
-      { label: "Deep analysis of my gameplay", value: "g_deep", preset: "vod" },
-      { label: "Structured plan + accountability", value: "g_plan", preset: "signature" },
-      { label: "Something very specific/unique", value: "g_custom", preset: "custom" },
+      { label: "I just want to see how far I can go", value: "g_quick", preset: "instant" },
+      { label: "Learn about the game, avoid bad habits, practise fundamentals", value: "g_deep", preset: "vod" },
+      { label: "Climb ASAP, ideally a few divisions in the coming weeks", value: "g_plan", preset: "signature" },
+      { label: "My goals are beyond your comprehension. I will beat Faker one day.", value: "g_custom", preset: "custom" },
     ],
   },
   {
-    id: "format",
-    question: "Preferred format?",
+    id: "rank",
+    question: "What level do you currently play at?",
     options: [
-      { label: "Short live call, focused fixes", value: "f_short", preset: "instant" },
-      { label: "VOD breakdown with detailed notes", value: "f_vod", preset: "vod" },
-      { label: "Live deep-dive + roadmap", value: "f_sig", preset: "signature" },
-      { label: "I’ll decide later / depends", value: "f_custom", preset: "custom" },
+      { label: "I'm Iron - Bronze / a new player", value: "f_short", preset: "instant" },
+      { label: "I'm Master+ you fool.", value: "f_vod", preset: "vod" },
+      { label: "Like any normal person, I perform at Silver - Diamond level", value: "f_sig", preset: "signature" },
+      { label: "My rank doesn't really matter as I have a special request", value: "f_custom", preset: "custom" },
     ],
   },
   {
