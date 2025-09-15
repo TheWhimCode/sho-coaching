@@ -1,7 +1,8 @@
 // src/pages/customization/checkout/lcolumn/UsefulToKnow.tsx
 "use client";
 
-import { DiscordLogo, Target, FilmReel } from "@phosphor-icons/react";
+import { Target, FilmReel } from "@phosphor-icons/react";
+import { FaDiscord } from "react-icons/fa"; // 👈 added
 
 export default function UsefulToKnow() {
   return (
@@ -23,7 +24,7 @@ export default function UsefulToKnow() {
           color="sky"
           title="Join Discord"
           description="You will meet with Sho on his Discord server, make sure you join! You’ll find some additional resources there as well. Before your session, double-check your mic & audio."
-          icon={<DiscordLogo size={20} weight="regular" />}
+          icon={<FaDiscord size={20} />} // 👈 swapped in FontAwesome Discord
         />
         <PrepItem
           color="violet"

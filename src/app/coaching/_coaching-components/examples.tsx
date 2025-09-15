@@ -23,14 +23,10 @@ const items: ExampleItem[] = [
 export default function CoachingExamples() {
   return (
     <section className="relative">
-      {/* Background */}
-      <div className="absolute inset-0 -z-10 bg-[#0B0F1A]" />
-      <div className="absolute inset-0 -z-10 bg-[url('/stars-noise.png')] opacity-10 mix-blend-screen" />
-
-      {/* Outer container centers the whole block */}
-      <div className="mx-auto max-w-6xl px-8 md:px-16 py-16 md:py-24">
-        {/* Two-column grid: left flexible, right auto */}
-        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] items-center gap-12">
+      {/* Outer container — wider, with much smaller vertical padding */}
+      <div className="mx-auto max-w-7xl px-4 md:px-6 pt-8 md:pt-10 pb-2 md:pb-4">
+        {/* Two-column grid: left flexible, right auto; slightly tighter gap */}
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] items-center gap-8 md:gap-10">
           {/* Left: text, can shrink/wrap */}
           <div className="min-w-0">
             <h2 className="text-2xl md:text-3xl font-semibold">
@@ -60,8 +56,9 @@ export default function CoachingExamples() {
                   <div
                     className="absolute inset-0 bg-center bg-cover transition-transform duration-300 group-hover:scale-105"
                     style={{ backgroundImage: `url(${item.bg})` }}
+                    aria-hidden
                   />
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/25 transition" />
+                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/25 transition" aria-hidden />
 
                   {/* Icon & role */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">

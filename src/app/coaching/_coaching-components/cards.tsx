@@ -6,15 +6,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react";
+import type { Preset } from "@/lib/sessions/preset";
+import { colorsByPreset } from "@/lib/sessions/colors";
 
-const PRESET_COLORS = {
-  instant:   { ring: "#f6e9b3", glow: "rgba(248,211,75,.18)" },
-  signature: { ring: "#f6b1b1", glow: "rgba(248,113,113,.18)" },
-  vod:       { ring: "#a6c8ff", glow: "rgba(105,168,255,.18)" },
-  custom:    { ring: "#d9d9d9", glow: "rgba(255,255,255,0.1)" },
-} as const;
-
-type PresetKey = keyof typeof PRESET_COLORS;
 type PresetSlug = "vod" | "signature" | "instant";
 
 type Item = {
@@ -53,10 +47,10 @@ const DEFAULT_ITEMS: Item[] = [
   },
 ];
 
-function SessionIcon({ preset }: { preset: PresetSlug | "custom" }) {
-  const { ring, glow } = PRESET_COLORS[preset as PresetKey] ?? PRESET_COLORS.custom;
-  const size = 32;
-  const glowStyle = { filter: `drop-shadow(0 0 10px ${glow})` } as React.CSSProperties;
+function SessionIcon({ preset }: { preset: Preset }) {
+  const { ring, glow } = colorsByPreset[preset] ?? colorsByPreset.custom;
+  const size = 26; // match SessionBlock
+  const glowStyle = { filter: `drop-shadow(0 0 8px ${glow})` } as React.CSSProperties;
 
   if (preset === "vod") return <Scroll size={size} weight="fill" color={ring} style={glowStyle} aria-hidden />;
   if (preset === "instant") return <Lightning size={size} weight="fill" color={ring} style={glowStyle} aria-hidden />;
@@ -65,8 +59,8 @@ function SessionIcon({ preset }: { preset: PresetSlug | "custom" }) {
 }
 
 // Allow className so we can control which corners are rounded
-function GlowRing({ preset, className = "" }: { preset: PresetKey; className?: string }) {
-  const c = PRESET_COLORS[preset];
+function GlowRing({ preset, className = "" }: { preset: Preset; className?: string }) {
+  const c = colorsByPreset[preset] ?? colorsByPreset.custom;
   return (
     <div
       aria-hidden
@@ -104,13 +98,13 @@ function Card({ item }: { item: Item }) {
             )}
           </div>
 
-          {/* Content — round ONLY the bottom corners; straight edge on top */}
-          <div className="relative z-10 flex flex-col flex-1 p-7 rounded-b-3xl">
-            <GlowRing preset={item.slug as PresetKey} className="rounded-b-3xl" />
+          {/* Content — round ONLY the bottom corners; straight edge on top (opaque) */}
+          <div className="relative z-10 flex flex-col flex-1 p-7 rounded-b-3xl bg-[#0B0F1A]">
+            <GlowRing preset={item.slug as Preset} className="rounded-b-3xl" />
 
             <div className="flex items-start justify-between gap-3 mb-2">
               <h3 className="text-2xl font-semibold tracking-tight text-white">{item.title}</h3>
-              <SessionIcon preset={item.slug} />
+              <SessionIcon preset={item.slug as Preset} />
             </div>
 
             <p className="text-white/70 mb-16">{item.subtitle}</p>
