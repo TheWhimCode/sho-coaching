@@ -37,7 +37,7 @@ export default function NavBar({ className = "" }: { className?: string }) {
         className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 z-20 flex items-center"
       >
         <Image
-          src="/images/Logo_orange.png"
+          src="/images/Logo_blue.png"
           alt="Sho Coaching Logo"
           width={38}
           height={38}

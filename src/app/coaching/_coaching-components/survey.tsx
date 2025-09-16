@@ -13,26 +13,25 @@ const PRESET_DETAILS: Record<Preset, { title: string; desc: string; img: string 
     title: "Signature Session",
     desc:
       "Deep, live coaching focused on decision-making, habits, and long-term growth. We prep beforehand, review your goals, and then dive into structured breakdowns with screen-shared examples, live drills, and clear action items.",
-    img:     "/images/sessions/Signature3.png",
+    img: "/images/sessions/Signature3.png",
   },
   vod: {
     title: "VOD Review",
     desc:
       "Asynchronous analysis of your gameplay with tight, timestamped feedback. I highlight decision trees, punish windows, and pattern leaks you can fix fast—no scheduling required.",
-    img:     "/images/sessions/VOD7.png",
-
+    img: "/images/sessions/VOD7.png",
   },
   instant: {
     title: "Instant Insight",
     desc:
       "Short, targeted session to unlock a specific bottleneck—perfect for a quick fix before a tilt spiral or to sanity-check a matchup, build, or early path.",
-    img:     "/images/sessions/Instant4.png",
+    img: "/images/sessions/Instant4.png",
   },
   custom: {
     title: "Custom Plan",
     desc:
       "A bespoke package tailored to your goals, schedule, and budget. Mix and match live sessions, VODs, drills, scrim reviews, and accountability check-ins.",
-    img: "/coaching/presets/custom.jpg",
+    img: "/images/sessions/Custom2.png",
   },
 };
 
@@ -41,7 +40,7 @@ function computeRecommendation(answers: SurveyAnswerMap): { top: Preset; scores:
   for (const q of SURVEY) {
     const a = answers[q.id];
     if (!a) continue;
-    const opt = q.options.find(o => o.value === a);
+    const opt = q.options.find((o) => o.value === a);
     if (opt) totals[opt.preset] += 1;
   }
   const order: Preset[] = ["signature", "vod", "instant", "custom"];
@@ -49,13 +48,7 @@ function computeRecommendation(answers: SurveyAnswerMap): { top: Preset; scores:
   return { top, scores: totals };
 }
 
-// Variants
-const slideVariants = {
-  enter: (direction: number) => ({ x: direction > 0 ? 60 : -60, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (direction: number) => ({ x: direction > 0 ? -60 : 60, opacity: 0 }),
-};
-
+// Simple fade variants only
 const fadeVariants = {
   enter: { opacity: 0 },
   center: { opacity: 1 },
@@ -63,10 +56,10 @@ const fadeVariants = {
 };
 
 export default function Survey({ className = "" }: { className?: string }) {
-  const [step, setStep] = useState(-1);            // -1 = intro (one-way)
+  const [step, setStep] = useState(-1);
   const [answers, setAnswers] = useState<SurveyAnswerMap>({});
-  const [direction, setDirection] = useState(1);   // 1 fwd, -1 back
-  const [justStarted, setJustStarted] = useState(false); // true right after leaving intro
+  const [direction, setDirection] = useState(1);
+  const [justStarted, setJustStarted] = useState(false);
 
   const total = SURVEY.length;
   const isIntro = step < 0;
@@ -80,13 +73,13 @@ export default function Survey({ className = "" }: { className?: string }) {
 
   function select(value: string) {
     if (!current) return;
-    setAnswers(prev => ({ ...prev, [current.id]: value }));
+    setAnswers((prev) => ({ ...prev, [current.id]: value }));
     setDirection(1);
-    setStep(s => s + 1);
+    setStep((s) => s + 1);
   }
   function goBack() {
     setDirection(-1);
-    setStep(s => Math.max(0, s - 1)); // never back to intro
+    setStep((s) => Math.max(0, s - 1));
   }
   function reset() {
     setAnswers({});
@@ -96,19 +89,18 @@ export default function Survey({ className = "" }: { className?: string }) {
   }
 
   const modeKey = isIntro ? "intro" : isDone ? "result" : "questions";
-
-  // Colors for the result card
   const ring = result ? colorsByPreset[result.top].ring : undefined;
   const glow = result ? colorsByPreset[result.top].glow : undefined;
 
   return (
     <section className={`relative w-full ${className}`}>
-      <div className="mx-auto w-full max-w-2xl px-6 md:px-10">
-        <div className="relative h-[clamp(360px,42vh,520px)]">
+      <div className="mx-auto w-full max-w-3xl px-6 md:px-10">
+        {/* Center the animated content within a viewport box */}
+        <div className="relative h-[clamp(360px,42vh,520px)] flex items-center justify-center">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={modeKey}
-              className="absolute inset-0 flex items-center justify-center"
+              className="w-full"
               variants={fadeVariants}
               initial="enter"
               animate="center"
@@ -116,7 +108,7 @@ export default function Survey({ className = "" }: { className?: string }) {
               transition={{ duration: 0.22 }}
             >
               {isIntro && (
-                <div className="text-center">
+                <div className="text-center py-10">
                   <h2 className="text-2xl md:text-3xl font-semibold leading-tight">
                     Still not sure what coaching session is best for you?
                   </h2>
@@ -140,91 +132,95 @@ export default function Survey({ className = "" }: { className?: string }) {
               )}
 
               {!isIntro && !isDone && (
-                <div className="w-full max-w-xl">
-                  <div className="rounded-2xl border border-white/10 bg-white/[.04] backdrop-blur-sm p-5 md:p-6">
-                    <div className="w-full">
-                      <div className="text-xs uppercase tracking-wide text-white/60">
-                        Step {step + 1} of {total}
+                <div className="relative py-6">
+                  {/* Controls row */}
+                  <div className="mt-1 flex items-center gap-2">
+                    {step > 0 && (
+                      <button
+                        onClick={goBack}
+                        className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1.5 text-sm text-white/80 hover:border-white/25 hover:text-white"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                      </button>
+                    )}
+                    <button
+                      onClick={reset}
+                      className="inline-flex items-center rounded-lg border border-white/15 px-3 py-1.5 text-sm text-white/80 hover:border-white/25 hover:text-white"
+                    >
+                      Reset
+                    </button>
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={current!.id}
+                      variants={fadeVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{ duration: 0.2 }}
+                      className="mt-4"
+                    >
+                      <h3 className="text-lg md:text-xl font-semibold leading-tight text-left">
+                        {current!.question}
+                      </h3>
+
+                      {/* 1 per row on mobile, 2 per row from sm+, never 4 */}
+                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {current!.options.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => select(opt.value)}
+                            className="min-h-[4rem] w-full rounded-lg border border-white/12 bg-white/[.05] px-3 py-2.5 text-left text-sm
+                                       leading-snug hover:border-white/25 hover:bg-white/[.08] transition
+                                       focus:outline-none focus:ring-2 focus:ring-white/25 flex items-center"
+                          >
+                            <span className="block w-full line-clamp-2">
+                              {opt.label}
+                            </span>
+                          </button>
+                        ))}
                       </div>
-                      <div className="mt-2 h-[3px] w-full bg-white/10 rounded-full overflow-hidden">
+
+                      {/* Progress bar at bottom */}
+                      <div className="mt-5 h-[3px] w-full bg-white/10 rounded-full overflow-hidden">
                         <motion.div
                           key={`progress-${step}`}
                           initial={{ width: 0 }}
-                          animate={{ width: `${((step + 1) / total) * 100}%` }}
+                          animate={{ width: `${((Math.min(step + 1, total)) / total) * 100}%` }}
                           transition={{ duration: 0.25 }}
                           className="h-full bg-white/60"
                         />
                       </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center gap-2">
-                      {step > 0 && (
-                        <button
-                          onClick={goBack}
-                          className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1.5 text-sm text-white/80 hover:border-white/25 hover:text-white"
-                        >
-                          <ArrowLeft className="h-4 w-4" />
-                          Back
-                        </button>
-                      )}
-                      <button
-                        onClick={reset}
-                        className="inline-flex items-center rounded-lg border border-white/15 px-3 py-1.5 text-sm text-white/80 hover:border-white/25 hover:text-white"
-                      >
-                        Reset
-                      </button>
-                    </div>
-
-                    <div className="mt-4">
-                      <AnimatePresence mode="wait" custom={direction}>
-                        <motion.div
-                          key={current!.id}
-                          variants={justStarted && step === 0 ? fadeVariants : slideVariants}
-                          initial={justStarted && step === 0 ? "enter" : "enter"}
-                          animate="center"
-                          exit="exit"
-                          custom={direction}
-                          transition={{ duration: 0.22 }}
-                        >
-                          <h3 className="text-lg md:text-xl font-semibold leading-tight text-left">
-                            {current!.question}
-                          </h3>
-
-                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {current!.options.map((opt) => (
-                              <button
-                                key={opt.value}
-                                onClick={() => select(opt.value)}
-                                className="rounded-lg border border-white/12 bg-white/[.05] px-3 py-2.5 text-left text-sm leading-snug
-                                           hover:border-white/25 hover:bg-white/[.08] transition
-                                           focus:outline-none focus:ring-2 focus:ring-white/25"
-                              >
-                                <span className="block min-h-[1.75rem] flex items-center">
-                                  {opt.label}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               )}
 
               {isDone && result && (
-                <div className="w-full max-w-3xl">
-                  <div
-                    className="relative rounded-2xl p-[1px] shadow-[0_6px_24px_rgba(0,0,0,0.3)]"
-                    style={{
-                      background: `linear-gradient(135deg, ${ring} 0%, transparent 60%)`,
-                      boxShadow: glow ? `0 6px 24px rgba(0,0,0,0.3), 0 0 28px ${glow}` : undefined,
-                    }}
+                <div className="relative">
+                  <motion.div
+                    key="result-card"
+                    variants={fadeVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.22 }}
+                    className="w-full"
                   >
-                    <div className="rounded-2xl bg-white/[.04] backdrop-blur-sm border border-white/10">
-                      <div className="p-4 md:p-6">
-                        <div className="flex flex-row items-center gap-4 md:gap-6">
-                          <div className="flex-1 min-w-0">
+                    <div
+                      className="relative rounded-2xl p-[1px] shadow-[0_6px_24px_rgba(0,0,0,0.3)]"
+                      style={{
+                        background: `linear-gradient(135deg, ${ring} 0%, transparent 60%)`,
+                        boxShadow: glow ? `0 6px 24px rgba(0,0,0,0.3), 0 0 28px ${glow}` : undefined,
+                      }}
+                    >
+                      <div className="rounded-2xl bg-white/[.04] backdrop-blur-sm border border-white/10 overflow-hidden">
+                        {/* Final session summary: left text, right full-height square image */}
+                        <div className="grid grid-cols-[1fr_auto] items-stretch min-h-[12rem]">
+                          {/* Left: summary */}
+                          <div className="flex flex-col min-w-0 p-4 md:p-6">
                             <div className="inline-flex items-center gap-2">
                               <span
                                 className="inline-block h-2.5 w-2.5 rounded-full"
@@ -247,18 +243,19 @@ export default function Survey({ className = "" }: { className?: string }) {
                             </div>
                           </div>
 
-                          <div className="shrink-0">
+                          {/* Right: full-height square image (covers entire card height) */}
+                          <div className="relative h-full aspect-square shrink-0">
                             <img
                               src={PRESET_DETAILS[result.top].img}
                               alt={PRESET_DETAILS[result.top].title}
-                              className="h-28 w-28 md:h-32 md:w-32 rounded-xl object-cover"
+                              className="h-full w-full object-cover"
                               style={{ boxShadow: glow ? `0 6px 20px ${glow}` : undefined }}
                             />
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               )}
             </motion.div>

@@ -116,6 +116,12 @@ export default function Page() {
           <Survey className="my-2 w-full" />
         </div>
       </section>
+
+      {/* Spacer for future content */}
+      <section className="relative isolate py-84">
+        <div className="relative z-10 mx-auto max-w-6xl px-6 text-center opacity-40">
+        </div>
+      </section>
     </main>
   );
 }

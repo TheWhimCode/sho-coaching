@@ -76,7 +76,7 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
     <div className="absolute right-3 top-3">
       <div className="flex items-center gap-1.5 text-[11px] leading-4">
         <Emblem tier={pf.tier} div={pf.div} />
-        <ArrowRight className="h-3.5 w-3.5 opacity-90" strokeWidth={3} aria-hidden />
+        <span aria-hidden>→</span>
         <Emblem tier={pt.tier} div={pt.div} />
         <span className="sr-only">
           Rank improved from {from ?? "unknown"} to {to ?? "unknown"}
@@ -101,8 +101,6 @@ export default function ReviewsMarquee({
   const trackRef = useRef<HTMLDivElement | null>(null);
 
   const sliceW = useRef(0); // modulo period (slice width incl. padding-right)
-  const gapPxRef = useRef(20); // single source of truth: card gap inside slice
-
   const x = useRef(0); // translateX
   const raf = useRef<number | null>(null);
   const lastTs = useRef<number | null>(null);
@@ -144,18 +142,15 @@ export default function ReviewsMarquee({
     );
   });
 
-  // Measure gap and slice width; seam uses the SAME gap:
-  // - gap lives ONLY on the slice
-  // - track gap = 0
-  // - each slice gets padding-right = gap AND gap = gap (restores intra-card spacing)
-  // - period = slice width (includes that padding)
+  // Spacing: slice owns the gap (Tailwind `gap-5`). Track gap = 0.
+  // Seam = slice padding-right = the slice's gap.
   useLayoutEffect(() => {
     const measure = () => {
       const sliceEl = sliceRef.current;
       const trackEl = trackRef.current;
       if (!sliceEl || !trackEl) return;
 
-      // Get gap from CSS if available, else geometry
+      // Read the real gap from computed style (Tailwind `gap-5`)
       const cs = getComputedStyle(sliceEl);
       let gap = parseFloat(cs.columnGap || cs.gap || "0");
       if (!gap || Number.isNaN(gap)) {
@@ -169,26 +164,24 @@ export default function ReviewsMarquee({
           gap = 20;
         }
       }
-      gapPxRef.current = gap;
 
       // No gap BETWEEN slices
       trackEl.style.gap = "0px";
       (trackEl.style as any).columnGap = "0px";
 
-      // Ensure EACH slice has the same intra-card gap and seam padding
+      // Ensure slices use ONLY their own gap from CSS classes; clear any inline gap overrides
       Array.from(trackEl.children).forEach((child) => {
         const el = child as HTMLElement;
-        el.style.gap = `${gap}px`;               // restore intra-card spacing
-        (el.style as any).columnGap = `${gap}px`;
-        el.style.paddingRight = `${gap}px`;      // seam equals one normal gap
+        el.style.gap = "";            // let Tailwind `gap-5` apply
+        (el.style as any).columnGap = "";
+        el.style.paddingRight = `${gap}px`; // seam equals one normal gap
       });
 
-      // Measure modulo period AFTER styles applied
+      // Period = slice width after padding applied
       sliceW.current = sliceEl.getBoundingClientRect().width;
     };
 
     measure();
-
     const ro = new ResizeObserver(measure);
     if (sliceRef.current) ro.observe(sliceRef.current);
     if (rootRef.current) ro.observe(rootRef.current);
