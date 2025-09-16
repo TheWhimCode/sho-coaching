@@ -146,7 +146,7 @@ function Card({
                 <span className="font-semibold">{item.duration}</span>
               )}
 
-              <span className="ml-auto font-semibold">${item.price}</span>
+              <span className="ml-auto font-semibold">€{item.price}</span>
             </div>
           </div>
         </article>

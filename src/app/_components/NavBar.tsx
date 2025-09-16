@@ -4,15 +4,14 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Youtube } from "lucide-react";
-import { FaDiscord, FaTiktok } from "react-icons/fa";
+import { Menu, X } from "lucide-react";
+import { FaDiscord, FaTiktok, FaYoutube } from "react-icons/fa";
 
 const NAV = [
   { label: "Home", href: "/" },
   { label: "Coaching", href: "/coaching" },
-  { label: "Patreon", href: "https://patreon.com", external: true },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
+  { label: "About Sho", href: "/about" },
 ];
 
 export default function NavBar({ className = "" }: { className?: string }) {
@@ -52,14 +51,13 @@ export default function NavBar({ className = "" }: { className?: string }) {
         <div className="absolute inset-0 -z-10 bg-[#0B0F1A]/30 backdrop-blur-md border-b border-white/10" />
 
         <nav className="w-full">
-          {/* Make this container relative so we can absolutely center the links */}
           <div className="relative h-16 md:h-20 flex items-center pl-14 md:pl-20 pr-4 md:pr-6">
-            {/* LEFT: title, aligned by left padding; doesn't affect centering */}
+            {/* LEFT: title */}
             <span className="text-lg md:text-xl font-semibold tracking-tight">
               Sho Coaching
             </span>
 
-            {/* CENTER: links layer spans full width, truly centered */}
+            {/* CENTER: links */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="hidden md:flex items-center gap-8 pointer-events-auto">
                 {NAV.map((it) =>
@@ -86,16 +84,24 @@ export default function NavBar({ className = "" }: { className?: string }) {
               </div>
             </div>
 
-            {/* RIGHT: socials + hamburger, pushed with ml-auto */}
+            {/* RIGHT: socials + hamburger */}
             <div className="ml-auto flex items-center">
               <div className="hidden md:flex items-center gap-3">
+                                <Link
+                  href="https://discord.gg/HfvxZBp"
+                  target="_blank"
+                  aria-label="Discord"
+                  className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
+                >
+                  <FaDiscord className="h-5 w-5" />
+                </Link>
                 <Link
-                  href="https://youtube.com"
+                  href="https://www.youtube.com/@ShoCoaching"
                   target="_blank"
                   aria-label="YouTube"
                   className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                 >
-                  <Youtube className="h-5 w-5" />
+                  <FaYoutube className="h-5 w-5" />
                 </Link>
                 <Link
                   href="https://tiktok.com"
@@ -104,14 +110,6 @@ export default function NavBar({ className = "" }: { className?: string }) {
                   className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                 >
                   <FaTiktok className="h-5 w-5" />
-                </Link>
-                <Link
-                  href="https://discord.gg"
-                  target="_blank"
-                  aria-label="Discord"
-                  className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
-                >
-                  <FaDiscord className="h-5 w-5" />
                 </Link>
               </div>
 
@@ -162,7 +160,7 @@ export default function NavBar({ className = "" }: { className?: string }) {
                     target="_blank"
                     className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                   >
-                    <Youtube className="h-5 w-5" />
+                    <FaYoutube className="h-5 w-5" />
                   </Link>
                   <Link
                     href="https://tiktok.com"

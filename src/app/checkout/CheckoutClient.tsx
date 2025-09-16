@@ -107,10 +107,10 @@ export default function CheckoutClient() {
   );
 
   return (
-    <section className="relative isolate min-h-screen pt-12 md:pt-16 lg:pt-20 pb-10 text-white overflow-x-hidden overflow-y-hidden">
+    <section className="relative isolate min-h-screen pt-28 md:pt-32 lg:pt-36 pb-10 text-white overflow-x-hidden overflow-y-hidden">
       {/* Background */}
       <div className="absolute inset-0 -z-10 pointer-events-none isolate overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070f_0%,#070c18_40%,#0c1528_70%,#16264a_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070f_0%,#070c18_40%,#0c1528_70%,#1c2f5c_100%)]" />
         <div className="absolute inset-0 [mask-image:radial-gradient(80%_80%_at_50%_50%,black,transparent)] bg-black/60" />
       </div>
 
@@ -118,8 +118,8 @@ export default function CheckoutClient() {
       <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
         <div className="flex justify-center">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto_420px] gap-8 items-start lg:justify-items-stretch min-h-[70vh]">
-            {/* Hide UsefulToKnow on mobile */}
-            <div className="hidden md:block w-full lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
+            {/* UsefulToKnow */}
+            <div className="hidden md:block relative w-full mt-12 lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
               <UsefulToKnow />
             </div>
 
@@ -133,7 +133,7 @@ export default function CheckoutClient() {
               variants={rightCol}
               initial="hidden"
               animate="show"
-className="w-full mx-auto lg:w-[400px] relative z-0 lg:justify-self-end"
+              className="w-full mx-auto lg:w-[400px] relative z-0 lg:justify-self-end"
             >
               <CheckoutPanel
                 payload={payload}

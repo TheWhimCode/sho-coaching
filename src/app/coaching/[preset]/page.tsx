@@ -17,12 +17,12 @@ export async function generateMetadata({
 }) {
   const { preset } = await params;
   const titles: Record<string, string> = {
-    vod: "VOD Review Coaching",
-    signature: "Signature Coaching Session",
-    instant: "Instant Coaching",
+    vod: "VOD Review",
+    signature: "Signature Session",
+    instant: "Instant Insight",
   };
   return {
-    title: titles[preset] ?? "Coaching",
+    title: `${titles[preset] ?? preset} | Sho`,
     description: "Book a session tailored to your goals.",
   };
 }

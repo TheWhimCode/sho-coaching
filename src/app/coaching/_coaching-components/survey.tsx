@@ -2,41 +2,28 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  type Variants,
+  easeInOut,
+  easeOut,
+  easeIn,
+} from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { SURVEY, type Preset, type SurveyAnswerMap } from "@/lib/survey/presets";
-import { colorsByPreset } from "@/lib/sessions/colors";
+import SessionSummaryCard from "./SessionSummaryCard";
 
-const PRESET_DETAILS: Record<Preset, { title: string; desc: string; img: string }> = {
-  signature: {
-    title: "Signature Session",
-    desc:
-      "Deep, live coaching focused on decision-making, habits, and long-term growth. We prep beforehand, review your goals, and then dive into structured breakdowns with screen-shared examples, live drills, and clear action items.",
-    img: "/images/sessions/Signature3.png",
-  },
-  vod: {
-    title: "VOD Review",
-    desc:
-      "Asynchronous analysis of your gameplay with tight, timestamped feedback. I highlight decision trees, punish windows, and pattern leaks you can fix fast—no scheduling required.",
-    img: "/images/sessions/VOD7.png",
-  },
-  instant: {
-    title: "Instant Insight",
-    desc:
-      "Short, targeted session to unlock a specific bottleneck—perfect for a quick fix before a tilt spiral or to sanity-check a matchup, build, or early path.",
-    img: "/images/sessions/Instant4.png",
-  },
-  custom: {
-    title: "Custom Plan",
-    desc:
-      "A bespoke package tailored to your goals, schedule, and budget. Mix and match live sessions, VODs, drills, scrim reviews, and accountability check-ins.",
-    img: "/images/sessions/Custom2.png",
-  },
-};
-
-function computeRecommendation(answers: SurveyAnswerMap): { top: Preset; scores: Record<Preset, number> } {
-  const totals: Record<Preset, number> = { vod: 0, signature: 0, instant: 0, custom: 0 };
+function computeRecommendation(answers: SurveyAnswerMap): {
+  top: Preset;
+  scores: Record<Preset, number>;
+} {
+  const totals: Record<Preset, number> = {
+    vod: 0,
+    signature: 0,
+    instant: 0,
+    custom: 0,
+  };
   for (const q of SURVEY) {
     const a = answers[q.id];
     if (!a) continue;
@@ -44,19 +31,41 @@ function computeRecommendation(answers: SurveyAnswerMap): { top: Preset; scores:
     if (opt) totals[opt.preset] += 1;
   }
   const order: Preset[] = ["signature", "vod", "instant", "custom"];
-  const top = order.reduce((best, p) => (totals[p] > totals[best] ? p : best), order[0]);
+  const top = order.reduce(
+    (best, p) => (totals[p] > totals[best] ? p : best),
+    order[0]
+  );
   return { top, scores: totals };
 }
 
-// Simple fade variants only
-const fadeVariants = {
-  enter: { opacity: 0 },
-  center: { opacity: 1 },
-  exit: { opacity: 0 },
+/** Animations */
+const introVariants: Variants = {
+  initial: { opacity: 1 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0, transition: { duration: 0.25, ease: easeOut } },
+};
+const eraseRevealVariants: Variants = {
+  initial: { opacity: 1, clipPath: "inset(0% 100% 0% 0%)" },
+  animate: {
+    opacity: 1,
+    clipPath: "inset(0% 0% 0% 0%)",
+    transition: { duration: 0.45, ease: easeInOut },
+  },
+  exit: { opacity: 0, transition: { duration: 0.2, ease: easeIn } },
+};
+const fadeQVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.22, ease: easeOut } },
+  exit: { opacity: 0, transition: { duration: 0.18, ease: easeIn } },
+};
+const resultVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.25, ease: easeOut } },
+  exit: { opacity: 0, transition: { duration: 0.2, ease: easeIn } },
 };
 
 export default function Survey({ className = "" }: { className?: string }) {
-  const [step, setStep] = useState(-1);
+  const [step, setStep] = useState(-1); // -1 intro
   const [answers, setAnswers] = useState<SurveyAnswerMap>({});
   const [direction, setDirection] = useState(1);
   const [justStarted, setJustStarted] = useState(false);
@@ -65,7 +74,10 @@ export default function Survey({ className = "" }: { className?: string }) {
   const isIntro = step < 0;
   const isDone = step >= total;
   const current = !isIntro && !isDone ? SURVEY[step] : undefined;
-  const result = useMemo(() => (isDone ? computeRecommendation(answers) : null), [isDone, answers]);
+  const result = useMemo(
+    () => (isDone ? computeRecommendation(answers) : null),
+    [isDone, answers]
+  );
 
   useEffect(() => {
     if (step > 0 && justStarted) setJustStarted(false);
@@ -88,177 +100,123 @@ export default function Survey({ className = "" }: { className?: string }) {
     setJustStarted(false);
   }
 
-  const modeKey = isIntro ? "intro" : isDone ? "result" : "questions";
-  const ring = result ? colorsByPreset[result.top].ring : undefined;
-  const glow = result ? colorsByPreset[result.top].glow : undefined;
-
   return (
     <section className={`relative w-full ${className}`}>
-      <div className="mx-auto w-full max-w-3xl px-6 md:px-10">
-        {/* Center the animated content within a viewport box */}
-        <div className="relative h-[clamp(360px,42vh,520px)] flex items-center justify-center">
+      <div className="mx-auto w-full max-w-[42rem] lg:max-w-[50rem] px-6 md:px-10">
+        <div className="relative h-[clamp(420px,48vh,600px)] flex items-center justify-center">
           <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={modeKey}
-              className="w-full"
-              variants={fadeVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.22 }}
-            >
-              {isIntro && (
-                <div className="text-center py-10">
-                  <h2 className="text-2xl md:text-3xl font-semibold leading-tight">
-                    Still not sure what coaching session is best for you?
-                  </h2>
-                  <p className="mt-3 text-sm md:text-base text-white/70">
-                    Take a quick 5-question survey and I’ll match you with the right format.
-                  </p>
+            {isDone && result ? (
+              <motion.div
+                key="result"
+                variants={resultVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="w-full"
+              >
+                <h2 className="text-xl md:text-2xl font-semibold mb-4 text-center">
+                  Your best match
+                </h2>
+                <SessionSummaryCard preset={result.top} onRetake={reset} />
+              </motion.div>
+            ) : isIntro ? (
+              <motion.div
+                key="intro"
+                variants={introVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="w-full text-center py-10"
+              >
+                <h2 className="text-2xl md:text-3xl font-semibold leading-tight">
+                  Still not sure what session is best for you?
+                </h2>
+                <p className="mt-3 text-sm md:text-base text-white/70">
+                  Take a quick 5-question survey and I’ll match you with the
+                  right format.
+                </p>
+                <div className="relative inline-block mt-8">
+                  <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 
+                                     bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
                   <button
                     onClick={() => {
                       setJustStarted(true);
                       setDirection(1);
                       setStep(0);
                     }}
-                    className="mt-8 inline-flex items-center justify-center rounded-2xl font-medium text-black
-                               w-full sm:w-auto px-6 md:px-7 py-3 md:py-3.5 shadow-[0_6px_20px_rgba(0,0,0,0.2)]
-                               hover:brightness-95 active:brightness-90 transition"
-                    style={{ backgroundColor: "#f6e9b3" }}
+                    className="relative z-10 rounded-xl px-6 md:px-7 py-3 md:py-3.5 text-base font-semibold text-[#0A0A0A] 
+                               bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] 
+                               ring-1 ring-[rgba(255,190,80,.55)]"
                   >
                     Let’s go
                   </button>
                 </div>
-              )}
-
-              {!isIntro && !isDone && (
+              </motion.div>
+            ) : (
+              <div key="questions" className="w-full">
                 <div className="relative py-6">
-                  {/* Controls row */}
+                  {/* Controls */}
                   <div className="mt-1 flex items-center gap-2">
-                    {step > 0 && (
+                    {step >= 0 && (
                       <button
                         onClick={goBack}
-                        className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1.5 text-sm text-white/80 hover:border-white/25 hover:text-white"
+                        disabled={step === 0}
+                        className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm 
+                          ${step === 0
+                            ? "border-white/10 text-white/40 cursor-not-allowed"
+                            : "border-white/15 text-white/80 hover:border-white/25 hover:text-white"}`}
                       >
                         <ArrowLeft className="h-4 w-4" />
                         Back
                       </button>
                     )}
-                    <button
-                      onClick={reset}
-                      className="inline-flex items-center rounded-lg border border-white/15 px-3 py-1.5 text-sm text-white/80 hover:border-white/25 hover:text-white"
-                    >
-                      Reset
-                    </button>
                   </div>
 
+                  {/* Question */}
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={current!.id}
-                      variants={fadeVariants}
-                      initial="enter"
-                      animate="center"
+                      variants={step === 0 ? eraseRevealVariants : fadeQVariants}
+                      initial="initial"
+                      animate="animate"
                       exit="exit"
-                      transition={{ duration: 0.2 }}
-                      className="mt-4"
+                      className="mt-6"
                     >
-                      <h3 className="text-lg md:text-xl font-semibold leading-tight text-left">
+                      <h3 className="text-xl md:text-2xl font-semibold leading-snug">
                         {current!.question}
                       </h3>
 
-                      {/* 1 per row on mobile, 2 per row from sm+, never 4 */}
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {current!.options.map((opt) => (
                           <button
                             key={opt.value}
                             onClick={() => select(opt.value)}
-                            className="min-h-[4rem] w-full rounded-lg border border-white/12 bg-white/[.05] px-3 py-2.5 text-left text-sm
-                                       leading-snug hover:border-white/25 hover:bg-white/[.08] transition
-                                       focus:outline-none focus:ring-2 focus:ring-white/25 flex items-center"
+                            className="h-[3.5rem] md:h-[4rem] w-full rounded-xl border border-white/12 bg-white/[.05] px-4 text-left text-sm md:text-base
+                                       leading-snug hover:border-sky-400/40 hover:bg-white/[.08] transition
+                                       focus:outline-none focus:ring-2 focus:ring-sky-400/30 flex items-center
+                                       shadow-[0_0_20px_-6px_rgba(255,255,255,0.12)]"
                           >
-                            <span className="block w-full line-clamp-2">
-                              {opt.label}
-                            </span>
+                            <span className="block w-full">{opt.label}</span>
                           </button>
                         ))}
                       </div>
-
-                      {/* Progress bar at bottom */}
-                      <div className="mt-5 h-[3px] w-full bg-white/10 rounded-full overflow-hidden">
-                        <motion.div
-                          key={`progress-${step}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${((Math.min(step + 1, total)) / total) * 100}%` }}
-                          transition={{ duration: 0.25 }}
-                          className="h-full bg-white/60"
-                        />
-                      </div>
                     </motion.div>
                   </AnimatePresence>
-                </div>
-              )}
 
-              {isDone && result && (
-                <div className="relative">
-                  <motion.div
-                    key="result-card"
-                    variants={fadeVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.22 }}
-                    className="w-full"
-                  >
-                    <div
-                      className="relative rounded-2xl p-[1px] shadow-[0_6px_24px_rgba(0,0,0,0.3)]"
-                      style={{
-                        background: `linear-gradient(135deg, ${ring} 0%, transparent 60%)`,
-                        boxShadow: glow ? `0 6px 24px rgba(0,0,0,0.3), 0 0 28px ${glow}` : undefined,
+                  {/* Progress bar */}
+                  <div className="mt-8 h-[3px] w-full bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={false}
+                      animate={{
+                        width: `${(Math.min(step + 1, total) / total) * 100}%`,
                       }}
-                    >
-                      <div className="rounded-2xl bg-white/[.04] backdrop-blur-sm border border-white/10 overflow-hidden">
-                        {/* Final session summary: left text, right full-height square image */}
-                        <div className="grid grid-cols-[1fr_auto] items-stretch min-h-[12rem]">
-                          {/* Left: summary */}
-                          <div className="flex flex-col min-w-0 p-4 md:p-6">
-                            <div className="inline-flex items-center gap-2">
-                              <span
-                                className="inline-block h-2.5 w-2.5 rounded-full"
-                                style={{ backgroundColor: ring }}
-                              />
-                              <h3 className="text-lg md:text-xl font-semibold tracking-tight">
-                                {PRESET_DETAILS[result.top].title}
-                              </h3>
-                            </div>
-                            <p className="mt-2 text-sm md:text-base leading-snug text-white/80 line-clamp-4">
-                              {PRESET_DETAILS[result.top].desc}
-                            </p>
-                            <div className="mt-4">
-                              <button
-                                onClick={reset}
-                                className="rounded-xl px-4 py-2 text-sm border border-white/20 hover:border-white/30"
-                              >
-                                Retake survey
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Right: full-height square image (covers entire card height) */}
-                          <div className="relative h-full aspect-square shrink-0">
-                            <img
-                              src={PRESET_DETAILS[result.top].img}
-                              alt={PRESET_DETAILS[result.top].title}
-                              className="h-full w-full object-cover"
-                              style={{ boxShadow: glow ? `0 6px 20px ${glow}` : undefined }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+                      transition={{ duration: 0.25, ease: easeOut }}
+                      className="h-full bg-gradient-to-r from-sky-400 to-blue-500 shadow-[0_0_12px_rgba(56,189,248,0.7)]"
+                    />
+                  </div>
                 </div>
-              )}
-            </motion.div>
+              </div>
+            )}
           </AnimatePresence>
         </div>
       </div>
