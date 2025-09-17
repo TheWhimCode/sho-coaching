@@ -23,7 +23,7 @@ function normalize(reviews?: Array<Review | string>): Review[] {
   );
 }
 
-/* ---------- Rank emblem chip (use images from /public/images/league/rank) ---------- */
+/* ---------- Rank emblem chip ---------- */
 
 const RANK_IMAGE: Record<string, string> = {
   iron: "Iron.png",
@@ -108,65 +108,82 @@ export default function ReviewsMarquee({
   const items = normalize(reviews);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const sliceRef = useRef<HTMLDivElement | null>(null); // measure this slice
+  const sliceRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
 
-  const sliceW = useRef(0); // modulo period (slice width incl. padding-right)
-  const gapPxRef = useRef(20); // single source of truth: card gap inside slice
+  const sliceW = useRef(0);
+  const gapPxRef = useRef(20);
 
-  const x = useRef(0); // translateX
+  const x = useRef(0);
   const raf = useRef<number | null>(null);
   const lastTs = useRef<number | null>(null);
   const running = useRef(true);
-  const velocity = useRef(0); // inertial fling px/s
+  const velocity = useRef(0);
 
   const fadePx = 80;
 
   const Card = ({ r }: { r: Review }) => (
-    <article className="relative w-[240px] sm:w-[280px] rounded-xl bg-white/[.03] border border-white/5 p-4 shrink-0">
-      <RankChip from={r.rankFrom} to={r.rankTo} />
-      <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/5">
-        <span className="font-semibold text-white/85 truncate text-sm">
-          {r.name}
-        </span>
-        <span className="sr-only">Rating: {r.rating ?? 5} out of 5</span>
-        <div
-          className="flex items-center gap-0.5 text-[#fc8803] opacity-90"
-          aria-hidden
-        >
-          {Array.from({ length: r.rating ?? 5 }).map((_, j) => (
-            <Star key={j} className="h-3.5 w-3.5" fill="currentColor" />
-          ))}
-        </div>
+    <article
+      className="
+        relative w-[240px] sm:w-[280px] shrink-0
+        rounded-xl overflow-hidden
+        bg-[#0B1734]/95
+        border border-white/10 ring-1 ring-inset ring-cyan-300/15
+        shadow-[0_8px_28px_-6px_rgba(0,0,0,.8)]
+        hover:ring-cyan-300/30 hover:border-white/15
+        transition-all
+      "
+    >
+      {/* Neon internal glows */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-12 -left-12 h-32 w-32 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full bg-sky-500/20 blur-3xl" />
       </div>
-      <p className="text-white/70 text-[13px] leading-5">{r.text}</p>
+
+      {/* Outer halo */}
+      <div className="pointer-events-none absolute inset-0 rounded-[11px] shadow-[0_0_30px_-6px_rgba(56,189,248,.45)]" />
+
+      <div className="relative p-4">
+        <RankChip from={r.rankFrom} to={r.rankTo} />
+
+        <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/5">
+          <span className="font-semibold text-white/90 truncate text-sm">
+            {r.name}
+          </span>
+          <span className="sr-only">Rating: {r.rating ?? 5} out of 5</span>
+
+          {/* Orange stars with neon glow */}
+          <div
+            className="flex items-center gap-0.5 text-[#fc8803] drop-shadow-[0_0_10px_rgba(252,136,3,.8)]"
+            aria-hidden
+          >
+            {Array.from({ length: r.rating ?? 5 }).map((_, j) => (
+              <Star key={j} className="h-3.5 w-3.5" fill="currentColor" />
+            ))}
+          </div>
+        </div>
+
+        <p className="text-white/75 text-[13px] leading-5">{r.text}</p>
+      </div>
     </article>
   );
 
-  // One slice (full set) — two back-to-back for seamless loop.
   const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
     return (
       <div ref={ref as any} className="flex items-center gap-5 shrink-0">
         {items.map((r, i) => (
           <Card key={`card-${i}`} r={r} />
         ))}
-        {/* no spacer; padding-right is set dynamically to equal the gap */}
       </div>
     );
   });
 
-  // Measure gap and slice width; seam uses the SAME gap:
-  // - gap lives ONLY on the slice
-  // - track gap = 0
-  // - each slice gets padding-right = gap AND gap = gap (restores intra-card spacing)
-  // - period = slice width (includes that padding)
   useLayoutEffect(() => {
     const measure = () => {
       const sliceEl = sliceRef.current;
       const trackEl = trackRef.current;
       if (!sliceEl || !trackEl) return;
 
-      // Get gap from CSS if available, else geometry
       const cs = getComputedStyle(sliceEl);
       let gap = parseFloat(cs.columnGap || cs.gap || "0");
       if (!gap || Number.isNaN(gap)) {
@@ -182,31 +199,26 @@ export default function ReviewsMarquee({
       }
       gapPxRef.current = gap;
 
-      // No gap BETWEEN slices
       trackEl.style.gap = "0px";
       (trackEl.style as any).columnGap = "0px";
 
-      // Ensure EACH slice has the same intra-card gap and seam padding
       Array.from(trackEl.children).forEach((child) => {
         const el = child as HTMLElement;
-        el.style.gap = `${gap}px`;               // restore intra-card spacing
+        el.style.gap = `${gap}px`;
         (el.style as any).columnGap = `${gap}px`;
-        el.style.paddingRight = `${gap}px`;      // seam equals one normal gap
+        el.style.paddingRight = `${gap}px`;
       });
 
-      // Measure modulo period AFTER styles applied
       sliceW.current = sliceEl.getBoundingClientRect().width;
     };
 
     measure();
-
     const ro = new ResizeObserver(measure);
     if (sliceRef.current) ro.observe(sliceRef.current);
     if (rootRef.current) ro.observe(rootRef.current);
     return () => ro.disconnect();
   }, []);
 
-  // Animation loop (auto + inertial)
   useEffect(() => {
     const step = (ts: number) => {
       if (lastTs.current == null) lastTs.current = ts;
@@ -220,7 +232,6 @@ export default function ReviewsMarquee({
       if (vx !== 0) {
         x.current += (vx * dt) / 1000;
 
-        // Wrap within [-W, 0)
         while (x.current <= -W) x.current += W;
         while (x.current > 0) x.current -= W;
 
@@ -229,7 +240,6 @@ export default function ReviewsMarquee({
         }
       }
 
-      // friction for inertial fling
       if (Math.abs(velocity.current) > 0.01) velocity.current *= 0.94;
       else velocity.current = 0;
 
@@ -244,7 +254,6 @@ export default function ReviewsMarquee({
     };
   }, [pxPerSecond]);
 
-  // Hover pause
   useEffect(() => {
     if (!pauseOnHover || !rootRef.current) return;
     const el = rootRef.current;
@@ -258,7 +267,6 @@ export default function ReviewsMarquee({
     };
   }, [pauseOnHover]);
 
-  // Drag layer
   const onDrag = (_: any, info: { delta: { x: number } }) => {
     const W = sliceW.current || 1;
     x.current += info.delta.x;
@@ -269,39 +277,38 @@ export default function ReviewsMarquee({
     }
   };
   const onDragEnd = (_: any, info: { velocity: { x: number } }) => {
-    velocity.current = info.velocity.x; // px/s
+    velocity.current = info.velocity.x;
   };
 
-  return (
-    <div
-      ref={rootRef}
-      className={["relative w-full h-full grid place-items-center", className].filter(Boolean).join(" ")}
-      aria-label="What clients say"
-    >
-      {/* Visible area with fadeout edges; no left padding so first card starts flush */}
-      <div
-        className="w-full overflow-hidden"
-        style={{
-          WebkitMaskImage: `linear-gradient(to right, transparent 0, black ${fadePx}px, black calc(100% - ${fadePx}px), transparent 100%)`,
-          maskImage: `linear-gradient(to right, transparent 0, black ${fadePx}px, black calc(100% - ${fadePx}px), transparent 100%)`,
-        }}
-      >
-        {/* Track: two slices back-to-back; no gap between them */}
-        <div ref={trackRef} className="flex flex-nowrap will-change-transform">
-          <Slice ref={sliceRef} />
-          <Slice />
-        </div>
+return (
+  <div
+    ref={rootRef}
+    className={["relative grid place-items-center", className].filter(Boolean).join(" ")}
+    style={{
+      // full-bleed across viewport
+      marginLeft: "calc(50% - 50vw)",
+      marginRight: "calc(50% - 50vw)",
+      width: "100vw",
+    }}
+    aria-label="What clients say"
+  >
+    {/* full-width track; no fades */}
+    <div className="w-full overflow-hidden py-6">
+      <div ref={trackRef} className="flex flex-nowrap will-change-transform">
+        <Slice ref={sliceRef} />
+        <Slice />
       </div>
-
-      {/* Transparent drag surface */}
-      <motion.div
-        className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        onDrag={onDrag}
-        onDragEnd={onDragEnd}
-        aria-hidden
-      />
     </div>
-  );
+
+    <motion.div
+      className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      onDrag={onDrag}
+      onDragEnd={onDragEnd}
+      aria-hidden
+    />
+  </div>
+);
+
 }

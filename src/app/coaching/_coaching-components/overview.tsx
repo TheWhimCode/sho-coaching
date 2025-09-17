@@ -15,10 +15,9 @@ export default function Overview({
   const [isFading, setIsFading] = useState(false);
   const [hasAutoplayed, setHasAutoplayed] = useState(false);
 
-  const FADE_DURATION = 1; // seconds before end to start fading
-  const EPS = 0.12;        // tolerance for decoder jitter
+  const FADE_DURATION = 1;
+  const EPS = 0.12;
 
-  // Robust autoplay
   const tryPlay = () => {
     const v = videoRef.current;
     if (!v) return;
@@ -27,7 +26,7 @@ export default function Overview({
     v.play().then(() => setHasAutoplayed(true)).catch(() => {});
   };
 
-  // Reliable end fade using rAF
+  // Fade handling
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -86,7 +85,7 @@ export default function Overview({
     };
   }, [duration, isFading]);
 
-  // Autoplay once when section is in view
+  // Autoplay once in view
   useEffect(() => {
     const v = videoRef.current;
     const sec = sectionRef.current;
@@ -144,16 +143,34 @@ export default function Overview({
             <div className="mt-5 max-w-2xl">
               <p className="text-base md:text-lg text-white/80 leading-relaxed">
                 Every player has different strengths, weaknesses, and goals — so no two
-                sessions ever look the same. Each rank, role, and champion changes
-                what matters most, so I shape the coaching around your current level of
+                sessions ever look the same. Each rank, role, and champion changes what
+                matters most, so I shape the coaching around your current level of
                 understanding.
               </p>
             </div>
           </div>
 
-          {/* RIGHT — video */}
+          {/* RIGHT — video + fade replacement */}
           <div className="md:col-span-6 md:self-center pr-0">
-            <div className="relative rounded-3xl overflow-hidden">
+            <div
+              className="relative rounded-3xl overflow-hidden aspect-video"
+              style={{ aspectRatio: "16/9" }}
+            >
+              {/* Replacement panel */}
+              <div
+                className={`absolute inset-0 z-0 flex items-center justify-center bg-black/40 transition-opacity duration-700 ease-out ${
+                  isFading ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+              >
+                <a
+                  href="#process"
+                  className="rounded-xl bg-[#fc8803] px-6 py-3 text-lg font-semibold text-black shadow-md hover:brightness-95 transition"
+                >
+                  See the process
+                </a>
+              </div>
+
+              {/* Video */}
               <video
                 ref={videoRef}
                 src="/videos/coaching/overview.mp4"
@@ -162,16 +179,17 @@ export default function Overview({
                 playsInline
                 preload="metadata"
                 tabIndex={-1}
-                className={`pointer-events-none select-none w-full h-auto transition-opacity duration-[500ms] ease-out ${
+                className={`pointer-events-none select-none absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-[500ms] ease-out ${
                   isFading ? "opacity-0" : "opacity-100"
                 }`}
-                style={{}}
                 controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
                 disablePictureInPicture
                 onContextMenu={(e) => e.preventDefault()}
               />
+
+              {/* vignette */}
               <div
-                className="pointer-events-none absolute inset-0"
+                className="pointer-events-none absolute inset-0 z-20"
                 style={{
                   background:
                     "radial-gradient(120% 110% at 50% 50%, rgba(0,0,0,0) 70%, rgba(0,0,0,.28) 88%, rgba(0,0,0,.42) 100%)",

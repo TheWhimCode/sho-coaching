@@ -73,7 +73,48 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 2) Overview */}
+{/* 2) Reviews — recessed with stronger shadow + visible texture */}
+<section
+  className="relative isolate overflow-hidden bg-transparent"
+  style={{
+    boxShadow: `
+      inset 0 24px 36px -12px rgba(0,0,0,0.95),
+      inset 0 -24px 36px -12px rgba(0,0,0,0.95)
+    `,
+  }}
+>
+  {/* optional dividers */}
+  <div aria-hidden className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+  <div aria-hidden className="absolute inset-x-0 bottom-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+  {/* stronger texture overlay */}
+  <div
+    aria-hidden
+    className="absolute inset-0 z-0 pointer-events-none opacity-25"
+    style={{
+      background: `
+        repeating-linear-gradient(
+          45deg,
+          rgba(255,255,255,0.08) 0px,
+          rgba(255,255,255,0.08) 2px,
+          transparent 2px,
+          transparent 6px
+        )
+      `,
+      mixBlendMode: "overlay",
+    }}
+  />
+
+  {/* content */}
+  <div className="relative z-20 mx-auto max-w-7xl">
+    <div className="max-w-6xl mx-auto px-6 py-6">
+      <Reviews />
+    </div>
+  </div>
+</section>
+
+
+      {/* 3) Overview */}
       <section className="relative isolate pt-28 pb-28 md:pt-36 md:pb-36">
         <div
           aria-hidden
@@ -89,15 +130,6 @@ export default function CoachingPageClient() {
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="max-w-6xl px-6 mx-auto">
             <Overview className="py-0" />
-          </div>
-        </div>
-      </section>
-
-      {/* 3) Reviews */}
-      <section className="relative isolate">
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <div className="max-w-6xl px-6 mx-auto min-h-[220px] grid place-items-center">
-            <Reviews />
           </div>
         </div>
       </section>
@@ -164,12 +196,8 @@ export default function CoachingPageClient() {
       {/* Local keyframes */}
       <style jsx global>{`
         @keyframes pulseDrift {
-          0% {
-            transform: translate3d(-2%, -1%, 0) scale(1);
-          }
-          100% {
-            transform: translate3d(2%, 1%, 0) scale(1.03);
-          }
+          0% { transform: translate3d(-2%, -1%, 0) scale(1); }
+          100% { transform: translate3d(2%, 1%, 0) scale(1.03); }
         }
       `}</style>
     </main>

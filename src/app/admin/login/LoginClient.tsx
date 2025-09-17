@@ -23,21 +23,24 @@ export default function LoginClient() {
   }
 
   return (
-    <main className="mx-auto max-w-sm p-6">
-      <h1 className="text-xl font-semibold mb-4">Admin Login</h1>
-      <form onSubmit={onSubmit} className="space-y-3">
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Admin secret"
-          className="w-full border rounded p-2"
-        />
-        <button className="w-full rounded p-2 border" type="submit">
-          Enter
-        </button>
-        {err && <p className="text-red-600 text-sm">{err}</p>}
-      </form>
-    </main>
+<main className="flex min-h-screen items-center justify-center">
+  <div className="w-full max-w-sm p-6">
+    <h1 className="text-xl font-semibold mb-4">Admin Login</h1>
+    <form onSubmit={onSubmit} className="space-y-3">
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Admin secret"
+        className="w-full border rounded p-2"
+      />
+      <button className="w-full rounded p-2 border" type="submit">
+        Enter
+      </button>
+      {err && <p className="text-red-600 text-sm">{err}</p>}
+    </form>
+  </div>
+</main>
+
   );
 }
