@@ -12,7 +12,7 @@ import {
 } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { SURVEY, type Preset, type SurveyAnswerMap } from "@/lib/survey/presets";
-import SessionSummaryCard from "./SessionSummaryCard";
+import SessionSummaryCard from "./components/SessionSummaryCard";
 
 function computeRecommendation(answers: SurveyAnswerMap): {
   top: Preset;

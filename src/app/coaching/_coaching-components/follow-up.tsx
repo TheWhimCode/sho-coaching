@@ -4,7 +4,7 @@ import React from "react";
 
 export default function FollowUp({
   className = "",
-  containerClassName = "max-w-6xl px-6",
+  containerClassName = "max-w-6xl",
 }: { className?: string; containerClassName?: string }) {
   return (
     <section className={`w-full ${className}`}>

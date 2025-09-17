@@ -41,10 +41,34 @@ export default function CoachingPageClient() {
       {/* 1) Product cards + Examples */}
       <section className="relative isolate pt-40 pb-16 md:pt-48 md:pb-16 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl">
-          <PresetCards containerClassName="max-w-6xl px-6" onFollowupInfo={scrollToFollowup} />
+          <PresetCards
+            containerClassName="max-w-6xl px-6"
+            onFollowupInfo={scrollToFollowup}
+          />
           <div className="border-t border-white/10 mx-2 my-16" />
-          <div className="pl-0">
-            <CoachingExamples />
+
+          {/* Examples with its own grid background only */}
+          <div className="relative">
+            {/* grid background — spans wider than content, only over the Examples block */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[140vw] -z-10"
+              style={{
+                backgroundImage: "url('/images/coaching/grid.png')",
+                backgroundRepeat: "repeat",
+                backgroundPosition: "center 140px",
+                backgroundSize: "auto",
+                opacity: 0.25,
+                imageRendering: "crisp-edges",
+                maskImage:
+                  "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+                WebkitMaskImage:
+                  "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+              }}
+            />
+            <div className="relative z-10">
+              <CoachingExamples />
+            </div>
           </div>
         </div>
       </section>
@@ -62,15 +86,19 @@ export default function CoachingPageClient() {
             `,
           }}
         />
-        <div className="relative z-10 mx-auto max-w-6xl px-6">
-          <Overview className="py-0" />
+        <div className="relative z-10 mx-auto max-w-7xl">
+          <div className="max-w-6xl px-6 mx-auto">
+            <Overview className="py-0" />
+          </div>
         </div>
       </section>
 
       {/* 3) Reviews */}
       <section className="relative isolate">
-        <div className="relative z-10 mx-auto max-w-6xl px-6 min-h-[220px] grid place-items-center">
-          <Reviews />
+        <div className="relative z-10 mx-auto max-w-7xl">
+          <div className="max-w-6xl px-6 mx-auto min-h-[220px] grid place-items-center">
+            <Reviews />
+          </div>
         </div>
       </section>
 
@@ -95,8 +123,11 @@ export default function CoachingPageClient() {
           aria-hidden
           className="absolute bottom-0 inset-x-0 z-10 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
         />
-        <div className="relative z-10 mx-auto max-w-6xl px-6">
-          <FollowUp className="py-0" />
+
+        <div className="relative z-10 mx-auto max-w-7xl">
+          <div className="max-w-6xl px-6 mx-auto">
+            <FollowUp className="py-0" />
+          </div>
         </div>
       </section>
 

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useLayoutEffect, useRef } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Star, ArrowRight } from "lucide-react";
 import type { Review } from "@/lib/reviews/reviews.data";
@@ -22,19 +23,20 @@ function normalize(reviews?: Array<Review | string>): Review[] {
   );
 }
 
-/* ---------- Rank emblem chip (no grey backgrounds) ---------- */
+/* ---------- Rank emblem chip (use images from /public/images/league/rank) ---------- */
 
-const TIER_COLORS: Record<string, string> = {
-  iron: "#6b6b6b",
-  bronze: "#cd7f32",
-  silver: "#c0c0c0",
-  gold: "#e3b341",
-  platinum: "#2bb6a8",
-  emerald: "#50c878",
-  diamond: "#4db6ff",
-  master: "#b45cff",
-  grandmaster: "#ff5c7a",
-  challenger: "#5ce1ff",
+const RANK_IMAGE: Record<string, string> = {
+  iron: "Iron.png",
+  bronze: "Bronze.png",
+  silver: "Silver.png",
+  gold: "Gold.png",
+  platinum: "Platinum.png",
+  emerald: "Emerald.png",
+  diamond: "Diamond.png",
+  master: "Master.png",
+  grandmaster: "GM.png",
+  gm: "GM.png",
+  challenger: "Challenger.png",
 };
 
 function parseRank(
@@ -51,12 +53,21 @@ function parseRank(
 const Emblem = ({ tier, div }: { tier?: string; div?: string }) => {
   if (!tier) return null;
   const key = tier.toLowerCase();
-  const base = TIER_COLORS[key] ?? "rgba(255,255,255,.8)";
+  const file = RANK_IMAGE[key];
+  if (!file) return null;
+
   return (
-    <span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full overflow-visible">
-      <span aria-hidden className="absolute inset-0 rounded-full" style={{ backgroundColor: base }} />
+    <span className="relative inline-flex h-8 w-8 items-center justify-center overflow-visible -mt-0.5">
+      <Image
+        src={`/images/league/rank/${file}`}
+        alt={div ? `${tier} ${div}` : tier}
+        width={32}
+        height={32}
+        className="h-8 w-8 object-contain pointer-events-none select-none"
+        priority={false}
+      />
       {div ? (
-        <span className="absolute -bottom-1.5 -right-1 text-[9px] leading-none font-semibold px-0.5 rounded bg-black/80 text-white">
+        <span className="absolute top-2 right-0.5 text-[10px] leading-none font-bold text-white drop-shadow">
           {div}
         </span>
       ) : null}
@@ -74,9 +85,9 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
   const pt = parseRank(to);
   return (
     <div className="absolute right-3 top-3">
-      <div className="flex items-center gap-1.5 text-[11px] leading-4">
+      <div className="flex items-center gap-2 text-[11px] leading-4">
         <Emblem tier={pf.tier} div={pf.div} />
-        <ArrowRight className="h-3.5 w-3.5 opacity-90" strokeWidth={3} aria-hidden />
+        <ArrowRight className="h-4 w-4 opacity-90" strokeWidth={3} aria-hidden />
         <Emblem tier={pt.tier} div={pt.div} />
         <span className="sr-only">
           Rank improved from {from ?? "unknown"} to {to ?? "unknown"}
