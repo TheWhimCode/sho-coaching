@@ -1,4 +1,4 @@
-// coaching/_coaching-components/ReviewsMarquee.tsx
+// coaching/_coaching-components/reviews.tsx
 "use client";
 
 import React, { useEffect, useLayoutEffect, useRef } from "react";
@@ -97,9 +97,8 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
   );
 };
 
-/* ---------- Marquee ---------- */
 
-export default function ReviewsMarquee({
+export default function Reviews({
   reviews,
   pxPerSecond = -24,
   className,
@@ -129,7 +128,7 @@ export default function ReviewsMarquee({
         rounded-xl overflow-hidden
         bg-[#0B1734]/95
         border border-white/10 ring-1 ring-inset ring-cyan-300/15
-        shadow-[0_8px_28px_-6px_rgba(0,0,0,.8)]
+        shadow-[8px_8px_20px_-6px_rgba(0,0,0,.8)]
         hover:ring-cyan-300/30 hover:border-white/15
         transition-all
       "
@@ -283,25 +282,62 @@ export default function ReviewsMarquee({
 return (
   <div
     ref={rootRef}
-    className={["relative grid place-items-center", className].filter(Boolean).join(" ")}
+    className={[
+      "relative grid place-items-center py-10",
+      className,
+    ]
+      .filter(Boolean)
+      .join(" ")}
     style={{
-      // full-bleed across viewport
       marginLeft: "calc(50% - 50vw)",
       marginRight: "calc(50% - 50vw)",
       width: "100vw",
     }}
     aria-label="What clients say"
   >
-    {/* full-width track; no fades */}
-    <div className="w-full overflow-hidden py-6">
+    {/* texture over the section's base color using overlay (keeps brightness/hue stable) */}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0"
+      style={{
+        backgroundImage: "url('/images/coaching/texture3.jpg')",
+        backgroundRepeat: "repeat",
+        backgroundSize: "auto",
+        mixBlendMode: "overlay",
+        opacity: 0.3,
+        filter: "contrast(1.2) brightness(1.05)",
+        maskImage:
+          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+      }}
+    />
+
+    {/* review cards */}
+    <div className="w-full overflow-hidden relative z-10">
       <div ref={trackRef} className="flex flex-nowrap will-change-transform">
         <Slice ref={sliceRef} />
         <Slice />
       </div>
     </div>
 
+    {/* inner shadow overlay (on top) */}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-20"
+      style={{
+        boxShadow: `
+          inset 0 30px 12px -6px rgba(0,0,0,0.5),
+          inset 0 -30px 12px -6px rgba(0,0,0,0.5),
+          inset 30px 0 12px -6px rgba(0,0,0,0.5),
+          inset -30px 0 12px -6px rgba(0,0,0,0.5)
+        `,
+      }}
+    />
+
+    {/* drag interaction layer */}
     <motion.div
-      className="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"
+      className="absolute inset-0 z-30 cursor-grab active:cursor-grabbing"
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       onDrag={onDrag}
@@ -310,5 +346,8 @@ return (
     />
   </div>
 );
+
+
+
 
 }

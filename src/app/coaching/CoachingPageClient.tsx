@@ -73,66 +73,77 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-{/* 2) Reviews — recessed with stronger shadow + visible texture */}
+{/* 2) Reviews — recessed with inner shadows + custom texture */}
 <section
-  className="relative isolate overflow-hidden bg-transparent"
-  style={{
-    boxShadow: `
-      inset 0 24px 36px -12px rgba(0,0,0,0.95),
-      inset 0 -24px 36px -12px rgba(0,0,0,0.95)
-    `,
-  }}
+  className="relative isolate overflow-hidden"
+  style={{ backgroundColor: "#0C1D3E" }} // brand base color
 >
-  {/* optional dividers */}
-  <div aria-hidden className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-  <div aria-hidden className="absolute inset-x-0 bottom-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
-  {/* stronger texture overlay */}
+  {/* optional top divider */}
   <div
     aria-hidden
-    className="absolute inset-0 z-0 pointer-events-none opacity-25"
+    className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+  />
+
+  {/* optional bottom divider */}
+  <div
+    aria-hidden
+    className="absolute inset-x-0 bottom-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+  />
+
+  {/* custom texture overlay */}
+  <div
+    aria-hidden
+    className="absolute inset-0 z-0 pointer-events-none"
     style={{
-      background: `
-        repeating-linear-gradient(
-          45deg,
-          rgba(255,255,255,0.08) 0px,
-          rgba(255,255,255,0.08) 2px,
-          transparent 2px,
-          transparent 6px
-        )
-      `,
+      backgroundImage: "url('/images/coaching/texture.png')",
+      backgroundRepeat: "repeat",
+      backgroundSize: "auto",
       mixBlendMode: "overlay",
+      opacity: 0.35, // adjust for grain strength
+    }}
+  />
+
+  {/* inner shadows */}
+  <div
+    aria-hidden
+    className="absolute inset-0 pointer-events-none"
+    style={{
+      boxShadow: `
+        inset 0 30px 12px -6px rgba(0,0,0,0.5),
+        inset 0 -30px 12px -6px rgba(0,0,0,0.5),
+        inset 30px 0 12px -6px rgba(0,0,0,0.5),
+        inset -30px 0 12px -6px rgba(0,0,0,0.5)
+      `,
     }}
   />
 
   {/* content */}
   <div className="relative z-20 mx-auto max-w-7xl">
-    <div className="max-w-6xl mx-auto px-6 py-6">
-      <Reviews />
-    </div>
+    <Reviews />
   </div>
 </section>
 
 
-      {/* 3) Overview */}
-      <section className="relative isolate pt-28 pb-28 md:pt-36 md:pb-36">
-        <div
-          aria-hidden
-          className="absolute inset-0 z-0 pointer-events-none"
-          style={{
-            background: `
-              radial-gradient(600px 400px at 15% 20%, rgba(56,189,248,.20), #0000 60%),
-              radial-gradient(700px 420px at 85% 15%, rgba(99,102,241,.18), #0000 62%),
-              linear-gradient(180deg, rgba(56,189,248,.10) 0%, rgba(99,102,241,.10) 100%)
-            `,
-          }}
-        />
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <div className="max-w-6xl px-6 mx-auto">
-            <Overview className="py-0" />
-          </div>
-        </div>
-      </section>
+{/* 3) Overview */}
+<section className="relative isolate pt-44 pb-28 md:pt-56 md:pb-36">
+  <div
+    aria-hidden
+    className="absolute inset-0 z-0 pointer-events-none"
+    style={{
+      background: `
+        radial-gradient(600px 400px at 15% 20%, rgba(56,189,248,.20), #0000 60%),
+        radial-gradient(700px 420px at 85% 15%, rgba(99,102,241,.18), #0000 62%),
+        linear-gradient(180deg, rgba(56,189,248,.10) 0%, rgba(99,102,241,.10) 100%)
+      `,
+    }}
+  />
+  <div className="relative z-10 mx-auto max-w-7xl">
+    <div className="max-w-6xl px-6 mx-auto">
+      <Overview className="py-0" />
+    </div>
+  </div>
+</section>
+
 
       {/* 4) Follow-up */}
       <section

@@ -49,4 +49,20 @@ rating: 5,
     rankFrom: "Diamond I",
     rankTo: "Challenger",
   },
+    {
+    name: "Wham",
+    text:
+"I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
+rating: 5,
+    rankFrom: "Diamond I",
+    rankTo: "Challenger",
+  },  
+  {
+    name: "Wham",
+    text:
+"I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
+rating: 5,
+    rankFrom: "Diamond I",
+    rankTo: "Challenger",
+  },
 ];
