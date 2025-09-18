@@ -107,7 +107,7 @@ export default function CheckoutClient() {
   );
 
   return (
-    <section className="relative isolate min-h-screen pt-28 md:pt-32 lg:pt-36 pb-10 text-white overflow-x-hidden overflow-y-hidden">
+    <section className="relative isolate min-h-screen pt-8 md:pt-10 lg:pt-12 pb-10 text-white overflow-x-hidden overflow-y-hidden">
       {/* Background */}
       <div className="absolute inset-0 -z-10 pointer-events-none isolate overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070f_0%,#070c18_40%,#0c1528_70%,#1c2f5c_100%)]" />

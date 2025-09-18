@@ -1,23 +1,43 @@
 "use client";
 
 import React from "react";
+import SquareButton from "@/app/_components/small/SquareButton";
+
+type Props = {
+  className?: string;
+  containerClassName?: string;
+  customizeHref?: string;
+  exampleHref?: string;
+};
 
 export default function FollowUp({
   className = "",
-  containerClassName = "max-w-6xl",
-}: { className?: string; containerClassName?: string }) {
+  containerClassName = "max-w-7xl",
+  customizeHref = "#customize",
+  exampleHref = "https://www.patreon.com/posts/syndra-emerald-113265874",
+}: Props) {
   return (
-    <section className={`w-full ${className}`}>
+    <section className={`w-full ${className}`} aria-labelledby="followup-heading">
       <div className={`mx-auto w-full ${containerClassName}`}>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-14 md:gap-20 items-center">
-          {/* Left: video placeholder */}
+        {/* Header with divider */}
+        <div className="text-center mb-8 md:mb-10">
+          <h2
+            id="followup-heading"
+            className="mt-0 text-[40px] md:text-[52px] leading-tight font-bold"
+          >
+            Follow-ups — a 15-minute progress review
+          </h2>
+          <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        </div>
+
+        {/* Content row */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-14 items-start">
+          {/* Left: 4:3 video placeholder */}
           <div className="md:col-span-6 order-last md:order-first">
-            <div className="relative aspect-video rounded-2xl border border-white/10 bg-white/[.03] overflow-hidden">
+            <div className="relative aspect-[4/3] rounded-2xl border border-white/10 bg-white/[.03] overflow-hidden">
               <div
                 className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{
-                  boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)",
-                }}
+                style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
               />
               <div className="absolute inset-0 grid place-items-center text-white/40 text-sm">
                 Video placeholder: Follow-up animation
@@ -25,66 +45,50 @@ export default function FollowUp({
             </div>
           </div>
 
-          {/* Right: text content */}
+          {/* Right: explanation + CTA row */}
           <div className="md:col-span-6 order-first md:order-last">
-            <p className="text-xs tracking-widest text-white/50 uppercase">
-              Add-on service
-            </p>
-            <h2 className="mt-2 text-2xl md:text-3xl font-semibold">
-              Follow-ups (15-min progress review)
-            </h2>
-            <p className="mt-3 text-white/70 text-base md:text-lg max-w-xl">
-              A concise, 15-minute progress review delivered days or months
-              after your coaching — so improvement keeps compounding.
+            <p className="text-[10px] tracking-[0.22em] text-white/50 uppercase">Add-on service</p>
+            <h3 className="mt-2 text-2xl md:text-3xl font-semibold">What is a Follow-up?</h3>
+            <p className="mt-3 text-white/70 text-base md:text-lg max-w-[50ch]">
+              After you’ve tried the session advice, request a follow-up. I’ll record a
+              15-minute video on your progress, what still isn’t working, and{" "}
+              <span className="text-white">new information</span> tailored to you — many
+              students say it feels like a second coaching session.
             </p>
 
-            {/* Three pillars */}
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-white/10 bg-white/[.04] p-4 text-center">
-                <p className="text-sm font-medium text-white/90">You send</p>
-                <p className="mt-1 text-xs text-white/60">
-                  Clips or match links + notes
+            {/* CTA row: Add button (orange styled) + example square button */}
+            <div className="mt-6 flex items-center justify-between gap-6 border-l-2 border-white/20 px-5 py-1.5 rounded-xl bg-white/[.02]">
+              {/* Left: helper line on top + button */}
+              <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
+                <p className="text-sm md:text-base text-white mb-2">
+                  You can add follow-ups through customization.
                 </p>
+                <div className="relative inline-block">
+                  <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
+                  <a
+                    href={customizeHref}
+                    className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
+                  >
+                    Add follow-ups
+                  </a>
+                </div>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/[.04] p-4 text-center">
-                <p className="text-sm font-medium text-white/90">I review</p>
-                <p className="mt-1 text-xs text-white/60">
-                  Habits, decisions, sticking points
-                </p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/[.04] p-4 text-center">
-                <p className="text-sm font-medium text-white/90">You get</p>
-                <p className="mt-1 text-xs text-white/60">
-                  Priorities for next 10–20 games
-                </p>
+
+              {/* Right: example square button with label on top */}
+              <div className="flex flex-col items-center">
+                <span className="mb-1.5 text-[10px] tracking-[0.2em] text-white/60">EXAMPLE</span>
+                <SquareButton
+                  role="Mid"
+                  href={exampleHref}
+                  src="/images/squarebuttons/Syndra8.png"
+                  size={80}
+                />
               </div>
             </div>
 
-            {/* Specs row */}
-            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-white/50">
-              <span>⏱ 48–72h turnaround</span>
-              <span>🎬 ~15 min video</span>
-              <span>📁 MP4 + timestamps</span>
-              <span>🛒 Add-on only</span>
-            </div>
-
-            {/* CTA row */}
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a
-                href="https://patreon.com/yourpatreon"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-[0_0_30px_-8px_rgba(251,191,36,.6)]"
-              >
-                Watch an example
-              </a>
-              <a
-                href="#book"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[.03] px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/[.06]"
-              >
-                Add to session
-              </a>
-            </div>
+            <p className="mt-5 text-[11px] text-white/50">
+              Typical turnaround 48–72h. Private MP4 link.
+            </p>
           </div>
         </div>
       </div>

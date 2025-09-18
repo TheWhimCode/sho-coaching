@@ -10,12 +10,12 @@ export type Review = {
 
 export const REVIEWS: Review[] = [
   {
-    name: "Lena",
+    name: "Croatoan",
     text:
-      "The session was eye-opening. Sho identified habits I didn’t notice and gave me 3 simple priorities to focus on. I felt improvement the next day and finally understand where my time is best spent.",
+"During a VOD review, Sho took his time and gave measured advice for my improvement opportunities. Seeing the mistakes I was making through another's eyes was really informative.",
     rating: 5,
-    rankFrom: "Gold II",
-    rankTo: "Platinum IV",
+    rankFrom: "Iron III",
+    rankTo: "Silver I",
   },
   {
     name: "Marco",
@@ -34,12 +34,12 @@ export const REVIEWS: Review[] = [
     rankTo: "Diamond III",
   },
   {
-    name: "Jonas",
+    name: "EricIsOnFire",
     text:
-      "I’ve tried coaching before—this was different. Structured, practical, and honest. The roadmap gave me certainty and the follow-up made sure I actually applied the changes.",
+"Coach did a great job pointing out a few fundamental errors that held me back from carrying as much as I can. He also showed genuine interest in revisiting and seeing my progress.",
     rating: 5,
-    rankFrom: "Emerald II",
-    rankTo: "Diamond IV",
+    rankFrom: "Bronze IV",
+    rankTo: "Silver IV",
   },  
   {
     name: "Wham",

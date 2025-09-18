@@ -1,10 +1,9 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import NavBar from "@/app/_components/NavBar";
-import NavGate from "@/app/_components/NavGate"; // client wrapper for conditional render
+import NavGate from "@/app/_components/NavGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,15 +22,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0B0F1A] text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
       >
-        {/* ✅ NavBar appears globally, except hidden on /coaching/[preset] */}
         <NavGate>
           <NavBar />
         </NavGate>

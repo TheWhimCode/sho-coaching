@@ -18,7 +18,12 @@ function computeRecommendation(answers: SurveyAnswerMap): {
   top: Preset;
   scores: Record<Preset, number>;
 } {
-  const totals: Record<Preset, number> = { vod: 0, signature: 0, instant: 0, custom: 0 };
+  const totals: Record<Preset, number> = {
+    vod: 0,
+    signature: 0,
+    instant: 0,
+    custom: 0,
+  };
   for (const q of SURVEY) {
     const a = answers[q.id];
     if (!a) continue;
@@ -26,7 +31,10 @@ function computeRecommendation(answers: SurveyAnswerMap): {
     if (opt) totals[opt.preset] += 1;
   }
   const order: Preset[] = ["signature", "vod", "instant", "custom"];
-  const top = order.reduce((best, p) => (totals[p] > totals[best] ? p : best), order[0]);
+  const top = order.reduce(
+    (best, p) => (totals[p] > totals[best] ? p : best),
+    order[0]
+  );
   return { top, scores: totals };
 }
 
@@ -66,7 +74,10 @@ export default function Survey({ className = "" }: { className?: string }) {
   const isIntro = step < 0;
   const isDone = step >= total;
   const current = !isIntro && !isDone ? SURVEY[step] : undefined;
-  const result = useMemo(() => (isDone ? computeRecommendation(answers) : null), [isDone, answers]);
+  const result = useMemo(
+    () => (isDone ? computeRecommendation(answers) : null),
+    [isDone, answers]
+  );
 
   useEffect(() => {
     if (step > 0 && justStarted) setJustStarted(false);
@@ -91,14 +102,9 @@ export default function Survey({ className = "" }: { className?: string }) {
 
   return (
     <section className={`relative w-full ${className}`}>
-      {/* wider container so options can breathe */}
-      <div className="mx-auto w-full max-w-[56rem] lg:max-w-[68rem] px-6 md:px-10">
-        {/* intro centered; questions/results start higher on the page */}
-        <div
-          className={`relative min-h-[clamp(520px,64vh,780px)] ${
-            isIntro ? "flex items-center justify-center" : "flex items-start justify-center pt-8 md:pt-12"
-          }`}
-        >
+      <div className="mx-auto w-full max-w-[42rem] lg:max-w-[50rem] px-6 md:px-10">
+        {/* removed fixed height & vertical centering */}
+        <div className="relative flex justify-center items-start">
           <AnimatePresence mode="wait" custom={direction}>
             {isDone && result ? (
               <motion.div
@@ -109,7 +115,9 @@ export default function Survey({ className = "" }: { className?: string }) {
                 exit="exit"
                 className="w-full"
               >
-                <h2 className="text-xl md:text-2xl font-semibold mb-4 text-center">Your best match</h2>
+                <h2 className="text-xl md:text-2xl font-semibold mb-4 text-center">
+                  Your best match
+                </h2>
                 <SessionSummaryCard preset={result.top} onRetake={reset} />
               </motion.div>
             ) : isIntro ? (
@@ -119,26 +127,24 @@ export default function Survey({ className = "" }: { className?: string }) {
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                className="w-full text-center py-10"
+                className="w-full text-center"
               >
                 <h2 className="text-2xl md:text-3xl font-semibold leading-tight">
                   Still not sure what session is best for you?
                 </h2>
                 <p className="mt-3 text-sm md:text-base text-white/70">
-                  Take a quick 5-question survey and I’ll match you with the right format.
+                  Take a quick 5-question survey and I’ll match you with the
+                  right format.
                 </p>
                 <div className="relative inline-block mt-8">
-                  <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 
-                                     bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
+                  <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
                   <button
                     onClick={() => {
                       setJustStarted(true);
                       setDirection(1);
                       setStep(0);
                     }}
-                    className="relative z-10 rounded-xl px-6 md:px-7 py-3 md:py-3.5 text-base font-semibold text-[#0A0A0A] 
-                               bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] 
-                               ring-1 ring-[rgba(255,190,80,.55)]"
+                    className="relative z-10 rounded-xl px-6 md:px-7 py-3 md:py-3.5 text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
                   >
                     Let’s go
                   </button>
@@ -148,17 +154,16 @@ export default function Survey({ className = "" }: { className?: string }) {
               <div key="questions" className="w-full">
                 <div className="relative">
                   {/* Controls */}
-                  <div className="mb-3 flex items-center justify-start gap-2">
+                  <div className="mt-1 flex items-center gap-2">
                     {step >= 0 && (
                       <button
                         onClick={goBack}
                         disabled={step === 0}
-                        className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm 
-                          ${
-                            step === 0
-                              ? "border-white/10 text-white/40 cursor-not-allowed"
-                              : "border-white/15 text-white/80 hover:border-white/25 hover:text-white"
-                          }`}
+                        className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm ${
+                          step === 0
+                            ? "border-white/10 text-white/40 cursor-not-allowed"
+                            : "border-white/15 text-white/80 hover:border-white/25 hover:text-white"
+                        }`}
                       >
                         <ArrowLeft className="h-4 w-4" />
                         Back
@@ -174,23 +179,18 @@ export default function Survey({ className = "" }: { className?: string }) {
                       initial="initial"
                       animate="animate"
                       exit="exit"
-                      className="mt-2"
+                      className="mt-6"
                     >
-                      {/* Bigger, centered, higher on page */}
-                      <h3 className="text-center mx-auto max-w-[48rem] text-3xl md:text-5xl font-semibold leading-tight">
+                      <h3 className="text-xl md:text-2xl font-semibold leading-snug">
                         {current!.question}
                       </h3>
 
-                      {/* Multiple choice: taller cards, denser grid, bigger text */}
-                      <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {current!.options.map((opt) => (
                           <button
                             key={opt.value}
                             onClick={() => select(opt.value)}
-                            className="group h-16 md:h-20 w-full rounded-2xl border border-white/12 bg-white/[.05] px-5 text-left 
-                                       text-base md:text-lg leading-snug transition 
-                                       hover:border-sky-400/40 hover:bg-white/[.08] focus:outline-none focus:ring-2 
-                                       focus:ring-sky-400/30 flex items-center shadow-[0_0_26px_-8px_rgba(255,255,255,0.14)]"
+                            className="h-[3.5rem] md:h-[4rem] w-full rounded-xl border border-white/12 bg-white/[.05] px-4 text-left text-sm md:text-base leading-snug hover:border-sky-400/40 hover:bg-white/[.08] transition focus:outline-none focus:ring-2 focus:ring-sky-400/30 flex items-center shadow-[0_0_20px_-6px_rgba(255,255,255,0.12)]"
                           >
                             <span className="block w-full">{opt.label}</span>
                           </button>
@@ -199,11 +199,13 @@ export default function Survey({ className = "" }: { className?: string }) {
                     </motion.div>
                   </AnimatePresence>
 
-                  {/* Progress bar (thicker to anchor the section) */}
-                  <div className="mt-10 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  {/* Progress bar */}
+                  <div className="mt-8 h-[3px] w-full bg-white/10 rounded-full overflow-hidden">
                     <motion.div
                       initial={false}
-                      animate={{ width: `${(Math.min(step + 1, total) / total) * 100}%` }}
+                      animate={{
+                        width: `${(Math.min(step + 1, total) / total) * 100}%`,
+                      }}
                       transition={{ duration: 0.25, ease: easeOut }}
                       className="h-full bg-gradient-to-r from-sky-400 to-blue-500 shadow-[0_0_12px_rgba(56,189,248,0.7)]"
                     />

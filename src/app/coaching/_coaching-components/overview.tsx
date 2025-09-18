@@ -150,15 +150,52 @@ export default function Overview({
             </div>
           </div>
 
-          {/* RIGHT — video + fade replacement */}
+          {/* RIGHT — video with angled cutout + strong inner shadow */}
           <div className="md:col-span-6 md:self-center pr-0">
             <div
-              className="relative rounded-3xl overflow-hidden aspect-video"
-              style={{ aspectRatio: "16/9" }}
+              className="relative aspect-video overflow-hidden rounded-2xl"
+              style={{
+                clipPath:
+                  "polygon(6% 0, 94% 0, 100% 15%, 100% 85%, 94% 100%, 6% 100%, 0 85%, 0 15%)",
+              }}
             >
-              {/* Replacement panel */}
+              {/* Video itself */}
+              <video
+                ref={videoRef}
+                src="/videos/coaching/overview.mp4"
+                autoPlay
+                muted
+                playsInline
+                preload="metadata"
+                tabIndex={-1}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[500ms] ease-out ${
+                  isFading ? "opacity-0" : "opacity-100"
+                }`}
+                controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
+                disablePictureInPicture
+                onContextMenu={(e) => e.preventDefault()}
+              />
+
+              {/* Inner shadow overlay (very strong) */}
               <div
-                className={`absolute inset-0 z-0 flex items-center justify-center bg-black/40 transition-opacity duration-700 ease-out ${
+                className="pointer-events-none absolute inset-0 rounded-2xl z-10"
+                style={{
+                  background: `
+                    radial-gradient(100% 140% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.95) 100%),
+                    linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,0.9) 100%),
+                    linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,0.9) 100%)
+                  `,
+                  boxShadow: `
+                    inset 0 0 100px rgba(0,0,0,0.95),
+                    inset 0 0 60px rgba(0,0,0,0.9)
+                  `,
+                  mixBlendMode: "multiply",
+                }}
+              />
+
+              {/* fade replacement (only after video ends) */}
+              <div
+                className={`absolute inset-0 z-20 flex items-center justify-center bg-black/30 transition-opacity duration-700 ease-out ${
                   isFading ? "opacity-100" : "opacity-0 pointer-events-none"
                 }`}
               >
@@ -169,32 +206,6 @@ export default function Overview({
                   See the process
                 </a>
               </div>
-
-              {/* Video */}
-              <video
-                ref={videoRef}
-                src="/videos/coaching/overview.mp4"
-                autoPlay
-                muted
-                playsInline
-                preload="metadata"
-                tabIndex={-1}
-                className={`pointer-events-none select-none absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-[500ms] ease-out ${
-                  isFading ? "opacity-0" : "opacity-100"
-                }`}
-                controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
-                disablePictureInPicture
-                onContextMenu={(e) => e.preventDefault()}
-              />
-
-              {/* vignette */}
-              <div
-                className="pointer-events-none absolute inset-0 z-20"
-                style={{
-                  background:
-                    "radial-gradient(120% 110% at 50% 50%, rgba(0,0,0,0) 70%, rgba(0,0,0,.28) 88%, rgba(0,0,0,.42) 100%)",
-                }}
-              />
             </div>
           </div>
         </div>

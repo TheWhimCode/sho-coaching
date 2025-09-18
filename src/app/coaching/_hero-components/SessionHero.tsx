@@ -34,19 +34,29 @@ type Props = {
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const TITLE_DELAY = 0.25;
-const TAGLINE_DELAY = 0.5;
-const PANEL_DELAY = { left: 0.25, center: 0.4, right: 0.65 } as const;
+
+// Fast background fade; delay the rest a touch so BG is visible first.
+const BG_FADE_DURATION = 1;          // quick fade for the video/image
+const CONTENT_BASE_DELAY = 0.8;       // hold UI a bit so BG settles
+
+// Element delays (stacked on top of CONTENT_BASE_DELAY)
+const TITLE_DELAY   = CONTENT_BASE_DELAY + 0.15;
+const TAGLINE_DELAY = CONTENT_BASE_DELAY + 0.35;
+const PANEL_DELAY   = {
+  left:   CONTENT_BASE_DELAY + 0.20,
+  center: CONTENT_BASE_DELAY + 0.60,
+  right:  CONTENT_BASE_DELAY + 1.00,
+} as const;
 
 const titleVariants = {
   hidden: { opacity: 0, x: -24 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE, delay: TITLE_DELAY } },
-  exit: { opacity: 0, x: 24, transition: { duration: 0.2, ease: EASE } },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE, delay: TITLE_DELAY } },
+  exit:   { opacity: 0, x: 24, transition: { duration: 0.2, ease: EASE } },
 };
 const taglineVariants = {
   hidden: { opacity: 0, x: -20 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.38, ease: EASE, delay: TAGLINE_DELAY } },
-  exit: { opacity: 0, x: 20, transition: { duration: 0.18, ease: EASE } },
+  show:   { opacity: 1, x: 0, transition: { duration: 0.38, ease: EASE, delay: TAGLINE_DELAY } },
+  exit:   { opacity: 0, x: 20, transition: { duration: 0.18, ease: EASE } },
 };
 
 export default function SessionHero({
@@ -155,8 +165,13 @@ export default function SessionHero({
 
   return (
     <section className="relative isolate min-h-screen md:h-[100svh] overflow-hidden text-white vignette">
-      {/* background */}
-      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* background — fade in ASAP */}
+      <motion.div
+        className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: BG_FADE_DURATION, ease: EASE }}
+      >
         {/* Desktop: video */}
         <video
           src="/videos/Particle1_slow.webm"
@@ -168,14 +183,14 @@ export default function SessionHero({
         />
         {/* Mobile: still image */}
         <img
-          src="/images/Particle1_frame.jpg" 
+          src="/images/Particle1_frame.jpg"
           alt=""
           className="block md:hidden h-full w-full object-cover object-left"
         />
         <div className="absolute inset-0 bg-black/30" />
-      </div>
+      </motion.div>
 
-      {/* content — animated */}
+      {/* content — delay a bit so BG is visible first */}
       <motion.div
         className="relative z-20 h-full flex items-center py-10 md:py-14"
         animate={{ x: shiftX }}

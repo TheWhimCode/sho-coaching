@@ -8,10 +8,16 @@ import { Menu, X } from "lucide-react";
 import { FaDiscord, FaTiktok, FaYoutube } from "react-icons/fa";
 
 const NAV = [
-  { label: "Home", href: "/" },
   { label: "Coaching", href: "/coaching" },
   { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
-  { label: "About Sho", href: "/about" },
+];
+
+const COURSE_LINKS = [
+  { label: "Top", href: "/courses/top" },
+  { label: "Jungle", href: "/courses/jungle" },
+  { label: "Mid", href: "/courses/mid" },
+  { label: "Top", href: "/courses/top" }, // kept duplicate as you had it
+  { label: "Support", href: "/courses/support" },
 ];
 
 export default function NavBar({ className = "" }: { className?: string }) {
@@ -30,7 +36,7 @@ export default function NavBar({ className = "" }: { className?: string }) {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-40 ${className}`}>
-      {/* LOGO (stays visible as bar fades) */}
+      {/* LOGO */}
       <Link
         href="/"
         className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 z-20 flex items-center"
@@ -81,13 +87,32 @@ export default function NavBar({ className = "" }: { className?: string }) {
                     </Link>
                   )
                 )}
+
+                {/* COURSES (disabled for now) */}
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  title="Courses coming soon"
+                  className="text-base md:text-lg text-white/50 cursor-not-allowed select-none"
+                >
+                  Courses
+                </button>
+
+                {/* CONTACT (last) */}
+                <Link
+                  href="/contact"
+                  className="text-base md:text-lg text-white/80 hover:text-orange-400 transition"
+                >
+                  Contact
+                </Link>
               </div>
             </div>
 
             {/* RIGHT: socials + hamburger */}
             <div className="ml-auto flex items-center">
               <div className="hidden md:flex items-center gap-3">
-                                <Link
+                <Link
                   href="https://discord.gg/HfvxZBp"
                   target="_blank"
                   aria-label="Discord"
@@ -154,9 +179,25 @@ export default function NavBar({ className = "" }: { className?: string }) {
                   )
                 )}
 
+                {/* COURSES (disabled) */}
+                <div className="py-2 text-base text-white/50 flex items-center justify-between">
+                  <span>Courses</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-white/10">Soon</span>
+                </div>
+
+                {/* CONTACT */}
+                <Link
+                  href="/contact"
+                  className="py-2 text-base text-white/80 hover:text-orange-400"
+                  onClick={() => setOpen(false)}
+                >
+                  Contact
+                </Link>
+
+                {/* socials */}
                 <div className="mt-3 flex items-center gap-3">
                   <Link
-                    href="https://youtube.com"
+                    href="https://www.youtube.com/@ShoCoaching"
                     target="_blank"
                     className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                   >
@@ -170,7 +211,7 @@ export default function NavBar({ className = "" }: { className?: string }) {
                     <FaTiktok className="h-5 w-5" />
                   </Link>
                   <Link
-                    href="https://discord.gg"
+                    href="https://discord.gg/HfvxZBp"
                     target="_blank"
                     className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                   >

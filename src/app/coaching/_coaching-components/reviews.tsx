@@ -329,8 +329,8 @@ return (
         boxShadow: `
           inset 0 30px 12px -6px rgba(0,0,0,0.5),
           inset 0 -30px 12px -6px rgba(0,0,0,0.5),
-          inset 30px 0 12px -6px rgba(0,0,0,0.5),
-          inset -30px 0 12px -6px rgba(0,0,0,0.5)
+          inset 30px 0 24px -6px rgba(0,0,0,0.8),
+          inset -30px 0 24px -6px rgba(0,0,0,0.8)
         `,
       }}
     />
