@@ -11,11 +11,11 @@ type ExampleItem = {
 };
 
 const items: ExampleItem[] = [
-  { role: "Top",     href: "https://www.patreon.com/yourpatreon/posts?filters[tag]=Top%20Free",     src: "/images/squarebuttons/Jax2.png" },
-  { role: "Jungle",  href: "https://www.patreon.com/posts/108659798",  src: "/images/squarebuttons/Shyvana7.png" },
-  { role: "Mid",     href: "https://www.patreon.com/posts/syndra-emerald-113265874",     src: "/images/squarebuttons/Syndra8.png" },
-  { role: "ADC",     href: "https://www.patreon.com/posts/jhin-emerald-107308126",     src: "/images/squarebuttons/Jhin2.png" },
-  { role: "Support", href: "https://www.patreon.com/posts/nami-diamond-2-113193138", src: "/images/squarebuttons/Nami.png" },
+  { role: "Top",     href: "https://www.patreon.com/yourpatreon/posts?filters[tag]=Top%20Free", src: "/images/squarebuttons/Jax2.png" },
+  { role: "Jungle",  href: "https://www.patreon.com/posts/108659798",                             src: "/images/squarebuttons/Shyvana7.png" },
+  { role: "Mid",     href: "https://www.patreon.com/posts/syndra-emerald-113265874",              src: "/images/squarebuttons/Syndra8.png" },
+  { role: "ADC",     href: "https://www.patreon.com/posts/jhin-emerald-107308126",                src: "/images/squarebuttons/Jhin2.png" },
+  { role: "Support", href: "https://www.patreon.com/posts/nami-diamond-2-113193138",              src: "/images/squarebuttons/Nami.png" },
 ];
 
 export default function CoachingExamples() {
@@ -28,20 +28,38 @@ export default function CoachingExamples() {
             <p className="mt-2 text-white/70 text-sm md:text-base">
               Watch some of Shos coaching sessions for free on Patreon.
             </p>
-            <p className="mt-2 text-xs text-white/50">Top, Jungle, Mid, ADC, Support.</p>
+            <p className="mt-2 text-xs text-white/50">
+              Get a feeling for my coaching style in real sessions.
+            </p>
           </div>
 
           <div className="min-w-0">
-            <div className="flex flex-nowrap gap-4 overflow-x-auto md:overflow-visible">
+            {/* Desktop: row of 5 (unchanged) */}
+            <div className="hidden md:flex flex-nowrap gap-4">
               {items.map((item) => (
                 <SquareButton
                   key={item.role}
                   role={item.role}
                   href={item.href}
                   src={item.src}
-                  size={120} // ← increased size (try 160–192 as needed)
+                  size={120}
                 />
               ))}
+            </div>
+
+            {/* Mobile: 2 rows total with uniform spacing */}
+            <div className="md:hidden mt-4 grid grid-cols-6 gap-4 justify-items-center">
+              {items.slice(0, 3).map((item) => (
+                <div key={item.role} className="col-span-2">
+                  <SquareButton role={item.role} href={item.href} src={item.src} size={84} />
+                </div>
+              ))}
+              <div className="col-start-2 col-span-2">
+                <SquareButton role={items[3].role} href={items[3].href} src={items[3].src} size={84} />
+              </div>
+              <div className="col-start-4 col-span-2">
+                <SquareButton role={items[4].role} href={items[4].href} src={items[4].src} size={84} />
+              </div>
             </div>
           </div>
         </div>

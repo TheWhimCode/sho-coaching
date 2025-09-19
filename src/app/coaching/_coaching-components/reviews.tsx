@@ -4,7 +4,8 @@
 import React, { useEffect, useLayoutEffect, useRef } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Star, ArrowRight } from "lucide-react";
+import { Star } from "lucide-react";                 // keep stars
+import { CaretRight } from "@phosphor-icons/react";  // NEW arrow
 import type { Review } from "@/lib/reviews/reviews.data";
 import { REVIEWS as DEFAULT_REVIEWS } from "@/lib/reviews/reviews.data";
 
@@ -84,10 +85,10 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
   const pf = parseRank(from);
   const pt = parseRank(to);
   return (
-    <div className="absolute right-3 top-3">
-      <div className="flex items-center gap-2 text-[11px] leading-4">
+    <div className="absolute right-2.5 top-2.5 hidden sm:block"> {/* hide on mobile */}
+      <div className="flex items-center gap-0.5 text-[11px] leading-4">
         <Emblem tier={pf.tier} div={pf.div} />
-        <ArrowRight className="h-4 w-4 opacity-90" strokeWidth={3} aria-hidden />
+        <CaretRight size={14} weight="bold" className="opacity-85" aria-hidden />
         <Emblem tier={pt.tier} div={pt.div} />
         <span className="sr-only">
           Rank improved from {from ?? "unknown"} to {to ?? "unknown"}
@@ -96,7 +97,6 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
     </div>
   );
 };
-
 
 export default function Reviews({
   reviews,
@@ -125,6 +125,7 @@ export default function Reviews({
     <article
       className="
         relative w-[240px] sm:w-[280px] shrink-0
+        h-[175px]   /* fixed height */
         rounded-xl overflow-hidden
         bg-[#0B1734]/95
         border border-white/10 ring-1 ring-inset ring-cyan-300/15
@@ -142,10 +143,11 @@ export default function Reviews({
       {/* Outer halo */}
       <div className="pointer-events-none absolute inset-0 rounded-[11px] shadow-[0_0_30px_-6px_rgba(56,189,248,.45)]" />
 
-      <div className="relative p-4">
+      {/* Content with fixed padding and adaptive layout */}
+      <div className="relative h-full p-4 flex flex-col min-h-0">
         <RankChip from={r.rankFrom} to={r.rankTo} />
 
-        <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/5">
+        <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/5 shrink-0">
           <span className="font-semibold text-white/90 truncate text-sm">
             {r.name}
           </span>
@@ -153,7 +155,7 @@ export default function Reviews({
 
           {/* Orange stars with neon glow */}
           <div
-            className="flex items-center gap-0.5 text-[#fc8803] drop-shadow-[0_0_10px_rgba(252,136,3,.8)]"
+            className="flex items-center gap-0.5 text-[#fc8803] drop-shadow-[0_0_10px_rgba(252,136,3,.8)] -mt-0.5"
             aria-hidden
           >
             {Array.from({ length: r.rating ?? 5 }).map((_, j) => (
@@ -162,7 +164,10 @@ export default function Reviews({
           </div>
         </div>
 
-        <p className="text-white/75 text-[13px] leading-5">{r.text}</p>
+        {/* text flexes inside available space, padding stays constant */}
+        <p className="text-white/75 text-[13px] leading-5 overflow-hidden">
+          {r.text}
+        </p>
       </div>
     </article>
   );
@@ -279,75 +284,71 @@ export default function Reviews({
     velocity.current = info.velocity.x;
   };
 
-return (
-  <div
-    ref={rootRef}
-    className={[
-      "relative grid place-items-center py-10",
-      className,
-    ]
-      .filter(Boolean)
-      .join(" ")}
-    style={{
-      marginLeft: "calc(50% - 50vw)",
-      marginRight: "calc(50% - 50vw)",
-      width: "100vw",
-    }}
-    aria-label="What clients say"
-  >
-    {/* texture over the section's base color using overlay (keeps brightness/hue stable) */}
+  return (
     <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-0"
+      ref={rootRef}
+      className={[
+        "relative grid place-items-center py-10",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{
-        backgroundImage: "url('/images/coaching/texture3.jpg')",
-        backgroundRepeat: "repeat",
-        backgroundSize: "auto",
-        mixBlendMode: "overlay",
-        opacity: 0.3,
-        filter: "contrast(1.2) brightness(1.05)",
-        maskImage:
-          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+        marginLeft: "calc(50% - 50vw)",
+        marginRight: "calc(50% - 50vw)",
+        width: "100vw",
       }}
-    />
+      aria-label="What clients say"
+    >
+      {/* texture over the section's base color using overlay (keeps brightness/hue stable) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          backgroundImage: "url('/images/coaching/texture3.jpg')",
+          backgroundRepeat: "repeat",
+          backgroundSize: "auto",
+          mixBlendMode: "overlay",
+          opacity: 0.3,
+          filter: "contrast(1.2) brightness(1.05)",
+          maskImage:
+            "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+        }}
+      />
 
-    {/* review cards */}
-    <div className="w-full overflow-hidden relative z-10">
-      <div ref={trackRef} className="flex flex-nowrap will-change-transform">
-        <Slice ref={sliceRef} />
-        <Slice />
+      {/* review cards */}
+      <div className="w-full overflow-hidden relative z-10">
+        <div ref={trackRef} className="flex flex-nowrap will-change-transform">
+          <Slice ref={sliceRef} />
+          <Slice />
+        </div>
       </div>
-    </div>
 
-    {/* inner shadow overlay (on top) */}
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-20"
-      style={{
-        boxShadow: `
+      {/* inner shadow overlay (on top) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-20"
+        style={{
+          boxShadow: `
           inset 0 30px 12px -6px rgba(0,0,0,0.5),
           inset 0 -30px 12px -6px rgba(0,0,0,0.5),
           inset 30px 0 24px -6px rgba(0,0,0,0.8),
           inset -30px 0 24px -6px rgba(0,0,0,0.8)
         `,
-      }}
-    />
+        }}
+      />
 
-    {/* drag interaction layer */}
-    <motion.div
-      className="absolute inset-0 z-30 cursor-grab active:cursor-grabbing"
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      onDrag={onDrag}
-      onDragEnd={onDragEnd}
-      aria-hidden
-    />
-  </div>
-);
-
-
-
-
+      {/* drag interaction layer */}
+      <motion.div
+        className="absolute inset-0 z-30 cursor-grab active:cursor-grabbing"
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        onDrag={onDrag}
+        onDragEnd={onDragEnd}
+        aria-hidden
+      />
+    </div>
+  );
 }

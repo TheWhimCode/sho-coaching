@@ -150,16 +150,9 @@ export default function Overview({
             </div>
           </div>
 
-          {/* RIGHT — video with angled cutout + strong inner shadow */}
+          {/* RIGHT — simple 4:3 video with rounded corners */}
           <div className="md:col-span-6 md:self-center pr-0">
-            <div
-              className="relative aspect-video overflow-hidden rounded-2xl"
-              style={{
-                clipPath:
-                  "polygon(6% 0, 94% 0, 100% 15%, 100% 85%, 94% 100%, 6% 100%, 0 85%, 0 15%)",
-              }}
-            >
-              {/* Video itself */}
+            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
               <video
                 ref={videoRef}
                 src="/videos/coaching/overview.mp4"
@@ -170,42 +163,11 @@ export default function Overview({
                 tabIndex={-1}
                 className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[500ms] ease-out ${
                   isFading ? "opacity-0" : "opacity-100"
-                }`}
+                } rounded-2xl`}
                 controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
                 disablePictureInPicture
                 onContextMenu={(e) => e.preventDefault()}
               />
-
-              {/* Inner shadow overlay (very strong) */}
-              <div
-                className="pointer-events-none absolute inset-0 rounded-2xl z-10"
-                style={{
-                  background: `
-                    radial-gradient(100% 140% at 50% 50%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.95) 100%),
-                    linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,0.9) 100%),
-                    linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,0.9) 100%)
-                  `,
-                  boxShadow: `
-                    inset 0 0 100px rgba(0,0,0,0.95),
-                    inset 0 0 60px rgba(0,0,0,0.9)
-                  `,
-                  mixBlendMode: "multiply",
-                }}
-              />
-
-              {/* fade replacement (only after video ends) */}
-              <div
-                className={`absolute inset-0 z-20 flex items-center justify-center bg-black/30 transition-opacity duration-700 ease-out ${
-                  isFading ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-              >
-                <a
-                  href="#process"
-                  className="rounded-xl bg-[#fc8803] px-6 py-3 text-lg font-semibold text-black shadow-md hover:brightness-95 transition"
-                >
-                  See the process
-                </a>
-              </div>
             </div>
           </div>
         </div>

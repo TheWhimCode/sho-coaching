@@ -53,6 +53,9 @@ export default function FollowUp({
             >
               Follow-ups — a 15-minute progress review
             </h2>
+            <p className="mt-3 text-xl md:text-2xl text-white/60 italic">
+              “Honestly, it felt like a second coaching session”
+            </p>
             <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           </div>
 
@@ -76,10 +79,7 @@ export default function FollowUp({
               <p className="text-[10px] tracking-[0.22em] text-white/50 uppercase">Add-on service</p>
               <h3 className="mt-2 text-2xl md:text-3xl font-semibold">What is a Follow-up?</h3>
               <p className="mt-3 text-white/70 text-base md:text-lg max-w-[50ch]">
-                After you’ve tried the session advice, request a follow-up. I’ll record a
-                15-minute video on your progress, what still isn’t working, and{" "}
-                <span className="text-white">new information</span> tailored to you — many
-                students say it feels like a second coaching session.
+                After you’ve practiced what you learned in our session, request your follow-up. Whether it’s been 3 days or 3 months, just send me a game and I’ll record a 15-minute video with new insights, a progress review, and your next steps to keep improving.
               </p>
 
               {/* CTA row: Add button (orange styled) + example square button */}
@@ -110,7 +110,7 @@ export default function FollowUp({
               </div>
 
               <p className="mt-5 text-[11px] text-white/50">
-                Typical turnaround 48–72h. Private MP4 link.
+                Typically finished in 24–72h. Private MP4 link.
               </p>
             </div>
           </div>

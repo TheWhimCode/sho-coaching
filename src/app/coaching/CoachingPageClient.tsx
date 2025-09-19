@@ -9,6 +9,7 @@ import Overview from "@/app/coaching/_coaching-components/overview";
 import PresetCards from "@/app/coaching/_coaching-components/cards";
 import NeedMoreInfo from "@/app/coaching/_coaching-components/components/NeedMoreInfo";
 import FAQ from "@/app/coaching/_coaching-components/faq";
+import Clips from "@/app/coaching/_coaching-components/clips";
 
 export default function CoachingPageClient() {
   const handleScrollToFollowup = React.useCallback(() => {
@@ -38,7 +39,7 @@ export default function CoachingPageClient() {
       </div>
 
       {/* 1) Product cards + Examples */}
-      <section className="relative isolate pt-40 pb-16 md:pt-48 md:pb-16 overflow-hidden">
+      <section className="relative isolate pt-20 pb-0 md:pt-48 md:pb-16 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl">
           <PresetCards
             containerClassName="max-w-6xl px-6"
@@ -62,7 +63,7 @@ export default function CoachingPageClient() {
                   "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
               }}
             />
-            <div className="relative z-10">
+            <div className="relative z-10 mb-12 md:mb-0">
               <CoachingExamples />
             </div>
           </div>
@@ -106,31 +107,63 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3) Overview (kept above Follow-up) */}
-      <section className="relative isolate pt-44 pb-28 md:pt-56 md:pb-36">
+      {/* 3) Overview + Clips share gradient */}
+      <section className="relative isolate pt-24 pb-24 md:pt-56 md:pb-56 overflow-hidden">
+        {/* gradient applied once here */}
         <div
           aria-hidden
           className="absolute inset-0 z-0 pointer-events-none"
           style={{
+            /**
+             * TOP heaviness came from both radial centers being near the top (15–20% y) plus a linear gradient
+             * that brightens from top to bottom. To balance, we mirror complementary radials near the bottom.
+             */
             background:
-              "radial-gradient(600px 400px at 15% 20%, rgba(56,189,248,.20), #0000 60%), radial-gradient(700px 420px at 85% 15%, rgba(99,102,241,.18), #0000 62%), linear-gradient(180deg, rgba(56,189,248,.10) 0%, rgba(99,102,241,.10) 100%)",
+              [
+                // top accents (existing)
+                "radial-gradient(600px 400px at 15% 20%, rgba(56,189,248,.20), #0000 60%)",
+                "radial-gradient(700px 420px at 85% 15%, rgba(99,102,241,.18), #0000 62%)",
+                // new bottom accents to match energy lower down
+                "radial-gradient(600px 400px at 20% 80%, rgba(56,189,248,.14), #0000 60%)",
+                "radial-gradient(700px 420px at 80% 85%, rgba(99,102,241,.12), #0000 62%)",
+                // gentle vertical wash
+                "linear-gradient(180deg, rgba(56,189,248,.10) 0%, rgba(99,102,241,.10) 100%)",
+              ].join(", "),
           }}
         />
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="max-w-6xl px-6 mx-auto">
-            <Overview className="py-0" />
+            {/* full on desktop, slimmed on mobile */}
+            <div className="hidden md:block">
+              <Overview className="py-0" />
+            </div>
+            <div className="block md:hidden">
+              <h2 className="mt-0 text-[32px] leading-tight font-bold">
+                What to <span className="text-[#fc8803]">expect</span>
+              </h2>
+              <p className="mt-3 text-white/70 text-sm tracking-wide">
+                Every session personalized. Every student unique.
+              </p>
+              <p className="mt-4 text-white/80 text-sm leading-relaxed">
+                Coaching is tailored to your strengths, weaknesses, and goals. No
+                two sessions look the same.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Clips hidden on mobile */}
+        <div className="relative z-10 mx-auto max-w-7xl mt-24 md:mt-32">
+          <div className="max-w-6xl px-6 mx-auto">
+            <Clips className="py-0 hidden md:block" />
           </div>
         </div>
       </section>
 
-      {/* 4) FAQ (inserted between Overview and Follow-up) */}
-<FAQ />   {/* ← no extra section wrapper with padding here */}
-
-
-      {/* 5) Follow-up + Survey (kept as anchor target) */}
+      {/* 4) Follow-up + Survey */}
       <section
         id="followup"
-        className="relative isolate pt-32 pb-32 md:pt-40 md:pb-40 overflow-hidden scroll-mt-24"
+        className="relative isolate pt-16 pb-16 md:pt-40 md:pb-40 overflow-hidden scroll-mt-24"
       >
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="max-w-6xl px-6 mx-auto">
@@ -142,12 +175,15 @@ export default function CoachingPageClient() {
       </section>
 
       {/* Spacer */}
-      <section className="relative isolate py-84">
+      <section className="relative isolate py-20 md:py-84">
         <div className="relative z-10 mx-auto max-w-6xl px-6 text-center opacity-40" />
       </section>
 
-      {/* Simple callout */}
-      <NeedMoreInfo label="Need more info?" accent="#8FB8E6" />
+      {/* Hide these on mobile */}
+      <div className="hidden md:block">
+        <NeedMoreInfo label="Need more info?" accent="#8FB8E6" />
+        <FAQ />
+      </div>
     </main>
   );
 }

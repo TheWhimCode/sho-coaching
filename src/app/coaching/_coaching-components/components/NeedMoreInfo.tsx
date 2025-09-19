@@ -20,7 +20,6 @@ export default function NeedMoreInfo({
 }: Props) {
   const [visible, setVisible] = useState(false);
   const [opacity, setOpacity] = useState(1);
-  const rafRef = useRef<number | null>(null);
 
   // delayed mount
   useEffect(() => {
@@ -28,35 +27,27 @@ export default function NeedMoreInfo({
     return () => clearTimeout(t);
   }, [delayMs]);
 
-  // fade with navbar (0 -> fadeMaxScroll)
+  // match NavBar fade behavior: same formula, no rAF, same transition feel
   useEffect(() => {
     const onScroll = () => {
-      if (rafRef.current) return;
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
-        const y = typeof window !== "undefined" ? window.scrollY : 0;
-        const next = Math.max(0, Math.min(1, 1 - y / fadeMaxScroll));
-        setOpacity(next);
-      });
+      const y = typeof window !== "undefined" ? window.scrollY : 0;
+      setOpacity(Math.max(0, Math.min(1, 1 - y / fadeMaxScroll)));
     };
-    onScroll(); // initialize
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, [fadeMaxScroll]);
 
   return (
     <div
       style={{
         opacity: visible ? opacity : 0,
-        transition: "opacity 200ms ease",
         color: accent,
       }}
       className={[
         "fixed bottom-6 right-6 z-50 select-none pointer-events-none",
         "flex items-center gap-2.5",
+        // match NavBar transition
+        "transition-[opacity] duration-75",
         className,
       ].join(" ")}
       aria-hidden
@@ -65,8 +56,8 @@ export default function NeedMoreInfo({
         {label}
       </span>
       <CaretDoubleDown
-        size={32}          // even, bigger size → crisp outline
-        weight="regular"   // outlined, not filled
+        size={32}
+        weight="regular"
         className="opacity-90"
         aria-hidden
       />

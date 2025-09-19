@@ -58,14 +58,12 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
   const c = colorsByPreset[item.slug as Preset] ?? colorsByPreset.custom;
   const cssVars = { ["--ring" as const]: c.ring, ["--glow" as const]: c.glow } as React.CSSProperties;
 
-  // Reset overlay state on any route change (incl. back/forward)
   useEffect(() => {
     cancelledRef.current = false;
     setOverlayActive(false);
     setNavQueuedTo(null);
   }, [pathname]);
 
-  // Cancel if user hits Back during overlay animation
   useEffect(() => {
     const onPop = () => {
       cancelledRef.current = true;
@@ -77,7 +75,7 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
   }, []);
 
   const navigateAfterOverlay = useCallback(() => {
-    if (cancelledRef.current) return;      // user backed out — do nothing
+    if (cancelledRef.current) return;
     if (!navQueuedTo) return;
     router.push(navQueuedTo);
   }, [router, navQueuedTo]);
@@ -87,9 +85,8 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
     e.stopPropagation();
     if (overlayActive) return;
     (e.currentTarget as HTMLElement)?.blur?.();
-
     setNavQueuedTo(`/coaching/${item.slug}`);
-    setOverlayActive(true);                // overlay runs; onComplete → navigateAfterOverlay
+    setOverlayActive(true);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -98,50 +95,67 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
 
   const handleFollowupActivate = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // don't start overlay/nav
+    e.stopPropagation();
     (e.currentTarget as HTMLElement)?.blur?.();
     onFollowupInfo?.();
   };
 
   return (
     <>
-      <div
-        className="relative group"
-        role="link"
-        tabIndex={0}
-        onClick={handleNavigate}
-        onKeyDown={handleKeyDown}
-      >
+      <div className="relative group" role="link" tabIndex={0} onClick={handleNavigate} onKeyDown={handleKeyDown}>
         <article
           style={cssVars}
-          className="flex flex-col h-full overflow-hidden rounded-3xl border border-white/10 bg-white/[.03] backdrop-blur-md transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-[var(--ring)] hover:shadow-[0_0_10px_1px_var(--glow)] focus-visible:outline-none focus-visible:border-[var(--ring)] focus-visible:shadow-[0_0_10px_1px_var(--glow)]"
+          className="relative flex flex-col h-full overflow-hidden rounded-3xl border border-white/10 bg-white/[.03] backdrop-blur-md transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-[var(--ring)] hover:shadow-[0_0_10px_1px_var(--glow)] focus-visible:outline-none focus-visible:border-[var(--ring)] focus-visible:shadow-[0_0_10px_1px_var(--glow)]"
         >
-          {/* Media */}
-          <div className="relative w-full aspect-square overflow-hidden rounded-t-3xl">
+          {/* Desktop/Tablet media */}
+          <div className="relative w-full aspect-square overflow-hidden rounded-t-3xl max-sm:hidden">
             <Image
               src={item.image}
               alt={item.title}
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 1200px) 50vw, 33vw"
               priority={false}
             />
           </div>
 
-          {/* Content */}
-          <div className="relative z-10 flex flex-col flex-1 p-7 rounded-b-3xl bg-[#0B0F1A]">
-            <GlowRing preset={item.slug as Preset} className="rounded-b-3xl" />
+          {/* Content wrapper */}
+          <div className="relative z-10 flex flex-col flex-1 p-7 rounded-b-3xl bg-[#0B0F1A] max-sm:p-0 max-sm:rounded-3xl">
+            <GlowRing preset={item.slug as Preset} className="rounded-b-3xl max-sm:rounded-3xl" />
 
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <h3 className="text-2xl font-semibold tracking-tight text-white">{item.title}</h3>
-              <SessionIcon preset={item.slug as Preset} />
+            {/* TOP ROW (mobile) */}
+            <div className="max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto] max-sm:items-stretch max-sm:gap-0 max-sm:h-[140px] max-sm:overflow-hidden">
+              {/* Left text column with bottom padding */}
+              <div className="min-w-0 min-h-0 overflow-hidden max-sm:pl-5 max-sm:pr-4 max-sm:pt-5 max-sm:pb-3.5">
+                <div className="flex items-start justify-between gap-3 mb-3 max-sm:mb-1.5">
+                  <h3 className="text-2xl max-sm:text-[15px] max-sm:leading-5 font-semibold tracking-tight text-white">
+                    {item.title}
+                  </h3>
+                  <div className="max-sm:hidden">
+                    <SessionIcon preset={item.slug as Preset} />
+                  </div>
+                </div>
+
+                {/* Desktop divider */}
+                <div className="mb-4 h-px w-full bg-gradient-to-r from-transparent via-white/8 to-transparent max-sm:hidden" />
+
+                {/* Description */}
+                <p className="text-white/70 leading-relaxed mb-6 max-sm:text-[14px] max-sm:leading-5 max-sm:line-clamp-4 max-sm:mb-0">
+                  {item.subtitle}
+                </p>
+              </div>
+
+              {/* Right image column */}
+              <div className="sm:hidden relative h-full aspect-square overflow-hidden max-sm:rounded-tr-3xl self-stretch">
+                <Image src={item.image} alt={item.title} fill className="object-cover" priority={false} />
+              </div>
             </div>
 
-            <div className="mb-4 h-px w-full bg-gradient-to-r from-transparent via-white/8 to-transparent" />
+            {/* Divider */}
+            <div className="hidden max-sm:block h-px bg-white/10" />
 
-            <p className="text-white/70 mb-6 leading-relaxed">{item.subtitle}</p>
-
-            <div className="flex items-center gap-4 text-base text-white mt-auto">
+            {/* Footer */}
+            <div className="sm:mt-auto max-sm:px-5 max-sm:pt-3.5 max-sm:pb-3.5 flex items-center gap-4 text-base max-sm:text-sm text-white leading-none">
               {item.slug === "signature" ? (
                 <span className="font-semibold flex items-center gap-1">
                   45 min +
@@ -149,24 +163,24 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
                     role="button"
                     tabIndex={0}
                     aria-label="Learn about the Follow-up below"
-                    onClick={onFollowupInfo ? (e) => { e.preventDefault(); e.stopPropagation(); onFollowupInfo(); } : undefined}
+                    onClick={handleFollowupActivate}
                     className="ml-1 px-2 py-0.5 rounded-full bg-white/10 text-white/90 cursor-pointer transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 inline-flex items-center gap-1"
                   >
                     Follow-up
-                    <span className="flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold text-white/70" aria-hidden>?</span>
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold text-white/70" aria-hidden>
+                      ?
+                    </span>
                   </span>
                 </span>
               ) : (
                 <span className="font-semibold">{item.duration}</span>
               )}
-
               <span className="ml-auto font-semibold">€{item.price}</span>
             </div>
           </div>
         </article>
       </div>
 
-      {/* One overlay instance; 60px radius + particles handled inside TransitionOverlay */}
       <TransitionOverlay active={overlayActive} duration={0.7} onComplete={navigateAfterOverlay} />
     </>
   );
@@ -186,7 +200,7 @@ export default function PresetCards({
   return (
     <section className={`w-full ${className}`}>
       <div className={`mx-auto w-full ${containerClassName}`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
           {items.map((item) => (
             <Card key={item.slug} item={item} onFollowupInfo={onFollowupInfo} />
           ))}
