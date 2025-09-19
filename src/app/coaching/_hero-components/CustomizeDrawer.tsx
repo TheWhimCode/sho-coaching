@@ -1,12 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../../../utils/sessionConfig";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
-
-/* NEW: icon imports */
 import { Signature, Scroll, Lightning, PuzzlePiece, X } from "@phosphor-icons/react";
 import InfoTooltip from "@/app/_components/small/InfoTooltip";
 
@@ -31,9 +29,16 @@ function incDuration(cfg: Cfg): Cfg {
   return { ...cfg, liveMin: cfg.liveMin + 15 };
 }
 
-type Props = { open: boolean; onClose: () => void; cfg: Cfg; onChange: (c: Cfg) => void };
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  cfg: Cfg;
+  onChange: (c: Cfg) => void;
+  /** Optional deep-link highlight (e.g., "followups") */
+  highlightKey?: "followups";
+};
 
-export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props) {
+export default function CustomizeDrawer({ open, onClose, cfg, onChange, highlightKey }: Props) {
   const [hoverPreset, setHoverPreset] = useState<Preset | null>(null);
 
   const baseOnly = cfg.liveMin;
@@ -41,12 +46,39 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
     () => getPreset(baseOnly, cfg.followups, cfg.liveBlocks),
     [baseOnly, cfg.followups, cfg.liveBlocks],
   );
-  const { ring, glow } = colorsByPreset[currentPreset];
+
+  // --- Highlight handling (slide reveal after open; disappears on first interaction) ---
+  const [showHighlight, setShowHighlight] = useState(false);
+  const interactedRef = useRef(false);
+
+  useEffect(() => {
+    if (open && highlightKey && !interactedRef.current) {
+      // Make it available immediately; animation itself is delayed by 0.5s
+      const t = setTimeout(() => setShowHighlight(true), 0);
+      return () => clearTimeout(t);
+    } else {
+      setShowHighlight(false);
+    }
+  }, [open, highlightKey]);
+
+  const clearHighlight = () => {
+    if (!interactedRef.current) {
+      interactedRef.current = true;
+      setShowHighlight(false);
+    }
+  };
+
+  // Wrap onChange to also clear highlight on first change
+  const changeAndClear = (next: Cfg) => {
+    clearHighlight();
+    onChange(next);
+  };
 
   function applyPreset(p: Exclude<Preset, "custom">) {
-    if (p === "instant") onChange(clamp({ ...cfg, liveMin: 30, liveBlocks: 0, followups: 0 }));
-    else if (p === "vod") onChange(clamp({ ...cfg, liveMin: 60, liveBlocks: 0, followups: 0 }));
-    else if (p === "signature") onChange(clamp({ ...cfg, liveMin: 45, liveBlocks: 0, followups: 1 }));
+    clearHighlight();
+    if (p === "instant") changeAndClear(clamp({ ...cfg, liveMin: 30, liveBlocks: 0, followups: 0 }));
+    else if (p === "vod") changeAndClear(clamp({ ...cfg, liveMin: 60, liveBlocks: 0, followups: 0 }));
+    else if (p === "signature") changeAndClear(clamp({ ...cfg, liveMin: 45, liveBlocks: 0, followups: 1 }));
   }
 
   const Divider = () => (
@@ -69,7 +101,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={() => { clearHighlight(); onClose(); }}
         >
           <motion.aside
             className="absolute left-0 top-0 h-full w-[min(440px,92vw)]
@@ -82,6 +114,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
             exit={{ x: -24, opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
+            onPointerDown={clearHighlight}
           >
             {/* Header with close button */}
             <div className="mb-1 flex items-center justify-between">
@@ -89,7 +122,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                 Customize your session
               </h3>
               <button
-                onClick={onClose}
+                onClick={() => { clearHighlight(); onClose(); }}
                 aria-label="Close customization drawer"
                 className="p-2 rounded-md hover:bg-white/10 transition"
               >
@@ -109,7 +142,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                 <div className="mt-2 flex gap-2">
                   <button
                     className={squareBtn}
-                    onClick={() => onChange(decDuration(cfg))}
+                    onClick={() => changeAndClear(decDuration(cfg))}
                     disabled={cfg.liveMin <= 30 && cfg.liveBlocks === 0}
                     aria-label="Decrease 15 minutes"
                   >
@@ -117,7 +150,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                   </button>
                   <button
                     className={squareBtn}
-                    onClick={() => onChange(incDuration(cfg))}
+                    onClick={() => changeAndClear(incDuration(cfg))}
                     disabled={cfg.liveMin + cfg.liveBlocks * 45 >= 120}
                     aria-label="Increase 15 minutes"
                   >
@@ -148,7 +181,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                   <button
                     className={squareBtn}
                     disabled={cfg.liveBlocks === 0}
-                    onClick={() => onChange(removeLiveBlock(cfg))}
+                    onClick={() => changeAndClear(removeLiveBlock(cfg))}
                     aria-label="Remove 45-minute block"
                   >
                     −45
@@ -156,7 +189,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                   <button
                     className={squareBtn}
                     disabled={cfg.liveMin + (cfg.liveBlocks + 1) * 45 > 120 || cfg.liveBlocks >= 2}
-                    onClick={() => onChange(addLiveBlock(cfg))}
+                    onClick={() => changeAndClear(addLiveBlock(cfg))}
                     aria-label="Add 45-minute block"
                   >
                     +45
@@ -166,9 +199,28 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
 
               <Divider />
 
-              {/* Follow-ups */}
-              <section>
-                <div className="flex items-center justify-between">
+              {/* Follow-ups (HIGHLIGHT: slide reveal with 0.5s delay; purple→blue) */}
+              <section className="relative">
+                <AnimatePresence>
+                  {showHighlight && highlightKey === "followups" && (
+                    <motion.span
+                      key="fu-highlight"
+                      aria-hidden
+                      className="pointer-events-none absolute -inset-2 rounded-xl"
+                      // slide reveal: start fully clipped to the right, then reveal
+                      initial={{ clipPath: "inset(0% 100% 0% 0%)" }}
+                      animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
+                      exit={{ clipPath: "inset(0% 100% 0% 0%)" }}
+                      transition={{ delay: 0.5, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(139,92,246,0.30), rgba(59,130,246,0.22))",
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
+
+                <div className="flex items-center justify-between relative">
                   <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
                     Follow-up recordings
                     <InfoTooltip ariaLabel="What are follow-ups?">
@@ -177,11 +229,11 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                   </span>
                   <span className="text-sm opacity-80">{cfg.followups} × 15 min</span>
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex gap-2 relative">
                   <button
                     className={squareBtn}
                     disabled={cfg.followups === 0}
-                    onClick={() => onChange({ ...cfg, followups: cfg.followups - 1 })}
+                    onClick={() => changeAndClear({ ...cfg, followups: cfg.followups - 1 })}
                     aria-label="Decrease follow-ups"
                   >
                     −
@@ -189,7 +241,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange }: Props)
                   <button
                     className={squareBtn}
                     disabled={cfg.followups >= 2}
-                    onClick={() => onChange({ ...cfg, followups: cfg.followups + 1 })}
+                    onClick={() => changeAndClear({ ...cfg, followups: cfg.followups + 1 })}
                     aria-label="Increase follow-ups"
                   >
                     +

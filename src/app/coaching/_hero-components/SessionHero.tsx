@@ -36,8 +36,8 @@ type Props = {
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 // Fast background fade; delay the rest a touch so BG is visible first.
-const BG_FADE_DURATION = 1;          // quick fade for the video/image
-const CONTENT_BASE_DELAY = 0.8;       // hold UI a bit so BG settles
+const BG_FADE_DURATION = 1;
+const CONTENT_BASE_DELAY = 0.8;
 
 // Element delays (stacked on top of CONTENT_BASE_DELAY)
 const TITLE_DELAY   = CONTENT_BASE_DELAY + 0.15;
@@ -48,16 +48,37 @@ const PANEL_DELAY   = {
   right:  CONTENT_BASE_DELAY + 1.00,
 } as const;
 
-const titleVariants = {
+/** Separate variants for first mount vs preset changes */
+const makeTitleVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -24 },
-  show:   { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE, delay: TITLE_DELAY } },
-  exit:   { opacity: 0, x: 24, transition: { duration: 0.2, ease: EASE } },
-};
-const taglineVariants = {
+  show: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      // unchanged feel on first load; quicker on change
+      duration: firstLoad ? 0.40 : 0.22,
+      ease: EASE,
+      // keep change delay small
+      delay: firstLoad ? TITLE_DELAY : 0.25,
+    },
+  },
+  exit: { opacity: 0, x: 24, transition: { duration: 0.18, ease: EASE } },
+});
+
+const makeTaglineVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -20 },
-  show:   { opacity: 1, x: 0, transition: { duration: 0.38, ease: EASE, delay: TAGLINE_DELAY } },
-  exit:   { opacity: 0, x: 20, transition: { duration: 0.18, ease: EASE } },
-};
+  show: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: firstLoad ? 0.38 : 0.20,
+      ease: EASE,
+      // NOTICEABLE STAGGER on preset change (title 0.05 → tagline 0.20)
+      delay: firstLoad ? TAGLINE_DELAY : 0.40,
+    },
+  },
+  exit: { opacity: 0, x: 20, transition: { duration: 0.16, ease: EASE } },
+});
 
 export default function SessionHero({
   title,
@@ -83,6 +104,10 @@ export default function SessionHero({
   const [initialSlotId, setInitialSlotId] = useState<string | null>(null);
 
   const [drawerW, setDrawerW] = useState(0);
+
+  // Track first render to switch variants after mount
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  useEffect(() => { setIsFirstLoad(false); }, []);
 
   const baseOnly = baseMinutes ?? 60;
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
@@ -202,7 +227,7 @@ export default function SessionHero({
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={preset}
-                  variants={titleVariants}
+                  variants={makeTitleVariants(isFirstLoad)}
                   initial="hidden"
                   animate="show"
                   exit="exit"
@@ -214,7 +239,7 @@ export default function SessionHero({
               <AnimatePresence mode="wait">
                 <motion.p
                   key={preset + "-tag"}
-                  variants={taglineVariants}
+                  variants={makeTaglineVariants(isFirstLoad)}
                   initial="hidden"
                   animate="show"
                   exit="exit"

@@ -69,57 +69,39 @@ export default function TransitionOverlay({
           }}
           aria-hidden
         >
-          {/* Subtle, wide glow across the top third.
-              - Very low alpha; visible but gentle.
-              - Linear base + three soft domes (L/C/R) to spread it across width.
-              - Attached to the moving top; slight drift + fade near the end. */}
-          <motion.div
-            className="pointer-events-none absolute left-0 right-0 top-0 z-10"
-            style={{
-              height: "34vh", // ~top third
-              background: `
-                /* base vertical ramp (subtle) */
-                linear-gradient(
-                  to bottom,
-                  rgba(210,225,255,0.12) 0%,
-                  rgba(210,225,255,0.045) 28%,
-                  rgba(210,225,255,0.00) 80%
-                ),
-                /* three soft domes */
-                radial-gradient(
-                  140% 120% at 15% 0%,
-                  rgba(210,230,255,0.07) 12%,
-                  rgba(210,230,255,0.00) 60%
-                ),
-                radial-gradient(
-                  140% 120% at 50% 0%,
-                  rgba(210,230,255,0.09) 12%,
-                  rgba(210,230,255,0.00) 60%
-                ),
-                radial-gradient(
-                  140% 120% at 85% 0%,
-                  rgba(210,230,255,0.07) 12%,
-                  rgba(210,230,255,0.00) 60%
-                )
-              `,
-              mixBlendMode: "screen", // ensures visibility on black but stays subtle
-              filter: "blur(10px)",   // soft, wide falloff
-              borderTopLeftRadius: R,
-              borderTopRightRadius: R,
-            }}
-            initial={{ y: 12, opacity: 0.18 }}
-            animate={{
-              y: -6,
-              opacity: [0.18, 0.1, 0.0], // fades as motion slows
-              borderTopLeftRadius: [R, 0],
-              borderTopRightRadius: [R, 0],
-            }}
-            transition={{
-              duration,
-              ease: [0.22, 1, 0.36, 1],
-              opacity: { duration, times: [0.35, 0.75, 1] },
-            }}
-          />
+          {/* Trail that eases to a stop near the end, then fades out */}
+<motion.div
+  className="pointer-events-none absolute left-0 right-0 top-0 z-10"
+  style={{
+    height: "120vh",
+    background: `
+      linear-gradient(
+        to bottom,
+        rgba(210,225,255,0.12) 0%,
+        rgba(210,225,255,0.045) 28%,
+        rgba(210,225,255,0.00) 80%
+      )
+    `,
+    mixBlendMode: "screen",
+    filter: "blur(10px)",
+    // 👇 force square edges so it’s a straight line, not rounded
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    willChange: "transform, opacity",
+  }}
+  initial={{ y: "0vh", opacity: 0.18 }}
+  animate={{
+    y: ["-1vh", "-1vh", "0vh"], // stop moving, then just fade
+    opacity: [0.18, 0.14, 0.0],
+  }}
+  transition={{
+    duration,
+    ease: [0.22, 1, 0.36, 1],
+    y: { duration, times: [0.0, 0.7, 1.0] },
+    opacity: { duration, times: [0.35, 0.7, 1.0] },
+  }}
+/>
+
         </motion.div>
       )}
     </AnimatePresence>,

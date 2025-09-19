@@ -10,20 +10,44 @@ import type { Cfg } from "../../../utils/sessionConfig";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { computePriceEUR } from "@/lib/pricing";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
+import { useSearchParams } from "next/navigation";
 
 export default function Client({ preset }: { preset: string }) {
-  // Seed config from URL preset
+  const params = useSearchParams();
+  const wantsCustomize = params.get("open") === "customize";
+  const focus = params.get("focus"); // e.g. "followups"
+
+  // Read query once for initial seeding
+  const qBase = Number(params.get("base") ?? NaN);
+  const qFU   = Number(params.get("followups") ?? NaN);
+  const qLive = Number(params.get("live") ?? NaN);
+
   const init = useMemo(() => {
+    // helper to clamp & coerce
+    const safe = (n: number, def: number) => (Number.isFinite(n) ? n : def);
+
+    if (preset === "custom") {
+      // Start with the linked values if present (so no post-mount flip)
+      const liveMin   = safe(qBase, 60);
+      const followups = Math.max(0, Math.min(2, safe(qFU, 0)));
+      const liveBlocks= Math.max(0, Math.min(2, safe(qLive, 0)));
+      return {
+        title: "Custom Session",
+        cfg: { liveMin, followups, liveBlocks } as Cfg,
+      };
+    }
+
     switch (preset) {
       case "signature":
         return { title: "Signature Session", cfg: { liveMin: 45, liveBlocks: 0, followups: 1 } as Cfg };
       case "instant":
-        return { title: "Instant Insight", cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "Instant Insight",   cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
       case "vod":
       default:
-        return { title: "VOD Review", cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "VOD Review",        cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
     }
-  }, [preset]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset, qBase, qFU, qLive]);
 
   const [cfg, setCfg] = useState<Cfg>(init.cfg);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -34,36 +58,21 @@ export default function Client({ preset }: { preset: string }) {
   const [liveMinutes, setLiveMinutes] = useState(init.cfg.liveMin);
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
 
-  // Active preset that follows customization (so Hero & steps update live)
-  const [activePreset, setActivePreset] = useState<Preset>(() => {
-    if (preset === "vod" || preset === "signature" || preset === "instant") return preset as Preset;
-    return getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks);
-  });
+  // Active preset follows current config (so hero/steps update)
+  const [activePreset, setActivePreset] = useState<Preset>(() =>
+    getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks)
+  );
 
-  // Track desktop vs mobile
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const check = () => setIsDesktop(window.innerWidth >= 768); // md breakpoint
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  // Reset cfg on route preset change
+  // If route segment changes, reset cfg accordingly (but ‘custom’ stays on its seeded values)
   useEffect(() => {
     setCfg(init.cfg);
     setLiveMinutes(init.cfg.liveMin);
-    // also reset active preset to the route preset on navigation
-    setActivePreset(() => {
-      if (preset === "vod" || preset === "signature" || preset === "instant") return preset as Preset;
-      return getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks);
-    });
-  }, [init, preset]);
+    setActivePreset(getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks));
+  }, [init]);
 
-  // Update active preset whenever the user customizes the config
+  // Keep active preset synced as user customizes
   useEffect(() => {
-    const p = getPreset(cfg.liveMin, cfg.followups, cfg.liveBlocks);
-    setActivePreset(p);
+    setActivePreset(getPreset(cfg.liveMin, cfg.followups, cfg.liveBlocks));
   }, [cfg.liveMin, cfg.followups, cfg.liveBlocks]);
 
   // Prefetch availability when base minutes change
@@ -80,21 +89,27 @@ export default function Client({ preset }: { preset: string }) {
         if (on) setPrefetchedSlots(data);
       } catch {}
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, [cfg.liveMin]);
 
   const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;
   const { priceEUR } = computePriceEUR(totalMinutes, cfg.followups);
 
+  // Auto-open drawer with delayed timing on deep-link
+  useEffect(() => {
+    if (preset === "custom" && wantsCustomize) {
+      // Base 0.8 + right 1.0 + extra 1.0 = 2.8s
+      const delay = 2800;
+      const t = setTimeout(() => setDrawerOpen(true), delay);
+      return () => clearTimeout(t);
+    }
+  }, [preset, wantsCustomize]);
+
   return (
     <LayoutGroup id="booking-flow">
       <main className="relative min-h-screen text-white overflow-x-hidden">
         <SessionHero
-          // keep Hero labels/steps in sync with current config
           presetOverride={activePreset}
-          // (legacy, kept for compatibility with your component)
           title={init.title}
           subtitle=""
           image=""
@@ -125,16 +140,16 @@ export default function Client({ preset }: { preset: string }) {
           )}
         </AnimatePresence>
 
-        {/* Mobile-only backdrop when drawer is open */}
+        {/* mobile backdrop for drawer */}
         <AnimatePresence>
-          {!isDesktop && drawerOpen && (
+          {drawerOpen && (
             <motion.div
               key="mobile-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.8 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-0 z-40 bg-black"
+              className="fixed inset-0 z-40 bg-black md:hidden"
               onClick={() => setDrawerOpen(false)}
             />
           )}
@@ -145,6 +160,7 @@ export default function Client({ preset }: { preset: string }) {
           onClose={() => setDrawerOpen(false)}
           cfg={cfg}
           onChange={setCfg}
+          highlightKey={focus === "followups" ? "followups" : undefined}
         />
       </main>
     </LayoutGroup>

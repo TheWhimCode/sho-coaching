@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import SquareButton from "@/app/_components/small/SquareButton";
+import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 
 type Props = {
   className?: string;
@@ -13,85 +15,107 @@ type Props = {
 export default function FollowUp({
   className = "",
   containerClassName = "max-w-7xl",
-  customizeHref = "#customize",
-  exampleHref = "https://www.patreon.com/posts/syndra-emerald-113265874",
+  // default: jump to custom with the drawer open + follow-ups highlighted
+  customizeHref = "/coaching/custom?base=45&followups=0&live=0&open=customize&focus=followups",
+  exampleHref = "https://www.patreon.com/posts/azir-emerald-up-123493426",
 }: Props) {
-  return (
-    <section className={`w-full ${className}`} aria-labelledby="followup-heading">
-      <div className={`mx-auto w-full ${containerClassName}`}>
-        {/* Header with divider */}
-        <div className="text-center mb-8 md:mb-10">
-          <h2
-            id="followup-heading"
-            className="mt-0 text-[40px] md:text-[52px] leading-tight font-bold"
-          >
-            Follow-ups — a 15-minute progress review
-          </h2>
-          <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        </div>
+  const router = useRouter();
+  const [transitioning, setTransitioning] = useState(false);
 
-        {/* Content row */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-14 items-start">
-          {/* Left: 4:3 video placeholder */}
-          <div className="md:col-span-6 order-last md:order-first">
-            <div className="relative aspect-[4/3] rounded-2xl border border-white/10 bg-white/[.03] overflow-hidden">
-              <div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
-              />
-              <div className="absolute inset-0 grid place-items-center text-white/40 text-sm">
-                Video placeholder: Follow-up animation
-              </div>
-            </div>
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      // Let modifier/middle clicks behave like a normal link (new tab/window)
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+
+      // Use overlay then route
+      e.preventDefault();
+      if (!transitioning) setTransitioning(true);
+    },
+    [transitioning]
+  );
+
+  const handleOverlayComplete = useCallback(() => {
+    router.push(customizeHref);
+  }, [router, customizeHref]);
+
+  return (
+    <>
+      {/* Transition curtain */}
+      <TransitionOverlay active={transitioning} onComplete={handleOverlayComplete} duration={0.7} />
+
+      <section className={`w-full ${className}`} aria-labelledby="followup-heading">
+        <div className={`mx-auto w-full ${containerClassName}`}>
+          {/* Header with divider */}
+          <div className="text-center mb-8 md:mb-10">
+            <h2
+              id="followup-heading"
+              className="mt-0 text-[40px] md:text-[52px] leading-tight font-bold"
+            >
+              Follow-ups — a 15-minute progress review
+            </h2>
+            <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           </div>
 
-          {/* Right: explanation + CTA row */}
-          <div className="md:col-span-6 order-first md:order-last">
-            <p className="text-[10px] tracking-[0.22em] text-white/50 uppercase">Add-on service</p>
-            <h3 className="mt-2 text-2xl md:text-3xl font-semibold">What is a Follow-up?</h3>
-            <p className="mt-3 text-white/70 text-base md:text-lg max-w-[50ch]">
-              After you’ve tried the session advice, request a follow-up. I’ll record a
-              15-minute video on your progress, what still isn’t working, and{" "}
-              <span className="text-white">new information</span> tailored to you — many
-              students say it feels like a second coaching session.
-            </p>
+          {/* Content row */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-14 items-start">
+            {/* Left: 4:3 video placeholder */}
+            <div className="md:col-span-6 order-last md:order-first">
+              <div className="relative aspect-[4/3] rounded-2xl border border-white/10 bg-white/[.03] overflow-hidden">
+                <div
+                  className="absolute inset-0 rounded-2xl pointer-events-none"
+                  style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
+                />
+                <div className="absolute inset-0 grid place-items-center text-white/40 text-sm">
+                  Video placeholder: Follow-up animation
+                </div>
+              </div>
+            </div>
 
-            {/* CTA row: Add button (orange styled) + example square button */}
-            <div className="mt-6 flex items-center justify-between gap-6 border-l-2 border-white/20 px-5 py-1.5 rounded-xl bg-white/[.02]">
-              {/* Left: helper line on top + button */}
-              <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
-                <p className="text-sm md:text-base text-white mb-2">
-                  You can add follow-ups through customization.
-                </p>
-                <div className="relative inline-block">
-                  <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
-                  <a
-                    href={customizeHref}
-                    className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
-                  >
-                    Add follow-ups
-                  </a>
+            {/* Right: explanation + CTA row */}
+            <div className="md:col-span-6 order-first md:order-last">
+              <p className="text-[10px] tracking-[0.22em] text-white/50 uppercase">Add-on service</p>
+              <h3 className="mt-2 text-2xl md:text-3xl font-semibold">What is a Follow-up?</h3>
+              <p className="mt-3 text-white/70 text-base md:text-lg max-w-[50ch]">
+                After you’ve tried the session advice, request a follow-up. I’ll record a
+                15-minute video on your progress, what still isn’t working, and{" "}
+                <span className="text-white">new information</span> tailored to you — many
+                students say it feels like a second coaching session.
+              </p>
+
+              {/* CTA row: Add button (orange styled) + example square button */}
+              <div className="mt-6 flex items-center justify-between gap-6 border-l-2 border-white/20 px-5 py-1.5 rounded-xl bg-white/[.02]">
+                {/* Left: helper line on top + button */}
+                <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
+                  <p className="text-sm md:text-base text-white mb-2">
+                    You can add follow-ups through customization.
+                  </p>
+                  <div className="relative inline-block">
+                    <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
+                    <a
+                      href={customizeHref}
+                      onClick={handleClick}
+                      className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
+                      aria-busy={transitioning}
+                    >
+                      Add follow-ups
+                    </a>
+                  </div>
+                </div>
+
+                {/* Right: example square button with label on top */}
+                <div className="flex flex-col items-center">
+                  <span className="mb-1.5 text-[10px] tracking-[0.2em] text-white/60">EXAMPLE</span>
+                  <SquareButton role="Mid" href={exampleHref} src="/images/squarebuttons/Azir2.png" size={80} />
                 </div>
               </div>
 
-              {/* Right: example square button with label on top */}
-              <div className="flex flex-col items-center">
-                <span className="mb-1.5 text-[10px] tracking-[0.2em] text-white/60">EXAMPLE</span>
-                <SquareButton
-                  role="Mid"
-                  href={exampleHref}
-                  src="/images/squarebuttons/Syndra8.png"
-                  size={80}
-                />
-              </div>
+              <p className="mt-5 text-[11px] text-white/50">
+                Typical turnaround 48–72h. Private MP4 link.
+              </p>
             </div>
-
-            <p className="mt-5 text-[11px] text-white/50">
-              Typical turnaround 48–72h. Private MP4 link.
-            </p>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

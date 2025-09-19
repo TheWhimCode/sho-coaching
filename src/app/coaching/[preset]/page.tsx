@@ -20,6 +20,7 @@ export async function generateMetadata({
     vod: "VOD Review",
     signature: "Signature Session",
     instant: "Instant Insight",
+    custom: "Custom Session",
   };
   return {
     title: `${titles[preset] ?? preset} | Sho`,
