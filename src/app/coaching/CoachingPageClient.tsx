@@ -1,4 +1,3 @@
-// src/app/coaching/page client (CoachingPageClient)
 "use client";
 
 import React from "react";
@@ -12,13 +11,12 @@ import PresetCards from "@/app/coaching/_coaching-components/cards";
 import NeedMoreInfo from "@/app/coaching/_coaching-components/components/NeedMoreInfo";
 import FAQ from "@/app/coaching/_coaching-components/faq";
 import Clips from "@/app/coaching/_coaching-components/clips";
+import PlaceholderSections from "@/app/coaching/_coaching-components/placeholder-sections"; // <-- gradient lives here
 
 export default function CoachingPageClient() {
   const handleScrollToFollowup = React.useCallback(() => {
     const el = document.getElementById("followup");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   return (
@@ -26,7 +24,7 @@ export default function CoachingPageClient() {
       className="relative min-h-screen text-white"
       style={{
         background:
-          "linear-gradient(180deg,#0A1730 0%,#0C1D3E 20%,#13254A 40%,#0C1D3E 60%,#08142C 80%,#0A1730 100%)",
+          "linear-gradient(180deg,#050B18 0%,#081126 20%,#0A1730 40%,#081126 60%,#050B18 80%,#000 100%)",
       }}
     >
       {/* global decorative sweep */}
@@ -35,7 +33,7 @@ export default function CoachingPageClient() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(900px 480px at 8% 6%, rgba(96,165,250,.20), #0000 60%), radial-gradient(800px 420px at 92% 10%, rgba(56,189,248,.16), #0000 60%), linear-gradient(90deg, rgba(173,216,255,.10) 0%, #0000 18%, rgba(173,216,255,.04) 50%, #0000 82%, rgba(173,216,255,.10) 100%)",
+              "radial-gradient(900px 480px at 8% 6%, rgba(96,165,250,.12), #0000 60%), radial-gradient(800px 420px at 92% 10%, rgba(56,189,248,.10), #0000 60%), linear-gradient(90deg, rgba(173,216,255,.06) 0%, #0000 18%, rgba(173,216,255,.02) 50%, #0000 82%, rgba(173,216,255,.06) 100%)",
           }}
         />
       </div>
@@ -57,7 +55,7 @@ export default function CoachingPageClient() {
                 backgroundRepeat: "repeat",
                 backgroundPosition: "center 140px",
                 backgroundSize: "auto",
-                opacity: 0.25,
+                opacity: 0.15,
                 imageRendering: "crisp-edges",
                 maskImage:
                   "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
@@ -75,15 +73,15 @@ export default function CoachingPageClient() {
       {/* 2) Reviews */}
       <section
         className="relative isolate overflow-hidden"
-        style={{ backgroundColor: "#0C1D3E" }}
+        style={{ backgroundColor: "#081126" }}
       >
         <div
           aria-hidden
-          className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
         />
         <div
           aria-hidden
-          className="absolute inset-x-0 bottom-0 z-10 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          className="absolute inset-x-0 bottom-0 z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
         />
         <div
           aria-hidden
@@ -93,7 +91,7 @@ export default function CoachingPageClient() {
             backgroundRepeat: "repeat",
             backgroundSize: "auto",
             mixBlendMode: "overlay",
-            opacity: 0.35,
+            opacity: 0.25,
           }}
         />
         <div
@@ -101,7 +99,7 @@ export default function CoachingPageClient() {
           className="absolute inset-0 pointer-events-none"
           style={{
             boxShadow:
-              "inset 0 30px 12px -6px rgba(0,0,0,0.5), inset 0 -30px 12px -6px rgba(0,0,0,0.5), inset 30px 0 12px -6px rgba(0,0,0,0.5), inset -30px 0 12px -6px rgba(0,0,0,0.5)",
+              "inset 0 30px 12px -6px rgba(0,0,0,0.6), inset 0 -30px 12px -6px rgba(0,0,0,0.6), inset 30px 0 12px -6px rgba(0,0,0,0.6), inset -30px 0 12px -6px rgba(0,0,0,0.6)",
           }}
         />
         <div className="relative z-20 mx-auto max-w-7xl">
@@ -109,22 +107,8 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3) Overview ONLY (keeps the gradient) */}
+      {/* 3) Overview — NO bright gradient here */}
       <section className="relative isolate pt-24 pb-24 md:pt-56 md:pb-56 overflow-hidden">
-        {/* gradient applied once here */}
-        <div
-          aria-hidden
-          className="absolute inset-0 z-0 pointer-events-none"
-          style={{
-            background: [
-              "radial-gradient(600px 400px at 15% 20%, rgba(56,189,248,.20), #0000 60%)",
-              "radial-gradient(700px 420px at 85% 15%, rgba(99,102,241,.18), #0000 62%)",
-              "radial-gradient(600px 400px at 20% 80%, rgba(56,189,248,.14), #0000 60%)",
-              "radial-gradient(700px 420px at 80% 85%, rgba(99,102,241,.12), #0000 62%)",
-              "linear-gradient(180deg, rgba(56,189,248,.10) 0%, rgba(99,102,241,.10) 100%)",
-            ].join(", "),
-          }}
-        />
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="max-w-6xl px-6 mx-auto">
             <Overview2 />
@@ -132,11 +116,13 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3b) Clips STANDALONE (no gradient wrapper) */}
+      {/* 3a) Placeholder + BRIGHT gradient lives here (slow fade-in) */}
+      <PlaceholderSections />
+
+      {/* 3b) Clips */}
       <section className="relative isolate pt-12 pb-24 md:pt-20 md:pb-32 overflow-visible">
         <div className="relative z-10 mx-auto max-w-7xl overflow-visible">
           <div className="max-w-6xl px-6 mx-auto overflow-visible">
-            {/* show on md+ only, as before */}
             <Clips className="py-0 hidden md:block" />
           </div>
         </div>
