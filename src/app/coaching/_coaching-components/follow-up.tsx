@@ -43,22 +43,8 @@ export default function FollowUp({
       {/* Transition curtain */}
       <TransitionOverlay active={transitioning} onComplete={handleOverlayComplete} duration={0.7} />
 
-      <section className={`w-full ${className}`} aria-labelledby="followup-heading">
+      <section className={`w-full ${className}`} aria-label="Follow-ups">
         <div className={`mx-auto w-full ${containerClassName}`}>
-          {/* Header with divider */}
-          <div className="text-center mb-8 md:mb-10">
-            <h2
-              id="followup-heading"
-              className="mt-0 text-[40px] md:text-[52px] leading-tight font-bold"
-            >
-              Follow-ups — a 15-minute progress review
-            </h2>
-            <p className="mt-3 text-xl md:text-2xl text-white/60 italic">
-              “Honestly, it felt like a second coaching session”
-            </p>
-            <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          </div>
-
           {/* Content row */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-14 items-start">
             {/* Left: 4:3 video placeholder */}
@@ -82,8 +68,13 @@ export default function FollowUp({
                 After you’ve practiced what you learned in our session, request your follow-up. Whether it’s been 3 days or 3 months, just send me a game and I’ll record a 15-minute video with new insights, a progress review, and your next steps to keep improving.
               </p>
 
+              {/* Moved subheader quote here */}
+              <p className="mt-2 text-lg md:text-lg text-white/60 italic">
+                “Honestly, it felt like a second coaching session”
+              </p>
+
               {/* CTA row: Add button (orange styled) + example square button */}
-              <div className="mt-6 flex items-center justify-between gap-6 border-l-2 border-white/20 px-5 py-1.5 rounded-xl bg-white/[.02]">
+              <div className="mt-4 flex items-center justify-between gap-6 border-l-2 border-white/20 px-5 py-1.5 rounded-xl bg-white/[.02]">
                 {/* Left: helper line on top + button */}
                 <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
                   <p className="text-sm md:text-base text-white mb-2">
@@ -94,7 +85,7 @@ export default function FollowUp({
                     <a
                       href={customizeHref}
                       onClick={handleClick}
-                      className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
+                      className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
                       aria-busy={transitioning}
                     >
                       Add follow-ups

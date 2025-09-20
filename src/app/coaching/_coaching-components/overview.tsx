@@ -152,7 +152,7 @@ export default function Overview({
 
           {/* RIGHT — simple 4:3 video with rounded corners */}
           <div className="md:col-span-6 md:self-center pr-0">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
+            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl">
               <video
                 ref={videoRef}
                 src="/videos/coaching/overview.mp4"
