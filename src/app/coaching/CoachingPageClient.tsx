@@ -11,22 +11,57 @@ import PresetCards from "@/app/coaching/_coaching-components/cards";
 import NeedMoreInfo from "@/app/coaching/_coaching-components/components/NeedMoreInfo";
 import FAQ from "@/app/coaching/_coaching-components/faq";
 import Clips from "@/app/coaching/_coaching-components/clips";
-import PlaceholderSections from "@/app/coaching/_coaching-components/placeholder-sections"; // <-- gradient lives here
+import PlaceholderSections from "@/app/coaching/_coaching-components/placeholder-sections";
 
 export default function CoachingPageClient() {
+  const [revealSides, setRevealSides] = React.useState(false);
+  const placeholderRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Trigger strictly when the section's TOP reaches the viewport TOP.
+  React.useEffect(() => {
+    const el = placeholderRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const top = el.getBoundingClientRect().top;
+      setRevealSides(top <= 0);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
   const handleScrollToFollowup = React.useCallback(() => {
     const el = document.getElementById("followup");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
+  const pageBG =
+    "linear-gradient(180deg,#050B18 0%,#081126 20%,#0A1730 40%,#081126 60%,#050B18 80%,#000 100%)";
+
+  // Single gradient definition used by all three masked layers
+  const glowBG = [
+    "radial-gradient(1200px 700px at 12% 12%, rgba(56,189,248,0.75), #0000 65%)",
+    "radial-gradient(1200px 700px at 88% 18%, rgba(139,92,246,0.62), #0000 65%)",
+    "radial-gradient(1000px 600px at 18% 82%, rgba(6,182,212,0.64), #0000 65%)",
+    "radial-gradient(1000px 600px at 82% 86%, rgba(236,72,153,0.52), #0000 65%)",
+    "linear-gradient(180deg, rgba(56,189,248,0.30) 0%, rgba(139,92,246,0.28) 100%)",
+  ].join(", ");
+
+  // Width of the side bands hidden initially (in vw for responsiveness)
+  const sideVW = 20; // change to taste
+
+  // Vibrancy ramp (animated via filter)
+  const baseFilter = "saturate(0.9) brightness(0.98) contrast(1)";
+  const revealFilter = "saturate(1.35) brightness(1.1) contrast(1.06)";
+
   return (
-    <main
-      className="relative min-h-screen text-white"
-      style={{
-        background:
-          "linear-gradient(180deg,#050B18 0%,#081126 20%,#0A1730 40%,#081126 60%,#050B18 80%,#000 100%)",
-      }}
-    >
+    <main className="relative min-h-screen text-white" style={{ background: pageBG }}>
       {/* global decorative sweep */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
         <div
@@ -71,10 +106,7 @@ export default function CoachingPageClient() {
       </section>
 
       {/* 2) Reviews */}
-      <section
-        className="relative isolate overflow-hidden"
-        style={{ backgroundColor: "#081126" }}
-      >
+      <section className="relative isolate overflow-hidden" style={{ backgroundColor: "#081126" }}>
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
@@ -107,7 +139,7 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3) Overview — NO bright gradient here */}
+      {/* 3) Overview */}
       <section className="relative isolate pt-24 pb-24 md:pt-56 md:pb-56 overflow-hidden">
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="max-w-6xl px-6 mx-auto">
@@ -116,8 +148,65 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3a) Placeholder + BRIGHT gradient lives here (slow fade-in) */}
-      <PlaceholderSections />
+      {/* 3a) Gradient with 3 masked layers: center visible, sides fade-in + vibrancy ramp */}
+      <section ref={placeholderRef} className="relative isolate overflow-hidden">
+        {/* Center band (always visible; vibrancy animates) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-30 will-change-[filter]"
+          style={{
+            background: glowBG,
+            WebkitMaskImage: `linear-gradient(to right, transparent 0, transparent ${sideVW}vw, white ${sideVW}vw, white calc(100% - ${sideVW}vw), transparent calc(100% - ${sideVW}vw), transparent 100%)`,
+            maskImage: `linear-gradient(to right, transparent 0, transparent ${sideVW}vw, white ${sideVW}vw, white calc(100% - ${sideVW}vw), transparent calc(100% - ${sideVW}vw), transparent 100%)`,
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskSize: "100% 100%",
+            maskSize: "100% 100%",
+            filter: revealSides ? revealFilter : baseFilter,
+            transition: "filter 1000ms ease-out",
+          }}
+        />
+
+        {/* Left band (fades in + already vibrant) */}
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 -z-30 transition-opacity duration-[500ms] ease-out will-change-[opacity,filter] ${
+            revealSides ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            background: glowBG,
+            WebkitMaskImage: `linear-gradient(to right, white 0, white ${sideVW}vw, transparent ${sideVW}vw, transparent 100%)`,
+            maskImage: `linear-gradient(to right, white 0, white ${sideVW}vw, transparent ${sideVW}vw, transparent 100%)`,
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskSize: "100% 100%",
+            maskSize: "100% 100%",
+            filter: revealFilter,
+            transition: "opacity 1000ms ease-out, filter 1000ms ease-out",
+          }}
+        />
+
+        {/* Right band (fades in + already vibrant) */}
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 -z-30 transition-opacity duration-[500ms] ease-out will-change-[opacity,filter] ${
+            revealSides ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            background: glowBG,
+            WebkitMaskImage: `linear-gradient(to right, transparent 0, transparent calc(100% - ${sideVW}vw), white calc(100% - ${sideVW}vw), white 100%)`,
+            maskImage: `linear-gradient(to right, transparent 0, transparent calc(100% - ${sideVW}vw), white calc(100% - ${sideVW}vw), white 100%)`,
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskSize: "100% 100%",
+            maskSize: "100% 100%",
+            filter: revealFilter,
+            transition: "opacity 1000ms ease-out, filter 1000ms ease-out",
+          }}
+        />
+
+        <PlaceholderSections />
+      </section>
 
       {/* 3b) Clips */}
       <section className="relative isolate pt-12 pb-24 md:pt-20 md:pb-32 overflow-visible">
