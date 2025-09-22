@@ -14,6 +14,9 @@ import CalendarGrid from "./components/CalendarGrid";
 import TimeSlotsList from "./components/TimeSlotsList";
 
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
+// Extracted cancel styling into a reusable, look-only button (no sizing)
+import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 
 type Props = {
   sessionType: string;
@@ -62,21 +65,21 @@ export default function Calendar({
     d.setHours(0, 0, 0, 0);
     return d;
   });
-const DISPLAY_STEP_MIN = 30;
-const LEAD_HOURS = 18;
+  const DISPLAY_STEP_MIN = 30;
+  const LEAD_HOURS = 18;
 
-function roundUpToStep(d: Date, stepMin: number) {
-  const m = d.getMinutes();
-  const up = Math.ceil(m / stepMin) * stepMin;
-  d.setMinutes(up === 60 ? 0 : up, 0, 0);
-  if (up === 60) d.setHours(d.getHours() + 1);
-  return d;
-}
+  function roundUpToStep(d: Date, stepMin: number) {
+    const m = d.getMinutes();
+    const up = Math.ceil(m / stepMin) * stepMin;
+    d.setMinutes(up === 60 ? 0 : up, 0, 0);
+    if (up === 60) d.setHours(d.getHours() + 1);
+    return d;
+  }
 
-function startBoundaryNowPlusLead() {
-  const s = new Date(Date.now() + LEAD_HOURS * 60 * 60 * 1000);
-  return roundUpToStep(s, DISPLAY_STEP_MIN);
-}
+  function startBoundaryNowPlusLead() {
+    const s = new Date(Date.now() + LEAD_HOURS * 60 * 60 * 1000);
+    return roundUpToStep(s, DISPLAY_STEP_MIN);
+  }
 
   /** Seed from prefetched slots so UI is instant */
   const [slots, setSlots] = useState<Slot[]>(() => prefetchedSlots ?? []);
@@ -108,36 +111,35 @@ function startBoundaryNowPlusLead() {
   }, [prefetchedSlots]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // -------- Availability fetch (silent, duration-aware) --------
-useEffect(() => {
-  let ignore = false;
-  const startBoundary = startBoundaryNowPlusLead();
-  const end = addDays(startOfDay(startBoundary), 14);
-  end.setHours(23, 59, 59, 999);
+  useEffect(() => {
+    let ignore = false;
+    const startBoundary = startBoundaryNowPlusLead();
+    const end = addDays(startOfDay(startBoundary), 14);
+    end.setHours(23, 59, 59, 999);
 
-  const doSpinner = slots.length === 0;
+    const doSpinner = slots.length === 0;
 
-  (async () => {
-    if (doSpinner) setLoading(true);
-    setHydrating(true); setError(null);
-    try {
-      const data = await fetchSlots(startBoundary, end, liveMinutes);
-      if (!ignore) {
-        setSlots(data);
-        if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
-          setSelectedSlotId(null);
+    (async () => {
+      if (doSpinner) setLoading(true);
+      setHydrating(true); setError(null);
+      try {
+        const data = await fetchSlots(startBoundary, end, liveMinutes);
+        if (!ignore) {
+          setSlots(data);
+          if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
+            setSelectedSlotId(null);
+          }
         }
+      } catch (e) {
+        if (!ignore) setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!ignore) { setHydrating(false); if (doSpinner) setLoading(false); }
       }
-    } catch (e) {
-      if (!ignore) setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      if (!ignore) { setHydrating(false); if (doSpinner) setLoading(false); }
-    }
-  })();
+    })();
 
-  return () => { ignore = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [liveMinutes]);
-
+    return () => { ignore = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveMinutes]);
 
   // -------- Preselect a provided slot once (if still valid) --------
   const preselectedOnce = useRef(false);
@@ -156,24 +158,23 @@ useEffect(() => {
   }, [initialSlotId, slots]);
 
   // -------- Build per-day starts (FREE, next 14 days) --------
-const startsByDay = useMemo(() => {
-  const map = new Map<string, { id: string; local: Date }[]>();
-  const startBoundary = startBoundaryNowPlusLead();
-  const end = addDays(startOfDay(startBoundary), 14);
-  end.setHours(23, 59, 59, 999);
+  const startsByDay = useMemo(() => {
+    const map = new Map<string, { id: string; local: Date }[]>();
+    const startBoundary = startBoundaryNowPlusLead();
+    const end = addDays(startOfDay(startBoundary), 14);
+    end.setHours(23, 59, 59, 999);
 
-  for (const s of slots) {
-    if (s.status !== SlotStatus.free) continue;
-    const dt = new Date(s.startTime);
-    if (dt < startBoundary || dt > end) continue;           // 👈 18h lead enforced
-    const key = dayKeyLocal(dt);
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push({ id: s.id, local: dt });
-  }
-  for (const arr of map.values()) arr.sort((a, b) => a.local.getTime() - b.local.getTime());
-  return map;
-}, [slots]);
-
+    for (const s of slots) {
+      if (s.status !== SlotStatus.free) continue;
+      const dt = new Date(s.startTime);
+      if (dt < startBoundary || dt > end) continue;           // 👈 18h lead enforced
+      const key = dayKeyLocal(dt);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push({ id: s.id, local: dt });
+    }
+    for (const arr of map.values()) arr.sort((a, b) => a.local.getTime() - b.local.getTime());
+    return map;
+  }, [slots]);
 
   const displayableStartCountByDay = useMemo(() => {
     const out = new Map<string, number>();
@@ -324,23 +325,22 @@ const startsByDay = useMemo(() => {
             <div className="px-6 py-4 border-t border-[rgba(146,180,255,.18)] flex items-center justify-between gap-3">
               {dErr && <div className="text-rose-400 text-sm">{dErr}</div>}
               <div className="ml-auto flex gap-2">
-                <button
-                  className="h-9 px-4 rounded-xl bg-[rgba(16,24,40,.70)] hover:bg-[rgba(20,28,48,.85)]
-                             ring-1 ring-[rgba(146,180,255,.18)] text-white
-                             supports-[backdrop-filter]:backdrop-blur-md"
+                <OutlineCTA
+                  // look-only: sizing here to match original
+                  className="h-9 px-4 text-white supports-[backdrop-filter]:backdrop-blur-md
+                             bg-[rgba(16,24,40,.70)] hover:bg-[rgba(20,28,48,.85)] ring-1 ring-[var(--color-divider)] rounded-xl"
                   onClick={() => setIsOpen(false)}
                 >
                   Cancel
-                </button>
-                <button
-                  className="h-9 px-4 rounded-xl bg-[#fc8803] hover:bg-[#f8a81a]
-                             shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]
-                             disabled:opacity-40 text-[#0A0A0A] font-semibold"
+                </OutlineCTA>
+                <PrimaryCTA
+                  withHalo={false}
+                  className="h-9 px-4 text-base"
                   disabled={!selectedSlotId || pending}
                   onClick={submitBooking}
                 >
                   {pending ? "Opening checkout…" : "Continue to payment"}
-                </button>
+                </PrimaryCTA>
               </div>
             </div>
           </motion.div>
