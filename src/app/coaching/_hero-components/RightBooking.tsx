@@ -3,6 +3,7 @@
 
 import { motion } from "framer-motion";
 import AvailableSlots, { Slot as UiSlot } from "@/components/AvailableSlots";
+import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 type Props = {
   liveMinutes: number;
@@ -22,7 +23,6 @@ function ShimmerRow() {
       <motion.div
         className="absolute inset-0"
         style={{
-          // NOTE: correct gradient syntax (no "="), and use mix-blend for visibility
           background:
             "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)",
           mixBlendMode: "overlay",
@@ -49,7 +49,8 @@ export default function RightBookingPanel({
       transition={{ duration: 0.35, delay: 0.05 }}
       className="self-start md:justify-self-end w-full max-w-sm"
     >
-      <div className="rounded-2xl p-5 flex flex-col gap-3 backdrop-blur-[1px] bg-[#0B1220]/10 ring-1 ring-[rgba(146,180,255,.18)]">
+      {/* Only styling is provided by GlassPanel; layout/sizing passed via className */}
+      <GlassPanel className="p-5 flex flex-col gap-3">
         {/* CTA */}
         <div className="relative">
           <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
@@ -90,10 +91,8 @@ export default function RightBookingPanel({
           </div>
         )}
 
-        <p className="text-xs text-white/70 mt-1">
-          Secure checkout (Stripe).
-        </p>
-      </div>
+        <p className="text-xs text-white/70 mt-1">Secure checkout (Stripe).</p>
+      </GlassPanel>
     </motion.div>
   );
 }

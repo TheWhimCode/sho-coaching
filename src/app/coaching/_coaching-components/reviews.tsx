@@ -1,13 +1,18 @@
 // coaching/_coaching-components/reviews.tsx
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";                 // keep stars
+// import { Star } from "lucide-react";                 // removed stars
 import { CaretRight } from "@phosphor-icons/react";  // NEW arrow
 import type { Review } from "@/lib/reviews/reviews.data";
 import { REVIEWS as DEFAULT_REVIEWS } from "@/lib/reviews/reviews.data";
+
+import Particles from "react-tsparticles";
+import type { ISourceOptions, Engine } from "tsparticles-engine";
+import { loadSlim } from "tsparticles-slim";
+import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 type Props = {
   reviews?: Array<Review | string>;
@@ -121,13 +126,61 @@ export default function Reviews({
 
   const fadePx = 80;
 
+  /* ---------- Purple, randomized, slow-glow particles ---------- */
+  const initParticles = useCallback(async (engine: Engine) => {
+    await loadSlim(engine);
+  }, []);
+
+  const particleOptions: ISourceOptions = {
+    fullScreen: { enable: false },
+    background: { color: "transparent" },
+    detectRetina: true,
+    fpsLimit: 60,
+    particles: {
+      number: {
+        value: 120,
+        density: { enable: true, area: 800 },
+      },
+      color: { value: ["#a78bfa", "#c4b5fd", "#8b5cf6"] }, // violet palette
+      shape: { type: "circle" },
+      size: { value: { min: 0.8, max: 2.6 }, animation: { enable: false } },
+      opacity: {
+        value: { min: 0.12, max: 0.35 },
+        animation: {
+          enable: true,
+          speed: 0.25,
+          minimumValue: 0.12,
+          sync: false,
+        },
+      },
+      move: {
+        enable: true,
+        speed: 0.48, // slow travel
+        direction: "left",
+        random: true,
+        straight: false,
+
+        outModes: { default: "out" },
+        trail: { enable: false },
+      },
+      shadow: {
+        enable: true,
+        blur: 6,
+        color: "#a78bfa",
+      },
+      links: { enable: false },
+    },
+    interactivity: {
+      events: { resize: true },
+    },
+  };
+
   const Card = ({ r }: { r: Review }) => (
-    <article
+    <GlassPanel
       className="
         relative w-[240px] sm:w-[280px] shrink-0
         h-[175px]   /* fixed height */
         rounded-xl overflow-hidden
-        bg-[#0B1734]/95
         border border-white/10 ring-1 ring-inset ring-cyan-300/15
         shadow-[8px_8px_20px_-6px_rgba(0,0,0,.8)]
         hover:ring-cyan-300/30 hover:border-white/15
@@ -136,12 +189,12 @@ export default function Reviews({
     >
       {/* Neon internal glows */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-12 -left-12 h-32 w-32 rounded-full bg-cyan-400/20 blur-3xl" />
-        <div className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full bg-sky-500/20 blur-3xl" />
+        <div className="absolute -top-12 -left-12 h-32 w-32 rounded-full bg-fuchsia-400/15 blur-3xl" />
+        <div className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full bg-purple-500/15 blur-3xl" />
       </div>
 
       {/* Outer halo */}
-      <div className="pointer-events-none absolute inset-0 rounded-[11px] shadow-[0_0_30px_-6px_rgba(56,189,248,.45)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[11px] shadow-[0_0_30px_-6px_rgba(168,85,247,.35)]" />
 
       {/* Content with fixed padding and adaptive layout */}
       <div className="relative h-full p-4 flex flex-col min-h-0">
@@ -151,17 +204,10 @@ export default function Reviews({
           <span className="font-semibold text-white/90 truncate text-sm">
             {r.name}
           </span>
-          <span className="sr-only">Rating: {r.rating ?? 5} out of 5</span>
-
-          {/* Orange stars with neon glow */}
-          <div
-            className="flex items-center gap-0.5 text-[#fc8803] drop-shadow-[0_0_10px_rgba(252,136,3,.8)] -mt-0.5"
-            aria-hidden
-          >
-            {Array.from({ length: r.rating ?? 5 }).map((_, j) => (
-              <Star key={j} className="h-3.5 w-3.5" fill="currentColor" />
-            ))}
-          </div>
+          {/* removed star icons; keep screen-reader rating if present */}
+          {typeof r.rating === "number" ? (
+            <span className="sr-only">Rating: {r.rating} out of 5</span>
+          ) : null}
         </div>
 
         {/* text flexes inside available space, padding stays constant */}
@@ -169,7 +215,7 @@ export default function Reviews({
           {r.text}
         </p>
       </div>
-    </article>
+    </GlassPanel>
   );
 
   const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
@@ -300,7 +346,7 @@ export default function Reviews({
       }}
       aria-label="What clients say"
     >
-      {/* texture over the section's base color using overlay (keeps brightness/hue stable) */}
+      {/* subtle texture above base color */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0"
@@ -309,14 +355,19 @@ export default function Reviews({
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
           mixBlendMode: "overlay",
-          opacity: 0.3,
-          filter: "contrast(1.2) brightness(1.05)",
+          opacity: 0.25,
+          filter: "contrast(1.15) brightness(1.04)",
           maskImage:
             "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
           WebkitMaskImage:
             "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
         }}
       />
+
+      {/* Purple particles, visible through glass cards */}
+      <div className="absolute inset-0 z-5 pointer-events-none">
+        <Particles id="reviews-particles" init={initParticles} options={particleOptions} className="w-full h-full" />
+      </div>
 
       {/* review cards */}
       <div className="w-full overflow-hidden relative z-10">

@@ -11,6 +11,8 @@ import NeedMoreInfo from "@/app/coaching/_coaching-components/components/NeedMor
 import FAQ from "@/app/coaching/_coaching-components/faq";
 import Clips from "@/app/coaching/_coaching-components/clips";
 import PlaceholderSections from "@/app/coaching/_coaching-components/placeholder-sections";
+import Tagline from "@/app/coaching/_coaching-components/tagline";
+import ShowcaseCarousel from "@/app/coaching/_coaching-components/showcase-carousel"; // ← NEW
 
 export default function CoachingPageClient() {
   const handleScrollToFollowup = React.useCallback(() => {
@@ -29,7 +31,7 @@ export default function CoachingPageClient() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(900px 480px at 8% 6%, rgba(96,165,250,.12), #0000 60%), radial-gradient(800px 420px at 92% 10%, rgba(56,189,248,.10), #0000 60%), linear-gradient(90deg, rgba(173,216,255,.06) 0%, #0000 18%, rgba(173,216,255,.02) 50%, #0000 82%, rgba(173,216,255,.06) 100%)",
+              "radial-gradient(900px 480px at 8% 6%, rgba(96,165,250,.18), #0000 55%), radial-gradient(800px 420px at 92% 10%, rgba(56,189,248,.16), #0000 55%), linear-gradient(90deg, rgba(173,216,255,.1) 0%, #0000 18%, rgba(173,216,255,.05) 50%, #0000 82%, rgba(173,216,255,.1) 100%)",
           }}
         />
       </div>
@@ -101,16 +103,14 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3) Overview */}
+      {/* 3) Overview with subtle light edges */}
       <section className="relative isolate pt-24 pb-24 md:pt-56 md:pb-56 overflow-hidden">
-        {/* subtle left/right gradients behind the element */}
+        {/* faint light glow around edges */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 pointer-events-none"
+          className="absolute inset-0 pointer-events-none -z-10"
           style={{
-            background:
-              `radial-gradient(1200px 650px at 36% 60%, color-mix(in srgb, var(--color-purple) 25%, transparent) 0%, transparent 75%),` +
-              `radial-gradient(1200px 650px at 64% 60%, color-mix(in srgb, var(--color-lightblue) 20%, transparent) 0%, transparent 75%)`,
+            boxShadow: "0 0 25px rgba(255,255,255,0.08)",
           }}
         />
         <div className="relative z-10 mx-auto max-w-7xl">
@@ -120,16 +120,25 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
+      {/* 3a) Tagline (no gradient) */}
+      <Tagline />
 
-      {/* 3a) Motivational glow (now self-contained inside the component) */}
-      <PlaceholderSections />
-
-      {/* 3b) Clips */}
+      {/* 3b) Clips (before PlaceholderSections) */}
       <section className="relative isolate pt-12 pb-24 md:pt-20 md:pb-32 overflow-visible">
         <div className="relative z-10 mx-auto max-w-7xl overflow-visible">
           <div className="max-w-6xl px-6 mx-auto overflow-visible">
             <Clips className="py-0 hidden md:block" />
           </div>
+        </div>
+      </section>
+
+      {/* 3c) Motivational glow / placeholder sections */}
+      <PlaceholderSections />
+
+      {/* NEW: Auto-scrolling showcase element */}
+      <section className="relative isolate py-8 md:py-16">
+        <div className="relative z-10 mx-auto max-w-7xl px-6">
+          <ShowcaseCarousel />
         </div>
       </section>
 

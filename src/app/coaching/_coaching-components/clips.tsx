@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import { CLIPS, ClipData } from "@/lib/coaching/clips.data";
 import ClipTiles from "@/app/coaching/_coaching-components/components/ClipTiles";
+import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 type Props = {
   className?: string;
@@ -53,17 +54,9 @@ export default function Clips({
             className="md:col-span-6 rounded-2xl overflow-hidden"
           />
 
-          {/* RIGHT: explainer panel (keeps the glassy wrapper) */}
+          {/* RIGHT: explainer panel */}
           <div className="md:col-span-6">
-            <div
-              className="
-                relative rounded-2xl p-5 md:p-8
-                bg-[rgba(18,32,64,0.35)]
-                border border-white/10
-                ring-1 ring-inset ring-cyan-300/10
-                backdrop-blur-sm
-              "
-            >
+            <GlassPanel className="relative p-5 md:p-8">
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 rounded-2xl"
@@ -79,14 +72,15 @@ export default function Clips({
                 Library of clips
               </h3>
               <p className="mt-3 text-white/75 text-base md:text-lg leading-relaxed max-w-[58ch]">
-                League is a game of visualization. But imagining a play that you've never consciously seen before is extremely
-                difficult and it's even more challenging to adjust your gameplay around it.
+                League is a game of visualization. But imagining a play that
+                you've never consciously seen before is extremely difficult and
+                it's even more challenging to adjust your gameplay around it.
               </p>
               <p className="mt-3 text-white/75 text-base md:text-lg leading-relaxed max-w-[58ch]">
-                That is why I've created a library of over 300 clips, to show you how a
-                Challenger player would behave in your shoes.
+                That is why I've created a library of over 300 clips, to show
+                you how a Challenger player would behave in your shoes.
               </p>
-            </div>
+            </GlassPanel>
           </div>
         </div>
       </div>
