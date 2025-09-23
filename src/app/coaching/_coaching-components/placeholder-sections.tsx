@@ -4,8 +4,6 @@ import React from "react";
 
 type SectionProps = { title: string; tagline?: string };
 
-// ---- Gradient / reveal owner ----
-// (Unchanged: gradient background look stays intact)
 function GlowBackdrop({ reveal }: { reveal: boolean }) {
   const sideVW = 20;
 
@@ -15,6 +13,8 @@ function GlowBackdrop({ reveal }: { reveal: boolean }) {
     "radial-gradient(1000px 600px at 18% 82%, rgba(6,182,212,0.64), #0000 65%)",
     "radial-gradient(1000px 600px at 82% 86%, rgba(236,72,153,0.52), #0000 65%)",
     "linear-gradient(180deg, rgba(56,189,248,0.30) 0%, rgba(139,92,246,0.28) 100%)",
+    // OPAQUE base layer
+    "linear-gradient(#05060a, #05060a)",
   ].join(", ");
 
   const baseFilter = "saturate(0.9) brightness(0.98) contrast(1)";
@@ -22,7 +22,6 @@ function GlowBackdrop({ reveal }: { reveal: boolean }) {
 
   return (
     <>
-      {/* Center band (always visible; vibrancy animates) */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-30 will-change-[filter]"
@@ -39,7 +38,6 @@ function GlowBackdrop({ reveal }: { reveal: boolean }) {
         }}
       />
 
-      {/* Left band (fades in) */}
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 -z-30 transition-opacity duration-[500ms] ease-out will-change-[opacity,filter] ${
@@ -58,7 +56,6 @@ function GlowBackdrop({ reveal }: { reveal: boolean }) {
         }}
       />
 
-      {/* Right band (fades in) */}
       <div
         aria-hidden
         className={`pointer-events-none absolute inset-0 -z-30 transition-opacity duration-[500ms] ease-out will-change-[opacity,filter] ${
@@ -80,19 +77,12 @@ function GlowBackdrop({ reveal }: { reveal: boolean }) {
   );
 }
 
-// Accent bar (brand styling)
-function AccentBar() {
-  return (
-    <div className="h-[3px] w-14 rounded-full bg-gradient-to-r from-cyan-300/80 to-violet-400/60" />
-  );
-}
-
 function BigSection({ title, tagline }: SectionProps) {
   return (
-    <section className="relative flex flex-col items-center text-center py-[70vh] md:py-[90vh] px-6">
+    <section className="relative flex flex-col items-center text-center py-28 md:py-40 px-6">
       <div className="max-w-2xl w-full mx-auto">
-        <AccentBar />
-        <h2 className="mt-6 text-3xl md:text-5xl font-bold tracking-tight">
+        {/* AccentBar removed */}
+        <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
           {title}
         </h2>
         {tagline && (
@@ -102,9 +92,8 @@ function BigSection({ title, tagline }: SectionProps) {
         )}
       </div>
 
-      {/* Placeholder for upcoming graphic */}
-      <div className="mt-10 w-full max-w-3xl h-56 md:h-72 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center text-white/50">
-        Graphic Placeholder
+      <div className="mt-8 w-full max-w-3xl aspect-[16/9] bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex items-center justify-center text-white/50">
+        Graphic Placeholder (16:9)
       </div>
     </section>
   );
@@ -119,8 +108,11 @@ export default function PlaceholderSections() {
     if (!el) return;
 
     const onScroll = () => {
-      const top = el.getBoundingClientRect().top;
-      setRevealSides(top <= 0);
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+
+      // Mirror logic: reveal after top hits top, hide after bottom rises above viewport bottom
+      setRevealSides(rect.top <= 0 && rect.bottom >= vh);
     };
 
     onScroll();
@@ -133,24 +125,27 @@ export default function PlaceholderSections() {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative isolate overflow-hidden">
+    <section
+      ref={containerRef}
+      className="relative isolate overflow-hidden pt-28 md:pt-40 pb-28 md:pb-40"
+    >
       <GlowBackdrop reveal={revealSides} />
 
       <BigSection
+        title="Bring your goals within reach"
+        tagline="Climbing isn’t about talent — it’s about discipline and reflection."
+      />
+      <BigSection
         title="Clarity when the game feels impossible"
-        tagline="Don’t ask why you’re losing — ask how you can win."
+        tagline="Don’t ask why you’re losing. Ask how you can win."
       />
       <BigSection
-        title="Win the fight before it starts"
-        tagline="Time your spikes, pick your battles, make the map play for you."
+        title="No more uncertainty"
+        tagline="Set clear goals that make a real difference in your matches."
       />
       <BigSection
-        title="Fix the 3 mistakes that matter"
-        tagline="High-impact, easy-to-fix habits that unlock fast MMR gains."
-      />
-      <BigSection
-        title="Practice that actually sticks"
-        tagline="Simple drills you’ll repeat — not advice you’ll forget."
+        title="Every game is winnable"
+        tagline="A Challenger player can have 100% winrate in low elo. So can you."
       />
     </section>
   );

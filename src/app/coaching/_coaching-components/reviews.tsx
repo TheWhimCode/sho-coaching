@@ -62,14 +62,15 @@ const Emblem = ({ tier, div }: { tier?: string; div?: string }) => {
   const file = RANK_IMAGE[key];
   if (!file) return null;
 
+  // Icons slightly bigger (from 32px -> 36px)
   return (
-    <span className="relative inline-flex h-8 w-8 items-center justify-center overflow-visible -mt-0.5">
+    <span className="relative inline-flex h-9 w-9 items-center justify-center overflow-visible -mt-0.5">
       <Image
         src={`/images/league/rank/${file}`}
         alt={div ? `${tier} ${div}` : tier}
-        width={32}
-        height={32}
-        className="h-8 w-8 object-contain pointer-events-none select-none"
+        width={36}
+        height={36}
+        className="h-9 w-9 object-contain pointer-events-none select-none"
         priority={false}
       />
       {div ? (
@@ -93,12 +94,59 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
     <div className="absolute right-2.5 top-2.5 hidden sm:block"> {/* hide on mobile */}
       <div className="flex items-center gap-0.5 text-[11px] leading-4">
         <Emblem tier={pf.tier} div={pf.div} />
-        <CaretRight size={14} weight="bold" className="opacity-85" aria-hidden />
+        {/* Arrow slightly bigger (14 -> 18) */}
+        <CaretRight size={18} weight="bold" className="opacity-85" aria-hidden />
         <Emblem tier={pt.tier} div={pt.div} />
         <span className="sr-only">
           Rank improved from {from ?? "unknown"} to {to ?? "unknown"}
         </span>
       </div>
+    </div>
+  );
+};
+
+/* ---------- Review item (inside a connected rail) ---------- */
+
+const ReviewItem = ({ r }: { r: Review }) => {
+  // Prefer r.avatar from reviews.data; fallback placeholder
+  const avatarSrc =
+    (r as any)?.avatar ??
+    "/images/coaching/reviews/placeholder-avatar.png";
+
+  return (
+    <div
+      className="
+        relative w-[240px] sm:w-[280px] shrink-0
+        h-[190px]   /* slightly higher */
+        rounded-md
+        px-4 py-4
+      "
+    >
+      <RankChip from={r.rankFrom} to={r.rankTo} />
+
+      <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/10 shrink-0">
+        {/* Reviewer name slightly bigger */}
+        <span className="font-semibold text-white/90 truncate text-[16px] sm:text-[17px]">
+          {r.name}
+        </span>
+
+        {/* Avatar to the right of the reviewer name */}
+        <Image
+          src={avatarSrc}
+          alt={`${r.name} avatar`}
+          width={28}
+          height={28}
+          className="ml-1 inline-block h-7 w-7 rounded-full object-cover ring-1 ring-white/15"
+        />
+
+        {typeof r.rating === "number" ? (
+          <span className="sr-only">Rating: {r.rating} out of 5</span>
+        ) : null}
+      </div>
+
+      <p className="text-white/80 text-[14px] leading-[22px] overflow-hidden">
+        {r.text}
+      </p>
     </div>
   );
 };
@@ -159,7 +207,6 @@ export default function Reviews({
         direction: "left",
         random: true,
         straight: false,
-
         outModes: { default: "out" },
         trail: { enable: false },
       },
@@ -175,54 +222,19 @@ export default function Reviews({
     },
   };
 
-  const Card = ({ r }: { r: Review }) => (
-    <GlassPanel
-      className="
-        relative w-[240px] sm:w-[280px] shrink-0
-        h-[175px]   /* fixed height */
-        rounded-xl overflow-hidden
-        border border-white/10 ring-1 ring-inset ring-cyan-300/15
-        shadow-[8px_8px_20px_-6px_rgba(0,0,0,.8)]
-        hover:ring-cyan-300/30 hover:border-white/15
-        transition-all
-      "
-    >
-      {/* Neon internal glows */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-12 -left-12 h-32 w-32 rounded-full bg-fuchsia-400/15 blur-3xl" />
-        <div className="absolute -bottom-12 -right-12 h-32 w-32 rounded-full bg-purple-500/15 blur-3xl" />
-      </div>
-
-      {/* Outer halo */}
-      <div className="pointer-events-none absolute inset-0 rounded-[11px] shadow-[0_0_30px_-6px_rgba(168,85,247,.35)]" />
-
-      {/* Content with fixed padding and adaptive layout */}
-      <div className="relative h-full p-4 flex flex-col min-h-0">
-        <RankChip from={r.rankFrom} to={r.rankTo} />
-
-        <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/5 shrink-0">
-          <span className="font-semibold text-white/90 truncate text-sm">
-            {r.name}
-          </span>
-          {/* removed star icons; keep screen-reader rating if present */}
-          {typeof r.rating === "number" ? (
-            <span className="sr-only">Rating: {r.rating} out of 5</span>
-          ) : null}
-        </div>
-
-        {/* text flexes inside available space, padding stays constant */}
-        <p className="text-white/75 text-[13px] leading-5 overflow-hidden">
-          {r.text}
-        </p>
-      </div>
-    </GlassPanel>
-  );
-
   const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
     return (
-      <div ref={ref as any} className="flex items-center gap-5 shrink-0">
+      <div ref={ref as any} className="flex items-stretch gap-6 shrink-0">
         {items.map((r, i) => (
-          <Card key={`card-${i}`} r={r} />
+          <React.Fragment key={`card-${i}`}>
+            <ReviewItem r={r} />
+            {i < items.length - 1 ? (
+              <span
+                aria-hidden
+                className="h-full w-px bg-white/15 shrink-0"
+              />
+            ) : null}
+          </React.Fragment>
         ))}
       </div>
     );
@@ -369,13 +381,31 @@ export default function Reviews({
         <Particles id="reviews-particles" init={initParticles} options={particleOptions} className="w-full h-full" />
       </div>
 
-      {/* review cards */}
-      <div className="w-full overflow-hidden relative z-10">
-        <div ref={trackRef} className="flex flex-nowrap will-change-transform">
-          <Slice ref={sliceRef} />
-          <Slice />
+      {/* connected wrapper rail, now full width */}
+      <GlassPanel
+        className="
+          relative w-full
+          overflow-hidden
+          border-y border-white/10 ring-1 ring-inset ring-cyan-300/15
+          shadow-[8px_8px_20px_-6px_rgba(0,0,0,.8)]
+          backdrop-blur
+          px-3 py-4
+          z-10
+        "
+      >
+        {/* subtle inner halo */}
+        <div
+          className="pointer-events-none absolute inset-0 shadow-[0_0_30px_-6px_rgba(168,85,247,.28)]"
+          aria-hidden
+        />
+
+        <div className="w-full overflow-hidden relative">
+          <div ref={trackRef} className="flex flex-nowrap will-change-transform">
+            <Slice ref={sliceRef} />
+            <Slice />
+          </div>
         </div>
-      </div>
+      </GlassPanel>
 
       {/* inner shadow overlay (on top) */}
       <div
@@ -383,11 +413,11 @@ export default function Reviews({
         className="pointer-events-none absolute inset-0 z-20"
         style={{
           boxShadow: `
-          inset 0 30px 12px -6px rgba(0,0,0,0.5),
-          inset 0 -30px 12px -6px rgba(0,0,0,0.5),
-          inset 30px 0 24px -6px rgba(0,0,0,0.8),
-          inset -30px 0 24px -6px rgba(0,0,0,0.8)
-        `,
+            inset 0 24px 12px -12px rgba(0,0,0,0.55),
+            inset 0 -24px 12px -12px rgba(0,0,0,0.55),
+            inset 40px 0 28px -18px rgba(0,0,0,0.85),
+            inset -40px 0 28px -18px rgba(0,0,0,0.85)
+          `,
         }}
       />
 

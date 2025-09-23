@@ -12,7 +12,10 @@ import FAQ from "@/app/coaching/_coaching-components/faq";
 import Clips from "@/app/coaching/_coaching-components/clips";
 import PlaceholderSections from "@/app/coaching/_coaching-components/placeholder-sections";
 import Tagline from "@/app/coaching/_coaching-components/tagline";
-import ShowcaseCarousel from "@/app/coaching/_coaching-components/showcase-carousel"; // ← NEW
+import ShowcaseCarousel from "@/app/coaching/_coaching-components/showcase-carousel";
+
+// divider with logo
+import DividerWithLogo from "@/app/_components/small/Divider-logo";
 
 export default function CoachingPageClient() {
   const handleScrollToFollowup = React.useCallback(() => {
@@ -20,57 +23,34 @@ export default function CoachingPageClient() {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
-  const pageBG =
-    "linear-gradient(180deg,#050B18 0%,#081126 20%,#0A1730 40%,#081126 60%,#050B18 80%,#000 100%)";
+const pageBG = "var(--color-bg)";
 
   return (
-    <main className="relative min-h-screen text-white" style={{ background: pageBG }}>
-      {/* global decorative sweep */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(900px 480px at 8% 6%, rgba(96,165,250,.18), #0000 55%), radial-gradient(800px 420px at 92% 10%, rgba(56,189,248,.16), #0000 55%), linear-gradient(90deg, rgba(173,216,255,.1) 0%, #0000 18%, rgba(173,216,255,.05) 50%, #0000 82%, rgba(173,216,255,.1) 100%)",
-          }}
-        />
+    <main
+      className="relative min-h-screen text-white overflow-x-clip"
+      style={{ background: pageBG }}
+    >
+<section className="relative isolate pt-20 pb-0 md:pt-48 md:pb-16 overflow-hidden overflow-x-clip">
+  <div className="relative z-10 mx-auto max-w-7xl">
+    <PresetCards
+      containerClassName="max-w-6xl px-6"
+      onFollowupInfo={handleScrollToFollowup}
+    />
+    <DividerWithLogo className="mx-2 my-16" />
+    <div className="relative">
+      <div className="relative z-10 mb-12 md:mb-0">
+        <CoachingExamples />
       </div>
+    </div>
+  </div>
+</section>
 
-      {/* 1) Product cards + Examples */}
-      <section className="relative isolate pt-20 pb-0 md:pt-48 md:pb-16 overflow-hidden">
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <PresetCards
-            containerClassName="max-w-6xl px-6"
-            onFollowupInfo={handleScrollToFollowup}
-          />
-          <div className="border-t border-white/10 mx-2 my-16" />
-          <div className="relative">
-            {/* subtle grid just for the examples section */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[140vw] -z-10"
-              style={{
-                backgroundImage: "url('/images/coaching/grid.png')",
-                backgroundRepeat: "repeat",
-                backgroundPosition: "center 140px",
-                backgroundSize: "auto",
-                opacity: 0.15,
-                imageRendering: "crisp-edges",
-                maskImage:
-                  "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
-                WebkitMaskImage:
-                  "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
-              }}
-            />
-            <div className="relative z-10 mb-12 md:mb-0">
-              <CoachingExamples />
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 2) Reviews */}
-      <section className="relative isolate overflow-hidden" style={{ backgroundColor: "#081126" }}>
+      <section
+        className="relative isolate overflow-hidden"
+        style={{ backgroundColor: "#081126" }}
+      >
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
@@ -103,15 +83,12 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3) Overview with subtle light edges */}
-      <section className="relative isolate pt-24 pb-24 md:pt-56 md:pb-56 overflow-hidden">
-        {/* faint light glow around edges */}
+      {/* 3) Overview */}
+      <section className="relative isolate pt-24 pb-36 md:pt-56 md:pb-[19rem] overflow-hidden">
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none -z-10"
-          style={{
-            boxShadow: "0 0 25px rgba(255,255,255,0.08)",
-          }}
+          style={{ boxShadow: "0 0 25px rgba(255,255,255,0.08)" }}
         />
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="max-w-6xl px-6 mx-auto">
@@ -120,11 +97,135 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3a) Tagline (no gradient) */}
-      <Tagline />
+      {/* 3a) Tagline */}
+      <section className="relative isolate">
+        <div className="relative z-10 mx-auto max-w-7xl px-6">
+          <Tagline />
+        </div>
+      </section>
 
-      {/* 3b) Clips (before PlaceholderSections) */}
-      <section className="relative isolate pt-12 pb-24 md:pt-20 md:pb-32 overflow-visible">
+      {/* 3b) Clips */}
+      <section
+        id="clips-section"
+        className="relative isolate pt-36 pb-36 md:pt-[19rem] md:pb-[19rem] overflow-x-clip overflow-y-visible"
+      >
+        {/* animation CSS (transform-based; no layout overflow) */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              #clips-stripes {
+                --stripe-thickness: 14rem;
+                --stripe-gap: 1rem;
+              }
+              #clips-stripes .stripe {
+                height: var(--stripe-thickness);
+                transform: scaleX(0);
+                transform-origin: left center;
+                will-change: transform;
+                transition: transform 900ms cubic-bezier(.22,.61,.36,1);
+              }
+              #clips-stripes .stripe--bottom { transition-delay: 0ms; }
+              #clips-stripes .stripe--middle { transition-delay: 140ms; }
+              #clips-stripes .stripe--top    { transition-delay: 280ms; }
+
+              /* 20% shorter than previous */
+              #clips-stripes.in-view .stripe--top    { transform: scaleX(0.72); }
+              #clips-stripes.in-view .stripe--bottom { transform: scaleX(0.912); }
+              #clips-stripes.in-view .stripe--middle { transform: scaleX(0.976); }
+
+              @media (prefers-reduced-motion: reduce) {
+                #clips-stripes .stripe { transition: none; transform: none; }
+              }
+            `,
+          }}
+        />
+
+        {/* Sentinel at the vertical center of the Clips area */}
+        <div
+          id="clips-center-sentinel"
+          aria-hidden
+          className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px pointer-events-none opacity-0"
+        />
+
+        {/* stripes container (centered, clipped horizontally) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -z-10 left-0 right-0 bottom-[-30rem] md:bottom-[-38rem] h-[90rem] md:h-[110rem] overflow-x-clip overflow-y-visible"
+        >
+          <div
+            id="clips-stripes"
+            className="absolute left-1/2 -translate-x-1/2 bottom-0 w-screen max-w-[100vw] h-[140rem] rotate-[-32deg] origin-bottom-left"
+          >
+            {/* middle (longest visual) */}
+            <div
+              className="stripe stripe--middle absolute left-0 w-[100vw]"
+              style={{
+                bottom: "calc(var(--stripe-thickness) + var(--stripe-gap))",
+                backgroundColor: "rgba(15, 30, 85, 0.40)",
+              }}
+            />
+            {/* bottom */}
+            <div
+              className="stripe stripe--bottom absolute left-0 w-[100vw]"
+              style={{
+                bottom: "0",
+                backgroundColor: "rgba(15, 30, 85, 0.40)",
+              }}
+            />
+            {/* top */}
+            <div
+              className="stripe stripe--top absolute left-0 w-[100vw]"
+              style={{
+                bottom:
+                  "calc((var(--stripe-thickness) + var(--stripe-gap)) * 2)",
+                backgroundColor: "rgba(15, 30, 85, 0.40)",
+              }}
+            />
+          </div>
+
+          <div
+            className="absolute inset-0"
+            style={{
+              maskImage:
+                "linear-gradient(to right, transparent 0, black 15%, black 85%, transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent 0, black 15%, black 85%, transparent 100%)",
+            }}
+          />
+        </div>
+
+        {/* Observer: triggers when the center sentinel is visible */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                var sentinel = document.getElementById('clips-center-sentinel');
+                var stripes = document.getElementById('clips-stripes');
+                if (!sentinel || !stripes || window.__clipsObsCenterInit) return;
+                window.__clipsObsCenterInit = true;
+
+                var obs = new IntersectionObserver(function(entries){
+                  for (var i=0;i<entries.length;i++){
+                    if (entries[i].isIntersecting){
+                      requestAnimationFrame(function(){
+                        stripes.classList.add('in-view');
+                      });
+                      obs.disconnect();
+                      break;
+                    }
+                  }
+                }, {
+                  threshold: 0,
+                  root: null,
+                  rootMargin: "0px"
+                });
+
+                obs.observe(sentinel);
+              })();
+            `,
+          }}
+        />
+
         <div className="relative z-10 mx-auto max-w-7xl overflow-visible">
           <div className="max-w-6xl px-6 mx-auto overflow-visible">
             <Clips className="py-0 hidden md:block" />
@@ -132,10 +233,10 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3c) Motivational glow / placeholder sections */}
+      {/* 3c) Placeholder sections */}
       <PlaceholderSections />
 
-      {/* NEW: Auto-scrolling showcase element */}
+      {/* Auto-scrolling showcase element */}
       <section className="relative isolate py-8 md:py-16">
         <div className="relative z-10 mx-auto max-w-7xl px-6">
           <ShowcaseCarousel />
@@ -150,7 +251,7 @@ export default function CoachingPageClient() {
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="max-w-6xl px-6 mx-auto">
             <FollowUp className="py-0" />
-            <div className="border-t border-white/10 mx-2 my-16" />
+            <DividerWithLogo className="mx-2 my-16" />
             <Survey className="w-full" />
           </div>
         </div>

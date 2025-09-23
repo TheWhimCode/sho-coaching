@@ -212,7 +212,7 @@ export default function SessionHero({
           alt=""
           className="block md:hidden h-full w-full object-cover object-left"
         />
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/20" />
       </motion.div>
 
       {/* content — delay a bit so BG is visible first */}

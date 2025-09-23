@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, useInView } from "framer-motion";
 import type { ClipData } from "@/lib/coaching/clips.data";
 
 type ClipTilesProps = {
   data: ClipData[];
   cols?: number;
   rows?: number;
-  rings?: number;
   gap?: string;
   bleed?: string;
   className?: string;
@@ -18,35 +17,93 @@ export default function ClipTiles({
   data,
   cols = 3,
   rows = 2,
-  rings = 2,
   gap = "12px",
   bleed = "15vw",
   className = "",
 }: ClipTilesProps) {
-  const gridCols = cols + rings * 2;
-  const gridRows = rows + rings * 2;
+  if (!data || data.length === 0) return null;
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(containerRef, { amount: 0.8, margin: "0px 0px -10% 0px" });
+
+  // timings
+  const START_DELAY_MS = 4000; // wait after appearing
+  const FADE_IN_MS = 600;
+  const HOLD_MS = 4000; // stay fully glowing
+  const FADE_OUT_MS = 1200; // slow fade out
+  const GAP_MS = 2000; // wait before next tile
+
+  // Sequence: center-bottom (4) → top-left (0) → bottom-right (5) → top-center (1) → bottom-left (3) → top-right (2)
+  const sequence = useMemo(() => {
+    const centerBottom = (rows - 1) * cols + Math.floor(cols / 2);
+    const mapPos = {
+      topLeft: 0,
+      topCenter: Math.floor(cols / 2),
+      topRight: cols - 1,
+      bottomLeft: (rows - 1) * cols + 0,
+      bottomCenter: centerBottom,
+      bottomRight: (rows - 1) * cols + (cols - 1),
+    };
+    return [
+      mapPos.bottomCenter,
+      mapPos.topLeft,
+      mapPos.bottomRight,
+      mapPos.topCenter,
+      mapPos.bottomLeft,
+      mapPos.topRight,
+    ];
+  }, [rows, cols]);
+
+  type Phase = "in" | "hold" | "out" | null;
+  const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
+  const [phase, setPhase] = useState<Phase>(null);
+
+  useEffect(() => {
+    if (!inView || sequence.length === 0) return;
+
+    let idx = 0;
+    let alive = true;
+    const to: number[] = [];
+
+    const schedule = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(fn, ms);
+      to.push(id);
+    };
+
+    const runStep = () => {
+      if (!alive) return;
+      const tile = sequence[idx % sequence.length];
+
+      setHighlightIndex(tile);
+      setPhase("in");
+      schedule(() => setPhase("hold"), FADE_IN_MS);
+      schedule(() => setPhase("out"), FADE_IN_MS + HOLD_MS);
+      schedule(() => {
+        setHighlightIndex(null);
+        setPhase(null);
+        idx++;
+        schedule(runStep, GAP_MS);
+      }, FADE_IN_MS + HOLD_MS + FADE_OUT_MS);
+    };
+
+    schedule(runStep, START_DELAY_MS);
+
+    return () => {
+      alive = false;
+      to.forEach(clearTimeout);
+      setHighlightIndex(null);
+      setPhase(null);
+    };
+  }, [inView, sequence]);
 
   return (
     <div
+      ref={containerRef}
       className={`relative w-full aspect-video overflow-visible ${className}`}
-      style={{ ["--gap" as any]: gap, ["--bleed" as any]: bleed } as React.CSSProperties}
+      style={
+        { ["--gap" as any]: gap, ["--bleed" as any]: bleed } as React.CSSProperties
+      }
     >
-      {/* DECORATIVE RINGS */}
-      <div
-        className="absolute pointer-events-none z-0"
-        style={{
-          inset: "calc(var(--bleed) * -1)",
-          WebkitMaskImage:
-            "radial-gradient(closest-side at 50% 50%, white 72%, transparent 100%)",
-          maskImage:
-            "radial-gradient(closest-side at 50% 50%, white 72%, transparent 100%)",
-        }}
-        aria-hidden
-      >
-        {renderDecorativeTiles({ gridCols, gridRows, rings, cols, rows })}
-      </div>
-
-      {/* CORE 3×2 CLIPS */}
       <div className="absolute inset-0 z-10">
         {Array.from({ length: rows * cols }).map((_, i) => {
           const c = i % cols;
@@ -64,7 +121,11 @@ export default function ClipTiles({
               pos={{ left, top, tileW, tileH }}
               interactive
               baseZ={20}
-              forcedOpacity={1} // fully opaque
+              forcedOpacity={1}
+              highlighted={highlightIndex === i}
+              phase={phase}
+              fadeInMs={FADE_IN_MS}
+              fadeOutMs={FADE_OUT_MS}
             />
           );
         })}
@@ -73,89 +134,40 @@ export default function ClipTiles({
   );
 }
 
-function renderDecorativeTiles({
-  gridCols,
-  gridRows,
-  rings,
-  cols,
-  rows,
-}: {
-  gridCols: number;
-  gridRows: number;
-  rings: number;
-  cols: number;
-  rows: number;
-}) {
-  const tileW = `calc((100% - ${(gridCols - 1)} * var(--gap)) / ${gridCols})`;
-  const tileH = `calc((100% - ${(gridRows - 1)} * var(--gap)) / ${gridRows})`;
-
-  const coreLeft = rings;
-  const coreTop = rings;
-  const coreRight = rings + cols - 1;
-  const coreBottom = rings + rows - 1;
-
-  const tiles: React.ReactNode[] = [];
-
-  for (let r = 0; r < gridRows; r++) {
-    for (let c = 0; c < gridCols; c++) {
-      const inCore = r >= coreTop && r <= coreBottom && c >= coreLeft && c <= coreRight;
-      if (inCore) continue;
-
-      const dRow = r < coreTop ? coreTop - r : r > coreBottom ? r - coreBottom : 0;
-      const dCol = c < coreLeft ? coreLeft - c : c > coreRight ? c - coreRight : 0;
-      const ring = dRow + dCol;
-      if (ring < 1 || ring > rings) continue;
-
-      const ringOpacity = ring === 1 ? 0.45 : 0.12;
-
-      const left = `calc((${tileW} + var(--gap)) * ${c})`;
-      const top = `calc((${tileH} + var(--gap)) * ${r})`;
-
-      tiles.push(
-        <ClipTile
-          key={`dec-${r}-${c}`}
-          clip={null}
-          pos={{ left, top, tileW, tileH }}
-          interactive={false}
-          baseZ={1}
-          forcedOpacity={ringOpacity}
-        />
-      );
-    }
-  }
-
-  return tiles;
-}
-
 function ClipTile({
   clip,
   pos,
   interactive,
   baseZ = 1,
   forcedOpacity,
+  highlighted = false,
+  phase = null,
+  fadeInMs = 600,
+  fadeOutMs = 1200,
 }: {
   clip: ClipData | null;
   pos: { left: string; top: string; tileW: string; tileH: string };
   interactive: boolean;
   baseZ?: number;
   forcedOpacity?: number;
+  highlighted?: boolean;
+  phase?: "in" | "hold" | "out" | null;
+  fadeInMs?: number;
+  fadeOutMs?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [hovered, setHovered] = useState(false);
-  const [animatingOut, setAnimatingOut] = useState(false);
 
   const { left, top, tileW, tileH } = pos;
 
   const onHoverStart = () => {
     if (!interactive) return;
     setHovered(true);
-    setAnimatingOut(false);
     videoRef.current?.play().catch(() => {});
   };
   const onHoverEnd = () => {
     if (!interactive) return;
     setHovered(false);
-    setAnimatingOut(true);
     videoRef.current?.pause();
   };
 
@@ -164,9 +176,21 @@ function ClipTile({
   const l = interactive && hovered ? "0%" : left;
   const t = interactive && hovered ? "0%" : top;
 
-  // ✅ unified gradient for all tiles
-  const defaultGradient =
-    "linear-gradient(135deg, rgba(90,150,250,0.6) 0%, rgba(40,80,160,0.6) 100%)";
+  // SAME COLOR AS BORDER (purple). Use a full-tile overlay.
+  const glowStyle: React.CSSProperties = {
+    background:
+      "linear-gradient(135deg, rgba(124,58,237,0.75), rgba(124,58,237,0.55))",
+  };
+
+  // Determine overlay opacity target
+  const overlayTarget =
+    highlighted && !hovered
+      ? phase === "in" || phase === "hold"
+        ? 0.9
+        : phase === "out"
+        ? 0
+        : 0
+      : 0;
 
   return (
     <motion.button
@@ -186,56 +210,86 @@ function ClipTile({
         zIndex: interactive && hovered ? baseZ + 10 : baseZ,
         opacity: forcedOpacity ?? 1,
         pointerEvents: interactive ? "auto" : "none",
+        background: "transparent", // ensure tile background is transparent
       }}
       aria-hidden={!interactive}
     >
-      {/* Gradient layer */}
+      {/* Full-tile glow overlay (above video, below labels) */}
+      <motion.div
+        className="absolute inset-0 rounded-2xl z-[25] mix-blend-screen pointer-events-none"
+        style={glowStyle}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: overlayTarget }}
+        transition={{
+          duration: overlayTarget > 0 ? fadeInMs / 1000 : fadeOutMs / 1000,
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* 4px ring — fade out slightly sooner (keep brightness) */}
       <div
         className="absolute inset-0 rounded-2xl"
         style={{
-          background: defaultGradient,
-          boxShadow: `
-            inset 0 0 14px rgba(0,0,0,.28),
-            0 6px 18px rgba(0,0,0,.35),
-            inset 0 1px 0 rgba(255,255,255,.04)
-          `,
-        }}
-      />
-
-      {/* Texture layer */}
-      <div
-        className="absolute inset-0 rounded-2xl pointer-events-none"
-        style={{
-          backgroundImage: "url('/images/coaching/texture3.jpg')",
-          backgroundRepeat: "repeat",
-          backgroundSize: "auto",
-          mixBlendMode: "overlay",
-          opacity: 0.28,
-          filter: "contrast(1.08) brightness(1.03)",
-        }}
-      />
-
-      {/* Gradient border */}
-      <div
-        className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300"
-        style={{
-          padding: "1px",
-          background:
-            interactive && (hovered || animatingOut)
-              ? "linear-gradient(180deg, rgba(160,200,255,.35), rgba(86,140,220,.25))"
-              : "linear-gradient(180deg, rgba(160,200,255,.2), rgba(86,140,220,.12))",
+          position: "absolute",
+          inset: 0,
           borderRadius: "1rem",
+          padding: "4px",
+          background: `
+            linear-gradient(
+              135deg,
+              rgba(255,255,255,0.35) 0%,
+              rgba(255,255,255,0.18) 28%,
+              rgba(255,255,255,0.06) 52%,
+              rgba(255,255,255,0.00) 88%
+            )
+          `,
           WebkitMask:
             "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
           WebkitMaskComposite: "xor",
-          mask:
-            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
           maskComposite: "exclude",
+          pointerEvents: "none",
+          opacity: 0.6,
         }}
-        aria-hidden
       />
 
-      {/* VIDEO (only for interactive core) */}
+      {/* inner highlight panel — make transparent (no wash) */}
+      <div
+        className="absolute inset-0 rounded-xl"
+        style={{
+          position: "absolute",
+          inset: "4px",
+          borderRadius: "0.75rem",
+          background: "transparent",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* 1px angled accent ring — fade slightly sooner (keep brightness) */}
+      <div
+        className="absolute inset-0 rounded-2xl"
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "1rem",
+          padding: "1px",
+          background: `
+            linear-gradient(
+              135deg,
+              rgba(124,58,237,1) 0%,
+              rgba(124,58,237,0.4) 24%,
+              rgba(124,58,237,0.1) 58%,
+              transparent 88%
+            )
+          `,
+          WebkitMask:
+            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* VIDEO (hover priority remains) */}
       {interactive && clip && (
         <motion.video
           ref={videoRef}
@@ -251,21 +305,22 @@ function ClipTile({
         />
       )}
 
-      {/* LABELS only on interactive */}
+      {/* LABELS */}
       {interactive && clip && (
-        <div className="absolute inset-0 z-10 grid place-items-center text-center pointer-events-none">
+        <motion.div
+          className="absolute inset-0 z-30 grid place-items-center text-center pointer-events-none"
+          animate={{ opacity: hovered ? 0 : 1 }}
+          transition={{ duration: hovered ? 0.2 : 0.3, ease: "easeInOut" }}
+        >
           <div className="px-3">
-            <div className="text-[11px] tracking-[0.18em] text-white/60 uppercase mb-1">
+            <div className="text-[11px] tracking-[0.18em] text-white/70 uppercase mb-1">
               {clip.tag ?? "Example"}
             </div>
             <div className="text-base md:text-[17px] font-semibold text-white/90">
               {clip.title}
             </div>
-            {clip.subtitle && (
-              <div className="mt-1 text-[12px] text-white/70">{clip.subtitle}</div>
-            )}
           </div>
-        </div>
+        </motion.div>
       )}
     </motion.button>
   );

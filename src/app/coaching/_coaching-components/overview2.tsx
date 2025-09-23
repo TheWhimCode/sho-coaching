@@ -1,7 +1,7 @@
 // components/overview/Overview2.tsx
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef, useEffect, useLayoutEffect } from "react";
 import {
   Trophy,
   BarChart3,
@@ -11,7 +11,7 @@ import {
   LayoutDashboard,
   AlertCircle,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useAnimation, useInView } from "framer-motion";
 import Particles from "react-tsparticles";
 import type { ISourceOptions, Engine } from "tsparticles-engine";
 import { loadSlim } from "tsparticles-slim";
@@ -24,8 +24,8 @@ type Item = {
 };
 
 const DEFAULT_ITEMS: Item[] = [
-  { id: "benefit-1", title: "Understand macro", body: "Learn to think like a pro and use the map to your advantage.", icon: <LayoutDashboard className="h-6 w-6" /> },
-  { id: "benefit-2", title: "Turn knowledge into wins", body: "Apply your knowledge in practice to close out more games.", icon: <Trophy className="h-6 w-6" /> },
+  { id: "benefit-1", title: "Understand macro", body: "Learn to think like a pro, use the map to your advantage.", icon: <LayoutDashboard className="h-6 w-6" /> },
+  { id: "benefit-2", title: "Turn knowledge into wins", body: "Learn to apply your gameknowledge to close out more games.", icon: <Trophy className="h-6 w-6" /> },
   { id: "benefit-3", title: "Profile review", body: "See how your profile stacks up against the pros.", icon: <BarChart3 className="h-6 w-6" /> },
   { id: "benefit-4", title: "No sugar-coating", body: "Direct, honest feedback. Enough input for your next 100+ games.", icon: <AlertCircle className="h-6 w-6" /> },
   { id: "benefit-5", title: "Mechanics upgrade", body: "Get instant feedback on mechanics and how to sharpen them.", icon: <Crosshair className="h-6 w-6" /> },
@@ -43,6 +43,28 @@ export default function Overview2({
   items?: Item[];
   className?: string;
 }) {
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(panelRef, { margin: "0px 0px -40% 0px" });
+  const glowControls = useAnimation();
+  const [hasTriggered, setHasTriggered] = useState(false);
+
+  // Prevent initial flash
+  useLayoutEffect(() => {
+    glowControls.set({ opacity: 0 });
+  }, [glowControls]);
+
+  // One-time subtle glow-in
+  useEffect(() => {
+    if (inView && !hasTriggered) {
+      setHasTriggered(true);
+      glowControls.start({
+        // lower target opacity to keep the glow subtle
+        opacity: 0.55,
+        transition: { duration: 0.9, delay: 1, ease: "easeOut" },
+      });
+    }
+  }, [inView, hasTriggered, glowControls]);
+
   return (
     <section className={`w-full ${className}`}>
       <div className="mx-auto max-w-7xl">
@@ -52,47 +74,65 @@ export default function Overview2({
           <h2 className="mt-2 text-3xl md:text-[44px] leading-tight font-bold">{heading}</h2>
         </div>
 
-        {/* Panel with ring/shadow only */}
-        <div
-          className="relative rounded-2xl overflow-hidden ring-1 ring-[color:var(--color-divider)]"
-          style={{
-            background: "var(--color-panel)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            boxShadow:
-              "0 10px 28px rgba(0,0,0,.35), 0 0 0 1px color-mix(in srgb, var(--color-fg) 8%, transparent)",
-          }}
-        >
-          {/* subtle texture overlay */}
-          <div
+        {/* Glow wrapper */}
+        <div className="relative">
+          {/* Outside glow (light blue + reduced intensity). This does NOT touch tile hover gradient. */}
+          <motion.div
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-2xl"
+            className="pointer-events-none absolute inset-0 rounded-3xl"
+            animate={glowControls}
             style={{
-              backgroundImage: "url('/images/coaching/texture3.jpg')",
-              backgroundRepeat: "repeat",
-              backgroundSize: "auto",
-              mixBlendMode: "overlay",
-              opacity: 0.14,
-              filter: "contrast(1.04) brightness(1.01)",
+              willChange: "opacity",
+              boxShadow: [
+                // use your theme var; keep radii small for subtlety
+                "0 0 28px var(--color-purple)",
+                "0 0 12px var(--color-purple)",
+                "0 0 4px var(--color-purple)",
+              ].join(", "),
             }}
           />
 
-          {/* 2x3 grid with inner borders */}
-          <div className="relative grid grid-cols-1 md:grid-cols-3 md:grid-rows-2">
-            {items.map((item, i) => {
-              const isFirstItem = i === 0;
-              const isFirstRow = i < 3;
-              const isFirstCol = i % 3 === 0;
-              return (
-                <Cell
-                  key={item.id}
-                  item={item}
-                  isFirstItem={isFirstItem}
-                  isFirstRow={isFirstRow}
-                  isFirstCol={isFirstCol}
-                />
-              );
-            })}
+          {/* Panel (no outer drop shadow, no background) */}
+          <div
+            ref={panelRef}
+            className="relative rounded-2xl overflow-hidden"
+            style={{
+              // background removed; tiles carry color
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+            }}
+          >
+            {/* subtle texture overlay */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-2xl"
+              style={{
+                backgroundImage: "url('/images/coaching/texture3.jpg')",
+                backgroundRepeat: "repeat",
+                backgroundSize: "auto",
+                mixBlendMode: "overlay",
+                opacity: 0.14,
+                filter: "contrast(1.04) brightness(1.01)",
+              }}
+            />
+
+            {/* 2x3 grid with inner borders */}
+            <div className="relative grid grid-cols-1 md:grid-cols-3 md:grid-rows-2">
+              {items.map((item, i) => {
+                const isFirstItem = i === 0;
+                const isFirstRow = i < 3;
+                const isFirstCol = i % 3 === 0;
+                return (
+                  <Cell
+                    key={item.id}
+                    item={item}
+                    isFirstItem={isFirstItem}
+                    isFirstRow={isFirstRow}
+                    isFirstCol={isFirstCol}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -100,7 +140,7 @@ export default function Overview2({
   );
 }
 
-/** Icon chip: dark glassy look like RightBooking */
+/** Icon chip */
 function MotionIcon({ hovered, children }: { hovered: boolean; children: React.ReactNode }) {
   return (
     <motion.div
@@ -125,7 +165,7 @@ function MotionIcon({ hovered, children }: { hovered: boolean; children: React.R
   );
 }
 
-/* Hover: lighter purple gradient + subtle particles; text zoom (slightly less than icon) */
+/* Tiles */
 function Cell({
   item,
   isFirstItem,
@@ -156,7 +196,14 @@ function Cell({
       color: { value: "#FFFFFF" },
       opacity: {
         value: { min: 0.03, max: 0.22 },
-        animation: { enable: true, speed: 0.5, minimumValue: 0.03, startValue: "random", destroy: "none", sync: false },
+        animation: {
+          enable: true,
+          speed: 0.5,
+          minimumValue: 0.03,
+          startValue: "random",
+          destroy: "none",
+          sync: false,
+        },
       },
       shadow: { enable: false },
     },
@@ -178,9 +225,14 @@ function Cell({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`relative p-6 md:p-7 group transition-colors duration-300 ${borders}`}
-      style={{ minHeight: 260 }}
+      style={{
+        minHeight: 260,
+        background: "var(--color-bg)", // tiles keep your page color
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+      }}
     >
-      {/* Hover gradient */}
+      {/* Hover gradient (unchanged to avoid breaking your effect) */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: hovered ? 1 : 0 }}
@@ -202,7 +254,7 @@ function Cell({
         <Particles id={`particles-${item.id}`} init={initParticles} options={particleOptions} className="w-full h-full" />
       </motion.div>
 
-      {/* content (text zoom slightly less than icon) */}
+      {/* content */}
       <motion.div
         className="relative z-10"
         animate={{ scale: hovered ? 1.03 : 1, y: hovered ? -1 : 0 }}
