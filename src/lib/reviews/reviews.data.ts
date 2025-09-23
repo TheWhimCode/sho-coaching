@@ -6,16 +6,20 @@ export type Review = {
   /** e.g. "Gold II", "Platinum IV", "Master" */
   rankFrom?: string;
   rankTo?: string;
+  avatar?: string;
 };
+
+const VIKTOR_AVATAR = "/images/coaching/reviews/viktor.svg";
 
 export const REVIEWS: Review[] = [
   {
     name: "Croatoan",
     text:
-"During a VOD review, Sho took his time and gave measured advice for my improvement opportunities. Seeing the mistakes I was making through another's eyes was really informative.",
+      "During a VOD review, Sho took his time and gave measured advice for my improvement opportunities. Seeing the mistakes I was making through another's eyes was really informative.",
     rating: 5,
     rankFrom: "Iron III",
     rankTo: "Silver I",
+    avatar: VIKTOR_AVATAR,
   },
   {
     name: "Marco",
@@ -24,6 +28,7 @@ export const REVIEWS: Review[] = [
     rating: 5,
     rankFrom: "Silver I",
     rankTo: "Gold III",
+    avatar: VIKTOR_AVATAR,
   },
   {
     name: "Ari",
@@ -32,37 +37,42 @@ export const REVIEWS: Review[] = [
     rating: 5,
     rankFrom: "Platinum IV",
     rankTo: "Diamond III",
+    avatar: VIKTOR_AVATAR,
   },
   {
     name: "EricIsOnFire",
     text:
-"Coach did a great job pointing out a few fundamental errors that held me back from carrying as much as I can. He also showed genuine interest in revisiting and seeing my progress.",
+      "Coach did a great job pointing out a few fundamental errors that held me back from carrying as much as I can. He also showed genuine interest in revisiting and seeing my progress.",
     rating: 5,
     rankFrom: "Bronze IV",
     rankTo: "Silver IV",
+    avatar: VIKTOR_AVATAR,
   },  
   {
     name: "Wham",
     text:
-"I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
-rating: 5,
+      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
+    rating: 5,
     rankFrom: "Diamond I",
     rankTo: "Challenger",
+    avatar: VIKTOR_AVATAR,
   },
-    {
+  {
     name: "Wham",
     text:
-"I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
-rating: 5,
+      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
+    rating: 5,
     rankFrom: "Diamond I",
     rankTo: "Challenger",
+    avatar: VIKTOR_AVATAR,
   },  
   {
     name: "Wham",
     text:
-"I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
-rating: 5,
+      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
+    rating: 5,
     rankFrom: "Diamond I",
     rankTo: "Challenger",
+    avatar: VIKTOR_AVATAR,
   },
 ];

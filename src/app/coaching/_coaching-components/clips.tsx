@@ -87,7 +87,7 @@ export default function Clips({
       aria-labelledby="clips-heading"
       ref={wrapRef}
     >
-      <div className={`mx-auto w-full ${containerClassName} px-4 md:px-6`}>
+      <div className={`mx-auto w-full ${containerClassName}`}>
         {/* Header */}
         <div className="text-center mb-8 md:mb-12">
           <h2

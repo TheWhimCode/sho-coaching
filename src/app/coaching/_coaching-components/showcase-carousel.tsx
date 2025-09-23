@@ -26,7 +26,7 @@ const DEFAULT_ITEMS: ShowcaseItem[] = [
   { title: "Objective control" },
 ].map((it) => ({
   ...it,
-  imageSrc: "/images/coaching/carousel/Placeholder1.png",
+  imageSrc: "/images/coaching/carousel/placeholder2.png",
   imageAlt: it.title,
 }));
 

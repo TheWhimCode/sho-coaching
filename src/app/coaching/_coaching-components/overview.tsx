@@ -1,7 +1,7 @@
 // components/overview/Overview2.tsx
 "use client";
 
-import React, { useCallback, useState, useRef, useEffect, useLayoutEffect } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Trophy,
   BarChart3,
@@ -11,7 +11,7 @@ import {
   LayoutDashboard,
   AlertCircle,
 } from "lucide-react";
-import { motion, useAnimation, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import Particles from "react-tsparticles";
 import type { ISourceOptions, Engine } from "tsparticles-engine";
 import { loadSlim } from "tsparticles-slim";
@@ -32,7 +32,7 @@ const DEFAULT_ITEMS: Item[] = [
   { id: "benefit-6", title: "VOD & Notes", body: "Receive my session recording and summary notes afterwards.", icon: <Clapperboard className="h-6 w-6" /> },
 ];
 
-export default function Overview2({
+export default function Overview({
   eyebrow = "Benefits",
   heading = "Why coaching works",
   items = DEFAULT_ITEMS,
@@ -43,28 +43,6 @@ export default function Overview2({
   items?: Item[];
   className?: string;
 }) {
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const inView = useInView(panelRef, { margin: "0px 0px -40% 0px" });
-  const glowControls = useAnimation();
-  const [hasTriggered, setHasTriggered] = useState(false);
-
-  // Prevent initial flash
-  useLayoutEffect(() => {
-    glowControls.set({ opacity: 0 });
-  }, [glowControls]);
-
-  // One-time subtle glow-in
-  useEffect(() => {
-    if (inView && !hasTriggered) {
-      setHasTriggered(true);
-      glowControls.start({
-        // lower target opacity to keep the glow subtle
-        opacity: 0.55,
-        transition: { duration: 0.9, delay: 1, ease: "easeOut" },
-      });
-    }
-  }, [inView, hasTriggered, glowControls]);
-
   return (
     <section className={`w-full ${className}`}>
       <div className="mx-auto max-w-7xl">
@@ -74,30 +52,11 @@ export default function Overview2({
           <h2 className="mt-2 text-3xl md:text-[44px] leading-tight font-bold">{heading}</h2>
         </div>
 
-        {/* Glow wrapper */}
+        {/* Panel (no outer glow, no scroll fade-in) */}
         <div className="relative">
-          {/* Outside glow (light blue + reduced intensity). This does NOT touch tile hover gradient. */}
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-3xl"
-            animate={glowControls}
-            style={{
-              willChange: "opacity",
-              boxShadow: [
-                // use your theme var; keep radii small for subtlety
-                "0 0 28px var(--color-purple)",
-                "0 0 12px var(--color-purple)",
-                "0 0 4px var(--color-purple)",
-              ].join(", "),
-            }}
-          />
-
-          {/* Panel (no outer drop shadow, no background) */}
           <div
-            ref={panelRef}
             className="relative rounded-2xl overflow-hidden"
             style={{
-              // background removed; tiles carry color
               backdropFilter: "blur(6px)",
               WebkitBackdropFilter: "blur(6px)",
             }}
@@ -227,12 +186,12 @@ function Cell({
       className={`relative p-6 md:p-7 group transition-colors duration-300 ${borders}`}
       style={{
         minHeight: 260,
-        background: "var(--color-bg)", // tiles keep your page color
+        background: "var(--color-panel)", // tiles keep your page color
         backdropFilter: "blur(6px)",
         WebkitBackdropFilter: "blur(6px)",
       }}
     >
-      {/* Hover gradient (unchanged to avoid breaking your effect) */}
+      {/* Hover gradient */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: hovered ? 1 : 0 }}

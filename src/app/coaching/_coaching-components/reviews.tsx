@@ -222,23 +222,22 @@ export default function Reviews({
     },
   };
 
-  const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
-    return (
-      <div ref={ref as any} className="flex items-stretch gap-6 shrink-0">
-        {items.map((r, i) => (
-          <React.Fragment key={`card-${i}`}>
+const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
+  return (
+    <div ref={ref as any} className="flex items-stretch gap-6 shrink-0">
+      {items.map((r, i) => (
+        <React.Fragment key={`card-${i}`}>
+          <div className={i === 0 ? "pl-6" : ""}>
             <ReviewItem r={r} />
-            {i < items.length - 1 ? (
-              <span
-                aria-hidden
-                className="h-full w-px bg-white/15 shrink-0"
-              />
-            ) : null}
-          </React.Fragment>
-        ))}
-      </div>
-    );
-  });
+          </div>
+          <span aria-hidden className="h-full w-px bg-white/15 shrink-0" />
+        </React.Fragment>
+      ))}
+    </div>
+  );
+});
+
+
 
   useLayoutEffect(() => {
     const measure = () => {

@@ -24,16 +24,18 @@ export default function ClipTiles({
   if (!data || data.length === 0) return null;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const inView = useInView(containerRef, { amount: 0.8, margin: "0px 0px -10% 0px" });
+  const inView = useInView(containerRef, {
+    amount: 0.8,
+    margin: "0px 0px -10% 0px",
+  });
 
   // timings
-  const START_DELAY_MS = 4000; // wait after appearing
+  const START_DELAY_MS = 4000;
   const FADE_IN_MS = 600;
-  const HOLD_MS = 4000; // stay fully glowing
-  const FADE_OUT_MS = 1200; // slow fade out
-  const GAP_MS = 2000; // wait before next tile
+  const HOLD_MS = 4000;
+  const FADE_OUT_MS = 1200;
+  const GAP_MS = 2000;
 
-  // Sequence: center-bottom (4) → top-left (0) → bottom-right (5) → top-center (1) → bottom-left (3) → top-right (2)
   const sequence = useMemo(() => {
     const centerBottom = (rows - 1) * cols + Math.floor(cols / 2);
     const mapPos = {
@@ -176,13 +178,23 @@ function ClipTile({
   const l = interactive && hovered ? "0%" : left;
   const t = interactive && hovered ? "0%" : top;
 
-  // SAME COLOR AS BORDER (purple). Use a full-tile overlay.
+  // Light blue gradient (was purple)
+  const blueBorder = `
+    linear-gradient(
+      135deg,
+      rgba(96,165,250,1) 0%,
+      rgba(96,165,250,0.4) 30%,
+      rgba(96,165,250,0.1) 65%,
+      transparent 95%
+    )
+  `;
+
+  // Full-tile glow overlay in matching light blue
   const glowStyle: React.CSSProperties = {
     background:
-      "linear-gradient(135deg, rgba(124,58,237,0.75), rgba(124,58,237,0.55))",
+      "linear-gradient(135deg, rgba(96,165,250,0.75), rgba(96,165,250,0.55))",
   };
 
-  // Determine overlay opacity target
   const overlayTarget =
     highlighted && !hovered
       ? phase === "in" || phase === "hold"
@@ -210,11 +222,11 @@ function ClipTile({
         zIndex: interactive && hovered ? baseZ + 10 : baseZ,
         opacity: forcedOpacity ?? 1,
         pointerEvents: interactive ? "auto" : "none",
-        background: "transparent", // ensure tile background is transparent
+        background: "transparent",
       }}
       aria-hidden={!interactive}
     >
-      {/* Full-tile glow overlay (above video, below labels) */}
+      {/* Full-tile glow overlay (matches border color) */}
       <motion.div
         className="absolute inset-0 rounded-2xl z-[25] mix-blend-screen pointer-events-none"
         style={glowStyle}
@@ -226,70 +238,25 @@ function ClipTile({
         }}
       />
 
-      {/* 4px ring — fade out slightly sooner (keep brightness) */}
+      {/* New 4px light blue border */}
       <div
         className="absolute inset-0 rounded-2xl"
         style={{
           position: "absolute",
           inset: 0,
           borderRadius: "1rem",
-          padding: "4px",
-          background: `
-            linear-gradient(
-              135deg,
-              rgba(255,255,255,0.35) 0%,
-              rgba(255,255,255,0.18) 28%,
-              rgba(255,255,255,0.06) 52%,
-              rgba(255,255,255,0.00) 88%
-            )
-          `,
+          padding: "2px",
+          background: blueBorder,
           WebkitMask:
             "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
           pointerEvents: "none",
-          opacity: 0.6,
+          opacity: 0.8,
         }}
       />
 
-      {/* inner highlight panel — make transparent (no wash) */}
-      <div
-        className="absolute inset-0 rounded-xl"
-        style={{
-          position: "absolute",
-          inset: "4px",
-          borderRadius: "0.75rem",
-          background: "transparent",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* 1px angled accent ring — fade slightly sooner (keep brightness) */}
-      <div
-        className="absolute inset-0 rounded-2xl"
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "1rem",
-          padding: "1px",
-          background: `
-            linear-gradient(
-              135deg,
-              rgba(124,58,237,1) 0%,
-              rgba(124,58,237,0.4) 24%,
-              rgba(124,58,237,0.1) 58%,
-              transparent 88%
-            )
-          `,
-          WebkitMask:
-            "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* VIDEO (hover priority remains) */}
+      {/* Video */}
       {interactive && clip && (
         <motion.video
           ref={videoRef}
@@ -305,7 +272,7 @@ function ClipTile({
         />
       )}
 
-      {/* LABELS */}
+      {/* Labels */}
       {interactive && clip && (
         <motion.div
           className="absolute inset-0 z-30 grid place-items-center text-center pointer-events-none"
