@@ -1,0 +1,255 @@
+// src/app/admin/students/[id]/StudentDetailClient.tsx
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
+import type { Student, Session } from '@prisma/client';
+
+import StudentSummary from '../_components/StudentSummary';
+import MatchHistory from '../_components/MatchHistory';
+import ChampionStats from '../_components/ChampionStats';
+import SessionTemplate from '../_components/SessionNotes';
+import GlassPanel from '@/app/_components/panels/GlassPanel';
+
+type EditablePatch = Partial<Pick<Student, 'name' | 'discord' | 'riotTag' | 'server'>>;
+
+const SERVER_ALIAS: Record<string, string> = {
+  euw:'euw1', eu:'euw1', euw1:'euw1',
+  eune:'eun1', eun:'eun1', eun1:'eun1',
+  na:'na1', na1:'na1',
+  oce:'oc1', oc1:'oc1',
+  lan:'la1', la1:'la1',
+  las:'la2', la2:'la2',
+  br:'br1', br1:'br1',
+  tr:'tr1', tr1:'tr1',
+  ru:'ru',
+  kr:'kr',
+  jp:'jp1', jp1:'jp1',
+  ph:'ph2', ph2:'ph2',
+  sg:'sg2', sg2:'sg2',
+  th:'th2', th2:'th2',
+  tw:'tw2', tw2:'tw2',
+  vn:'vn2', vn2:'vn2',
+};
+const normalizeServer = (s: string | null | undefined) => {
+  const key = (s ?? '').trim().toLowerCase();
+  return SERVER_ALIAS[key] || key || '';
+};
+
+const debounce = <F extends (...a: any[]) => any>(fn: F, ms = 600) => {
+  let t: any;
+  return (...a: Parameters<F>) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+};
+
+export default function StudentDetailClient() {
+  const params = useParams();
+  const id = (params?.id as string) || '';
+
+  const [student, setStudent] = useState<Student | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [riotTag, setRiotTag] = useState('');
+  const [server, setServer] = useState('');
+  const [puuid, setPuuid] = useState<string | null>(null);
+
+  // summary payload from backend
+  const [summary, setSummary] = useState<any | null>(null);
+  const [sumLoading, setSumLoading] = useState(false);
+  const [sumErr, setSumErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+
+    fetch(`/api/admin/students/${encodeURIComponent(id)}`, { cache: 'no-store' })
+      .then(async (r) => {
+        if (!r.ok) throw new Error((await r.text()) || `Student ${r.status}`);
+        return r.json();
+      })
+      .then((j) => {
+        const s = j.student as any;
+        if (!s) throw new Error('Not found');
+        setStudent(s);
+        setRiotTag(s.riotTag || '');
+        setServer(normalizeServer(s.server));
+        setPuuid(s.puuid ?? null); // use stored puuid if exists
+      })
+      .catch((err) => { setError(err.message); setStudent(null); })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  // Load sessions
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/admin/sessions?studentId=${encodeURIComponent(id)}&take=10`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setSessions(j?.sessions ?? []))
+      .catch(() => setSessions([]));
+  }, [id]);
+
+  // SINGLE call: fetch SoloQ history + aggregates (with deeper scan)
+// --- summary fetch ---
+useEffect(() => {
+  const rt = riotTag.trim();
+  const sv = server.trim();
+
+  if (!sv || (!puuid && !rt)) {
+    setSummary(null);
+    setSumErr(null);
+    setSumLoading(false);
+    return;
+  }
+
+  const controller = new AbortController();
+  setSumLoading(true);
+  setSumErr(null);
+
+  const params = new URLSearchParams({
+    server: sv,
+    count: '10',
+    maxIds: '300',        // dig deeper for SoloQ mixed with normals/flex
+    concurrency: '3',
+    ...(puuid ? { puuid } : { riotId: rt }),
+  });
+
+  (async () => {
+    try {
+      const r = await fetch(`/api/riot/summary?${params.toString()}`, { signal: controller.signal });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || j.detail || `HTTP ${r.status}`);
+      setSummary(j);
+      if (j.puuid && j.puuid !== puuid) setPuuid(j.puuid);
+    } catch (e: any) {
+      if (!controller.signal.aborted) {
+        setSummary({ matches: [], aggregates: [] }); // avoid perpetual "Loading…"
+        setSumErr(String(e?.message || e));
+      }
+    } finally {
+      // Always end loading even if aborted mid-flight
+      setSumLoading(false);
+    }
+  })();
+
+  return () => controller.abort();
+}, [riotTag, server, puuid]);
+
+// --- handle changes from StudentSummary ---
+const handleChange = (patch: EditablePatch) => {
+  const normalizedPatch: EditablePatch = {
+    ...patch,
+    ...(patch.server !== undefined ? { server: normalizeServer(patch.server) } : {}),
+  };
+
+  setStudent((prev) => (prev ? ({ ...prev, ...normalizedPatch } as Student) : prev));
+
+  if (normalizedPatch.riotTag !== undefined) {
+    setRiotTag((normalizedPatch.riotTag || '').trim());
+    setPuuid(null);        // << force re-resolve for new Riot#Tag
+    setSummary(null);
+  }
+  if (normalizedPatch.server !== undefined) {
+    const ns = normalizeServer(normalizedPatch.server);
+    setServer(ns);
+    setPuuid(null);        // << region may change; force re-resolve
+    setSummary(null);
+  }
+
+  fetch(`/api/admin/students/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(normalizedPatch),
+  }).catch(() => {});
+};
+
+// --- helpers unchanged ---
+const numberFor = (sid: string) => {
+  const idx = sessions.findIndex((x) => String(x.id) === String(sid));
+  return idx >= 0 ? idx + 1 : 1;
+};
+
+const saveDoc = useMemo(
+  () =>
+    debounce(async (studentId: string, number: number, content: string, title: string) => {
+      await fetch(`/api/session-docs/${encodeURIComponent(studentId)}?number=${number}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: { md: content, title } }),
+      });
+    }, 600),
+  []
+);
+
+
+  if (loading) return <div className="px-6 pt-8 pb-6 text-sm text-zinc-400">Loading…</div>;
+  if (error)   return <div className="px-6 pt-8 pb-6 text-sm text-rose-400">{error}</div>;
+  if (!student) return <div className="px-6 pt-8 pb-6 text-sm text-zinc-400">Student not found.</div>;
+
+  const aggregates = summary?.aggregates ?? [];
+  const matches = summary?.matches ?? [];
+
+  return (
+    <main className="relative min-h-screen text-white overflow-x-clip">
+      {/* bg */}
+      <div aria-hidden className="absolute inset-0 z-0" style={{
+        background:
+          'radial-gradient(circle at 22% 18%, rgba(0,130,255,0.28), transparent 58%),' +
+          'radial-gradient(circle at 78% 32%, rgba(255,100,30,0.24), transparent 58%),' +
+          'radial-gradient(circle at 25% 82%, rgba(0,130,255,0.20), transparent 58%),' +
+          'radial-gradient(circle at 80% 75%, rgba(255,100,30,0.18), transparent 58%)',
+      }} />
+      <div aria-hidden className="absolute inset-0 z-0 opacity-25 mix-blend-overlay"
+           style={{ backgroundImage: "url('/images/coaching/texture.png')", backgroundRepeat: 'repeat' }} />
+
+      {/* content */}
+      <div className="relative z-10 pt-24 pb-20">
+        <div className="mx-auto w-full max-w-6xl px-6 space-y-10">
+          <GlassPanel className="p-6 md:p-8">
+            <StudentSummary
+              student={{
+                id: student.id,
+                name: student.name,
+                discord: student.discord,
+                riotTag: student.riotTag,
+                server,
+                createdAt: student.createdAt,
+                updatedAt: student.updatedAt,
+              }}
+              onChange={handleChange}
+            />
+            {sumLoading ? <div className="mt-2 text-xs text-zinc-400">Loading SoloQ summary…</div> : null}
+            {sumErr ? <div className="mt-2 text-xs text-amber-400">Summary: {sumErr}</div> : null}
+          </GlassPanel>
+
+          <GlassPanel className="p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="lg:w-1/2">
+                <ChampionStats rows={aggregates} />
+              </div>
+              <div className="lg:w-1/2">
+                <MatchHistory matches={matches} />
+              </div>
+            </div>
+          </GlassPanel>
+
+          <GlassPanel className="p-6 md:p-8">
+            <SessionTemplate
+              student={student}
+              sessions={sessions}
+              onUpdateSession={(s) =>
+                saveDoc(
+                  student.id,
+                  (s as any).number ?? numberFor(s.id),
+                  s.content,
+                  s.title || `Session ${(s as any).number ?? ''}`
+                )
+              }
+            />
+          </GlassPanel>
+        </div>
+      </div>
+    </main>
+  );
+}

@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
 
 /* ===========================
    THEME TOKENS (Tailwind v4)
@@ -147,4 +149,14 @@ html, body {
   padding: 1px;
   pointer-events: none;
   filter: blur(.3px);
+}
+@layer utilities {
+  @keyframes slow-pan {
+    0%   { background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%; }
+    50%  { background-position: 25% 15%, 80% 30%, 20% 80%, 85% 85%; }
+    100% { background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%; }
+  }
+  .animate-slow-pan {
+    animation: slow-pan 50s linear infinite;
+  }
 }

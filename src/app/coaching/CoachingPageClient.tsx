@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import Survey from "@/app/coaching/_coaching-components/survey";
 import Reviews from "@/app/coaching/_coaching-components/reviews";
 import CoachingExamples from "@/app/coaching/_coaching-components/examples";
@@ -12,10 +12,12 @@ import FAQ from "@/app/coaching/_coaching-components/faq";
 import Clips from "@/app/coaching/_coaching-components/clips";
 import PlaceholderSections from "@/app/coaching/_coaching-components/inspiration";
 import Tagline from "@/app/coaching/_coaching-components/tagline";
-import ShowcaseCarousel from "@/app/coaching/_coaching-components/showcase-carousel";
+import ShowcaseCarousel from "@/app/coaching/_coaching-components/carousel";
 
 // divider with logo
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
+// glass panel
+import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 export default function CoachingPageClient() {
   const handleScrollToFollowup = React.useCallback(() => {
@@ -83,55 +85,69 @@ export default function CoachingPageClient() {
         </div>
       </section>
 
-      {/* 3) Overview — smaller gradients, bottom oversize only */}
-      <section className="relative isolate pt-24 pb-36 md:pt-56 md:pb-[19rem]">
+      {/* 3) Overview inside GlassPanel — background gradient stays global */}
+      <section className="relative isolate -mt-px">
         <div
           aria-hidden
           className="absolute top-0 left-0 right-0 -bottom-[50%] -z-10 pointer-events-none"
           style={{
             background:
               "radial-gradient(circle at 22% 18%, rgba(0,130,255,0.22), transparent 58%), radial-gradient(circle at 78% 32%, rgba(255,100,30,0.18), transparent 58%)",
-            animation: "slow-pan 45s linear infinite",
           }}
         />
-
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <div className="max-w-6xl px-6 mx-auto">
-            <Overview />
-          </div>
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pt-8 md:pt-12 pb-0">
+          <GlassPanel className="!ring-0 border border-t-0 border-[rgba(146,180,255,.18)] !rounded-t-none p-0 md:p-10">
+            <div className="max-w-6xl mx-auto">
+              <Overview />
+            </div>
+          </GlassPanel>
         </div>
       </section>
 
-      {/* 3a) Tagline */}
-      <section className="relative isolate">
-        <div className="relative z-10 mx-auto max-w-7xl px-6">
+      <section className="relative isolate py-24 md:py-36">
+        <div className="relative z-10 mx-auto max-w-6xl px-6">
           <Tagline />
         </div>
       </section>
 
-      {/* 3b) Clips with particles */}
-      <section
-        id="clips-section"
-        className="relative isolate pt-36 pb-36 md:pt-[19rem] md:pb-[19rem]"
-      >
-        <ParticleBackground />
+      {/* Showcase carousel + Clips in one GlassPanel */}
+      <section id="clips-section" className="relative isolate">
+        {/* Gradient background matching Overview, static now */}
+        <div
+          aria-hidden
+          className="absolute -top-[50%] left-0 right-0 -bottom-[50%] -z-10 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle at 22% 40%, rgba(0,130,255,0.22), transparent 58%), radial-gradient(circle at 78% 55%, rgba(255,100,30,0.18), transparent 58%)",
+          }}
+        />
 
-        <div className="relative z-10 mx-auto max-w-7xl">
-          <div className="max-w-6xl px-6 mx-auto">
-            <Clips className="py-0 hidden md:block" />
-          </div>
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pb-8 md:pb-0">
+          <GlassPanel
+            className="
+              p-0 md:p-8
+              !ring-0
+              border border-b-0 border-[rgba(146,180,255,.18)]
+            "
+          >
+            {/* ShowcaseCarousel */}
+            <ShowcaseCarousel />
+
+            {/* Space + divider to match Cards ↔ Examples */}
+            <DividerWithLogo className="mx-2 my-16" />
+
+            {/* Clips */}
+            <div className="relative">
+              <div className="relative z-10 mb-12 md:mb-0">
+                <Clips className="py-0 hidden md:block" containerClassName="max-w-none" />
+              </div>
+            </div>
+          </GlassPanel>
         </div>
       </section>
 
       {/* 3c) Placeholder sections */}
       <PlaceholderSections />
-
-      {/* 4) Showcase carousel */}
-      <section className="relative isolate py-8 md:py-16">
-        <div className="relative z-10 mx-auto max-w-7xl px-6">
-          <ShowcaseCarousel />
-        </div>
-      </section>
 
       {/* 5) Follow-up + Survey */}
       <section
@@ -157,81 +173,6 @@ export default function CoachingPageClient() {
         <NeedMoreInfo label="Need more info?" accent="#8FB8E6" />
         <FAQ />
       </div>
-
-      {/* Shared keyframes */}
-      <style jsx>{`
-        @keyframes slow-pan {
-          0% {
-            background-position: 0% 0%, 100% 100%;
-          }
-          50% {
-            background-position: 40% 40%, 70% 55%;
-          }
-          100% {
-            background-position: 0% 0%, 100% 100%;
-          }
-        }
-      `}</style>
     </main>
-  );
-}
-
-/** Particle background for Clips section */
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let width = canvas.offsetWidth;
-    let height = canvas.offsetHeight;
-    canvas.width = width;
-    canvas.height = height;
-
-    const particles = Array.from({ length: 60 }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      r: 1.2 + Math.random() * 1.4,
-    }));
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = "rgba(255,255,255,0.35)";
-      for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height;
-        if (p.y > height) p.y = 0;
-      }
-      requestAnimationFrame(draw);
-    };
-    draw();
-
-    const onResize = () => {
-      width = canvas.offsetWidth;
-      height = canvas.offsetHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute left-0 right-0 top-0 -bottom-[50%] w-full h-[150%] -z-10 pointer-events-none"
-    />
   );
 }

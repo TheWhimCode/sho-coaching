@@ -8,24 +8,17 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
-enum SlotStatus {
-  free
-  taken
-  blocked
-}
-
 model Slot {
-  id         String     @id @default(cuid())
-  startTime  DateTime   @unique
-  duration   Int
-  status     SlotStatus @default(free)
-  holdUntil  DateTime?
-  holdKey    String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  booking    Booking?   @relation("SlotBooking")
+  id        String     @id @default(cuid())
+  startTime DateTime   @unique
+  duration  Int
+  holdUntil DateTime?
+  holdKey   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  status    SlotStatus @default(free)
+  booking   Booking?   @relation("SlotBooking")
 
-  // Indexes to speed up availability/hold queries
   @@index([startTime])
   @@index([status, startTime, holdUntil])
   @@index([holdKey, holdUntil])
@@ -33,9 +26,9 @@ model Slot {
 
 model AvailabilityRule {
   id            String   @id @default(cuid())
-  weekday       Int      @unique // 0=Sun … 6=Sat
-  openMinute    Int      // minutes from midnight
-  closeMinute   Int      // exclusive
+  weekday       Int      @unique
+  openMinute    Int
+  closeMinute   Int
   effectiveFrom DateTime @default(now())
   createdAt     DateTime @default(now())
 }
@@ -54,9 +47,8 @@ model Booking {
   id               String     @id @default(cuid())
   sessionType      String
   status           String     @default("unpaid")
-  slotId           String?    @unique   // may be null (snapshot used)
+  slotId           String?    @unique
   liveMinutes      Int
-  liveBlocks       Int        @default(0)   // replaces outdated inGame boolean
   followups        Int        @default(0)
   discord          String
   notes            String?
@@ -68,20 +60,15 @@ model Booking {
   currency         String     @default("eur")
   blockCsv         String?
   customerEmail    String?
-
-  // Waiver info
+  scheduledStart   DateTime
+  scheduledMinutes Int
+  liveBlocks       Int        @default(0)
   waiverAccepted   Boolean    @default(false)
   waiverAcceptedAt DateTime?
   waiverIp         String?
+  slot             Slot?      @relation("SlotBooking", fields: [slotId], references: [id])
+  emailLogs        EmailLog[]
 
-  // Permanent schedule snapshot
-  scheduledStart   DateTime
-  scheduledMinutes Int
-
-  slot       Slot?      @relation("SlotBooking", fields: [slotId], references: [id], onDelete: SetNull)
-  emailLogs  EmailLog[]
-
-  // Helpful query indexes
   @@index([createdAt])
   @@index([scheduledStart])
 }
@@ -112,4 +99,110 @@ model WebhookEvent {
   createdAt DateTime @default(now())
 
   @@index([type, createdAt])
+}
+
+enum SlotStatus {
+  free
+  taken
+  blocked
+}
+
+// ===== Adjusted enums =====
+enum Visibility {
+  PRIVATE
+  STUDENT
+}
+
+// ===== Models =====
+model Student {
+  id      String  @id @default(cuid())
+  name    String  @unique
+  discord String? @unique
+  puuid   String? @unique
+  server  String? // e.g., euw1, na1, kr  (was: platform)
+
+  // Keep BOTH: Riot needs summonerId for league API; riotTag is display ("Name#TAG")
+  summonerId String? // internal Riot Summoner ID (for /league)
+  riotTag    String? // "GameName#Tag", optional
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions    Session[]
+  assets      Asset[]
+  sessionDocs SessionDoc[]
+  Note        Note[]
+
+  @@index([puuid])
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  studentId   String
+  scheduledAt DateTime
+  summary     String?
+  createdAt   DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  notes   Note[]
+  assets  Asset[]
+}
+
+model Note {
+  id         String     @id @default(cuid())
+  studentId  String
+  sessionId  String?
+  title      String
+  bodyMd     String
+  visibility Visibility @default(PRIVATE)
+  createdAt  DateTime   @default(now())
+
+  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id])
+}
+
+model Asset {
+  id         String     @id @default(cuid())
+  studentId  String
+  sessionId  String?
+  type       String
+  storageKey String
+  url        String
+  mime       String?
+  size       Int?
+  visibility Visibility @default(PRIVATE)
+  createdAt  DateTime   @default(now())
+
+  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id])
+
+  @@index([studentId])
+}
+
+// SoloQ only; simplified snapshot
+model RankSnapshot {
+  id         String   @id @default(cuid())
+  puuid      String
+  server     String // was: platform
+  capturedAt DateTime @default(now())
+  tier       String
+  division   String?
+  lp         Int
+
+  @@index([puuid, capturedAt])
+  @@index([capturedAt])
+}
+
+model SessionDoc {
+  id        String   @id @default(cuid())
+  studentId String
+  number    Int
+  notes     Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, number])
+  @@index([studentId]) // optional, good for queries
 }

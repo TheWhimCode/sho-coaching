@@ -1,20 +1,13 @@
-import { PrismaClient } from "@prisma/client";
-// prisma.ts
-import { CFG_SERVER } from "@/lib/config.server";
+// src/lib/prisma.ts
+import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ["error", "warn"],
-    datasources: {
-      db: {
-        url: CFG_SERVER.DATABASE_URL,
-      },
-    },
+    // Prisma will read DATABASE_URL from process.env automatically
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
