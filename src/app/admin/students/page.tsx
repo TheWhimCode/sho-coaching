@@ -1,7 +1,7 @@
 // src/app/admin/students/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 
 type Student = {
@@ -18,25 +18,42 @@ export default function StudentsPage() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
+  const loadedOnce = useRef(false);
 
   useEffect(() => {
+    // Guard duplicate runs in React Strict Mode (dev)
+    if (loadedOnce.current) return;
+    loadedOnce.current = true;
+
+    const ac = new AbortController();
     setLoading(true);
-    fetch("/api/admin/students")
-      .then((r) => r.json())
-      .then((j) =>
-        setStudents(
-          (j.students || []).map((s: any) => ({
-            id: s.id,
-            name: s.name,
-            discord: s.discord,
-            riotTag: s.riotTag,
-            server: s.server,
-            createdAt: s.createdAt,
-            updatedAt: s.updatedAt,
-          }))
-        )
-      )
+
+fetch('/api/admin/students', { cache: 'no-store' })
+  .then(async (r) => {
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    const text = await r.text();
+    return text ? JSON.parse(text) : { students: [] };
+  })
+
+      .then((j) => {
+        const list = (j.students ?? []).map((s: any) => ({
+          id: String(s.id),
+          name: String(s.name ?? ""),
+          discord: s.discord ?? null,
+          riotTag: s.riotTag ?? null,
+          server: s.server ?? null,
+          createdAt: typeof s.createdAt === "string" ? s.createdAt : new Date(s.createdAt).toISOString(),
+          updatedAt: typeof s.updatedAt === "string" ? s.updatedAt : new Date(s.updatedAt).toISOString(),
+        })) as Student[];
+        setStudents(list);
+      })
+      .catch((e) => {
+        console.error("students fetch failed:", e);
+        setStudents([]);
+      })
       .finally(() => setLoading(false));
+
+    return () => ac.abort();
   }, []);
 
   const filtered = useMemo(() => {
@@ -50,8 +67,7 @@ export default function StudentsPage() {
   }, [q, students]);
 
   return (
-    <div className="px-70 py-20 space-y-4">
-      {/* padding 60px on all sides */}
+    <div className="px-16 py-20 space-y-4">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-semibold">Students</h1>
         <input
@@ -74,26 +90,18 @@ export default function StudentsPage() {
                 href={`/admin/students/${s.id}`}
                 className="block rounded-2xl border border-zinc-800 bg-zinc-900 p-4 hover:border-zinc-700 transition"
               >
-                {/* Large name */}
                 <div className="text-lg font-semibold tracking-tight">{s.name}</div>
-                {/* Smaller meta row */}
                 <div className="mt-1 text-xs text-zinc-400 flex flex-wrap gap-x-3 gap-y-1">
                   <span>
-                    Discord:{" "}
-                    <span className="text-zinc-200">{s.discord || "—"}</span>
+                    Discord: <span className="text-zinc-200">{s.discord || "—"}</span>
                   </span>
                   <span>
-                    Riot:{" "}
-                    <span className="text-zinc-200">{s.riotTag || "—"}</span>
+                    Riot: <span className="text-zinc-200">{s.riotTag || "—"}</span>
                   </span>
                   <span>
-                    Server:{" "}
-                    <span className="text-zinc-200 uppercase">
-                      {s.server || "—"}
-                    </span>
+                    Server: <span className="text-zinc-200 uppercase">{s.server || "—"}</span>
                   </span>
                 </div>
-                {/* Subtle updated timestamp */}
                 <div className="mt-2 text-[11px] text-zinc-500">
                   Updated {new Date(s.updatedAt).toLocaleString()}
                 </div>

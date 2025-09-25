@@ -4,8 +4,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-// import { Star } from "lucide-react";                 // removed stars
-import { CaretRight } from "@phosphor-icons/react";  // NEW arrow
+import { CaretRight } from "@phosphor-icons/react";
 import type { Review } from "@/lib/reviews/reviews.data";
 import { REVIEWS as DEFAULT_REVIEWS } from "@/lib/reviews/reviews.data";
 
@@ -13,6 +12,12 @@ import Particles from "react-tsparticles";
 import type { ISourceOptions, Engine } from "tsparticles-engine";
 import { loadSlim } from "tsparticles-slim";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
+
+// ✅ champion avatar resolver (uses DDragon + live patch)
+import {
+  championAvatarByName,
+  ensureLiveDDragonPatch,
+} from "@/lib/league/championAvatar";
 
 type Props = {
   reviews?: Array<Review | string>;
@@ -23,10 +28,22 @@ type Props = {
 };
 
 function normalize(reviews?: Array<Review | string>): Review[] {
-  if (!reviews || reviews.length === 0) return DEFAULT_REVIEWS;
-  return reviews.map((r) =>
-    typeof r === "string" ? ({ name: "Player", text: r } as Review) : r
-  );
+  const items =
+    !reviews || reviews.length === 0
+      ? DEFAULT_REVIEWS
+      : reviews.map((r) =>
+          typeof r === "string" ? ({ name: "Player", text: r } as Review) : r
+        );
+
+  // Fill avatar automatically:
+  // - prefer explicit r.avatar
+  // - else use r.champion if provided
+  // - else fall back to r.name
+  return items.map((r) => {
+    const sourceName = (r as any).champion ?? r.name;
+    const avatar = r.avatar ?? championAvatarByName(sourceName);
+    return { ...r, avatar };
+  });
 }
 
 /* ---------- Rank emblem chip ---------- */
@@ -91,10 +108,9 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
   const pf = parseRank(from);
   const pt = parseRank(to);
   return (
-    <div className="absolute right-2.5 top-2.5 hidden sm:block"> {/* hide on mobile */}
+    <div className="absolute right-2.5 top-2.5 hidden sm:block">
       <div className="flex items-center gap-0.5 text-[11px] leading-4">
         <Emblem tier={pf.tier} div={pf.div} />
-        {/* Arrow slightly bigger (14 -> 18) */}
         <CaretRight size={18} weight="bold" className="opacity-85" aria-hidden />
         <Emblem tier={pt.tier} div={pt.div} />
         <span className="sr-only">
@@ -108,16 +124,14 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
 /* ---------- Review item (inside a connected rail) ---------- */
 
 const ReviewItem = ({ r }: { r: Review }) => {
-  // Prefer r.avatar from reviews.data; fallback placeholder
   const avatarSrc =
-    (r as any)?.avatar ??
-    "/images/coaching/reviews/placeholder-avatar.png";
+    (r as any)?.avatar ?? "/images/coaching/reviews/placeholder-avatar.png";
 
   return (
     <div
       className="
         relative w-[240px] sm:w-[280px] shrink-0
-        h-[190px]   /* slightly higher */
+        h-[190px]
         rounded-md
         px-4 py-4
       "
@@ -125,18 +139,20 @@ const ReviewItem = ({ r }: { r: Review }) => {
       <RankChip from={r.rankFrom} to={r.rankTo} />
 
       <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/10 shrink-0">
-        {/* Reviewer name slightly bigger */}
         <span className="font-semibold text-white/90 truncate text-[16px] sm:text-[17px]">
           {r.name}
         </span>
 
-        {/* Avatar to the right of the reviewer name */}
         <Image
           src={avatarSrc}
           alt={`${r.name} avatar`}
           width={28}
           height={28}
           className="ml-1 inline-block h-7 w-7 rounded-full object-cover ring-1 ring-white/15"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src =
+              "/images/coaching/reviews/placeholder-avatar.png";
+          }}
         />
 
         {typeof r.rating === "number" ? (
@@ -157,6 +173,11 @@ export default function Reviews({
   className,
   pauseOnHover = true,
 }: Props) {
+  // Ensure we use the live DDragon patch once on mount
+  useEffect(() => {
+    ensureLiveDDragonPatch(); // fetches realms and updates internal patch
+  }, []);
+
   const items = normalize(reviews);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -185,59 +206,43 @@ export default function Reviews({
     detectRetina: true,
     fpsLimit: 60,
     particles: {
-      number: {
-        value: 120,
-        density: { enable: true, area: 800 },
-      },
-      color: { value: ["#a78bfa", "#c4b5fd", "#8b5cf6"] }, // violet palette
+      number: { value: 120, density: { enable: true, area: 800 } },
+      color: { value: ["#a78bfa", "#c4b5fd", "#8b5cf6"] },
       shape: { type: "circle" },
       size: { value: { min: 0.8, max: 2.6 }, animation: { enable: false } },
       opacity: {
         value: { min: 0.12, max: 0.35 },
-        animation: {
-          enable: true,
-          speed: 0.25,
-          minimumValue: 0.12,
-          sync: false,
-        },
+        animation: { enable: true, speed: 0.25, minimumValue: 0.12, sync: false },
       },
       move: {
         enable: true,
-        speed: 0.48, // slow travel
+        speed: 0.48,
         direction: "left",
         random: true,
         straight: false,
         outModes: { default: "out" },
         trail: { enable: false },
       },
-      shadow: {
-        enable: true,
-        blur: 6,
-        color: "#a78bfa",
-      },
+      shadow: { enable: true, blur: 6, color: "#a78bfa" },
       links: { enable: false },
     },
-    interactivity: {
-      events: { resize: true },
-    },
+    interactivity: { events: { resize: true } },
   };
 
-const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
-  return (
-    <div ref={ref as any} className="flex items-stretch gap-6 shrink-0">
-      {items.map((r, i) => (
-        <React.Fragment key={`card-${i}`}>
-          <div className={i === 0 ? "pl-6" : ""}>
-            <ReviewItem r={r} />
-          </div>
-          <span aria-hidden className="h-full w-px bg-white/15 shrink-0" />
-        </React.Fragment>
-      ))}
-    </div>
-  );
-});
-
-
+  const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
+    return (
+      <div ref={ref as any} className="flex items-stretch gap-6 shrink-0">
+        {items.map((r, i) => (
+          <React.Fragment key={`card-${i}`}>
+            <div className={i === 0 ? "pl-6" : ""}>
+              <ReviewItem r={r} />
+            </div>
+            <span aria-hidden className="h-full w-px bg-white/15 shrink-0" />
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  });
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -344,10 +349,7 @@ const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
   return (
     <div
       ref={rootRef}
-      className={[
-        "relative grid place-items-center py-10",
-        className,
-      ]
+      className={["relative grid place-items-center py-10", className]
         .filter(Boolean)
         .join(" ")}
       style={{
@@ -377,7 +379,12 @@ const Slice = React.forwardRef<HTMLDivElement, {}>(function Slice(_, ref) {
 
       {/* Purple particles, visible through glass cards */}
       <div className="absolute inset-0 z-5 pointer-events-none">
-        <Particles id="reviews-particles" init={initParticles} options={particleOptions} className="w-full h-full" />
+        <Particles
+          id="reviews-particles"
+          init={initParticles}
+          options={particleOptions}
+          className="w-full h-full"
+        />
       </div>
 
       {/* connected wrapper rail, now full width */}

@@ -4,7 +4,7 @@
 import React, { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import BluePanel from "@/app/_components/panels/BluePanel"; // still used for the 2x3 grid only
-import Experience, { Rating } from "@/app/coaching/_coaching-components/components/overview/experience";
+import Experience from "@/app/coaching/_coaching-components/components/overview/experience";
 import {
   Trophy,
   BarChart3,
@@ -39,7 +39,7 @@ const NOTES_IMG_SRC = "/images/coaching/overview/notes.png";
 
 export default function Overview({
   eyebrow = "Benefits",
-  heading = "Why coaching works",
+  heading = "Why my coaching works",
   items = DEFAULT_ITEMS,
   className = "",
 }: {
@@ -84,12 +84,8 @@ export default function Overview({
           </div>
         </BluePanel>
 
-        {/* Bottom elements WITHOUT panel wrappers */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-          {/* Left: rating (extracted) */}
-          <Rating />
-
-          {/* Right: experience rows (no panel) */}
+        {/* Bottom: experience (no rating) */}
+        <div className="mt-6">
           <div className="p-6 md:py-10">
             <Experience />
           </div>

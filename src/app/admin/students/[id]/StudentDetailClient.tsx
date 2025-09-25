@@ -1,4 +1,3 @@
-// src/app/admin/students/[id]/StudentDetailClient.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -91,97 +90,96 @@ export default function StudentDetailClient() {
   }, [id]);
 
   // SINGLE call: fetch SoloQ history + aggregates (with deeper scan)
-// --- summary fetch ---
-useEffect(() => {
-  const rt = riotTag.trim();
-  const sv = server.trim();
+  // --- summary fetch ---
+  useEffect(() => {
+    const rt = riotTag.trim();
+    const sv = server.trim();
 
-  if (!sv || (!puuid && !rt)) {
-    setSummary(null);
-    setSumErr(null);
-    setSumLoading(false);
-    return;
-  }
-
-  const controller = new AbortController();
-  setSumLoading(true);
-  setSumErr(null);
-
-  const params = new URLSearchParams({
-    server: sv,
-    count: '10',
-    maxIds: '300',        // dig deeper for SoloQ mixed with normals/flex
-    concurrency: '3',
-    ...(puuid ? { puuid } : { riotId: rt }),
-  });
-
-  (async () => {
-    try {
-      const r = await fetch(`/api/riot/summary?${params.toString()}`, { signal: controller.signal });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(j.error || j.detail || `HTTP ${r.status}`);
-      setSummary(j);
-      if (j.puuid && j.puuid !== puuid) setPuuid(j.puuid);
-    } catch (e: any) {
-      if (!controller.signal.aborted) {
-        setSummary({ matches: [], aggregates: [] }); // avoid perpetual "Loading…"
-        setSumErr(String(e?.message || e));
-      }
-    } finally {
-      // Always end loading even if aborted mid-flight
+    if (!sv || (!puuid && !rt)) {
+      setSummary(null);
+      setSumErr(null);
       setSumLoading(false);
+      return;
     }
-  })();
 
-  return () => controller.abort();
-}, [riotTag, server, puuid]);
+    const controller = new AbortController();
+    setSumLoading(true);
+    setSumErr(null);
 
-// --- handle changes from StudentSummary ---
-const handleChange = (patch: EditablePatch) => {
-  const normalizedPatch: EditablePatch = {
-    ...patch,
-    ...(patch.server !== undefined ? { server: normalizeServer(patch.server) } : {}),
+    const params = new URLSearchParams({
+      server: sv,
+      count: '10',
+      maxIds: '60',        // dig deeper for SoloQ mixed with normals/flex
+      concurrency: '3',
+      ...(puuid ? { puuid } : { riotId: rt }),
+    });
+
+    (async () => {
+      try {
+        const r = await fetch(`/api/riot/summary?${params.toString()}`, { signal: controller.signal });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.error || j.detail || `HTTP ${r.status}`);
+        setSummary(j);
+        if (j.puuid && j.puuid !== puuid) setPuuid(j.puuid);
+      } catch (e: any) {
+        if (!controller.signal.aborted) {
+          setSummary({ matches: [], aggregates: [] }); // avoid perpetual "Loading…"
+          setSumErr(String(e?.message || e));
+        }
+      } finally {
+        // Always end loading even if aborted mid-flight
+        setSumLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [riotTag, server, puuid]);
+
+  // --- handle changes from StudentSummary ---
+  const handleChange = (patch: EditablePatch) => {
+    const normalizedPatch: EditablePatch = {
+      ...patch,
+      ...(patch.server !== undefined ? { server: normalizeServer(patch.server) } : {}),
+    };
+
+    setStudent((prev) => (prev ? ({ ...prev, ...normalizedPatch } as Student) : prev));
+
+    if (normalizedPatch.riotTag !== undefined) {
+      setRiotTag((normalizedPatch.riotTag || '').trim());
+      setPuuid(null);        // << force re-resolve for new Riot#Tag
+      setSummary(null);
+    }
+    if (normalizedPatch.server !== undefined) {
+      const ns = normalizeServer(normalizedPatch.server);
+      setServer(ns);
+      setPuuid(null);        // << region may change; force re-resolve
+      setSummary(null);
+    }
+
+    fetch(`/api/admin/students/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(normalizedPatch),
+    }).catch(() => {});
   };
 
-  setStudent((prev) => (prev ? ({ ...prev, ...normalizedPatch } as Student) : prev));
+  // --- helpers unchanged ---
+  const numberFor = (sid: string) => {
+    const idx = sessions.findIndex((x) => String(x.id) === String(sid));
+    return idx >= 0 ? idx + 1 : 1;
+  };
 
-  if (normalizedPatch.riotTag !== undefined) {
-    setRiotTag((normalizedPatch.riotTag || '').trim());
-    setPuuid(null);        // << force re-resolve for new Riot#Tag
-    setSummary(null);
-  }
-  if (normalizedPatch.server !== undefined) {
-    const ns = normalizeServer(normalizedPatch.server);
-    setServer(ns);
-    setPuuid(null);        // << region may change; force re-resolve
-    setSummary(null);
-  }
-
-  fetch(`/api/admin/students/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(normalizedPatch),
-  }).catch(() => {});
-};
-
-// --- helpers unchanged ---
-const numberFor = (sid: string) => {
-  const idx = sessions.findIndex((x) => String(x.id) === String(sid));
-  return idx >= 0 ? idx + 1 : 1;
-};
-
-const saveDoc = useMemo(
-  () =>
-    debounce(async (studentId: string, number: number, content: string, title: string) => {
-      await fetch(`/api/session-docs/${encodeURIComponent(studentId)}?number=${number}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: { md: content, title } }),
-      });
-    }, 600),
-  []
-);
-
+  const saveDoc = useMemo(
+    () =>
+      debounce(async (studentId: string, number: number, content: string, title: string) => {
+        await fetch(`/api/session-docs/${encodeURIComponent(studentId)}?number=${number}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes: { md: content, title } }),
+        });
+      }, 600),
+    []
+  );
 
   if (loading) return <div className="px-6 pt-8 pb-6 text-sm text-zinc-400">Loading…</div>;
   if (error)   return <div className="px-6 pt-8 pb-6 text-sm text-rose-400">{error}</div>;
@@ -229,7 +227,7 @@ const saveDoc = useMemo(
                 <ChampionStats rows={aggregates} />
               </div>
               <div className="lg:w-1/2">
-                <MatchHistory matches={matches} />
+                <MatchHistory matches={matches} puuid={puuid ?? undefined} />
               </div>
             </div>
           </GlassPanel>

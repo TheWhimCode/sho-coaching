@@ -14,6 +14,7 @@ const connectSrc = [
   "https://api.stripe.com",
   "https://m.stripe.network",
   "https://r.stripe.com",
+  "https://ddragon.leagueoflegends.com", // allow realms fetch
   isDev ? "ws:" : "",
   isDev ? "wss:" : "",
 ].filter(Boolean).join(" ");
@@ -23,6 +24,7 @@ const imgSrc = [
   "data:",
   "blob:",
   "https://*.stripe.com",
+  "https://ddragon.leagueoflegends.com", // allow champion images
 ].join(" ");
 
 // Build CSP parts (dev: no upgrade-insecure-requests)
@@ -48,6 +50,13 @@ const csp = cspParts.join("; ");
 
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
+
+  // If you use next/image anywhere, keep this so DDragon is allowed
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "ddragon.leagueoflegends.com" },
+    ],
+  },
 
   async headers() {
     const baseHeaders = [

@@ -1,4 +1,4 @@
-// coaching/_coaching-components/reviews.data.ts
+// src/lib/reviews/reviews.data.ts
 export type Review = {
   name: string;
   text: string;
@@ -6,73 +6,66 @@ export type Review = {
   /** e.g. "Gold II", "Platinum IV", "Master" */
   rankFrom?: string;
   rankTo?: string;
-  avatar?: string;
+  avatar?: string;      // optional manual override
+  champion?: string;    // ✅ set this to a LoL champion name (e.g., "Viktor")
 };
 
-const VIKTOR_AVATAR = "/images/coaching/reviews/viktor.svg";
-
+// Example data — now using `champion` (no need to set `avatar`)
 export const REVIEWS: Review[] = [
   {
-    name: "Croatoan",
+    name: "Yokah",
     text:
-      "During a VOD review, Sho took his time and gave measured advice for my improvement opportunities. Seeing the mistakes I was making through another's eyes was really informative.",
-    rating: 5,
-    rankFrom: "Iron III",
-    rankTo: "Silver I",
-    avatar: VIKTOR_AVATAR,
+      "After the session I lost every game and demoted. It was miserable. I'm not sure I'd recommend Sho to anyone other than Iron players. Oh well, after loss comes win. mdr",
+    rankFrom: "Grandmaster",
+    rankTo: "Master",
+    champion: "Akali",
   },
   {
     name: "Marco",
     text:
       "Super clear, no fluff. He spotted macro mistakes fast and explained the why behind every change. Notes after the call kept me accountable and I climbed steadily the following week.",
-    rating: 5,
     rankFrom: "Silver I",
     rankTo: "Gold III",
-    avatar: VIKTOR_AVATAR,
+    champion: "Viktor",
   },
   {
     name: "Ari",
     text:
       "Exactly what I needed: targeted fixes and a calm, professional vibe. Hearing my thought process challenged in real time helped me break autopilot and play with intention again.",
-    rating: 5,
     rankFrom: "Platinum IV",
     rankTo: "Diamond III",
-    avatar: VIKTOR_AVATAR,
+    champion: "Viktor",
   },
   {
     name: "EricIsOnFire",
     text:
       "Coach did a great job pointing out a few fundamental errors that held me back from carrying as much as I can. He also showed genuine interest in revisiting and seeing my progress.",
-    rating: 5,
     rankFrom: "Bronze IV",
     rankTo: "Silver IV",
-    avatar: VIKTOR_AVATAR,
-  },  
-  {
-    name: "Wham",
-    text:
-      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
-    rating: 5,
-    rankFrom: "Diamond I",
-    rankTo: "Challenger",
-    avatar: VIKTOR_AVATAR,
+    champion: "Viktor",
   },
   {
     name: "Wham",
     text:
-      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
-    rating: 5,
+      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",
     rankFrom: "Diamond I",
     rankTo: "Challenger",
-    avatar: VIKTOR_AVATAR,
-  },  
+    champion: "Viktor",
+  },
   {
     name: "Wham",
     text:
-      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",    
-    rating: 5,
+      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",
     rankFrom: "Diamond I",
     rankTo: "Challenger",
-    avatar: VIKTOR_AVATAR,
+    champion: "Viktor",
+  },
+  {
+    name: "Wham",
+    text:
+      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",
+    rankFrom: "Diamond I",
+    rankTo: "Challenger",
+    champion: "Viktor",
   },
 ];

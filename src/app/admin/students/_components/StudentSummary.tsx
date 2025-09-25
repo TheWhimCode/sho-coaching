@@ -54,7 +54,6 @@ export default function StudentSummary({ student, onChange }: Props) {
   const [isEditingRiot, setIsEditingRiot] = useState(false);
 
   // Keep local inputs in sync if parent student changes
-  // Do NOT clobber riotTag while editing.
   useEffect(() => {
     setName(student.name || '');
     setDiscord(student.discord || '');
@@ -64,7 +63,7 @@ export default function StudentSummary({ student, onChange }: Props) {
 
   const emit = (patch: EditablePatch) => onChange?.(patch);
 
-  // Debounced emitter (for other fields, not Riot while typing)
+  // Debounced emitter (for server field)
   const emitDebounced = useMemo(() => {
     let t: any;
     return (patch: EditablePatch) => {
@@ -82,7 +81,7 @@ export default function StudentSummary({ student, onChange }: Props) {
 
   return (
     <div className="p-0">
-      {/* Name (editable, looks like text) */}
+      {/* Name */}
       <h1 className="text-4xl font-extrabold tracking-tight text-white">
         <input
           aria-label="Name"
@@ -95,7 +94,7 @@ export default function StudentSummary({ student, onChange }: Props) {
         />
       </h1>
 
-      {/* Info rows: shared 3-col grid so rows align */}
+      {/* Info rows */}
       <div
         className="
           mt-6
@@ -115,17 +114,12 @@ export default function StudentSummary({ student, onChange }: Props) {
           onBlur={() => emit({ discord })}
         />
 
-        {/* Riot#Tag — non-editable link by default; pencil on the RIGHT, aligned with text */}
+        {/* Riot#Tag */}
         <div className="contents">
-          {/* Icon column */}
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/5 text-white/80 ring-1 ring-white/10">
             <Hash className="h-5 w-5" />
           </span>
-
-          {/* Label column */}
           <span className="text-zinc-400 px-1">Riot#Tag:</span>
-
-          {/* Value + Pencil column */}
           <div className="flex items-center min-w-0">
             {isEditingRiot ? (
               <input
@@ -135,7 +129,7 @@ export default function StudentSummary({ student, onChange }: Props) {
                 onChange={(e) => setRiotTag(e.target.value)}
                 onBlur={() => {
                   setIsEditingRiot(false);
-                  emit({ riotTag });
+                  emit({ riotTag: riotTag.trim() }); // ✅ force update with trimmed value
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
@@ -163,7 +157,6 @@ export default function StudentSummary({ student, onChange }: Props) {
               </span>
             )}
 
-            {/* Pencil button (only visible when not editing) */}
             {!isEditingRiot && (
               <button
                 type="button"
@@ -178,28 +171,26 @@ export default function StudentSummary({ student, onChange }: Props) {
           </div>
         </div>
 
-
+        {/* Server */}
         <Meta
           icon={<Server className="h-5 w-5" />}
           label="Server"
           value={server || ''}
           onChange={(v) => {
             setServer(v);
-            emitDebounced({ server: normalizeServer(v) }); // emit while typing (normalized)
+            emitDebounced({ server: normalizeServer(v) });
           }}
           onBlur={() => emit({ server: normalizeServer(server) })}
           transformDisplay={(v) => v.toUpperCase()}
         />
       </div>
 
-      {/* Divider */}
       <div className="mt-8 h-px w-full bg-white/10" />
     </div>
   );
 }
 
 /* ------- Pieces ------- */
-
 function Meta({
   icon,
   label,
@@ -219,17 +210,11 @@ function Meta({
   const shown = display ?? '';
 
   return (
-    // `contents` so these three children participate in the parent grid
     <div className="contents">
-      {/* Icon column */}
       <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/5 text-white/80 ring-1 ring-white/10">
         {icon}
       </span>
-
-      {/* Label column */}
       <span className="text-zinc-400 px-1">{label}:</span>
-
-      {/* Value column (flexes to fill) */}
       <input
         aria-label={label}
         className="font-semibold text-zinc-100 bg-transparent border-none outline-none focus:outline-none focus:ring-0 px-1 w-full min-w-0"

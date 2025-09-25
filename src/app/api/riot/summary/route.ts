@@ -7,50 +7,48 @@ const BASE_HEADERS = { 'X-Riot-Token': RIOT_KEY };
 type Region = 'americas' | 'europe' | 'asia' | 'sea';
 
 const ALIAS_TO_PLATFORM: Record<string, string> = {
-  euw:'euw1', eu:'euw1', euw1:'euw1',
-  eune:'eun1', eun:'eun1', eun1:'eun1',
-  na:'na1', na1:'na1',
-  oce:'oc1', oc1:'oc1',
-  lan:'la1', la1:'la1',
-  las:'la2', la2:'la2',
-  br:'br1', br1:'br1',
-  tr:'tr1', tr1:'tr1',
-  ru:'ru',
-  kr:'kr',
-  jp:'jp1', jp1:'jp1',
-  ph:'ph2', ph2:'ph2',
-  sg:'sg2', sg2:'sg2',
-  th:'th2', th2:'th2',
-  tw:'tw2', tw2:'tw2',
-  vn:'vn2', vn2:'vn2',
+  euw: 'euw1', eu: 'euw1', euw1: 'euw1',
+  eune: 'eun1', eun: 'eun1', eun1: 'eun1',
+  na: 'na1', na1: 'na1',
+  oce: 'oc1', oc1: 'oc1',
+  lan: 'la1', la1: 'la1',
+  las: 'la2', la2: 'la2',
+  br: 'br1', br1: 'br1',
+  tr: 'tr1', tr1: 'tr1',
+  ru: 'ru',
+  kr: 'kr',
+  jp: 'jp1', jp1: 'jp1',
+  ph: 'ph2', ph2: 'ph2',
+  sg: 'sg2', sg2: 'sg2',
+  th: 'th2', th2: 'th2',
+  tw: 'tw2', tw2: 'tw2',
+  vn: 'vn2', vn2: 'vn2',
 };
 
 const PLATFORM_TO_REGION: Record<string, Region> = {
-  na1:'americas', br1:'americas', la1:'americas', la2:'americas', oc1:'americas',
-  euw1:'europe', eun1:'europe', tr1:'europe', ru:'europe',
-  kr:'asia', jp1:'asia',
-  ph2:'sea', sg2:'sea', th2:'sea', tw2:'sea', vn2:'sea',
+  na1: 'americas', br1: 'americas', la1: 'americas', la2: 'americas', oc1: 'americas',
+  euw1: 'europe', eun1: 'europe', tr1: 'europe', ru: 'europe',
+  kr: 'asia', jp1: 'asia',
+  ph2: 'sea', sg2: 'sea', th2: 'sea', tw2: 'sea', vn2: 'sea',
 };
 
 const SOLO = 420;
 const REMAKE_SEC = 180;
 
-/* ---------------- LRU cache (process memory) ---------------- */
+/* ---------------- LRU cache ---------------- */
 type CacheEntry = { data: any; exp: number };
 const MATCH_CACHE = new Map<string, CacheEntry>();
-const MATCH_TTL_MS = 15 * 60 * 1000;
+const MATCH_TTL_MS = 60 * 60 * 1000; // 1h TTL
 
 function cacheGet(id: string) {
   const e = MATCH_CACHE.get(id);
   if (!e) return null;
   if (e.exp < Date.now()) { MATCH_CACHE.delete(id); return null; }
-  // refresh LRU
-  MATCH_CACHE.delete(id); MATCH_CACHE.set(id, e);
+  MATCH_CACHE.delete(id); MATCH_CACHE.set(id, e); // refresh LRU
   return e.data;
 }
 function cacheSet(id: string, data: any) {
   MATCH_CACHE.set(id, { data, exp: Date.now() + MATCH_TTL_MS });
-  // cap size, delete first key if present
   if (MATCH_CACHE.size > 1000) {
     const iter = MATCH_CACHE.keys().next();
     if (!iter.done) MATCH_CACHE.delete(iter.value);
@@ -71,7 +69,7 @@ function requirePlatform(input: string): { platform: string; region: Region } {
 async function riotFetch(url: string, init?: RequestInit, retries = 2): Promise<Response> {
   let attempt = 0;
   while (true) {
-    const res = await fetch(url, { ...init, headers: { ...(init?.headers||{}), ...BASE_HEADERS }, cache: 'no-store' });
+    const res = await fetch(url, { ...init, headers: { ...(init?.headers || {}), ...BASE_HEADERS }, cache: 'no-store' });
     if (res.ok) return res;
     if ((res.status === 429 || res.status >= 500) && attempt < retries) {
       const ra = Number(res.headers.get('retry-after') || 0);
@@ -138,7 +136,7 @@ async function fetchMatch(region: Region, matchId: string) {
 }
 
 async function fetchDetails(region: Region, ids: string[], concurrency = 3) {
-  const out: (any|null)[] = Array(ids.length).fill(null);
+  const out: (any | null)[] = Array(ids.length).fill(null);
   let i = 0;
   async function worker() {
     while (i < ids.length) {
@@ -163,10 +161,13 @@ export async function GET(req: Request) {
     let puuid = (searchParams.get('puuid') || '').trim();
 
     const historyCount = Math.max(1, Math.min(20, Number(searchParams.get('count') || 10)));
-    const maxIds = Math.max(historyCount, Math.min(200, Number(searchParams.get('maxIds') || 120)));
+    const maxIds = Math.max(historyCount, Math.min(200, Number(searchParams.get('maxIds') || 60)));
     const detailsConcurrency = Math.max(1, Math.min(3, Number(searchParams.get('concurrency') || 3)));
 
-    // ✅ Non-nullable region/platform
+    const startMs = Number(searchParams.get('startMs') || 0) || 0;
+    const endMs = Number(searchParams.get('endMs') || 0) || 0;
+
+    // ✅ platform/region
     let plat: string;
     let reg: Region;
     try {
@@ -178,6 +179,8 @@ export async function GET(req: Request) {
     // Resolve puuid if needed
     if (!puuid) {
       if (!riotId) return NextResponse.json({ error: 'Provide puuid or riotId' }, { status: 400 });
+      console.log("resolveAccount input riotId=", JSON.stringify(riotId));
+
       const acc = await resolveAccount(reg, riotId);
       if (!acc.ok) {
         return NextResponse.json({ error: 'Account lookup failed', detail: acc.error }, { status: acc.status || 500 });
@@ -185,38 +188,51 @@ export async function GET(req: Request) {
       puuid = acc.puuid;
     }
 
-    // IDs — try SoloQ first; fallback to all queues
-    let ids = await fetchIds(reg, puuid, { maxIds, queue: SOLO });
-    if (ids.length === 0) ids = await fetchIds(reg, puuid, { maxIds });
+    // -------- Fetch SoloQ matches --------
+    const want = historyCount;
+    const step = 20;
+    let start = 0;
+    const solo: any[] = [];
 
-    if (ids.length === 0) {
-      return NextResponse.json({ puuid, platform: plat, region: reg, matches: [], aggregates: [], totalSolo: 0 });
+    while (solo.length < want && start < maxIds) {
+      const idsPage = await fetchIds(reg, puuid, { pageStart: start, step, maxIds: step, queue: SOLO });
+      if (!idsPage.length) break;
+
+      const details = (await fetchDetails(reg, idsPage, detailsConcurrency)).filter(Boolean) as any[];
+
+      for (const m of details) {
+        const info = m?.info;
+        if (!info) continue;
+        if (info.queueId !== SOLO || Number(info.gameDuration) < REMAKE_SEC) continue;
+
+        const ts = info.gameStartTimestamp ?? info.gameCreation ?? info.gameEndTimestamp;
+        if (startMs && ts && ts < startMs) continue;
+        if (endMs && ts && ts >= endMs) continue;
+
+        solo.push(m);
+        if (solo.length >= want) break;
+      }
+      start += step;
     }
 
-    // Details (cached + low concurrency)
-    const details = (await fetchDetails(reg, ids, detailsConcurrency)).filter(Boolean) as any[];
-
-    // SoloQ + no remakes
-    const solo = details.filter(m => m?.info?.queueId === SOLO && Number(m.info?.gameDuration) >= REMAKE_SEC);
-
-    const matches = solo.slice(0, historyCount);
+    const matches = solo.slice(0, want);
 
     // Aggregates
-    type Agg = { championId:number; championName:string; games:number; wins:number; k:number; d:number; a:number; cs:number; };
+    type Agg = { championId: number; championName: string; games: number; wins: number; k: number; d: number; a: number; cs: number; };
     const by: Record<number, Agg> = {};
-    for (const m of solo) {
+    for (const m of matches) {
       const me = (m.info.participants || []).find((x: any) => x.puuid === puuid);
       if (!me) continue;
       const id = me.championId as number;
       const name = me.championName ?? '—';
-      by[id] ??= { championId:id, championName:name, games:0, wins:0, k:0, d:0, a:0, cs:0 };
+      by[id] ??= { championId: id, championName: name, games: 0, wins: 0, k: 0, d: 0, a: 0, cs: 0 };
       const s = by[id];
       s.games++; if (me.win) s.wins++;
       s.k += me.kills ?? 0; s.d += me.deaths ?? 0; s.a += me.assists ?? 0;
       s.cs += (me.totalMinionsKilled ?? 0) + (me.neutralMinionsKilled ?? 0);
     }
 
-    const round = (n:number,d=2) => { const f=Math.pow(10,d); return Math.round(n*f)/f; };
+    const round = (n: number, d = 2) => { const f = Math.pow(10, d); return Math.round(n * f) / f; };
     const aggregates = Object.values(by)
       .map(s => ({
         championId: s.championId,
@@ -229,16 +245,17 @@ export async function GET(req: Request) {
         a: round(s.a / Math.max(1, s.games), 1),
         cs: round(s.cs / Math.max(1, s.games), 1),
       }))
-      .sort((a,b)=>b.games-a.games);
+      .sort((a, b) => b.games - a.games);
 
     return NextResponse.json({
       puuid,
       platform: plat,
       region: reg,
+      split: { startMs: startMs || null, endMs: endMs || null },
       matches,
       aggregates,
       totalSolo: solo.length,
-      fetchedIds: ids.length,
+      fetchedIds: Math.min(start, maxIds),
     });
   } catch (e: any) {
     console.error('summary error', e?.message || e);
