@@ -31,17 +31,15 @@ export async function POST(req: Request) {
 
   if (!studentId) return NextResponse.json({ error: 'studentId required' }, { status: 400 });
 
-  // notes can be string or object; parse JSON-looking strings
   let notes: unknown = body?.notes ?? {};
   if (typeof notes === 'string') {
     const t = notes.trim();
     if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
-      try { notes = JSON.parse(t); } catch { /* keep as string */ }
+      try { notes = JSON.parse(t); } catch {}
     }
   }
   const notesJson: Prisma.InputJsonValue = toJson(notes);
 
-  // Auto-assign next number if not provided
   if (typeof number !== 'number') {
     const agg = await prisma.sessionDoc.aggregate({
       _max: { number: true },

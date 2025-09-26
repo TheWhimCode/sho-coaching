@@ -6,7 +6,7 @@ import { memo, useEffect } from 'react'
 import {
   championAvatarByName,
   ensureLiveDDragonPatch,
-} from '@/lib/league/championAvatar'
+} from '@/lib/league/datadragon'
 
 export default memo(function ChampionStats({
   rows,
@@ -28,8 +28,9 @@ export default memo(function ChampionStats({
     ensureLiveDDragonPatch()
   }, [])
 
+  // tighter gap between columns
   const grid =
-    'grid grid-cols-[40px_minmax(0,1fr)_92px_64px_72px_56px] items-center gap-x-3 px-2'
+    'grid grid-cols-[40px_minmax(0,1fr)_80px_56px_64px_48px] items-center gap-x-2 px-1'
 
   const wrText = (wr: number) => {
     if (wr >= 70) return 'text-emerald-400'
@@ -49,7 +50,7 @@ export default memo(function ChampionStats({
       {/* Header — identical columns to the list */}
       <div className={`${grid} mt-3 pb-1 text-[11px] uppercase tracking-wide text-zinc-500`}>
         <div className="col-span-2 pl-1">Champion</div>
-        <div className="text-right">KDA</div>
+        <div className="text-center">KDA</div>
         <div className="text-right">Games</div>
         <div className="text-right">WR</div>
         <div className="text-right">CS</div>
@@ -74,15 +75,15 @@ export default memo(function ChampionStats({
                 />
               </div>
 
-              {/* Champion name (only the name, like the working UI) */}
+              {/* Champion name */}
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold leading-5 text-zinc-100">
                   {r.championName}
                 </div>
               </div>
 
-              {/* KDA column: stacked (avg on top, full K/D/A below) */}
-              <div className="flex flex-col items-end leading-tight">
+              {/* KDA column: centered */}
+              <div className="flex flex-col items-center leading-tight">
                 <div className="text-sm font-semibold tabular-nums text-zinc-100">
                   {Number.isFinite(r.kda) ? r.kda.toFixed(1) : '-'}
                 </div>

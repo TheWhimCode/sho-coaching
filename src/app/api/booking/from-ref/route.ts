@@ -20,14 +20,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
   }
 
-  // derive a simple key (by IP if available, else fallback)
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "unknown";
-  const key = `from-ref:${ip}`;
-
-  // per-IP: 60/min
-  if (!rateLimit(key, 60, 60_000)) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(`from-ref:${ip}`, 60, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 
@@ -37,26 +31,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const booking = await prisma.booking.findFirst({
-    where: {
-      OR: [{ paymentRef: ref }, { stripeSessionId: ref }],
+  const s = await prisma.session.findFirst({
+    where: { OR: [{ paymentRef: ref }, { stripeSessionId: ref }] },
+    select: {
+      id: true,
+      sessionType: true,
+      liveMinutes: true,
+      followups: true,
+      discord: true,
+      currency: true,
+      amountCents: true,
+      scheduledStart: true,
+      slot: { select: { startTime: true } },
     },
-    include: { slot: true },
   });
 
-  if (!booking?.slot) {
+  const start = s?.scheduledStart ?? s?.slot?.startTime ?? null;
+  if (!s || !start) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   const res = NextResponse.json({
-    id: booking.id,
-    sessionType: booking.sessionType,
-    liveMinutes: booking.liveMinutes,
-    followups: booking.followups,
-    discord: booking.discord ?? "",
-    currency: (booking.currency || "eur").toLowerCase(),
-    amountCents: booking.amountCents ?? null,
-    startISO: booking.slot.startTime.toISOString(),
+    id: s.id,
+    sessionType: s.sessionType,
+    liveMinutes: s.liveMinutes,
+    followups: s.followups,
+    discord: s.discord ?? "",
+    currency: (s.currency || "eur").toLowerCase(),
+    amountCents: s.amountCents ?? null,
+    startISO: start.toISOString(),
   });
   res.headers.set("Cache-Control", "no-store");
   return res;

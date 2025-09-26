@@ -1,4 +1,3 @@
-// src/app/admin/students/_components/SessionNotes.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -10,7 +9,7 @@ import { defaultTitle, buildDefaultMd } from './_components/noteDefaults';
 export type NoteSession = {
   id: string;        // session id if exists, else doc id like "doc-<n>"
   number: number;    // 1..n per student
-  title: string;     // independent, editable (not from markdown)
+  title: string;     // ALWAYS derived from Session.sessionType (fallback to default)
   content: string;   // markdown
   createdAt: string; // ISO
 };
@@ -28,12 +27,14 @@ export default function SessionNotes({
   onCreateSession,
   onUpdateSession,
 }: Props) {
+  // Ensure sessions are ordered chronologically by scheduledStart (or createdAt)
   const sortedSessions = useMemo(
     () =>
-      [...(sessions ?? [])].sort(
-        (a, b) =>
-          new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
-      ),
+      [...(sessions ?? [])].sort((a, b) => {
+        const aTime = (a.scheduledStart ?? a.createdAt).getTime();
+        const bTime = (b.scheduledStart ?? b.createdAt).getTime();
+        return aTime - bTime;
+      }),
     [sessions]
   );
 
@@ -55,11 +56,19 @@ export default function SessionNotes({
         const listJson = listRes.ok ? await listRes.json() : { docs: [] as Array<{ id: string; number: number }> };
         const docs: Array<{ id: string; number: number }> = listJson?.docs ?? [];
 
+        // Helper: title always from DB sessionType for the nth session; fallback to defaultTitle(n)
+        const titleFromDb = (n: number) => {
+          const session = sortedSessions[n - 1];
+          const t = (session?.sessionType ?? '').trim();
+          return t || defaultTitle(n);
+        };
+
         if (!docs.length) {
+          // No docs stored yet — seed from sessions only
           const mapped = sortedSessions.map((s, i) => {
             const n = i + 1;
-            const content = s.summary ?? buildDefaultMd();
-            const title = defaultTitle(n);
+            const content = s.notes ?? buildDefaultMd(); // was s.summary; keep your own field
+            const title = titleFromDb(n);
             return {
               id: String(s.id),
               number: n,
@@ -75,12 +84,19 @@ export default function SessionNotes({
           const seed =
             mapped.length
               ? mapped
-              : [{ id: 'doc-1', number: 1, title: defaultTitle(1), content: buildDefaultMd(), createdAt: new Date().toISOString() }];
+              : [{
+                  id: 'doc-1',
+                  number: 1,
+                  title: titleFromDb(1),
+                  content: buildDefaultMd(),
+                  createdAt: new Date().toISOString(),
+                }];
           setLocal(seed);
           setActiveId(seed[0]?.id ?? 'doc-1');
           return;
         }
 
+        // Docs exist — fetch contents, but ignore any doc.notes.title
         const details = await Promise.all(
           docs.map(async (d) => {
             try {
@@ -102,27 +118,30 @@ export default function SessionNotes({
           .map((doc) => {
             const n = doc!.number;
             const raw = doc!.notes;
+
             let content = '';
-            let title = defaultTitle(n);
-            if (raw && typeof raw === 'object' && ('md' in raw || 'title' in raw)) {
+            if (raw && typeof raw === 'object' && ('md' in raw)) {
               content = (raw as any).md ?? '';
-              title = (raw as any).title || title;
             } else if (typeof raw === 'string') {
               content = raw;
             } else {
               content = buildDefaultMd();
             }
+
             const session = sortedSessions[n - 1];
+            const id = session ? String(session.id) : `doc-${n}`;
+            const createdAt = session
+              ? (session.createdAt instanceof Date
+                  ? session.createdAt.toISOString()
+                  : (session.createdAt as any) ?? new Date().toISOString())
+              : new Date().toISOString();
+
             return {
-              id: session ? String(session.id) : `doc-${n}`,
+              id,
               number: n,
-              title,
+              title: titleFromDb(n),   // ALWAYS from DB sessionType
               content,
-              createdAt: session
-                ? (session.createdAt instanceof Date
-                    ? session.createdAt.toISOString()
-                    : (session.createdAt as any) ?? new Date().toISOString())
-                : new Date().toISOString(),
+              createdAt,
             };
           })
           .sort((a, b) => a.number - b.number);
@@ -132,7 +151,13 @@ export default function SessionNotes({
         setActiveId(items[0]?.id ?? '');
       } catch {
         if (aborted) return;
-        setLocal([{ id: 'doc-1', number: 1, title: defaultTitle(1), content: buildDefaultMd(), createdAt: new Date().toISOString() }]);
+        setLocal([{
+          id: 'doc-1',
+          number: 1,
+          title: (sortedSessions[0]?.sessionType ?? '').trim() || defaultTitle(1),
+          content: buildDefaultMd(),
+          createdAt: new Date().toISOString(),
+        }]);
         setActiveId('doc-1');
       }
     })();
@@ -140,39 +165,37 @@ export default function SessionNotes({
     return () => {
       aborted = true;
     };
-  }, [student?.id, sortedSessions.length]);
+  }, [student?.id, sortedSessions]);
 
   // Create a new doc on the server immediately
   const createSession = async () => {
     if (!student?.id) return;
     const fallbackNumber = (local.reduce((m, x) => Math.max(m, x.number), 0) || 0) + 1;
     const md = buildDefaultMd();
-    const title = defaultTitle(fallbackNumber);
 
     let newId = `doc-${Date.now()}`;
     let newNumber = fallbackNumber;
-    let newTitle = title;
 
     try {
       const res = await fetch('/api/session-docs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId: student.id, notes: { md, title } }),
+        // Do NOT send a title; we ignore titles in notes
+        body: JSON.stringify({ studentId: student.id, notes: { md } }),
       });
       if (res.ok) {
         const { doc } = await res.json();
         newId = doc.id;
         newNumber = doc.number;
-        if (doc?.notes && typeof doc.notes === 'object' && 'title' in doc.notes) {
-          newTitle = String(doc.notes.title);
-        }
       }
     } catch {}
+
+    const title = (sortedSessions[newNumber - 1]?.sessionType ?? '').trim() || defaultTitle(newNumber);
 
     const s: NoteSession = {
       id: newId,
       number: newNumber,
-      title: newTitle,
+      title,
       content: md,
       createdAt: new Date().toISOString(),
     };
@@ -186,7 +209,10 @@ export default function SessionNotes({
   const patchActive = (patch: Partial<NoteSession>) => {
     const current = local.find((s) => s.id === activeId);
     if (!current) return;
-    const updated: NoteSession = { ...current, ...patch };
+
+    // Never allow title changes; strip it if present in patch
+    const { title: _ignoreTitle, ...rest } = patch as any;
+    const updated: NoteSession = { ...current, ...rest };
     setLocal((xs) => xs.map((s) => (s.id === current.id ? updated : s)));
     onUpdateSession?.(updated);
   };

@@ -1,7 +1,7 @@
-// src/lib/email.ts
 import "server-only";
 import { CFG_SERVER } from "@/lib/config.server";
 import { CFG_PUBLIC } from "@/lib/config.public";
+import { sign } from "@/lib/sign";
 
 let resendInstance: any;
 async function getResend() {
@@ -59,7 +59,7 @@ export async function sendBookingEmail(
 
   const icsUrl = `${CFG_PUBLIC.SITE_URL}/api/ics?bookingId=${encodeURIComponent(
     bookingId
-  )}`;
+  )}&sig=${encodeURIComponent(sign(bookingId))}`;
 
   // Optional: expose a Discord invite in your public config
   const discordInvite = (CFG_PUBLIC as any).DISCORD_INVITE_URL as

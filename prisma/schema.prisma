@@ -17,7 +17,7 @@ model Slot {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   status    SlotStatus @default(free)
-  booking   Booking?   @relation("SlotBooking")
+  session   Session?   @relation("SlotSession")
 
   @@index([startTime])
   @@index([status, startTime, holdUntil])
@@ -43,7 +43,7 @@ model AvailabilityException {
   @@index([date])
 }
 
-model Booking {
+model Session {
   id               String     @id @default(cuid())
   sessionType      String
   status           String     @default("unpaid")
@@ -51,6 +51,7 @@ model Booking {
   liveMinutes      Int
   followups        Int        @default(0)
   discord          String
+  riotTag          String?    
   notes            String?
   createdAt        DateTime   @default(now())
   stripeSessionId  String?    @unique
@@ -66,8 +67,11 @@ model Booking {
   waiverAccepted   Boolean    @default(false)
   waiverAcceptedAt DateTime?
   waiverIp         String?
-  slot             Slot?      @relation("SlotBooking", fields: [slotId], references: [id])
-  emailLogs        EmailLog[]
+
+  slot       Slot?       @relation("SlotSession", fields: [slotId], references: [id])
+  emailLogs  EmailLog[]
+  studentId  String?
+  student    Student?    @relation(fields: [studentId], references: [id])
 
   @@index([createdAt])
   @@index([scheduledStart])
@@ -82,14 +86,14 @@ model ProcessedEvent {
 
 model EmailLog {
   id        String   @id @default(cuid())
-  bookingId String
+  sessionId String
   kind      String
   sentAt    DateTime @default(now())
   createdAt DateTime @default(now())
-  booking   Booking  @relation(fields: [bookingId], references: [id])
+  session   Session  @relation(fields: [sessionId], references: [id])
 
-  @@unique([bookingId, kind])
-  @@index([bookingId])
+  @@unique([sessionId, kind])
+  @@index([sessionId])
 }
 
 model WebhookEvent {
@@ -107,89 +111,66 @@ enum SlotStatus {
   blocked
 }
 
-// ===== Adjusted enums =====
-enum Visibility {
-  PRIVATE
-  STUDENT
-}
-
 // ===== Models =====
 model Student {
-  id      String  @id @default(cuid())
-  name    String  @unique
-  discord String? @unique
-  puuid   String? @unique
-  server  String? // e.g., euw1, na1, kr  (was: platform)
-
-  // Keep BOTH: Riot needs summonerId for league API; riotTag is display ("Name#TAG")
-  summonerId String? // internal Riot Summoner ID (for /league)
-  riotTag    String? // "GameName#Tag", optional
+  id        String   @id @default(cuid())
+  name      String   @unique
+  discord   String?  @unique
+  puuid     String?  @unique
+  server    String?  // e.g., euw1, na1, kr
+  riotTag   String?  // "GameName#Tag"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions    Session[]
-  assets      Asset[]
-  sessionDocs SessionDoc[]
-  Note        Note[]
+  sessions      Session[]
+  sessionDocs   SessionDoc[]
+  rankSnapshots RankSnapshot[]
+  assets        StudentAsset[]
 
   @@index([puuid])
 }
 
-model Session {
-  id          String   @id @default(cuid())
-  studentId   String
-  scheduledAt DateTime
-  summary     String?
-  createdAt   DateTime @default(now())
-
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  notes   Note[]
-  assets  Asset[]
-}
-
-model Note {
-  id         String     @id @default(cuid())
-  studentId  String
-  sessionId  String?
-  title      String
-  bodyMd     String
-  visibility Visibility @default(PRIVATE)
-  createdAt  DateTime   @default(now())
-
-  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  session Session? @relation(fields: [sessionId], references: [id])
-}
-
-model Asset {
-  id         String     @id @default(cuid())
-  studentId  String
-  sessionId  String?
+// Global asset library (all graphics/resources you upload)
+model AssetLibrary {
+  id         String   @id @default(cuid())
+  name       String
   type       String
   storageKey String
   url        String
   mime       String?
   size       Int?
-  visibility Visibility @default(PRIVATE)
-  createdAt  DateTime   @default(now())
+  createdAt  DateTime @default(now())
 
-  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  session Session? @relation(fields: [sessionId], references: [id])
-
-  @@index([studentId])
+  students   StudentAsset[]
 }
 
-// SoloQ only; simplified snapshot
+// Attach assets from the library to students
+model StudentAsset {
+  id         String        @id @default(cuid())
+  studentId  String
+  assetId    String
+  createdAt  DateTime      @default(now())
+
+  student    Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  asset      AssetLibrary  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, assetId])
+  @@index([studentId])
+  @@index([assetId])
+}
+
 model RankSnapshot {
   id         String   @id @default(cuid())
-  puuid      String
-  server     String // was: platform
+  studentId  String
   capturedAt DateTime @default(now())
   tier       String
   division   String?
   lp         Int
 
-  @@index([puuid, capturedAt])
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, capturedAt])
   @@index([capturedAt])
 }
 
@@ -204,5 +185,5 @@ model SessionDoc {
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, number])
-  @@index([studentId]) // optional, good for queries
+  @@index([studentId])
 }

@@ -47,7 +47,7 @@ export const REVIEWS: Review[] = [
   {
     name: "Wham",
     text:
-      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",
+      "I've learned pretty much all of my fundamentals from Sho. He made me realize that my mechanics, macro and especially mental needed work. Took me a while, but I got there.",
     rankFrom: "Diamond I",
     rankTo: "Challenger",
     champion: "Viktor",

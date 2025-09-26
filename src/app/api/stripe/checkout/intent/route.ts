@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     let sessionType: string;
 
     if (bookingId) {
-      const booking = await prisma.booking.findUnique({
+      const booking = await prisma.session.findUnique({
         where: { id: bookingId },
         select: { slotId: true, liveMinutes: true, followups: true, sessionType: true, customerEmail: true },
       });

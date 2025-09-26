@@ -1,4 +1,4 @@
-// coaching/_coaching-components/reviews.tsx
+// src/app/coaching/_coaching-components/reviews.tsx
 "use client";
 
 import React, { useEffect, useLayoutEffect, useRef, useCallback } from "react";
@@ -13,15 +13,14 @@ import type { ISourceOptions, Engine } from "tsparticles-engine";
 import { loadSlim } from "tsparticles-slim";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 
-// ✅ champion avatar resolver (uses DDragon + live patch)
 import {
   championAvatarByName,
   ensureLiveDDragonPatch,
-} from "@/lib/league/championAvatar";
+  rankMiniCrestSvg,
+} from "@/lib/league/datadragon";
 
 type Props = {
   reviews?: Array<Review | string>;
-  /** pixels per second; negative scrolls left */
   pxPerSecond?: number;
   className?: string;
   pauseOnHover?: boolean;
@@ -35,10 +34,6 @@ function normalize(reviews?: Array<Review | string>): Review[] {
           typeof r === "string" ? ({ name: "Player", text: r } as Review) : r
         );
 
-  // Fill avatar automatically:
-  // - prefer explicit r.avatar
-  // - else use r.champion if provided
-  // - else fall back to r.name
   return items.map((r) => {
     const sourceName = (r as any).champion ?? r.name;
     const avatar = r.avatar ?? championAvatarByName(sourceName);
@@ -46,52 +41,77 @@ function normalize(reviews?: Array<Review | string>): Review[] {
   });
 }
 
-/* ---------- Rank emblem chip ---------- */
+/* ---------- Rank mini-crest chip ---------- */
 
-const RANK_IMAGE: Record<string, string> = {
-  iron: "Iron.png",
-  bronze: "Bronze.png",
-  silver: "Silver.png",
-  gold: "Gold.png",
-  platinum: "Platinum.png",
-  emerald: "Emerald.png",
-  diamond: "Diamond.png",
-  master: "Master.png",
-  grandmaster: "GM.png",
-  gm: "GM.png",
-  challenger: "Challenger.png",
-};
+type DivRoman = "I" | "II" | "III" | "IV";
+type RankTierInput =
+  | "IRON"
+  | "BRONZE"
+  | "SILVER"
+  | "GOLD"
+  | "PLATINUM"
+  | "EMERALD"
+  | "DIAMOND"
+  | "MASTER"
+  | "GRANDMASTER"
+  | "CHALLENGER"
+  | "UNRANKED";
 
-function parseRank(
-  s?: string
-): { tier?: string; div?: "I" | "II" | "III" | "IV" } {
+function parseRank(s?: string): { tier?: RankTierInput; div?: DivRoman } {
   if (!s) return {};
-  const m = s.trim().match(/^([A-Za-z]+)(?:\s+(I{1,3}|IV))?$/);
+  const raw = s.trim();
+  const alias = raw.toLowerCase();
+  if (alias === "gm") return { tier: "GRANDMASTER" };
+  if (alias === "unranked") return { tier: "UNRANKED" };
+
+  const m = raw.match(/^([A-Za-z]+)(?:\s+(I{1,3}|IV))?$/);
   if (!m) return {};
-  const tier = m[1];
-  const div = (m[2] as any) || undefined;
+
+  const t = m[1].toLowerCase();
+  const map: Record<string, RankTierInput> = {
+    iron: "IRON",
+    bronze: "BRONZE",
+    silver: "SILVER",
+    gold: "GOLD",
+    platinum: "PLATINUM",
+    emerald: "EMERALD",
+    diamond: "DIAMOND",
+    master: "MASTER",
+    grandmaster: "GRANDMASTER",
+    gm: "GRANDMASTER",
+    challenger: "CHALLENGER",
+    unranked: "UNRANKED",
+  };
+
+  const tier = map[t];
+  const div = (m[2] as DivRoman) || undefined;
   return { tier, div };
 }
 
-const Emblem = ({ tier, div }: { tier?: string; div?: string }) => {
+const Emblem = ({ tier, div }: { tier?: RankTierInput; div?: string }) => {
   if (!tier) return null;
-  const key = tier.toLowerCase();
-  const file = RANK_IMAGE[key];
-  if (!file) return null;
-
-  // Icons slightly bigger (from 32px -> 36px)
+  const src = rankMiniCrestSvg(tier);
   return (
-    <span className="relative inline-flex h-9 w-9 items-center justify-center overflow-visible -mt-0.5">
+    <span className="relative inline-flex h-8 w-8 items-center justify-center overflow-visible align-middle">
       <Image
-        src={`/images/league/rank/${file}`}
+        src={src}
         alt={div ? `${tier} ${div}` : tier}
-        width={36}
-        height={36}
-        className="h-9 w-9 object-contain pointer-events-none select-none"
+        width={32}
+        height={32}
+        className="h-7 w-7 object-contain pointer-events-none select-none"
         priority={false}
+        unoptimized
       />
       {div ? (
-        <span className="absolute top-2 right-0.5 text-[10px] leading-none font-bold text-white drop-shadow">
+        <span
+          className="
+            absolute bottom-0.5 right-0
+            text-[9px] font-extrabold text-white leading-none
+            drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]
+            [text-shadow:_0_0_3px_rgba(0,0,0,0.9)]
+          "
+          aria-hidden
+        >
           {div}
         </span>
       ) : null}
@@ -109,7 +129,7 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
   const pt = parseRank(to);
   return (
     <div className="absolute right-2.5 top-2.5 hidden sm:block">
-      <div className="flex items-center gap-0.5 text-[11px] leading-4">
+      <div className="flex items-center gap-1 text-[11px] leading-4">
         <Emblem tier={pf.tier} div={pf.div} />
         <CaretRight size={18} weight="bold" className="opacity-85" aria-hidden />
         <Emblem tier={pt.tier} div={pt.div} />
@@ -121,23 +141,17 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
   );
 };
 
-/* ---------- Review item (inside a connected rail) ---------- */
+/* ---------- Review item ---------- */
 
 const ReviewItem = ({ r }: { r: Review }) => {
   const avatarSrc =
     (r as any)?.avatar ?? "/images/coaching/reviews/placeholder-avatar.png";
 
   return (
-    <div
-      className="
-        relative w-[240px] sm:w-[280px] shrink-0
-        h-[190px]
-        rounded-md
-        px-4 py-4
-      "
-    >
+    <div className="relative w=[240px] sm:w-[280px] shrink-0 h-[190px] rounded-md px-4 py-4">
       <RankChip from={r.rankFrom} to={r.rankTo} />
 
+      {/* header row: name + avatar (vertically centered); emblem chip is separate (absolute) */}
       <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/10 shrink-0">
         <span className="font-semibold text-white/90 truncate text-[16px] sm:text-[17px]">
           {r.name}
@@ -148,7 +162,7 @@ const ReviewItem = ({ r }: { r: Review }) => {
           alt={`${r.name} avatar`}
           width={28}
           height={28}
-          className="ml-1 inline-block h-7 w-7 rounded-full object-cover ring-1 ring-white/15"
+          className="ml-1 inline-block h-7 w-7 rounded-full object-cover ring-1 ring-white/15 align-middle"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src =
               "/images/coaching/reviews/placeholder-avatar.png";
@@ -173,9 +187,8 @@ export default function Reviews({
   className,
   pauseOnHover = true,
 }: Props) {
-  // Ensure we use the live DDragon patch once on mount
   useEffect(() => {
-    ensureLiveDDragonPatch(); // fetches realms and updates internal patch
+    ensureLiveDDragonPatch();
   }, []);
 
   const items = normalize(reviews);
@@ -193,9 +206,6 @@ export default function Reviews({
   const running = useRef(true);
   const velocity = useRef(0);
 
-  const fadePx = 80;
-
-  /* ---------- Purple, randomized, slow-glow particles ---------- */
   const initParticles = useCallback(async (engine: Engine) => {
     await loadSlim(engine);
   }, []);
@@ -221,7 +231,6 @@ export default function Reviews({
         random: true,
         straight: false,
         outModes: { default: "out" },
-        trail: { enable: false },
       },
       shadow: { enable: true, blur: 6, color: "#a78bfa" },
       links: { enable: false },
@@ -359,7 +368,6 @@ export default function Reviews({
       }}
       aria-label="What clients say"
     >
-      {/* subtle texture above base color */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0"
@@ -377,7 +385,6 @@ export default function Reviews({
         }}
       />
 
-      {/* Purple particles, visible through glass cards */}
       <div className="absolute inset-0 z-5 pointer-events-none">
         <Particles
           id="reviews-particles"
@@ -387,24 +394,11 @@ export default function Reviews({
         />
       </div>
 
-      {/* connected wrapper rail, now full width */}
-      <GlassPanel
-        className="
-          relative w-full
-          overflow-hidden
-          border-y border-white/10 ring-1 ring-inset ring-cyan-300/15
-          shadow-[8px_8px_20px_-6px_rgba(0,0,0,.8)]
-          backdrop-blur
-          px-3 py-4
-          z-10
-        "
-      >
-        {/* subtle inner halo */}
+      <GlassPanel className="relative w-full overflow-hidden border-y border-white/10 ring-1 ring-inset ring-cyan-300/15 shadow-[8px_8px_20px_-6px_rgba(0,0,0,.8)] backdrop-blur px-3 py-4 z-10">
         <div
           className="pointer-events-none absolute inset-0 shadow-[0_0_30px_-6px_rgba(168,85,247,.28)]"
           aria-hidden
         />
-
         <div className="w-full overflow-hidden relative">
           <div ref={trackRef} className="flex flex-nowrap will-change-transform">
             <Slice ref={sliceRef} />
@@ -413,7 +407,6 @@ export default function Reviews({
         </div>
       </GlassPanel>
 
-      {/* inner shadow overlay (on top) */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-20"
@@ -427,7 +420,6 @@ export default function Reviews({
         }}
       />
 
-      {/* drag interaction layer */}
       <motion.div
         className="absolute inset-0 z-30 cursor-grab active:cursor-grabbing"
         drag="x"

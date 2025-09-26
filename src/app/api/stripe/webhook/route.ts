@@ -1,3 +1,4 @@
+// src/app/api/stripe/webhook/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
@@ -45,7 +46,6 @@ async function commitTakenSlots(slotIdsCsv: string | undefined) {
   });
 }
 
-// --- helper to detect Prisma unique-violation (duplicate event) ---
 function isUniqueViolation(e: unknown): boolean {
   return typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002";
 }
@@ -62,27 +62,20 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    event = getStripe().webhooks.constructEvent(
-      raw,
-      sig,
-      CFG_SERVER.STRIPE_WEBHOOK_SECRET,
-      300 // seconds tolerance
-    );
+    event = getStripe().webhooks.constructEvent(raw, sig, CFG_SERVER.STRIPE_WEBHOOK_SECRET, 300);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[webhook] verify failed:", msg);
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
   }
 
-  // --- Idempotency guard ---
   try {
     await prisma.processedEvent.create({ data: { id: event.id } });
   } catch (e: unknown) {
-    if (isUniqueViolation(e)) return NextResponse.json({ ok: true }); // already handled
+    if (isUniqueViolation(e)) return NextResponse.json({ ok: true });
     throw e;
   }
 
-  // finalize helper
   const handle = async (
     meta: Record<string, string>,
     amount?: number,
@@ -96,26 +89,19 @@ export async function POST(req: Request) {
       return;
     }
 
-    console.log("[webhook] finalize start", { paymentRef, amount, currency, meta });
-
-    // We no longer rely on notes/discord in metadata.
-    // finalizeBooking should fetch missing details from your DB via bookingId/slotIds.
     await finalizeBooking(
-      { ...meta, email }, // meta now expected to be minimal; DB holds the rich fields
+      { ...meta, email }, // meta minimal; DB holds rich fields
       amount,
       (currency ?? "eur").toLowerCase(),
       paymentRef,
       "stripe"
     );
 
-    // Mark slots as taken if provided
     await commitTakenSlots(meta.slotIds);
-
-    console.log("[webhook] finalize done", { paymentRef });
 
     if (email && paymentRef) {
       try {
-        const booking = await prisma.booking.findFirst({
+        const booking = await prisma.session.findFirst({
           where: { paymentRef },
           select: {
             id: true,
@@ -139,10 +125,7 @@ export async function POST(req: Request) {
             priceEUR: (amount ?? 0) / 100,
             bookingId: booking.id,
             timeZone: meta.timeZone || meta.tz,
-            // icsUrl if supported by your mailer
           });
-
-          console.log("[webhook] email sent", { paymentRef, email });
         }
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -154,20 +137,18 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "payment_intent.succeeded": {
-        // Re-retrieve PI to ensure freshest metadata (avoids race with intent.update)
         const piEvent = event.data.object as Stripe.PaymentIntent;
         const pi = await getStripe().paymentIntents.retrieve(piEvent.id);
         const meta = (pi.metadata ?? {}) as Record<string, string>;
-        const email = (await extractEmailFromPI(pi)) || undefined; // no longer rely on meta.email
+        const email = (await extractEmailFromPI(pi)) || undefined;
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
         break;
       }
       case "checkout.session.completed": {
-        // Re-retrieve CS (expand payment_intent) and prefer PI metadata
         const csEvent = event.data.object as Stripe.Checkout.Session;
         const cs = await getStripe().checkout.sessions.retrieve(csEvent.id, { expand: ["payment_intent"] });
-        let pi: Stripe.PaymentIntent | null = null;
 
+        let pi: Stripe.PaymentIntent | null = null;
         if (typeof cs.payment_intent === "string") {
           pi = await getStripe().paymentIntents.retrieve(cs.payment_intent);
         } else if (cs.payment_intent && (cs.payment_intent as any).object === "payment_intent") {
@@ -177,15 +158,18 @@ export async function POST(req: Request) {
         const piMeta = (pi?.metadata ?? {}) as Record<string, string>;
         const csMeta = (cs.metadata ?? {}) as Record<string, string>;
 
-        // Merge: prefer PI metadata (client patched right before confirm)
-        const meta = { ...csMeta, ...piMeta };
+        // Prefer PI metadata; pass CS id so finalizeBooking can persist it in stripeSessionId
+        const meta = { ...csMeta, ...piMeta, stripeSessionId: cs.id };
 
         const email =
           (await (pi ? extractEmailFromPI(pi) : Promise.resolve<string | undefined>(undefined))) ||
           cs.customer_details?.email ||
           undefined;
 
-        await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", cs.id, email);
+        // IMPORTANT: prefer PI id for paymentRef so /from-ref?ref=pi_... resolves
+        const paymentRef = pi?.id ?? cs.id;
+
+        await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", paymentRef, email);
         break;
       }
       default:

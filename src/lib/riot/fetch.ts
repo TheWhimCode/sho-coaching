@@ -1,11 +1,9 @@
 import { bucketKeyFor, limiterGroup } from "./limiter";
 
-const RIOT_API_KEY = process.env.RIOT_API_KEY!;
+const RIOT_API_KEY = process.env.RIOT_API_KEY ?? "";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 function parseRetryAfter(res: Response): number {
   const ra =
@@ -13,8 +11,12 @@ function parseRetryAfter(res: Response): number {
     res.headers.get("retry-after") ??
     res.headers.get("x-rate-limit-reset");
   const n = Number(ra);
-  if (Number.isFinite(n) && n > 0) return Math.min(n, 10);
-  return 1;
+  return Number.isFinite(n) && n > 0 ? Math.min(n, 10) : 1;
+}
+
+function riotHeaders() {
+  if (!RIOT_API_KEY) throw new Error("Missing RIOT_API_KEY");
+  return { "X-Riot-Token": RIOT_API_KEY };
 }
 
 export async function riotFetchJSON<T>(
@@ -29,15 +31,11 @@ export async function riotFetchJSON<T>(
   return limiter.schedule({ expiration: DEFAULT_TIMEOUT_MS * 2 }, async () => {
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), DEFAULT_TIMEOUT_MS);
-
     try {
       const res = await fetch(url, {
         ...init,
         signal: ac.signal,
-        headers: {
-          "X-Riot-Token": RIOT_API_KEY,
-          ...(init.headers || {}),
-        },
+        headers: { ...riotHeaders(), ...(init.headers || {}) },
         cache: "no-store",
       });
 

@@ -1,4 +1,3 @@
-// next.config.mjs
 /** @type {import('next').NextConfig} */
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -25,6 +24,7 @@ const imgSrc = [
   "blob:",
   "https://*.stripe.com",
   "https://ddragon.leagueoflegends.com", // allow champion images
+  "https://raw.communitydragon.org",     // allow rank emblems (CDragon)
 ].join(" ");
 
 // Build CSP parts (dev: no upgrade-insecure-requests)
@@ -51,10 +51,10 @@ const csp = cspParts.join("; ");
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
 
-  // If you use next/image anywhere, keep this so DDragon is allowed
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "ddragon.leagueoflegends.com" },
+      { protocol: "https", hostname: "raw.communitydragon.org" }, // ✅ allow rank emblems
     ],
   },
 
@@ -80,7 +80,6 @@ const nextConfig = {
         key: "Strict-Transport-Security",
         value: "max-age=63072000; includeSubDomains; preload",
       });
-      // TEMP: Report-Only for a week—watch logs, then remove this block
       baseHeaders.push({
         key: "Content-Security-Policy-Report-Only",
         value: `${csp}; report-uri /api/csp/report`,

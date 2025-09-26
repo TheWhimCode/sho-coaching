@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   if (!bookingId) return NextResponse.json({ error: "missing_bookingId" }, { status: 400 });
 
   try {
-    await prisma.booking.update({
+    await prisma.session.update({
       where: { id: bookingId },
       data: {
         waiverAccepted: waiverAccepted === true,

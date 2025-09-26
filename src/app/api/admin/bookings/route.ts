@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     ...(range === "upcoming" ? { scheduledStart: { gte: now } } : {}),
   };
 
-  const rows = await prisma.booking.findMany({
+  const rows = await prisma.session.findMany({
     where,
     select: {
       id: true,

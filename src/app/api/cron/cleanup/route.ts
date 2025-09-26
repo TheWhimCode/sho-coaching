@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const result = await prisma.booking.deleteMany({
+  const result = await prisma.session.deleteMany({
     where: {
       status: "unpaid",
       createdAt: { lt: cutoff },

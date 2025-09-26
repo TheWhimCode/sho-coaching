@@ -1,13 +1,13 @@
-// src/app/admin/students/_components/StudentSummary.tsx
 'use client';
 
 import type { Student } from '@prisma/client';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Hash, MessageCircle, Server, Pencil } from 'lucide-react';
+import RankCard from './_components/RankCard';
 
 type MinimalStudent = Pick<
   Student,
-  'id' | 'name' | 'discord' | 'riotTag' | 'server' | 'createdAt' | 'updatedAt'
+  'id' | 'name' | 'discord' | 'riotTag' | 'server' | 'puuid' | 'createdAt' | 'updatedAt'
 >;
 
 type EditablePatch = Partial<Pick<Student, 'name' | 'discord' | 'riotTag' | 'server'>>;
@@ -17,7 +17,6 @@ type Props = {
   onChange?: (updated: EditablePatch) => void;
 };
 
-// alias → platform code
 const SERVER_ALIAS: Record<string, string> = {
   euw: 'euw1', eu: 'euw1', euw1: 'euw1',
   eune: 'eun1', eun: 'eun1', eun1: 'eun1',
@@ -27,8 +26,7 @@ const SERVER_ALIAS: Record<string, string> = {
   las: 'la2', la2: 'la2',
   br: 'br1', br1: 'br1',
   tr: 'tr1', tr1: 'tr1',
-  ru: 'ru',
-  kr: 'kr',
+  ru: 'ru', kr: 'kr',
   jp: 'jp1', jp1: 'jp1',
   ph: 'ph2', ph2: 'ph2',
   th: 'th2', th2: 'th2',
@@ -40,7 +38,6 @@ const normalizeServer = (s: string | null | undefined) => {
   return SERVER_ALIAS[key] || key || '';
 };
 
-// Parse "Name#Tag" → { name, tag }
 const parseRiot = (v: string) => {
   const [name, tag] = (v ?? '').split('#');
   return { name: name?.trim() || '', tag: tag?.trim() || '' };
@@ -53,7 +50,7 @@ export default function StudentSummary({ student, onChange }: Props) {
   const [server, setServer] = useState(student.server || '');
   const [isEditingRiot, setIsEditingRiot] = useState(false);
 
-  // Keep local inputs in sync if parent student changes
+  // Keep local inputs in sync with incoming props (unless Riot is being edited)
   useEffect(() => {
     setName(student.name || '');
     setDiscord(student.discord || '');
@@ -61,9 +58,26 @@ export default function StudentSummary({ student, onChange }: Props) {
     if (!isEditingRiot) setRiotTag(student.riotTag || '');
   }, [student.id, student.name, student.discord, student.server, student.riotTag, isEditingRiot]);
 
+  // 🔸 Kick the parent once per student to mimic a user edit on first load
+  // This makes the parent run the same resolve/fetch flow it runs after manual edits.
+  const kickedForIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!onChange) return;
+    if (kickedForIdRef.current === student.id) return; // only once per student
+    kickedForIdRef.current = student.id;
+
+    const rt = (student.riotTag || '').trim();
+    const sv = normalizeServer(student.server);
+
+    // Only emit if we have something meaningful; this mirrors a legit user edit.
+    if (rt || sv) {
+      onChange({ riotTag: rt, server: sv });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student.id]); // run when a different student mounts
+
   const emit = (patch: EditablePatch) => onChange?.(patch);
 
-  // Debounced emitter (for server field)
   const emitDebounced = useMemo(() => {
     let t: any;
     return (patch: EditablePatch) => {
@@ -72,7 +86,6 @@ export default function StudentSummary({ student, onChange }: Props) {
     };
   }, [onChange]);
 
-  // Build dpm.lol url from current Riot#Tag
   const { name: riotNamePart, tag: riotTagPart } = parseRiot(riotTag);
   const dpmUrl =
     riotNamePart && riotTagPart
@@ -80,117 +93,135 @@ export default function StudentSummary({ student, onChange }: Props) {
       : undefined;
 
   return (
-    <div className="p-0">
-      {/* Name */}
-      <h1 className="text-4xl font-extrabold tracking-tight text-white">
-        <input
-          aria-label="Name"
-          className="bg-transparent border-none p-0 m-0 outline-none focus:outline-none focus:ring-0"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => emit({ name })}
-          placeholder="Name"
-          size={Math.max((name || '').length, 1)}
-        />
-      </h1>
+    <div className="flex w-full items-stretch">
+      {/* Left: student info */}
+      <div className="flex-1 p-0">
+        <h1 className="text-4xl font-extrabold tracking-tight text-white">
+          <input
+            aria-label="Name"
+            className="bg-transparent border-none p-0 m-0 outline-none focus:outline-none focus:ring-0"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => emit({ name })}
+            placeholder="Name"
+            size={Math.max((name || '').length, 1)}
+          />
+        </h1>
 
-      {/* Info rows */}
-      <div
-        className="
-          mt-6
-          grid
-          grid-cols-[auto_max-content_1fr]
-          auto-rows-min
-          items-center
-          gap-x-6 gap-y-4
-          text-lg text-zinc-200
-        "
-      >
-        <Meta
-          icon={<MessageCircle className="h-5 w-5" />}
-          label="Discord"
-          value={discord || ''}
-          onChange={(v) => setDiscord(v)}
-          onBlur={() => emit({ discord })}
-        />
+        <div
+          className="
+            mt-6
+            grid
+            grid-cols-[auto_max-content_1fr]
+            auto-rows-min
+            items-center
+            gap-x-6 gap-y-4
+            text-lg text-zinc-200
+          "
+        >
+          <Meta
+            icon={<MessageCircle className="h-5 w-5" />}
+            label="Discord"
+            value={discord || ''}
+            onChange={(v) => setDiscord(v)}
+            onBlur={() => emit({ discord })}
+          />
 
-        {/* Riot#Tag */}
-        <div className="contents">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/5 text-white/80 ring-1 ring-white/10">
-            <Hash className="h-5 w-5" />
-          </span>
-          <span className="text-zinc-400 px-1">Riot#Tag:</span>
-          <div className="flex items-center min-w-0">
-            {isEditingRiot ? (
-              <input
-                aria-label="Riot#Tag"
-                className="font-semibold text-zinc-100 bg-transparent border-none outline-none focus:outline-none focus:ring-0 px-1 min-w-0"
-                value={riotTag || ''}
-                onChange={(e) => setRiotTag(e.target.value)}
-                onBlur={() => {
-                  setIsEditingRiot(false);
-                  emit({ riotTag: riotTag.trim() }); // ✅ force update with trimmed value
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                  if (e.key === 'Escape') {
+          {/* Riot#Tag */}
+          <div className="contents">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/5 text-white/80 ring-1 ring-white/10">
+              <Hash className="h-5 w-5" />
+            </span>
+            <span className="text-zinc-400 px-1">Riot#Tag:</span>
+            <div className="flex items-center min-w-0">
+              {isEditingRiot ? (
+                <input
+                  aria-label="Riot#Tag"
+                  className="font-semibold text-zinc-100 bg-transparent border-none outline-none focus:outline-none focus:ring-0 px-1 min-w-0"
+                  value={riotTag || ''}
+                  onChange={(e) => setRiotTag(e.target.value)}
+                  onBlur={() => {
                     setIsEditingRiot(false);
-                    setRiotTag(student.riotTag || '');
-                  }
-                }}
-                placeholder="—"
-                autoFocus
-              />
-            ) : dpmUrl ? (
-              <a
-                href={dpmUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                title={dpmUrl}
-                className="font-semibold text-zinc-100 px-1 min-w-0 truncate no-underline focus:outline-none"
-              >
-                {riotTag || '—'}
-              </a>
-            ) : (
-              <span className="font-semibold text-zinc-100 px-1 min-w-0 truncate">
-                {riotTag || '—'}
-              </span>
-            )}
+                    emit({ riotTag: riotTag.trim() });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    if (e.key === 'Escape') {
+                      setIsEditingRiot(false);
+                      setRiotTag(student.riotTag || '');
+                    }
+                  }}
+                  placeholder="—"
+                  autoFocus
+                />
+              ) : dpmUrl ? (
+                <a
+                  href={dpmUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  title={dpmUrl}
+                  className="font-semibold text-zinc-100 px-1 min-w-0 truncate no-underline focus:outline-none"
+                >
+                  {riotTag || '—'}
+                </a>
+              ) : (
+                <span className="font-semibold text-zinc-100 px-1 min-w-0 truncate">
+                  {riotTag || '—'}
+                </span>
+              )}
 
-            {!isEditingRiot && (
-              <button
-                type="button"
-                aria-label="Edit Riot Tag"
-                title="Edit Riot Tag"
-                onClick={() => setIsEditingRiot(true)}
-                className="ml-2 inline-flex items-center justify-center rounded-md p-1 text-white/70 hover:text-white hover:bg-white/10 transition"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            )}
+              {!isEditingRiot && (
+                <button
+                  type="button"
+                  aria-label="Edit Riot Tag"
+                  title="Edit Riot Tag"
+                  onClick={() => setIsEditingRiot(true)}
+                  className="ml-2 inline-flex items-center justify-center rounded-md p-1 text-white/70 hover:text-white hover:bg-white/10 transition"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Server */}
+          <Meta
+            icon={<Server className="h-5 w-5" />}
+            label="Server"
+            value={server || ''}
+            onChange={(v) => {
+              setServer(v);
+              emitDebounced({ server: normalizeServer(v) });
+            }}
+            onBlur={() => emit({ server: normalizeServer(server) })}
+            transformDisplay={(v) => v.toUpperCase()}
+          />
         </div>
 
-        {/* Server */}
-        <Meta
-          icon={<Server className="h-5 w-5" />}
-          label="Server"
-          value={server || ''}
-          onChange={(v) => {
-            setServer(v);
-            emitDebounced({ server: normalizeServer(v) });
-          }}
-          onBlur={() => emit({ server: normalizeServer(server) })}
-          transformDisplay={(v) => v.toUpperCase()}
-        />
+        <div className="mt-8 h-px w-full bg-white/10" />
       </div>
 
-      <div className="mt-8 h-px w-full bg-white/10" />
+      {/* Middle placeholder column (empty) */}
+      <div className="mx-8 w-40 shrink-0" />
+
+      {/* Right: compact column, left divider, wraps to content */}
+      <div className="pl-6 border-l border-white/10 flex items-center justify-end shrink-0">
+        {student.puuid ? (
+          <RankCard
+            puuid={student.puuid}
+            server={normalizeServer(server)}
+            widthClass="min-w-[200px]"
+            heightClass="h-24"
+            zoom={3.5}
+          />
+        ) : (
+          <div className="text-sm text-zinc-400">No Riot account linked.</div>
+        )}
+      </div>
     </div>
   );
 }
 
-/* ------- Pieces ------- */
 function Meta({
   icon,
   label,

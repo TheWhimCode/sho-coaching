@@ -1,103 +1,88 @@
-'use client';
-import { useMemo } from 'react';
+// src/app/admin/students/_components/MatchHistory.tsx
+'use client'
+import { useEffect, useMemo, useState, useCallback } from 'react'
+import { ensureLiveDDragonPatch } from '@/lib/league/datadragon'
+import MatchRow from './_components/MatchHistory/MatchRow'
+import MatchDetails from './_components/MatchHistory/MatchDetails'
 
 export default function MatchHistory({
   matches = [],
   puuid,
 }: {
-  matches?: any[];
-  puuid?: string;
+  matches?: any[]
+  puuid?: string
 }) {
-  const list = useMemo(() => (Array.isArray(matches) ? matches : []), [matches]);
+  const list = useMemo(() => (Array.isArray(matches) ? matches : []), [matches])
+  const [open, setOpen] = useState<Record<string, boolean>>({})
+  const [ready, setReady] = useState(false)
 
-  // relative time: show "Xd Xh", but:
-  // - no "d" if < 1 day (show "Xh")
-  // - no "h" if >= 2 days (show "Xd")
-  function fmtRelative(whenMs: number | null | undefined): string | null {
-    if (!whenMs) return null;
-    const now = Date.now();
-    const diffMs = Math.max(0, now - Number(whenMs));
-    const H = 3600_000;
-    const D = 24 * H;
+  useEffect(() => {
+    ;(async () => {
+      try {
+        // Patch first
+        await ensureLiveDDragonPatch()
+        // Load runes + summoner spells without changing static imports
+        const dd = await import('@/lib/league/datadragon')
+        await Promise.all([
+          dd.ensureRunesAssets?.(),
+          dd.ensureSummonerSpellsAssets?.(),
+        ])
+        // Gate rendering until both maps are ready (if helpers exist)
+        const runesOK = dd.areRunesReady ? dd.areRunesReady() : true
+        const spellsOK = dd.areSummonerSpellsReady ? dd.areSummonerSpellsReady() : true
+        setReady(runesOK && spellsOK)
+      } catch {
+        // Fail-open so UI still renders
+        setReady(true)
+      }
+    })()
+  }, [])
 
-    const days = Math.floor(diffMs / D);
-    const hours = Math.floor((diffMs % D) / H);
+  const toggle = useCallback((id: string) => {
+    setOpen((s) => ({ ...s, [id]: !s[id] }))
+  }, [])
 
-    if (days >= 2) return `${days}d ago`;
-    if (days >= 1) return `${days}d ${hours}h ago`;
-    return `${Math.floor(diffMs / H)}h ago`;
+  if (!list.length) {
+    return <div className="mt-4 text-sm text-zinc-400">No recent SoloQ games.</div>
+  }
+
+  // Hold rows until assets (runes + spells) are ready
+  if (!ready) {
+    return (
+      <ul className="mt-3 space-y-2">
+        {list.slice(0, Math.min(5, list.length)).map((_, i) => (
+          <li key={i} className="w-full rounded-2xl p-3 ring-1 shadow text-white">
+            <div className="animate-pulse grid grid-cols-[64px_minmax(0,1fr)_260px_110px] items-center gap-x-6">
+              <div className="h-14 w-14 rounded-lg bg-zinc-800/60" />
+              <div className="min-w-0">
+                <div className="h-5 w-28 rounded bg-zinc-800/60" />
+                <div className="mt-2 h-4 w-40 rounded bg-zinc-800/60" />
+              </div>
+              <div className="h-14 w-full rounded bg-zinc-800/40" />
+              <div className="justify-self-end w-16">
+                <div className="h-5 w-full rounded bg-zinc-800/60" />
+                <div className="mt-2 h-3 w-12 rounded bg-zinc-800/60" />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
   }
 
   return (
-    <>
-      {list.length === 0 ? (
-        <div className="mt-4 text-sm text-zinc-400">No recent SoloQ games.</div>
-      ) : (
-        <ul className="mt-4 space-y-4">
-          {list.map((m, i) => {
-            const info = m?.info;
-            if (!info) return null;
-
-            const p =
-              (info.participants || []).find((x: any) => (puuid ? x.puuid === puuid : false)) ||
-              (info.participants || [])[0];
-            if (!p) return null;
-
-            const win = !!p.win;
-            const k = p.kills ?? 0,
-              d = p.deaths ?? 0,
-              a = p.assists ?? 0;
-            const kda = ((k + a) / Math.max(1, d)).toFixed(2);
-            const champ = p.championName ?? '—';
-            const cs = (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0);
-
-            // duration in seconds
-            const sec =
-              typeof info.gameDuration === 'number'
-                ? info.gameDuration
-                : typeof info.gameDuration === 'string'
-                ? parseInt(info.gameDuration, 10)
-                : null;
-
-            const mmss =
-              sec != null
-                ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
-                : null;
-
-            // CS/min
-            const csPerMin =
-              sec && sec > 0 ? (cs * 60) / sec : null;
-            const csPerMinStr = csPerMin != null ? ` (${csPerMin.toFixed(1)})` : '';
-
-            // relative played time
-            const playedAtMs =
-              info.gameStartTimestamp ?? info.gameCreation ?? info.gameEndTimestamp ?? null;
-            const rel = fmtRelative(playedAtMs);
-
-            return (
-              <li
-                key={m.metadata?.matchId ?? info.gameId ?? i}
-                className={[
-                  // ↓ 20% lower height: reduce padding (p-5→p-4; sm:p-6→sm:p-5)
-                  'w-full rounded-2xl p-4 sm:p-5 ring-1 shadow transition text-white',
-                  win
-                    ? 'bg-blue-600/20 ring-blue-400/25 hover:ring-blue-300/40'
-                    : 'bg-rose-600/20 ring-rose-400/25 hover:ring-rose-300/40',
-                ].join(' ')}
-              >
-                <h4 className="text-2xl font-extrabold tracking-tight">
-                  {champ} <span className="font-bold">{k}/{d}/{a}</span>
-                </h4>
-                <div className="mt-1 text-base text-zinc-200">
-                  KDA {kda} • CS {cs}{csPerMinStr}
-                  {mmss ? ` • ${mmss}` : ''}
-                  {rel ? ` • ${rel}` : ''}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </>
-  );
+    <ul className="mt-3 space-y-2">
+      {list.map((m, i) => {
+        const info = m?.info
+        if (!info) return null
+        const id = m?.metadata?.matchId ?? info?.gameId ?? String(i)
+        return (
+          <li key={id}>
+            <MatchRow match={m} puuid={puuid} open={!!open[id]} onToggle={() => toggle(id)} />
+            {open[id] && <MatchDetails match={m} puuid={puuid} />}
+          </li>
+        )
+      })}
+    </ul>
+  )
 }

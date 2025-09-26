@@ -7,8 +7,6 @@ import { verify } from "@/lib/sign";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function fmtUTC(d: Date) {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
@@ -50,19 +48,17 @@ export async function GET(req: Request) {
   const id = u.searchParams.get("bookingId")?.trim() || "";
   const sig = u.searchParams.get("sig")?.trim() || "";
 
-  // per-bookingId: 20/min (only if id looks valid)
-  if (UUID_RX.test(id)) {
-    if (!rateLimit(`ics:booking:${id}`, 20, 60_000)) {
-      return noStore("not found", 404, { "Content-Type": "text/plain" });
-    }
-  }
-
-  // signed link + basic id sanity
-  if (!UUID_RX.test(id) || !sig || !verify(id, sig)) {
+  // signed link + basic id presence (IDs are cuid, not UUID)
+  if (!id || !sig || !verify(id, sig)) {
     return noStore("not found", 404, { "Content-Type": "text/plain" });
   }
 
-  const b = await prisma.booking.findUnique({ where: { id } });
+  // per-id: 20/min
+  if (!rateLimit(`ics:booking:${id}`, 20, 60_000)) {
+    return noStore("not found", 404, { "Content-Type": "text/plain" });
+  }
+
+  const b = await prisma.session.findUnique({ where: { id } });
   if (!b?.scheduledStart || !b?.scheduledMinutes) {
     return noStore("not found", 404, { "Content-Type": "text/plain" });
   }

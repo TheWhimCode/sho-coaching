@@ -1,4 +1,3 @@
-// src/app/admin/students/_components/_components/DocTemplate.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -27,13 +26,8 @@ export default function DocTemplate({ session, onChange }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // 🔹 Editable title (independent of markdown)
-  const [title, setTitle] = useState(
-    session.title || `Session ${session.number ?? ''}`.trim()
-  );
-  useEffect(() => {
-    setTitle(session.title || `Session ${session.number ?? ''}`.trim());
-  }, [session.id, session.title, session.number]);
+  // Title is read-only and already computed from sessionType by parent
+  const title = session.title || `Session ${session.number ?? ''}`.trim();
 
   const initialMarkdown = useMemo(
     () => (session.content?.trim() ? session.content : DEFAULT_TEMPLATE),
@@ -62,8 +56,7 @@ export default function DocTemplate({ session, onChange }: Props) {
           'w-full min-h-[360px] block ' +
           'rounded-xl bg-transparent text-zinc-100 ' +
           'outline-none focus:ring-2 focus:ring-zinc-500/40 p-6 leading-2',
-              spellcheck: 'false',          // ⬅️ turn off red squiggles
-
+        spellcheck: 'false',
       },
     },
     immediatelyRender: false,
@@ -100,7 +93,7 @@ export default function DocTemplate({ session, onChange }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.id, editor]);
 
-  // Also save on blur — cleanup returns void
+  // Save on blur
   useEffect(() => {
     if (!editor) return;
     const handler = () => {
@@ -114,23 +107,11 @@ export default function DocTemplate({ session, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* 🔹 Editable title (not markdown) */}
+      {/* Read-only title */}
       <div className="flex items-center justify-between gap-3">
-        <input
-          className="flex-1 bg-transparent text-white text-xl font-semibold outline-none border border-transparent
-                     focus:border-zinc-600/60 rounded-md px-2 py-1"
-          value={title}
-          placeholder={`Session ${session.number ?? ''}`.trim() || 'Session'}
-          onChange={(e) => {
-            const v = e.target.value;
-            setTitle(v);
-            onChange?.({ title: v });
-          }}
-          onBlur={(e) => onChange?.({ title: e.target.value.trim() })}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
-          }}
-        />
+        <div className="flex-1 text-white text-xl font-semibold">
+          {title}
+        </div>
         <span className="text-xs text-zinc-400">
           {new Date(session.createdAt).toLocaleString()}
         </span>

@@ -44,16 +44,16 @@ export async function POST(req: Request) {
 
   const { amountCents } = computePriceEUR(liveMinutes, followups);
 
-  // ---- Reuse-or-create to avoid P2002 on Booking.slotId ----
-  const existing = await prisma.booking.findFirst({
+  // ---- Reuse-or-create to avoid P2002 on Session.slotId ----
+  const existing = await prisma.session.findFirst({
     where: { slotId, status: "unpaid" },
     select: { id: true },
   });
 
   try {
-    // Update existing unpaid booking for this slot (preferred)
+    // Update existing unpaid session for this slot (preferred)
     if (existing) {
-      const b = await prisma.booking.update({
+      const b = await prisma.session.update({
         where: { id: existing.id },
         data: {
           sessionType,
@@ -78,8 +78,8 @@ export async function POST(req: Request) {
       return res;
     }
 
-    // Otherwise create a fresh unpaid booking
-    const b = await prisma.booking.create({
+    // Otherwise create a fresh unpaid session
+    const b = await prisma.session.create({
       data: {
         sessionType,
         slotId, // still unique; there will be at most one unpaid row per slot
@@ -103,9 +103,9 @@ export async function POST(req: Request) {
     res.headers.set("Cache-Control", "no-store");
     return res;
   } catch (e: any) {
-    // Handle race: if another request just created the unpaid booking, reuse it.
+    // Handle race: if another request just created the unpaid session, reuse it.
     if (e?.code === "P2002") {
-      const again = await prisma.booking.findFirst({
+      const again = await prisma.session.findFirst({
         where: { slotId, status: "unpaid" },
         select: { id: true },
       });
