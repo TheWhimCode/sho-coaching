@@ -15,9 +15,9 @@ export const REVIEWS: Review[] = [
   {
     name: "Yokah",
     text:
-      "After the session I lost every game and demoted. It was miserable. I'm not sure I'd recommend Sho to anyone other than Iron players. Oh well, after loss comes win. mdr",
-    rankFrom: "Grandmaster",
-    rankTo: "Master",
+      "Thanks to Sho's coaching, I was truly able to reach a Grandmaster level. He helped me realize some major issues that were holding me back from climbing in Elo.",
+    rankFrom: "Master",
+    rankTo: "Grandmaster",
     champion: "Akali",
   },
   {

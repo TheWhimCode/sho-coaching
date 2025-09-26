@@ -50,16 +50,18 @@ export async function accountByRiotTag(
   return (await res.json()) as any;
 }
 
-/** Summoner -> SoloQ entry */
+export type SoloQRank = { tier: string; division?: string | null; lp: number };
+
+/** SoloQ entry by PUUID */
 export async function soloQueueEntry(
   server: string,
-  summonerId: string,
-): Promise<{ tier: string; division?: string | null; lp: number } | null> {
-  const url = `https://${server}.api.riotgames.com/lol/league/v4/entries/by-summoner/${encodeURIComponent(
-    summonerId,
+  puuid: string,
+): Promise<SoloQRank | null> {
+  const url = `https://${server}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(
+    puuid,
   )}`;
   const res = await fetch(url, { headers: riotHeaders(), cache: "no-store" });
-  await expectOk(res, "leagueEntries");
+  await expectOk(res, "leagueEntriesByPuuid");
   const entries = (await res.json()) as Array<any>;
   const solo = entries.find((e) => e.queueType === "RANKED_SOLO_5x5");
   if (!solo) return null;
@@ -100,7 +102,7 @@ export async function probeSummonerEverywhere(puuid: string) {
 
       if (res.ok) {
         const j = await res.json();
-        return { found: { server, id: j.id as string, name: j.name as string }, attempts };
+        return { found: { server, name: j.name as string }, attempts };
       }
 
       const body = (await jsonOrText(res)) as any;
@@ -111,10 +113,11 @@ export async function probeSummonerEverywhere(puuid: string) {
   return { found: null, attempts };
 }
 
+/** Get summoner profile by PUUID */
 export async function summonerByPuuid(
   server: string,
   puuid: string,
-): Promise<{ id: string; name: string }> {
+): Promise<{ name: string }> {
   const url = `https://${server}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`;
   const res = await fetch(url, { headers: riotHeaders(), cache: "no-store" });
   if (!res.ok) {
@@ -122,5 +125,5 @@ export async function summonerByPuuid(
     throw new Error(`summonerByPuuid ${server} failed: ${res.status} ${res.statusText} ${text}`);
   }
   const j = await res.json();
-  return { id: j.id as string, name: j.name as string };
+  return { name: j.name as string };
 }
