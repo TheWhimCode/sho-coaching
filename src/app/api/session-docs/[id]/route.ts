@@ -1,10 +1,9 @@
-// app/api/session-docs/[id]/route.ts
+// src/app/api/session-docs/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
-// [id] = studentId
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> }; // [id] = studentId
 
 const parseNumber = (n: unknown): number | null => {
   const v = typeof n === 'string' ? parseInt(n, 10) : typeof n === 'number' ? n : NaN;
@@ -20,8 +19,8 @@ const toJson = (v: unknown): Prisma.InputJsonValue => {
 };
 
 // GET /api/session-docs/:studentId?number=1
-export async function GET(req: Request, { params }: Ctx) {
-  const studentId = params.id;
+export async function GET(req: Request, ctx: Ctx) {
+  const { id: studentId } = await ctx.params; // ✅ await params
   const sp = new URL(req.url).searchParams;
   const number = parseNumber(sp.get('number'));
   if (!studentId || !number) {
@@ -39,8 +38,8 @@ export async function GET(req: Request, { params }: Ctx) {
 
 // PATCH /api/session-docs/:studentId?number=1
 // body: { notes?: string|{ md?: string; title?: string }, number?: number }
-export async function PATCH(req: Request, { params }: Ctx) {
-  const studentId = params.id;
+export async function PATCH(req: Request, ctx: Ctx) {
+  const { id: studentId } = await ctx.params; // ✅ await params
   const sp = new URL(req.url).searchParams;
   const numberFromQuery = parseNumber(sp.get('number'));
 
@@ -52,11 +51,12 @@ export async function PATCH(req: Request, { params }: Ctx) {
     return NextResponse.json({ error: 'studentId (path) and number (query or body) are required' }, { status: 400 });
   }
 
+  // Accept string or object; try to parse JSON-looking strings
   let notes: unknown = body?.notes ?? body?.content ?? {};
   if (typeof notes === 'string') {
     const t = notes.trim();
     if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
-      try { notes = JSON.parse(t); } catch {}
+      try { notes = JSON.parse(t); } catch { /* keep as string */ }
     }
   }
   const notesJson: Prisma.InputJsonValue = toJson(notes);

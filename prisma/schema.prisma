@@ -17,6 +17,8 @@ model Slot {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   status    SlotStatus @default(free)
+
+  // Relation to Session (anchor slot)
   session   Session?   @relation("SlotSession")
 
   @@index([startTime])
@@ -51,10 +53,9 @@ model Session {
   liveMinutes      Int
   followups        Int        @default(0)
   discord          String
-  riotTag          String?    
+  riotTag          String?
   notes            String?
   createdAt        DateTime   @default(now())
-  stripeSessionId  String?    @unique
   paymentProvider  String?
   paymentRef       String?    @unique
   amountCents      Int?
@@ -68,10 +69,14 @@ model Session {
   waiverAcceptedAt DateTime?
   waiverIp         String?
 
+  // relations
   slot       Slot?       @relation("SlotSession", fields: [slotId], references: [id])
   emailLogs  EmailLog[]
   studentId  String?
   student    Student?    @relation(fields: [studentId], references: [id])
+
+  // One-to-one link to SessionDoc
+  sessionDoc SessionDoc? @relation("SessionToDoc")
 
   @@index([createdAt])
   @@index([scheduledStart])
@@ -175,15 +180,20 @@ model RankSnapshot {
 }
 
 model SessionDoc {
-  id        String   @id @default(cuid())
-  studentId String
-  number    Int
-  notes     Json     @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  studentId  String
+  number     Int
+  notes      Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  // One-to-one FK to Session (+ relation wiring)
+  sessionId  String?  @unique
+  session    Session? @relation("SessionToDoc", fields: [sessionId], references: [id], onDelete: SetNull)
+
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, number])
   @@index([studentId])
+  @@index([sessionId])
 }

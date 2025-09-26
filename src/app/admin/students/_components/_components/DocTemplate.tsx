@@ -26,8 +26,9 @@ export default function DocTemplate({ session, onChange }: Props) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // Title is read-only and already computed from sessionType by parent
-  const title = session.title || `Session ${session.number ?? ''}`.trim();
+  // Read-only title: provided by parent (session.title = sessionType or fallback)
+  const [title, setTitle] = useState(session.title);
+  useEffect(() => { setTitle(session.title); }, [session.id, session.title]);
 
   const initialMarkdown = useMemo(
     () => (session.content?.trim() ? session.content : DEFAULT_TEMPLATE),
@@ -61,8 +62,7 @@ export default function DocTemplate({ session, onChange }: Props) {
     },
     immediatelyRender: false,
     onUpdate({ editor }) {
-      const md =
-        ((editor.storage as any).markdown?.getMarkdown?.() as string) ?? '';
+      const md = ((editor.storage as any).markdown?.getMarkdown?.() as string) ?? '';
       onChange?.({ content: md });
     },
   });
@@ -97,8 +97,7 @@ export default function DocTemplate({ session, onChange }: Props) {
   useEffect(() => {
     if (!editor) return;
     const handler = () => {
-      const md =
-        ((editor.storage as any).markdown?.getMarkdown?.() as string) ?? '';
+      const md = ((editor.storage as any).markdown?.getMarkdown?.() as string) ?? '';
       onChange?.({ content: md });
     };
     editor.on('blur', handler);
@@ -109,7 +108,7 @@ export default function DocTemplate({ session, onChange }: Props) {
     <div className="flex flex-col gap-4 h-full">
       {/* Read-only title */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex-1 text-white text-xl font-semibold">
+        <div className="flex-1 text-white text-xl font-semibold px-2 py-1">
           {title}
         </div>
         <span className="text-xs text-zinc-400">

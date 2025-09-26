@@ -81,10 +81,10 @@ export default function StudentDetailClient() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  // sessions
+  // sessions (fetch from /api/admin/bookings as you want)
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/admin/sessions?studentId=${encodeURIComponent(id)}&take=10`, { cache: 'no-store' })
+    fetch(`/api/admin/bookings?studentId=${encodeURIComponent(id)}&take=10`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => setSessions(j?.sessions ?? []))
       .catch(() => setSessions([]));
@@ -193,16 +193,22 @@ export default function StudentDetailClient() {
     return idx >= 0 ? idx + 1 : 1;
   };
 
+  // server save for docs — FORCE title to sessionType
   const saveDoc = useMemo(
     () =>
-      debounce(async (studentId: string, number: number, content: string, title: string) => {
+      debounce(async (studentId: string, number: number, content: string, _ignoredTitle: string) => {
+        const matching = sessions[number - 1]; // SessionNotes aligns #n to nth session
+        const titleToSave =
+          matching?.sessionType?.trim() ||
+          (matching ? `Session ${number}` : `Session ${number}`);
+
         await fetch(`/api/session-docs/${encodeURIComponent(studentId)}?number=${number}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notes: { md: content, title } }),
+          body: JSON.stringify({ notes: { md: content, title: titleToSave } }),
         });
       }, 600),
-    []
+    [sessions]
   );
 
   if (loading) return <div className="px-6 pt-8 pb-6 text-sm text-zinc-400">Loading…</div>;
@@ -266,6 +272,7 @@ export default function StudentDetailClient() {
                   student.id,
                   (s as any).number ?? numberFor(s.id),
                   s.content,
+                  // ignored by saveDoc; title is forced to sessionType
                   s.title || `Session ${(s as any).number ?? ''}`
                 )
               }
