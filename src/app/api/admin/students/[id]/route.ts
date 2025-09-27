@@ -17,11 +17,13 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({} as any));
+
   const data: Record<string, unknown> = {};
-  if ('name' in body) data.name = body.name;
+  if ('name'    in body) data.name = body.name;
   if ('discord' in body) data.discord = body.discord ?? null;
   if ('riotTag' in body) data.riotTag = body.riotTag ?? null;
-  if ('server' in body) data.server = body.server ?? null;
+  if ('server'  in body) data.server = body.server ?? null;
+  if ('puuid'   in body) data.puuid = body.puuid ?? null; // ✅ added
 
   try {
     const student = await prisma.student.update({ where: { id }, data });

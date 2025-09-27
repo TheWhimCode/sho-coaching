@@ -2,45 +2,38 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import ExperienceYears from "./ExperienceYears";
+import ExperienceYears2 from "./ExperienceYears2";
 import ReviewsCard from "./400-reviews";
-
-/** Riot DDragon */
-const FALLBACK_PATCH = "15.19.1";
+import EkkoSilhouette from "./EkkoSilhouette";
 
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
 
+const dividerStyle: React.CSSProperties = {
+  height: 1,
+  background:
+    "linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--color-divider) 12%, var(--color-divider) 88%, rgba(255,255,255,0) 100%)",
+  opacity: 0.6,
+};
+
 export default function Experience() {
-  const [patch, setPatch] = React.useState<string>(FALLBACK_PATCH);
-
-  React.useEffect(() => {
-    fetch("https://ddragon.leagueoflegends.com/realms/euw.json")
-      .then((r) => r.json())
-      .then((data) => {
-        const v = data?.n?.champion;
-        if (typeof v === "string" && v.length > 0) setPatch(v);
-      })
-      .catch(() => {});
-  }, []);
-
   return (
     <section
       aria-labelledby="no-wasted-games-title"
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-visible"
     >
       <GridPattern />
 
       <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-12 md:gap-8">
         {/* LEFT COLUMN: text + stats */}
-        <div className="col-span-1 md:col-span-8 flex flex-col gap-10">
-          {/* Row 1: statement */}
+        <div className="col-span-1 md:col-span-8 flex flex-col gap-8">
+          {/* Text block */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.5 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col justify-center pb-16"
+            className="flex flex-col justify-center mb-4"
           >
             <h2
               id="no-wasted-games-title"
@@ -60,20 +53,48 @@ export default function Experience() {
             </p>
           </motion.div>
 
-          {/* Row 2: stat cards */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* EXPERIENCE */}
-            <ExperienceYears patch={patch} />
+          {/* Divider #1 (below text) */}
+          <div aria-hidden className="w-full" style={dividerStyle} />
 
-            {/* REVIEWS (now extracted) */}
-            <ReviewsCard rating={4.9} scaleMax={5} subtitle="Based on 500+ reviews" />
+          {/* Cards with a real middle column divider */}
+          <div className="grid items-stretch grid-cols-1 gap-6 md:grid-cols-[1fr_1px_1fr]">
+            {/* Left card */}
+            <div className="md:col-[1]">
+              <ExperienceYears2 className="py-8" />
+            </div>
+
+            {/* Vertical divider (md+) */}
+            <div
+              aria-hidden
+              className="hidden md:block md:col-[2] w-px h-full"
+              style={{ background: "var(--color-divider)", opacity: 0.6 }}
+            />
+
+            {/* Horizontal divider on mobile (between stacked cards) */}
+            <div
+              aria-hidden
+              className="md:hidden h-px w-full"
+              style={{ background: "var(--color-divider)", opacity: 0.6 }}
+            />
+
+            {/* Right card */}
+            <div className="md:col-[3]">
+              <ReviewsCard
+                rating={4.9}
+                scaleMax={5}
+                subtitle="Based on 500+ reviews"
+                className="py-8"
+              />
+            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Ekko placeholder */}
+        {/* RIGHT COLUMN: Ekko silhouette */}
         <div className="col-span-1 md:col-span-4">
-          <div className="ekko-placeholder h-full min-h-[22rem] w-full rounded-2xl border border-dashed border-[var(--color-divider)]/50 flex items-center justify-center text-fg-muted/50">
-            Ekko silhouette here
+          <div className="relative h-full min-h-[22rem] w-full overflow-visible">
+            <div className="absolute inset-3 overflow-visible">
+              <EkkoSilhouette />
+            </div>
           </div>
         </div>
       </div>
