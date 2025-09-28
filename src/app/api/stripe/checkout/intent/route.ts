@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
-import { getBlockIdsByTime, SLOT_SIZE_MIN } from "@/lib/booking/block";
+import { getBlockIdsByTime, SLOT_SIZE_MIN, ceilDiv } from "@/lib/booking/block";
 import { rateLimit } from "@/lib/rateLimit";
 import { CFG_SERVER } from "@/lib/config.server";
 import { SlotStatus } from "@prisma/client";
@@ -99,9 +99,11 @@ export async function POST(req: Request) {
     // 2) Contiguous block check
     let slotIds = await getBlockIdsByTime(anchor.startTime, liveMinutes, prisma);
 
-    // 3) Fallback window check
+    // 3) Fallback window check (no pre-buffer in new config)
     if (!slotIds) {
-      const { BUFFER_BEFORE_MIN, BUFFER_AFTER_MIN } = CFG_SERVER.booking;
+      const BUFFER_BEFORE_MIN = 0; // local default to match config removal
+      const { BUFFER_AFTER_MIN } = CFG_SERVER.booking;
+
       const windowStart = new Date(anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000);
       const windowEnd = new Date(anchor.startTime.getTime() + (liveMinutes + BUFFER_AFTER_MIN) * 60_000);
 
@@ -121,7 +123,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "unavailable" }, { status: 409 });
       }
 
-      const expected = Math.round((liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN) / SLOT_SIZE_MIN);
+      const expected = ceilDiv(liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN, SLOT_SIZE_MIN);
       if (rows.length !== expected) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
       const stepMs = SLOT_SIZE_MIN * 60_000;
