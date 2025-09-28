@@ -219,24 +219,28 @@ export default function StudentDetailClient() {
 
   return (
     <main className="relative min-h-screen text-white overflow-x-clip">
-      {/* bg */}
-      <div aria-hidden className="absolute inset-0 z-0" style={{
-        background:
-          'radial-gradient(circle at 22% 18%, rgba(0,130,255,0.28), transparent 58%),' +
-          'radial-gradient(circle at 78% 32%, rgba(255,100,30,0.24), transparent 58%),' +
-          'radial-gradient(circle at 25% 82%, rgba(0,130,255,0.20), transparent 58%),' +
-          'radial-gradient(circle at 80% 75%, rgba(255,100,30,0.18), transparent 58%)',
-      }} />
+      {/* BG LAYERS: fixed so they sit behind the transparent, fixed navbar and are NOT pushed by layout spacing */}
       <div
         aria-hidden
-        className="absolute inset-0 z-0 opacity-25 mix-blend-overlay"
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(circle at 22% 18%, rgba(0,130,255,0.28), transparent 58%),' +
+            'radial-gradient(circle at 78% 32%, rgba(255,100,30,0.24), transparent 58%),' +
+            'radial-gradient(circle at 25% 82%, rgba(0,130,255,0.20), transparent 58%),' +
+            'radial-gradient(circle at 80% 75%, rgba(255,100,30,0.18), transparent 58%)',
+        }}
+      />
+      <div
+        aria-hidden
+        className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
         style={{ backgroundImage: "url('/images/coaching/texture.png')", backgroundRepeat: 'repeat' }}
       />
 
-      {/* content */}
+      {/* content (sits above bg; actual offset comes from global layout spacer) */}
       <div className="relative z-10 pb-20">
         <div className="mx-auto w-full max-w-6xl px-6 space-y-10">
-          {/* spacer */}
+          {/* tiny top spacer for breathing room within the page block */}
           <div className="h-1" />
 
           <GlassPanel className="p-6 md:p-8">

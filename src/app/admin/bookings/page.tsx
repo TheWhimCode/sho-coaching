@@ -35,22 +35,37 @@ function toLocalDayKey(iso: string) {
 }
 function prettyDayLabel(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 function splitUpcomingPast(rows: BookingRow[]) {
   const now = Date.now();
   const upcoming: BookingRow[] = [];
   const past: BookingRow[] = [];
-  for (const r of rows) (new Date(r.scheduledStart).getTime() >= now ? upcoming : past).push(r);
-  upcoming.sort((a, b) => +new Date(a.scheduledStart) - +new Date(b.scheduledStart));
-  past.sort((a, b) => +new Date(b.scheduledStart) - +new Date(a.scheduledStart));
+  for (const r of rows)
+    (new Date(r.scheduledStart).getTime() >= now ? upcoming : past).push(r);
+  upcoming.sort(
+    (a, b) => +new Date(a.scheduledStart) - +new Date(b.scheduledStart)
+  );
+  past.sort(
+    (a, b) => +new Date(b.scheduledStart) - +new Date(a.scheduledStart)
+  );
   return { upcoming, past };
 }
 function groupByDay(sorted: BookingRow[]) {
   const map = new Map<string, DayGroup>();
   for (const r of sorted) {
     const k = toLocalDayKey(r.scheduledStart);
-    if (!map.has(k)) map.set(k, { key: k, label: prettyDayLabel(r.scheduledStart), items: [] });
+    if (!map.has(k))
+      map.set(k, {
+        key: k,
+        label: prettyDayLabel(r.scheduledStart),
+        items: [],
+      });
     map.get(k)!.items.push(r);
   }
   return [...map.values()];
@@ -187,7 +202,9 @@ export default function AdminBookingsPage() {
           </div>
 
           {/* notes */}
-          <div className="text-white/70 text-sm break-words">{r.notes ? r.notes : <span className="text-white/35">—</span>}</div>
+          <div className="text-white/70 text-sm break-words">
+            {r.notes ? r.notes : <span className="text-white/35">—</span>}
+          </div>
         </div>
       </li>
     );
@@ -209,80 +226,98 @@ export default function AdminBookingsPage() {
   );
 
   return (
-    <div className="min-h-screen grid place-items-center bg-gradient-to-br from-purple-900 via-black to-indigo-950 text-white">
-      <div className="w-full max-w-6xl p-8 space-y-8 bg-black/40 rounded-3xl border border-purple-500/30 shadow-[0_0_30px_rgba(150,0,255,0.3)]">
-        <motion.h1
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-4xl md:text-5xl font-extrabold text-center bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent"
-        >
-          ✨ Bookings
-        </motion.h1>
+    <div className="relative min-h-screen text-white">
+      {/* Fixed background layer so layout padding/spacer doesn't push it */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-purple-900 via-black to-indigo-950" />
 
-        <p className="text-center text-purple-300">
-          Times shown in your timezone: <span className="text-purple-100 font-medium">{prettyTZ}</span>
-        </p>
-
-        {/* Upcoming */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Upcoming</h2>
-            <div className="text-sm text-white/60">
-              {loading ? "Loading…" : `${upcoming.length} booking${upcoming.length === 1 ? "" : "s"}`}
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">Summoning bookings…</div>
-          ) : upcoming.length === 0 ? (
-            <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">Nothing upcoming.</div>
-          ) : (
-            <div className="space-y-4">
-              {upcomingGroups.map((g) => (
-                <Group key={g.key} g={g} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Past */}
-        <section className="space-y-4">
-          <button
-            onClick={() => setShowPast((v) => !v)}
-            className="w-full flex items-center justify-between rounded-xl px-4 py-3 bg-white/5 hover:bg-white/10 ring-1 ring-white/10 transition"
+      {/* Content sits above; global navbar offset comes from layout */}
+      <div className="relative z-10 grid place-items-center min-h-screen">
+        <div className="w-full max-w-6xl p-8 space-y-8 bg-black/40 rounded-3xl border border-purple-500/30 shadow-[0_0_30px_rgba(150,0,255,0.3)]">
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-4xl md:text-5xl font-extrabold text-center bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent"
           >
-            <span className="text-lg font-semibold">Past</span>
-            <span className="text-sm text-white/70">
-              {loading ? "…" : `${past.length} booking${past.length === 1 ? "" : "s"}`} {showPast ? "▲" : "▼"}
-            </span>
-          </button>
+            ✨ Bookings
+          </motion.h1>
 
-          <AnimatePresence initial={false}>
-            {showPast && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                className="overflow-hidden"
-              >
-                {loading ? (
-                  <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">Consulting the archives…</div>
-                ) : past.length === 0 ? (
-                  <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">No past bookings yet.</div>
-                ) : (
-                  <div className="space-y-4">
-                    {pastGroups.map((g) => (
-                      <Group key={g.key} g={g} />
-                    ))}
-                  </div>
-                )}
-              </motion.div>
+          <p className="text-center text-purple-300">
+            Times shown in your timezone:{" "}
+            <span className="text-purple-100 font-medium">{prettyTZ}</span>
+          </p>
+
+          {/* Upcoming */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Upcoming</h2>
+              <div className="text-sm text-white/60">
+                {loading ? "Loading…" : `${upcoming.length} booking${upcoming.length === 1 ? "" : "s"}`}
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">
+                Summoning bookings…
+              </div>
+            ) : upcoming.length === 0 ? (
+              <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">
+                Nothing upcoming.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {upcomingGroups.map((g) => (
+                  <Group key={g.key} g={g} />
+                ))}
+              </div>
             )}
-          </AnimatePresence>
-        </section>
+          </section>
 
-        {log && <pre className="bg-neutral-900/80 rounded-lg p-3 text-sm text-purple-300">{log}</pre>}
+          {/* Past */}
+          <section className="space-y-4">
+            <button
+              onClick={() => setShowPast((v) => !v)}
+              className="w-full flex items-center justify-between rounded-xl px-4 py-3 bg-white/5 hover:bg-white/10 ring-1 ring-white/10 transition"
+            >
+              <span className="text-lg font-semibold">Past</span>
+              <span className="text-sm text-white/70">
+                {loading ? "…" : `${past.length} booking${past.length === 1 ? "" : "s"}`}{" "}
+                {showPast ? "▲" : "▼"}
+              </span>
+            </button>
+
+            <AnimatePresence initial={false}>
+              {showPast && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden"
+                >
+                  {loading ? (
+                    <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">
+                      Consulting the archives…
+                    </div>
+                  ) : past.length === 0 ? (
+                    <div className="p-6 text-white/70 bg-neutral-900/60 rounded-2xl ring-1 ring-white/10">
+                      No past bookings yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {pastGroups.map((g) => (
+                        <Group key={g.key} g={g} />
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+
+          {log && (
+            <pre className="bg-neutral-900/80 rounded-lg p-3 text-sm text-purple-300">{log}</pre>
+          )}
+        </div>
       </div>
     </div>
   );
