@@ -18,7 +18,7 @@ const GlassPanel = forwardRef<HTMLDivElement, GlassPanelProps>(
         ref={ref}
         className={clsx(
           // Visual style only (no sizing/layout)
-          "rounded-2xl backdrop-blur-[1px] bg-[#0B1220]/10 ring-1 ring-[rgba(146,180,255,.18)]",
+          "rounded-2xl backdrop-blur-[2px] bg-[#0B1220]/10 ring-1 ring-[rgba(146,180,255,.1)]",
           className
         )}
         {...rest}

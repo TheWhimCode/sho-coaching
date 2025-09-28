@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 import { computePriceEUR } from "@/lib/pricing";
+import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 /* ===================== Types ===================== */
 type Props = {
@@ -239,7 +240,8 @@ export default function CenterSessionPanel({
       transition={{ duration: 0.35, delay: enterDelay }}
       className="relative w-full max-w-md"
     >
-      <div className="rounded-2xl backdrop-blur-[1px] p-6 bg-[#0B1220]/10 ring-1 ring-[rgba(146,180,255,.10)]">
+      {/* Use GlassPanel as the background/border only; no extra spacing/visuals here */}
+      <GlassPanel className="p-6">
         <SessionBlock
           title={title}
           minutes={baseOnly}
@@ -267,7 +269,7 @@ export default function CenterSessionPanel({
             <div className="absolute inset-0">{statsContent}</div>
           )}
         </div>
-      </div>
+      </GlassPanel>
     </motion.div>
   );
 }
