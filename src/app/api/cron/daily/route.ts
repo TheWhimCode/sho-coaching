@@ -178,11 +178,10 @@ async function runAll(origin: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const fromVercel = !!req.headers.get("x-vercel-cron");
   const secret = (process.env.CRON_SECRET || "").trim();
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
 
-  if (!fromVercel && (!secret || token !== secret)) {
+  if (!secret || token !== secret) {
     return unauthorized();
   }
 
