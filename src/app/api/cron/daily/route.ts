@@ -178,15 +178,24 @@ async function runAll(origin: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const fromVercel = !!req.headers.get("x-vercel-cron") || !!req.headers.get("x-vercel-signature");
   const secret = (process.env.CRON_SECRET || "").trim();
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
 
-  if (!secret || token !== secret) {
+  if (!fromVercel && (!secret || token !== secret)) {
     return unauthorized();
   }
 
   const origin = req.nextUrl.origin;
   const result = await runAll(origin);
+
+  console.log("CRON RESULT:", JSON.stringify({
+    vercelEnv: process.env.VERCEL_ENV,
+    host: req.headers.get("host"),
+    db: (process.env.DATABASE_URL || "").replace(/:\/\/.*@/, "://***@").split("?")[0],
+    result
+  }));
+
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
