@@ -33,9 +33,11 @@
     "react-intersection-observer": "^9.16.0",
     "react-tsparticles": "^2.12.2",
     "react-useanimations": "^2.10.0",
+    "recharts": "^3.2.1",
     "remixicon-react": "^1.0.0",
     "resend": "^6.0.1",
     "stripe": "^18.4.0",
+    "swr": "^2.3.6",
     "tiptap-markdown": "^0.9.0",
     "tsparticles": "^3.9.1",
     "tsparticles-engine": "^2.12.0",
@@ -46,7 +48,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/typography": "^0.5.19",
-    "@types/node": "^20",
+    "@types/node": "^20.19.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
@@ -56,8 +58,9 @@
     "prisma": "^6.16.2",
     "server-only": "^0.0.1",
     "tailwindcss": "^4.1.13",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.4",
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"

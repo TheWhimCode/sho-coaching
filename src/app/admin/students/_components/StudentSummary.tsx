@@ -4,6 +4,7 @@ import type { Student } from '@prisma/client';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Hash, MessageCircle, Server, Pencil } from 'lucide-react';
 import RankCard from './_components/RankCard';
+import RankGraph from './_components/StudentSummary/RankGraph'; // ⬅️ added
 
 type MinimalStudent = Pick<
   Student,
@@ -59,7 +60,6 @@ export default function StudentSummary({ student, onChange }: Props) {
   }, [student.id, student.name, student.discord, student.server, student.riotTag, isEditingRiot]);
 
   // 🔸 Kick the parent once per student to mimic a user edit on first load
-  // This makes the parent run the same resolve/fetch flow it runs after manual edits.
   const kickedForIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!onChange) return;
@@ -69,12 +69,9 @@ export default function StudentSummary({ student, onChange }: Props) {
     const rt = (student.riotTag || '').trim();
     const sv = normalizeServer(student.server);
 
-    // Only emit if we have something meaningful; this mirrors a legit user edit.
-    if (rt || sv) {
-      onChange({ riotTag: rt, server: sv });
-    }
+    if (rt || sv) onChange({ riotTag: rt, server: sv });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [student.id]); // run when a different student mounts
+  }, [student.id]);
 
   const emit = (patch: EditablePatch) => onChange?.(patch);
 
@@ -197,14 +194,14 @@ export default function StudentSummary({ student, onChange }: Props) {
             transformDisplay={(v) => v.toUpperCase()}
           />
         </div>
-
-        <div className="mt-8 h-px w-full bg-white/10" />
       </div>
 
-      {/* Middle placeholder column (empty) */}
-      <div className="mx-8 w-40 shrink-0" />
+      {/* Middle column: Rank graph */}
+      <div className="mx-8 w-[420px] shrink-0 border-l border-white/10 pl-6">
+        <RankGraph studentId={student.id} />
+      </div>
 
-      {/* Right: compact column, left divider, wraps to content */}
+      {/* Right: compact column */}
       <div className="pl-6 border-l border-white/10 flex items-center justify-end shrink-0">
         {student.puuid ? (
           <RankCard

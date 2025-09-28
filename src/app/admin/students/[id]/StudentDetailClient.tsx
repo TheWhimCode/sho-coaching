@@ -234,8 +234,11 @@ export default function StudentDetailClient() {
       />
 
       {/* content */}
-      <div className="relative z-10 pt-24 pb-20">
+      <div className="relative z-10 pb-20">
         <div className="mx-auto w-full max-w-6xl px-6 space-y-10">
+          {/* spacer */}
+          <div className="h-1" />
+
           <GlassPanel className="p-6 md:p-8">
             <StudentSummary
               student={{
