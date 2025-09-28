@@ -2,16 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/admin/slots/cron",
+      "path": "/api/cron/daily",
       "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/cleanup",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/rank-snapshots",
-      "schedule": "0 4 * * *"
     }
   ]
 }
