@@ -1,4 +1,3 @@
-// src/app/api/cron/daily/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getDayAvailability } from "@/lib/booking/availability";
@@ -8,7 +7,6 @@ import { SlotStatus } from "@prisma/client";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// === Helpers ===
 function unauthorized() {
   return new Response("Unauthorized", { status: 401 });
 }
@@ -28,7 +26,6 @@ function sleep(ms: number) {
   return new Promise((res) => setTimeout(res, ms));
 }
 
-// === Job 1: Cleanup unpaid bookings ===
 async function cleanupUnpaidBookings() {
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const result = await prisma.session.deleteMany({
@@ -40,7 +37,6 @@ async function cleanupUnpaidBookings() {
   return result.count;
 }
 
-// === Job 2: Manage slots ===
 async function manageSlots() {
   const today = utcMidnight();
   const end = new Date(today);
@@ -82,13 +78,11 @@ async function manageSlots() {
   return { deleted: delPast.count + delFuture.count, created };
 }
 
-// === Job 3: Rank snapshots ===
 type RiotRank = { tier: string; division?: string | null; lp: number };
 
-const RATE_PER_MIN = 40; // safe against 100/2min limit
-const INTERVAL_MS = Math.ceil(60000 / RATE_PER_MIN); // ~1500ms between requests
-const MAX_DURATION_MS = 50_000; // prevent long Vercel runs
-const RETRY_BACKOFF_MS = 1500;
+const RATE_PER_MIN = 40;
+const INTERVAL_MS = Math.ceil(60000 / RATE_PER_MIN);
+const MAX_DURATION_MS = 50_000;
 
 async function fetchRank(origin: string, server: string, puuid: string): Promise<RiotRank | null> {
   const url = `${origin}/api/riot/rank?server=${encodeURIComponent(server)}&puuid=${encodeURIComponent(puuid)}`;
@@ -98,11 +92,12 @@ async function fetchRank(origin: string, server: string, puuid: string): Promise
   try {
     const r = await fetch(url, { cache: "no-store", signal: ac.signal });
     if (!r.ok) return null;
-    const j = await r.json().catch(() => ({}));
+    const j: any = await r.json().catch(() => ({}));
+    const s = j?.solo ?? j?.data ?? j;
     return {
-      tier: j?.tier ?? j?.data?.tier ?? "UNRANKED",
-      division: j?.division ?? j?.data?.division ?? null,
-      lp: Number(j?.lp ?? j?.leaguePoints ?? 0) || 0,
+      tier: s?.tier ?? "UNRANKED",
+      division: s?.division ?? s?.rank ?? null,
+      lp: Number(s?.lp ?? s?.leaguePoints ?? 0) || 0,
     };
   } catch {
     return null;
@@ -138,7 +133,7 @@ async function createRankSnapshots(origin: string) {
       });
     }
 
-    await sleep(INTERVAL_MS); // pace requests
+    await sleep(INTERVAL_MS);
   }
 
   let inserted = 0;
@@ -158,7 +153,6 @@ async function createRankSnapshots(origin: string) {
   };
 }
 
-// === Runner for all jobs ===
 async function runAll(origin: string) {
   const results = { cleanup: null as any, slots: null as any, ranks: null as any, errors: [] as string[] };
 
@@ -183,7 +177,6 @@ async function runAll(origin: string) {
   return results;
 }
 
-// === Handlers ===
 export async function GET(req: NextRequest) {
   const fromVercel = !!req.headers.get("x-vercel-cron");
   const secret = (process.env.CRON_SECRET || "").trim();
