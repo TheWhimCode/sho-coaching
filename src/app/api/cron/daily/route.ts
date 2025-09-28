@@ -86,24 +86,25 @@ const MAX_DURATION_MS = 50_000;
 
 async function fetchRank(origin: string, server: string, puuid: string): Promise<RiotRank | null> {
   const url = `${origin}/api/riot/rank?server=${encodeURIComponent(server)}&puuid=${encodeURIComponent(puuid)}`;
-  const ac = new AbortController();
-  const tm = setTimeout(() => ac.abort(), 8000);
-
-  try {
-    const r = await fetch(url, { cache: "no-store", signal: ac.signal });
-    if (!r.ok) return null;
-    const j: any = await r.json().catch(() => ({}));
-    const s = j?.solo ?? j?.data ?? j;
-    return {
-      tier: s?.tier ?? "UNRANKED",
-      division: s?.division ?? s?.rank ?? null,
-      lp: Number(s?.lp ?? s?.leaguePoints ?? 0) || 0,
-    };
-  } catch {
-    return null;
-  } finally {
+  for (let i = 0; i < 2; i++) {
+    const ac = new AbortController();
+    const tm = setTimeout(() => ac.abort(), 12000);
+    try {
+      const r = await fetch(url, { cache: "no-store", signal: ac.signal });
+      if (r.ok) {
+        const j: any = await r.json().catch(() => ({}));
+        const s = j?.solo ?? j?.data ?? j;
+        return {
+          tier: s?.tier ?? "UNRANKED",
+          division: s?.division ?? s?.rank ?? null,
+          lp: Number(s?.lp ?? s?.leaguePoints ?? 0) || 0,
+        };
+      }
+    } catch {}
     clearTimeout(tm);
+    await sleep(1000);
   }
+  return null;
 }
 
 async function createRankSnapshots(origin: string) {
@@ -181,20 +182,24 @@ export async function GET(req: NextRequest) {
   const fromVercel = !!req.headers.get("x-vercel-cron") || !!req.headers.get("x-vercel-signature");
   const secret = (process.env.CRON_SECRET || "").trim();
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!fromVercel && (!secret || token !== secret)) return unauthorized();
 
-  if (!fromVercel && (!secret || token !== secret)) {
-    return unauthorized();
-  }
+  const origin =
+    (process.env.CANONICAL_URL || process.env.NEXT_PUBLIC_SITE_URL || "").trim() ||
+    req.nextUrl.origin;
 
-  const origin = req.nextUrl.origin;
   const result = await runAll(origin);
 
-  console.log("CRON RESULT:", JSON.stringify({
-    vercelEnv: process.env.VERCEL_ENV,
-    host: req.headers.get("host"),
-    db: (process.env.DATABASE_URL || "").replace(/:\/\/.*@/, "://***@").split("?")[0],
-    result
-  }));
+  console.log(
+    "CRON RESULT:",
+    JSON.stringify({
+      vercelEnv: process.env.VERCEL_ENV,
+      host: req.headers.get("host"),
+      originUsed: origin,
+      db: (process.env.DATABASE_URL || "").replace(/:\/\/.*@/, "://***@").split("?")[0],
+      result,
+    })
+  );
 
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
