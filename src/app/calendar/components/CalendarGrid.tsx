@@ -117,25 +117,35 @@ export default function CalendarGrid({
               const base =
                 "aspect-square rounded-xl text-sm transition-all ring-1 ring-[rgba(146,180,255,.18)] relative overflow-hidden";
               const enabled = "bg-[#0d1b34] hover:bg-[#15284a] text-white/90";
-              // unified, slightly softer light-blue glow
-              const selectedCls = "shadow-[0_0_10px_1px_#8FB8E6]";
+              // Card-like selection: blue ring + soft glow using global --color-lightblue
+              const selectedCls =
+                "ring-[var(--color-lightblue)] shadow-[0_0_10px_1px_var(--color-lightblue)]";
               const disabled = "bg-[#0b1220] opacity-45 cursor-not-allowed";
-              const outsideCls = outside ? "opacity-35" : "";
+              // Grey out only if outside AND not available/in-window
+              const outsideCls =
+                outside && (!hasAvail || !inWindow) ? "opacity-35" : "";
 
               return (
                 <button
                   key={key}
                   disabled={!hasAvail || !inWindow}
                   onClick={() => onSelectDate(d)}
-                  className={[base, outsideCls, hasAvail && inWindow ? enabled : disabled, selected ? selectedCls : ""].join(" ")}
+                  className={[
+                    base,
+                    outsideCls,
+                    hasAvail && inWindow ? enabled : disabled,
+                    selected ? selectedCls : "",
+                  ].join(" ")}
                 >
                   <div className="flex h-full w-full items-center justify-center relative">
                     <span className="text-white">{format(d, "d")}</span>
                     {today && (
-                      <span className="absolute top-0.5 inset-x-0 text-[9px] text-[#8FB8E6] font-medium">Today</span>
+                      <span className="absolute top-0.5 inset-x-0 text-[9px] text-[var(--color-lightblue)] font-medium">
+                        Today
+                      </span>
                     )}
                     {hasAvail && inWindow && (
-                      <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#fc8803]" />
+                      <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[var(--color-orange)]" />
                     )}
                   </div>
                 </button>

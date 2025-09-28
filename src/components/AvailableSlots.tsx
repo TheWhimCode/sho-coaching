@@ -31,7 +31,7 @@ export default function AvailableSlots({
   onPick?: (id: string) => void;
 }) {
   return (
-    <div className="mt-1 grid grid-cols-1 gap-2">
+    <div className=" grid grid-cols-1 gap-2">
       {slots
         // ✅ only keep slots that are free and aligned to 30-min grid
         .filter(

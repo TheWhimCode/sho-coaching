@@ -71,8 +71,10 @@ export default function RightBookingPanel({
           </button>
         )}
 
-        {/* Next available */}
-        <div className="mt-1 text-xs text-[#8FB8E6]">Next available</div>
+        {/* Label above slots */}
+        <div className="mt-1 text-xs text-[#8FB8E6]">
+          Next available times — in your timezone
+        </div>
 
         {loading ? (
           <div className="space-y-2">

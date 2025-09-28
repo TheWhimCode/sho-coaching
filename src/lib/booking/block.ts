@@ -10,20 +10,21 @@ const DEBUG = process.env.DEBUG_BOOKING === "1";
 export function addMin(d: Date, m: number) {
   return new Date(d.getTime() + m * 60_000);
 }
-
+function utcMidnight(d: Date) {
+  const t = new Date(d);
+  t.setUTCHours(0, 0, 0, 0);
+  return t;
+}
 export function ceilDiv(a: number, b: number) {
   return Math.floor((a + b - 1) / b);
 }
 
+/** Server-side guards applied during booking/holding (no business-hours gate). */
 export function guards(now = new Date()) {
-  const { LEAD_MINUTES, MAX_ADVANCE_DAYS, OPEN_HOUR, CLOSE_HOUR } = CFG_SERVER.booking;
+  const { LEAD_MINUTES, MAX_ADVANCE_DAYS } = CFG_SERVER.booking;
   const minStart = addMin(now, LEAD_MINUTES);
   const maxStart = addMin(now, MAX_ADVANCE_DAYS * 24 * 60);
-  const isWithinHours = (d: Date) => {
-    const h = d.getUTCHours();
-    return h >= OPEN_HOUR && h < CLOSE_HOUR;
-  };
-  return { minStart, maxStart, isWithinHours };
+  return { minStart, maxStart };
 }
 
 /** Back-compat: find block ids starting from a slotId. */
@@ -40,12 +41,49 @@ export async function getBlockIdsByTime(
   tx = prisma,
   opts?: { holdKey?: string }
 ) {
-  const { minStart, maxStart, isWithinHours } = guards(new Date());
+  const { minStart, maxStart } = guards(new Date());
   if (startTime < minStart) return null;
   if (startTime > maxStart) return null;
-  if (!isWithinHours(startTime)) return null;
 
-  const { BUFFER_BEFORE_MIN, BUFFER_AFTER_MIN } = CFG_SERVER.booking;
+  // --- PER-DAY CAP (counts taken or actively-held session chains) ---
+  if (CFG_SERVER.booking.PER_DAY_CAP > 0) {
+    const now = new Date();
+    const dayStart = utcMidnight(startTime);
+    const dayEnd = addMin(dayStart, 24 * 60);
+
+    // Fetch all non-free 15m slots in the day: confirmed (taken) OR actively held
+    const busy = await tx.slot.findMany({
+      where: {
+        startTime: { gte: dayStart, lt: dayEnd },
+        OR: [
+          { status: SlotStatus.taken },
+          { status: SlotStatus.blocked },                      // if you use blocked to materialize days
+          { AND: [ { status: SlotStatus.free }, { holdUntil: { gt: now } } ] }, // active holds
+        ],
+      },
+      orderBy: { startTime: "asc" },
+      select: { startTime: true, status: true, holdUntil: true },
+    });
+
+    // Count "session heads": first slot of each contiguous busy chain (15m step)
+    let sessions = 0;
+    for (let i = 0; i < busy.length; i++) {
+      const prev = busy[i - 1]?.startTime;
+      const cur = busy[i].startTime;
+      const expectedPrev = prev ? addMin(cur, -SLOT_SIZE_MIN).getTime() : NaN;
+      const isHead = !prev || prev.getTime() !== expectedPrev;
+      if (isHead) sessions++;
+    }
+
+    if (sessions >= CFG_SERVER.booking.PER_DAY_CAP) {
+      if (DEBUG) console.info("[cap] reached", { day: dayStart.toISOString(), sessions });
+      return null;
+    }
+  }
+
+  // --- BUFFER WINDOW & CONTIGUOUS FREE CHAIN CHECK ---
+  const { BUFFER_AFTER_MIN } = CFG_SERVER.booking;
+  const BUFFER_BEFORE_MIN = 0; // you chose to remove pre-buffer
   const windowStart = addMin(startTime, -BUFFER_BEFORE_MIN);
   const windowEnd   = addMin(startTime, liveMinutes + BUFFER_AFTER_MIN);
   const expected    = ceilDiv(
@@ -71,7 +109,6 @@ export async function getBlockIdsByTime(
 
   if (DEBUG) {
     try {
-      // eslint-disable-next-line no-console
       console.info("[block:dbg]", {
         start: startTime.toISOString(),
         windowStart: windowStart.toISOString(),
@@ -94,7 +131,6 @@ export async function getBlockIdsByTime(
     if (got !== want) {
       if (DEBUG) {
         try {
-          // eslint-disable-next-line no-console
           console.warn("[block:gap]", {
             at: i,
             prev: block[i - 1].startTime.toISOString(),

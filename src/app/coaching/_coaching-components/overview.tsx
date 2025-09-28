@@ -1,9 +1,8 @@
-// src/app/coaching/_coaching-components/components/overview/index.tsx
 "use client";
 
 import React, { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import BluePanel from "@/app/_components/panels/BluePanel"; // still used for the 2x3 grid only
+import BluePanel from "@/app/_components/panels/BluePanel";
 import Experience from "@/app/coaching/_coaching-components/components/overview/experience";
 import {
   Trophy,
@@ -57,14 +56,14 @@ export default function Overview({
           "color-mix(in srgb, var(--color-orange) 78%, white 22%)",
       }}
     >
+      <div className="block-gap" />
+
       <div className="mx-auto max-w-7xl">
-        {/* Header */}
         <div className="mb-6 md:mb-8">
           <p className="text-[11px] tracking-[0.22em] text-fg-muted uppercase">{eyebrow}</p>
           <h2 className="mt-2 text-3xl md:text-[44px] leading-tight font-bold">{heading}</h2>
         </div>
 
-        {/* 2×3 grid (keeps the BluePanel) */}
         <BluePanel>
           <div className="relative grid grid-cols-1 md:grid-cols-3 md:grid-rows-2">
             {items.map((item, i) => {
@@ -84,8 +83,9 @@ export default function Overview({
           </div>
         </BluePanel>
 
-        {/* Bottom: experience (no rating) */}
-        <div className="mt-6">
+        <div className="block-gap" />
+
+        <div>
           <div className="p-6 md:py-10">
             <Experience />
           </div>
@@ -95,7 +95,6 @@ export default function Overview({
   );
 }
 
-/** Icon chip (hover grows slightly more) */
 function MotionIcon({ hovered, children }: { hovered: boolean; children: React.ReactNode }) {
   return (
     <motion.div
@@ -112,7 +111,6 @@ function MotionIcon({ hovered, children }: { hovered: boolean; children: React.R
   );
 }
 
-/* Tiles */
 function Cell({
   item,
   isFirstItem,
@@ -167,7 +165,6 @@ function Cell({
     .filter(Boolean)
     .join(" ");
 
-  /** Title with “Notes” highlighted + underline and image preview */
   const renderTitle = () => {
     const hasNotes = /notes/i.test(item.title);
     if (!hasNotes) return item.title;
@@ -218,7 +215,6 @@ function Cell({
         className={`relative p-6 md:p-7 group transition-colors duration-300 ${borders} flex flex-col justify-between`}
         style={{ minHeight: 260, background: "var(--color-panel)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
       >
-        {/* Hover gradient */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: hovered ? 1 : 0 }}
@@ -226,7 +222,6 @@ function Cell({
           className="absolute inset-0 pointer-events-none z-0"
           style={{ background: "linear-gradient(180deg, rgba(139,92,246,0.18), rgba(32,14,64,0.38))" }}
         />
-        {/* Particles */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: hovered ? 1 : 0 }}
@@ -236,17 +231,14 @@ function Cell({
           <Particles id={`particles-${item.id}`} init={initParticles} options={particleOptions} className="w-full h-full" />
         </motion.div>
 
-        {/* icon */}
         <MotionIcon hovered={hovered}>{item.icon ?? <Bolt className="h-6 w-6 opacity-90" />}</MotionIcon>
 
-        {/* text */}
         <div className="relative z-10">
           <h3 className="text-lg md:text-xl font-semibold">{renderTitle()}</h3>
           <p className="mt-2 text-sm md:text-[15px] leading-relaxed text-fg-muted">{item.body}</p>
         </div>
       </div>
 
-      {/* Image preview portal (for “Notes”) */}
       {typeof window !== "undefined" &&
         preview.show &&
         createPortal(

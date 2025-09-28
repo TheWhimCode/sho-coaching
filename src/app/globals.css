@@ -26,6 +26,21 @@
   --color-fg-muted:  #A7B8D6;
 }
 
+
+.section-y {
+  @apply py-24 md:py-36;
+}
+
+.block-gap {
+  @apply my-16;
+}
+
+.tight-gap {
+  @apply my-8;
+}
+
+
+
 /* ===========================
    GLOBAL VARIABLES (for inline styles)
    =========================== */

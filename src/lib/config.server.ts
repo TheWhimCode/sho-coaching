@@ -26,14 +26,14 @@ export const CFG_SERVER = Object.freeze({
   CRON_SECRET: must("CRON_SECRET"),
   ICS_SIGN_SECRET: must("ICS_SIGN_SECRET"),
 
-  // Booking config
+  // Booking config (all UTC-based on the server)
   booking: Object.freeze({
-    BUFFER_BEFORE_MIN: int("BUFFER_BEFORE_MIN", 15),
-    BUFFER_AFTER_MIN:  int("BUFFER_AFTER_MIN", 15),
-    LEAD_MINUTES:      int("LEAD_MINUTES", 120),
-    MAX_ADVANCE_DAYS:  int("MAX_ADVANCE_DAYS", 28),
-    OPEN_HOUR:         int("OPEN_HOUR", 13),
+    BUFFER_AFTER_MIN:  int("BUFFER_AFTER_MIN", 30),
+    LEAD_MINUTES:      int("LEAD_MINUTES", 1080), // 18h
+
+    MAX_ADVANCE_DAYS:  int("MAX_ADVANCE_DAYS", 15),
+    OPEN_HOUR:         int("OPEN_HOUR", 0),
     CLOSE_HOUR:        int("CLOSE_HOUR", 24),
-    PER_DAY_CAP:       int("PER_DAY_CAP", 0),
+    PER_DAY_CAP:       int("PER_DAY_CAP", 2),
   }),
 });

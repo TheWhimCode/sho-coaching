@@ -38,29 +38,30 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "invalid_range" }, { status: 400 });
   }
 
-  // cap range
+  // cap request range
   const ms = to.getTime() - from.getTime();
   const days = ms / (24 * 60 * 60 * 1000);
   if (days > MAX_RANGE_DAYS) {
     return NextResponse.json({ error: "range_too_large" }, { status: 400 });
   }
 
-  // validate liveMinutes
+  // validate/normalize liveMinutes (15-min grid)
   let liveMinutes = parseInt(liveRaw, 10);
   if (!Number.isFinite(liveMinutes)) liveMinutes = 60;
   if (liveMinutes < MIN_MINUTES || liveMinutes > MAX_MINUTES) {
     return NextResponse.json({ error: "invalid_liveMinutes" }, { status: 400 });
   }
-  // (optional) force 15-minute grid
   if (liveMinutes % 15 !== 0) liveMinutes = Math.round(liveMinutes / 15) * 15;
 
-  const { minStart, maxStart, isWithinHours } = guards(new Date());
+  // Server policy: lead + max advance (no business-hours gate here)
+  const { minStart, maxStart } = guards(new Date());
   const gte = from < minStart ? minStart : from;
   const lt = to > maxStart ? maxStart : to;
+  if (gte >= lt) return NextResponse.json([]);
 
   const now = new Date();
 
-  // Only FREE slots in range; hide soft holds
+  // Only FREE slots; hide active holds
   const rows = await prisma.slot.findMany({
     where: {
       status: SlotStatus.free,
@@ -71,22 +72,29 @@ export async function GET(req: Request) {
     orderBy: { startTime: "asc" },
   });
 
-  const filtered = rows.filter((r) => isWithinHours(new Date(r.startTime)));
-
-  // Avoid unbounded parallelism on huge lists
-  const limit = 2000; // safety cap
-  if (filtered.length > limit) {
+  // Safety cap to avoid hammering DB with validations
+  if (rows.length > 2000) {
     return NextResponse.json({ error: "too_many_results" }, { status: 400 });
   }
 
+  // Final server-side validation:
+  // - contiguous chain w/ buffers
+  // - lead/max-advance (again)
+  // - PER_DAY_CAP (inside canStartAtTime/getBlockIdsByTime)
   const checked = await Promise.all(
-    filtered.map(async (r) =>
+    rows.map(async (r) =>
       (await canStartAtTime(r.startTime, liveMinutes, prisma)) ? r : null
     )
   );
 
-  const valid = checked.filter((x): x is typeof filtered[number] => Boolean(x));
-  const res = NextResponse.json(valid);
+  const valid = checked.filter((x): x is typeof rows[number] => Boolean(x));
+  const res = NextResponse.json(
+    valid.map((r) => ({
+      id: r.id,
+      startTime: r.startTime.toISOString(),
+      status: r.status, // still 'free'
+    }))
+  );
   res.headers.set("Cache-Control", "no-store");
   return res;
 }

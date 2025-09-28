@@ -21,10 +21,6 @@ function minToHHMM(m: number) {
   const mm = (m % 60).toString().padStart(2, "0");
   return `${h}:${mm}`;
 }
-function hhmmToMin(str: string) {
-  const [h, m] = str.split(":").map(Number);
-  return h * 60 + m;
-}
 const clampMin = (n: number) => Math.max(0, Math.min(1440, n));
 
 // UTC <-> Local (Europe/Berlin) conversions
@@ -69,11 +65,18 @@ export default function AdminSlotsPage() {
   const [loading, setLoading] = useState(true);
   const [log, setLog] = useState("");
 
+  // mode + uniform inputs
+  const [mode, setMode] = useState<"individual" | "uniform">("individual");
+  const [uniformOpen, setUniformOpen] = useState("13:00");
+  const [uniformClose, setUniformClose] = useState("23:59"); // HTML time can't input 24:00
+  const [uniformFullDay, setUniformFullDay] = useState(false); // send "24:00" if needed
+
   // new exception form
-const [exDate, setExDate] = useState(() => {
-  const today = new Date();
-  return today.toISOString().slice(0, 10); // e.g. "2025-09-13"
-});  const [exOpen, setExOpen] = useState("13:00");
+  const [exDate, setExDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().slice(0, 10);
+  });
+  const [exOpen, setExOpen] = useState("13:00");
   const [exClose, setExClose] = useState("15:00");
   const [exBlocked, setExBlocked] = useState(false);
 
@@ -99,6 +102,18 @@ const [exDate, setExDate] = useState(() => {
       });
 
       setRules(normalized);
+
+      // seed uniform inputs from Monday (or Sunday) to mirror current rules
+      const sample = normalized[1] ?? normalized[0];
+      const ymd = getAnchorYMDForWeekday(sample.weekday);
+      setUniformOpen(utcMinToLocalHHMM(ymd, sample.openMinute));
+      setUniformClose(
+        sample.closeMinute >= 1440
+          ? "23:59"
+          : utcMinToLocalHHMM(ymd, sample.closeMinute)
+      );
+      setUniformFullDay(sample.closeMinute >= 1440);
+
       setExceptions(e as Exception[]);
       setLoading(false);
     })();
@@ -106,22 +121,39 @@ const [exDate, setExDate] = useState(() => {
 
   // Save rules
   async function saveRules() {
-    const ordered = [...rules].sort((a, b) => a.weekday - b.weekday);
-    const body = {
-      rules: ordered.map((r) => {
-        const open = minToHHMM(clampMin(r.openMinute));
-        const closeWasFullDay = r.closeMinute >= 1440;
-        const close = closeWasFullDay
-          ? "24:00"
-          : minToHHMM(clampMin(r.closeMinute));
+    // Build the 7-day payload the server already expects.
+    let toSend: { open: string; close: string }[];
+
+    if (mode === "uniform") {
+      toSend = Array.from({ length: 7 }, (_, weekday) => {
+        const ymd = getAnchorYMDForWeekday(weekday);
+        const openMinUtc = localHHMMtoUtcMin(ymd, uniformOpen);
+        const closeMinUtc = uniformFullDay
+          ? 1440
+          : localHHMMtoUtcMin(ymd, uniformClose);
+
+        const open = minToHHMM(clampMin(openMinUtc));
+        const close =
+          (uniformFullDay || closeMinUtc >= 1440)
+            ? "24:00"
+            : minToHHMM(clampMin(closeMinUtc));
+
         return { open, close };
-      }),
-    };
+      });
+    } else {
+      const ordered = [...rules].sort((a, b) => a.weekday - b.weekday);
+      toSend = ordered.map((r) => {
+        const open = minToHHMM(clampMin(r.openMinute));
+        const close =
+          r.closeMinute >= 1440 ? "24:00" : minToHHMM(clampMin(r.closeMinute));
+        return { open, close };
+      });
+    }
 
     const res = await fetch("/api/admin/availability/rules", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ rules: toSend }),
     });
 
     if (!res.ok) {
@@ -138,9 +170,7 @@ const [exDate, setExDate] = useState(() => {
     const body = {
       date: exDate,
       blocked: exBlocked,
-      open: exBlocked
-        ? undefined
-        : minToHHMM(localHHMMtoUtcMin(exDate, exOpen)),
+      open: exBlocked ? undefined : minToHHMM(localHHMMtoUtcMin(exDate, exOpen)),
       close: exBlocked
         ? undefined
         : minToHHMM(localHHMMtoUtcMin(exDate, exClose)),
@@ -167,10 +197,9 @@ const [exDate, setExDate] = useState(() => {
 
   // Delete exception
   async function deleteException(id: string) {
-    const res = await fetch(
-      `/api/admin/availability/exceptions?id=${id}`,
-      { method: "DELETE" }
-    );
+    const res = await fetch(`/api/admin/availability/exceptions?id=${id}`, {
+      method: "DELETE",
+    });
     if (!res.ok) {
       const txt = await res.text();
       setLog(`❌ Failed to delete: ${txt}`);
@@ -214,7 +243,7 @@ const [exDate, setExDate] = useState(() => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-black to-indigo-950 text-white">
-      <div className="w-full max-w-3xl space-y-10 p-8 bg-black/40 rounded-3xl border border-purple-500/30 shadow-[0_0_30px_rgba(150,0,255,0.3)]">
+      <div className="w-full max-w-5xl space-y-10 p-8 bg-black/40 rounded-3xl border border-purple-500/30 shadow-[0_0_30px_rgba(150,0,255,0.3)]">
         <motion.h1
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -229,50 +258,131 @@ const [exDate, setExDate] = useState(() => {
 
         {/* Weekly Rules */}
         <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4">📜 Weekly Rules</h2>
-          <div className="grid gap-3">
-            {weekdays.map((d, i) => {
-              const rule = rules.find((r) => r.weekday === i)!;
-              const ymd = getAnchorYMDForWeekday(i); // dynamic anchor
-              return (
-                <div key={i} className="flex gap-3 items-center">
-                  <span className="w-10">{d}</span>
-                  <input
-                    type="time"
-                    value={utcMinToLocalHHMM(ymd, rule.openMinute)}
-                    onChange={(e) => {
-                      const copy = [...rules];
-                      const idx = copy.findIndex((r) => r.weekday === i);
-                      copy[idx] = {
-                        ...copy[idx],
-                        openMinute: localHHMMtoUtcMin(ymd, e.target.value),
-                      };
-                      setRules(copy);
-                    }}
-                    className="bg-neutral-800 px-2 py-1 rounded"
-                  />
-                  <span>–</span>
-                  <input
-                    type="time"
-                    value={utcMinToLocalHHMM(ymd, rule.closeMinute)}
-                    onChange={(e) => {
-                      const copy = [...rules];
-                      const idx = copy.findIndex((r) => r.weekday === i);
-                      copy[idx] = {
-                        ...copy[idx],
-                        closeMinute: localHHMMtoUtcMin(ymd, e.target.value),
-                      };
-                      setRules(copy);
-                    }}
-                    className="bg-neutral-800 px-2 py-1 rounded"
-                  />
-                </div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">📜 Weekly Rules</h2>
+            <div className="flex items-center gap-4 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mode"
+                  value="individual"
+                  checked={mode === "individual"}
+                  onChange={() => setMode("individual")}
+                />
+                Edit weekdays individually
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mode"
+                  value="uniform"
+                  checked={mode === "uniform"}
+                  onChange={() => setMode("uniform")}
+                />
+                One range for all weekdays
+              </label>
+            </div>
           </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* INDIVIDUAL */}
+            <div
+              className={`rounded-xl p-4 border ${
+                mode === "individual"
+                  ? "border-purple-400/60"
+                  : "border-neutral-700/80 opacity-60"
+              }`}
+            >
+              <h3 className="font-semibold mb-3">Per-day editor</h3>
+              <div className="grid gap-3">
+                {weekdays.map((d, i) => {
+                  const rule = rules.find((r) => r.weekday === i)!;
+                  const ymd = getAnchorYMDForWeekday(i);
+                  return (
+                    <div key={i} className="flex gap-3 items-center">
+                      <span className="w-10">{d}</span>
+                      <input
+                        type="time"
+                        value={utcMinToLocalHHMM(ymd, rule.openMinute)}
+                        onChange={(e) => {
+                          const copy = [...rules];
+                          const idx = copy.findIndex((r) => r.weekday === i);
+                          copy[idx] = {
+                            ...copy[idx],
+                            openMinute: localHHMMtoUtcMin(ymd, e.target.value),
+                          };
+                          setRules(copy);
+                        }}
+                        disabled={mode !== "individual"}
+                        className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                      />
+                      <span>–</span>
+                      <input
+                        type="time"
+                        value={utcMinToLocalHHMM(ymd, rule.closeMinute)}
+                        onChange={(e) => {
+                          const copy = [...rules];
+                          const idx = copy.findIndex((r) => r.weekday === i);
+                          copy[idx] = {
+                            ...copy[idx],
+                            closeMinute: localHHMMtoUtcMin(ymd, e.target.value),
+                          };
+                          setRules(copy);
+                        }}
+                        disabled={mode !== "individual"}
+                        className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* UNIFORM */}
+            <div
+              className={`rounded-xl p-4 border ${
+                mode === "uniform"
+                  ? "border-purple-400/60"
+                  : "border-neutral-700/80 opacity-60"
+              }`}
+            >
+              <h3 className="font-semibold mb-3">Uniform editor</h3>
+              <div className="flex flex-wrap gap-3 items-center">
+                <span className="w-28 opacity-80">All weekdays</span>
+                <input
+                  type="time"
+                  value={uniformOpen}
+                  onChange={(e) => setUniformOpen(e.target.value)}
+                  disabled={mode !== "uniform"}
+                  className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                />
+                <span>–</span>
+                <input
+                  type="time"
+                  value={uniformClose}
+                  onChange={(e) => setUniformClose(e.target.value)}
+                  disabled={mode !== "uniform" || uniformFullDay}
+                  className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                />
+                <label className="flex items-center gap-2 text-xs opacity-80">
+                  <input
+                    type="checkbox"
+                    checked={uniformFullDay}
+                    onChange={(e) => setUniformFullDay(e.target.checked)}
+                    disabled={mode !== "uniform"}
+                  />
+                  Full day (send close = 24:00)
+                </label>
+              </div>
+              <p className="text-xs opacity-70 mt-2">
+                Saving in “One range” mode overwrites all 7 days with this range.
+              </p>
+            </div>
+          </div>
+
           <button
             onClick={saveRules}
-            className="mt-4 px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-400 hover:opacity-90 font-medium shadow-[0_0_10px_rgba(0,255,200,0.5)]"
+            className="mt-6 px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-400 hover:opacity-90 font-medium shadow-[0_0_10px_rgba(0,255,200,0.5)]"
           >
             Save Rules ✍️
           </button>
