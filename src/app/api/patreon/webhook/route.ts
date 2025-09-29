@@ -117,10 +117,10 @@ export async function POST(req: Request) {
     (async () => {
       try {
         const pg = new Pg({ connectionString: DIRECT_DATABASE_URL, ssl: { rejectUnauthorized: false } as any });
-        await withTimeout(pg.connect(), 2000);
+        await withTimeout(pg.connect(), 5000);
         await withTimeout(
           pg.query("SELECT pg_notify('patreon_posts', $1)", [JSON.stringify({ postId, title, url })]),
-          2000
+          5000
         );
         await pg.end();
         if (DEBUG) console.log("[patreon] notified db");
