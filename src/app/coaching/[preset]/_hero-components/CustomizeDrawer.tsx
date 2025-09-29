@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "../../../../utils/sessionConfig";
+import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "@/utils/sessionConfig";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 import { Signature, Scroll, Lightning, PuzzlePiece, X } from "@phosphor-icons/react";
