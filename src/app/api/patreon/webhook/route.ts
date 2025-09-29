@@ -6,13 +6,13 @@ import { Client as Pg } from "pg";
 
 const SECRET = process.env.PATREON_WEBHOOK_SECRET!;
 const DIRECT_DATABASE_URL = process.env.DIRECT_DATABASE_URL!;
+const DEBUG = process.env.DEBUG_PATREON === "1";
 
 // --- small in-memory dedupe (per instance) ---
 const SEEN_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const seen = new Map<string, number>();
 function dedupe(key?: string) {
   const now = Date.now();
-  // cleanup
   for (const [k, t] of seen) if (now - t > SEEN_TTL_MS) seen.delete(k);
   if (!key) return false;
   const prev = seen.get(key);
@@ -71,17 +71,21 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 export async function POST(req: Request) {
   try {
     const raw = Buffer.from(await req.arrayBuffer());
-    const sig =
-      req.headers.get("x-patreon-signature") ||
-      req.headers.get("X-Patreon-Signature");
+    const sig = req.headers.get("x-patreon-signature") || req.headers.get("X-Patreon-Signature");
+    const hdrEvt = req.headers.get("x-patreon-event") || req.headers.get("X-Patreon-Event") || null;
+
+    if (DEBUG) {
+      // minimal header snapshot (no auth secrets printed)
+      const h = Object.fromEntries(
+        Array.from(req.headers.entries())
+          .filter(([k]) => ["content-type", "x-patreon-signature", "x-patreon-event", "user-agent"].includes(k.toLowerCase()))
+      );
+      console.log("[patreon] hit", { hdrEvt, sigLen: (sig ?? "").length, rawLen: raw.length, headers: h });
+    }
 
     // Keep 401 on bad signature (signals misconfig), but everything else returns 200.
     if (!verify(raw, sig, SECRET)) {
-      console.error("[patreon] signature failed", {
-        hasSig: !!sig,
-        sigLen: sig?.length,
-        rawLen: raw.length,
-      });
+      console.error("[patreon] signature failed", { hasSig: !!sig, sigLen: sig?.length, rawLen: raw.length });
       return new Response("invalid signature", { status: 401 });
     }
 
@@ -89,21 +93,23 @@ export async function POST(req: Request) {
     try {
       payload = JSON.parse(raw.toString("utf8"));
     } catch {
-      // bad JSON from source -> 200 to avoid retries, but log
       console.error("[patreon] bad json");
       return new Response("ignored", { status: 200 });
     }
 
-    const evt = payload?.event_name || payload?.event_type;
+    const evt = payload?.event_name || payload?.event_type || hdrEvt || null;
+    if (DEBUG) console.log("[patreon] evt", evt, "payload.keys", Object.keys(payload || {}));
+
     if (evt !== "posts:publish") {
+      if (DEBUG) console.log("[patreon] non-target event ignored");
       return new Response("ignored", { status: 200 });
     }
 
     const { postId, title, url } = extract(payload);
+    if (DEBUG) console.log("[patreon] extracted", { postId, title, url });
 
-    // Skip if we've seen this postId recently (best-effort)
     if (dedupe(postId)) {
-      console.info("[patreon] duplicate event suppressed", { postId });
+      if (DEBUG) console.info("[patreon] duplicate event suppressed", { postId });
       return new Response("ok");
     }
 
@@ -113,24 +119,27 @@ export async function POST(req: Request) {
         const pg = new Pg({ connectionString: DIRECT_DATABASE_URL, ssl: { rejectUnauthorized: false } as any });
         await withTimeout(pg.connect(), 2000);
         await withTimeout(
-          pg.query("SELECT pg_notify('patreon_posts', $1)", [
-            JSON.stringify({ postId, title, url }),
-          ]),
+          pg.query("SELECT pg_notify('patreon_posts', $1)", [JSON.stringify({ postId, title, url })]),
           2000
         );
         await pg.end();
+        if (DEBUG) console.log("[patreon] notified db");
       } catch (dbErr) {
         console.error("[patreon webhook] db error", dbErr);
       }
-    })().catch(() => {
-      /* already logged */
-    });
+    })().catch(() => { /* already logged */ });
 
-    // Immediate ACK to stop Patreon retries
     return new Response("ok");
   } catch (e) {
-    // On unexpected handler errors, still ACK to prevent retry storms.
     console.error("[patreon webhook] unhandled error", e);
     return new Response("ok");
   }
+}
+
+// Optional: health checks
+export async function GET() {
+  return new Response("ok");
+}
+export async function HEAD() {
+  return new Response(null, { status: 200 });
 }
