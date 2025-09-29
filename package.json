@@ -8,7 +8,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "test": "echo \"(no tests)\" && exit 0"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -30,7 +31,7 @@
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.539.0",
     "luxon": "^3.7.2",
-    "next": "^15.5.2",
+    "next": "^15.5.4",
     "pg": "^8.16.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -84,5 +85,6 @@
   "bugs": {
     "url": "https://github.com/TheWhimCode/sho-coaching/issues"
   },
-  "homepage": "https://github.com/TheWhimCode/sho-coaching#readme"
+  "homepage": "https://github.com/TheWhimCode/sho-coaching#readme",
+  "packageManager": "npm@10"
 }
