@@ -1,5 +1,5 @@
 // src/app/api/patreon/webhook/route.ts
-export const runtime = "nodejs"; // ensure Node runtime (not Edge)
+export const runtime = "nodejs"; // ensure Node runtime
 
 import crypto from "node:crypto";
 import { Client as Pg } from "pg";
@@ -7,12 +7,22 @@ import { Client as Pg } from "pg";
 const SECRET = process.env.PATREON_WEBHOOK_SECRET!;
 const DIRECT_DATABASE_URL = process.env.DIRECT_DATABASE_URL!;
 
-function verify(raw: Buffer, headerSig: string | null) {
-  if (!SECRET || !headerSig) return false;
-  const mac = crypto.createHmac("sha256", SECRET).update(raw).digest("hex");
-  const a = Buffer.from(mac, "hex");
-  const b = Buffer.from(headerSig, "hex");
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+function timingEq(a: string, b: string) {
+  const A = Buffer.from(a);
+  const B = Buffer.from(b);
+  if (A.length !== B.length) return false;
+  return crypto.timingSafeEqual(A, B);
+}
+
+function verify(raw: Buffer, headerSig: string | null, secret: string) {
+  if (!headerSig || !secret) return false;
+
+  const sig = headerSig.trim();
+  const hex = crypto.createHmac("sha256", secret).update(raw).digest("hex");
+  const b64 = crypto.createHmac("sha256", secret).update(raw).digest("base64");
+
+  // accept either hex or base64
+  return timingEq(sig, hex) || timingEq(sig, b64);
 }
 
 function extract(p: any) {
@@ -20,21 +30,37 @@ function extract(p: any) {
   const id = p?.data?.id;
   const url =
     a.url ??
-    (a.slug ? `https://www.patreon.com/posts/${a.slug}` : id ? `https://www.patreon.com/posts/${id}` : undefined);
+    (a.slug
+      ? `https://www.patreon.com/posts/${a.slug}`
+      : id
+      ? `https://www.patreon.com/posts/${id}`
+      : undefined);
   const title = a.title ?? (id ? `New Patreon Post #${id}` : "New Patreon Post");
   return { postId: id, title, url };
 }
 
 export async function POST(req: Request) {
   try {
-    const sig = req.headers.get("x-patreon-signature");
     const raw = Buffer.from(await req.arrayBuffer());
+    const sig =
+      req.headers.get("x-patreon-signature") ||
+      req.headers.get("X-Patreon-Signature");
 
-    if (!verify(raw, sig)) {
+    if (!verify(raw, sig, SECRET)) {
+      console.error("[patreon] signature failed", {
+        hasSig: !!sig,
+        sigLen: sig?.length,
+        rawLen: raw.length,
+      });
       return new Response("invalid signature", { status: 401 });
     }
 
-    const payload = JSON.parse(raw.toString("utf8"));
+    let payload: any;
+    try {
+      payload = JSON.parse(raw.toString("utf8"));
+    } catch {
+      return new Response("bad json", { status: 400 });
+    }
 
     // Only handle publish events
     const evt = payload?.event_name || payload?.event_type;
