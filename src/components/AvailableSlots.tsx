@@ -31,9 +31,15 @@ export default function AvailableSlots({
   onPick?: (id: string) => void;
 }) {
   return (
-    <div className=" grid grid-cols-1 gap-2">
+    <div className="grid grid-cols-1 gap-2">
+      {/* Heading */}
+      <div className=" whitespace-pre tabular-nums text-xs leading-none">
+        <span style={{ color: "var(--color-lightblue)" }}>
+          Next available times — in your timezone
+        </span>
+      </div>
+
       {slots
-        // ✅ only keep slots that are free and aligned to 30-min grid
         .filter(
           (s) =>
             s.status === SlotStatus.free &&

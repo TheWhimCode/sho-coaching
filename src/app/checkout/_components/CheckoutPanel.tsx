@@ -7,7 +7,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import type { Appearance, Stripe } from "@stripe/stripe-js";
 import dynamic from "next/dynamic";
 
-import SessionBlock from "@/app/coaching/_hero-components/SessionBlock";
+import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 
 // SSR-safe steps

@@ -2,9 +2,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import SessionHero from "../_hero-components/SessionHero";
+import SessionHero from "./_hero-components/SessionHero";
 import CalLikeOverlay from "@/app/calendar/Calendar";
-import CustomizeDrawer from "../_hero-components/CustomizeDrawer";
+import CustomizeDrawer from "./_hero-components/CustomizeDrawer";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Cfg } from "../../../utils/sessionConfig";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
