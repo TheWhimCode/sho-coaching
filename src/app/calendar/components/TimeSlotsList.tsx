@@ -62,17 +62,18 @@ export default function TimeSlotsList({
               });
               return (
                 <li key={id}>
-                  <button
-                    onClick={() => onSelectSlot(id)}
-                    className={[
-                      "w-full px-3.5 py-4 rounded-xl text-sm transition ring-1 supports-[backdrop-filter]:backdrop-blur-md leading-none",
-                      isActive
-                        ? "bg-[#0d1b34] text-white ring-[var(--color-lightblue)] shadow-[0_0_10px_1px_var(--color-lightblue)]"
-                        : "bg-[#0d1b34] hover:bg-[#15284a] text-white/90 ring-[rgba(146,180,255,.18)]",
-                    ].join(" ")}
-                  >
-                    {label}
-                  </button>
+<button
+  onClick={() => onSelectSlot(id)}
+  className={[
+    "w-full px-3.5 py-4 rounded-xl text-sm transition supports-[backdrop-filter]:backdrop-blur-md leading-none",
+    isActive
+      ? "bg-[#0d1b34] text-white selected-glow"
+      : "bg-[#0d1b34] hover:bg-[#15284a] text-white/90 ring-1 ring-[rgba(146,180,255,.18)]",
+  ].join(" ")}
+>
+  {label}
+</button>
+
                 </li>
               );
             })}

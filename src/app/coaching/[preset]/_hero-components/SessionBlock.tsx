@@ -28,6 +28,7 @@ type Props = {
 const TICK_H = 8;
 const TOTAL_TICKS = 6;
 const clampN = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+
 function SessionIcon({
   preset,
   color,
@@ -41,22 +42,16 @@ function SessionIcon({
   const glowStyle = glow ? { filter: `drop-shadow(0 0 8px ${glow})` } : undefined;
 
   if (preset === "vod") {
-    // Deep knowledge ⇒ Scroll (filled)
     return <Scroll size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
   }
   if (preset === "instant") {
-    // Instant ⇒ Lightning (filled)
     return <Lightning size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
   }
   if (preset === "signature") {
-    // Signature ⇒ Signature (filled)
     return <Signature size={size} weight="bold" color={color} style={glowStyle} aria-hidden />;
   }
-  // Custom ⇒ Puzzle piece (filled)
   return <PuzzlePiece size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
 }
-
-
 
 export default function SessionBlock({
   title,
@@ -74,13 +69,12 @@ export default function SessionBlock({
   const preset = getPreset(minutes, followups, liveBlocks);
   const { ring, glow } = colorsByPreset[preset];
 
-  // Flip once on first customize; stays true while this component is mounted
   const [everActivated, setEverActivated] = useState(false);
   useEffect(() => {
     if (isActive && !everActivated) setEverActivated(true);
   }, [isActive, everActivated]);
 
-  const showAffordance = isActive || everActivated; // controls texture + faint border
+  const showAffordance = isActive || everActivated;
 
   const litTicks = useMemo(() => {
     const raw = Math.round((totalMinutes - 30) / 15);
@@ -130,11 +124,7 @@ export default function SessionBlock({
       {showAffordance && (
         <span
           aria-hidden
-          className="
-            pointer-events-none absolute inset-0 rounded-2xl opacity-[0.06]
-            bg-[radial-gradient(rgba(255,255,255,1)_1px,transparent_1px)]
-            [background-size:14px_14px]
-          "
+          className="pointer-events-none absolute inset-0 rounded-2xl bg-dottexture"
         />
       )}
 
@@ -146,12 +136,12 @@ export default function SessionBlock({
         />
       )}
 
-      {/* Emblem (standalone, slightly lower/left from the corner) */}
+      {/* Emblem */}
       <div className="pointer-events-none absolute right-6 top-5">
         <SessionIcon preset={preset} color={ring} glow={glow} />
       </div>
 
-      {/* Header row: shows date if present, otherwise 'Session' */}
+      {/* Header row */}
       <div className="mb-2 flex items-center justify-between pr-10">
         <div className="text-xs uppercase tracking-wide text-white/65">
           {dateLabel ?? "Session"}

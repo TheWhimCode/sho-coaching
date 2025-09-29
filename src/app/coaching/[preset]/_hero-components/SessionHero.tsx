@@ -226,7 +226,7 @@ export default function SessionHero({
       >
         <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
-            <header className="md:col-span-3 mb-2 md:mb-4">
+<header className="md:col-span-3 mb-0 md:mb-4">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={preset}

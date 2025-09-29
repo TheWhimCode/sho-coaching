@@ -1,31 +1,17 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-
-/* ===========================
-   THEME TOKENS (Tailwind v4)
-   =========================== */
 @theme inline {
-  /* Core */
-  --color-bg:        #050B18; /* page background base */
-  --color-panel:     linear-gradient(
-    180deg,
-    #0C162C 0%,
-    #081126 100%
-  );
-  --color-divider:   rgb(255 255 255 / .10); /* borders/dividers */
-
-  /* Accents */
-  --color-orange:    #fc8803; /* CTA base */
-  --color-purple:    #7C3AED; /* glow/highlights */
-  --color-lightblue: #60A5FA; /* grids/radials + small accents */
-  --color-teal:      #06B6D4; /* optional secondary glow 06B6D4*/
-
-  /* Text */
+  --color-bg:        #050B18;
+  --color-panel:     linear-gradient(180deg, #0C162C 0%, #081126 100%);
+  --color-divider:   rgb(255 255 255 / .10);
+  --color-orange:    #fc8803;
+  --color-purple:    #7C3AED;
+  --color-lightblue: #60A5FA;
+  --color-teal:      #06B6D4;
   --color-fg:        #EAF2FF;
   --color-fg-muted:  #A7B8D6;
 }
-
 
 .section-y {
   @apply py-24 md:py-36;
@@ -39,61 +25,33 @@
   @apply my-8;
 }
 
-
-
-/* ===========================
-   GLOBAL VARIABLES (for inline styles)
-   =========================== */
 :root {
-  --color-bg:        #050B18 ;
+  --color-bg:        #050B18;
   --color-panel:     linear-gradient(180deg, #0C162C 0%, #081126 100%);
   --color-divider:   rgb(255 255 255 / .10);
-
   --color-orange:    #fc8803;
   --color-purple:    #8B5CF6;
   --color-lightblue: #60A5FA;
   --color-teal:      #06B6D4;
-
   --color-fg:        #EAF2FF;
   --color-fg-muted:  #A7B8D6;
 }
 
-/* ===========================
-   GLOBAL RESETS
-   =========================== */
 html, body {
   @apply bg-bg text-[var(--color-fg)];
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ===========================
-   UTILITIES & EFFECTS
-   =========================== */
-
-/* Horizontal mask fade */
 .mask-x-fade {
   --fade: 48px;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    black var(--fade),
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black var(--fade), black calc(100% - var(--fade)), transparent 100%);
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    black var(--fade),
-    black calc(100% - var(--fade)),
-    transparent 100%
-  );
+  mask-image: linear-gradient(to right, transparent 0, black var(--fade), black calc(100% - var(--fade)), transparent 100%);
   mask-repeat: no-repeat;
   mask-size: 100% 100%;
 }
 
-/* Scanlines */
 @keyframes scanlines {
   0% { background-position: 0 0; }
   100% { background-position: 0 4px; }
@@ -105,7 +63,6 @@ html, body {
   pointer-events: none;
 }
 
-/* Noise overlay */
 .noise {
   background-image: url("/textures/noise.png");
   mix-blend-mode: overlay;
@@ -113,14 +70,10 @@ html, body {
   pointer-events: none;
 }
 
-/* Hero gradient helper (optional) */
 .bg-hero-gradient {
-  background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(26,63,140,.35), transparent 70%),
-    linear-gradient(180deg, #071024 0%, #050A18 100%);
+  background: radial-gradient(1200px 600px at 50% -10%, rgba(26,63,140,.35), transparent 70%), linear-gradient(180deg, #071024 0%, #050A18 100%);
 }
 
-/* Vignette helper */
 .vignette::after {
   content: "";
   position: absolute;
@@ -129,17 +82,13 @@ html, body {
   pointer-events: none;
 }
 
-/* HUD grid */
 .hud-grid {
-  background-image:
-    linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-image: linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
   background-size: 24px 24px;
   opacity: .12;
   pointer-events: none;
 }
 
-/* Frosted card */
 .frost-card {
   background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
   backdrop-filter: blur(8px);
@@ -147,7 +96,6 @@ html, body {
   border-radius: 16px;
 }
 
-/* Glow stroke (thin gradient border) */
 .glow-stroke {
   position: relative;
   border-radius: 16px;
@@ -165,13 +113,26 @@ html, body {
   pointer-events: none;
   filter: blur(.3px);
 }
+
 @layer utilities {
   @keyframes slow-pan {
     0%   { background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%; }
     50%  { background-position: 25% 15%, 80% 30%, 20% 80%, 85% 85%; }
     100% { background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%; }
   }
+
   .animate-slow-pan {
     animation: slow-pan 50s linear infinite;
   }
+
+  .selected-glow {
+    box-shadow: 0 0 0 1px var(--color-lightblue),
+                0 0 10px 1px var(--color-lightblue) !important;
+  }
+}
+
+.bg-dottexture {
+  background-image: radial-gradient(rgba(255,255,255,1) 1px, transparent 1px);
+  background-size: 14px 14px;
+  opacity: 0.06;
 }

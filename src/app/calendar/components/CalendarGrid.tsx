@@ -66,7 +66,6 @@ export default function CalendarGrid({
 
   return (
     <div className="text-white">
-      {/* header */}
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => onMonthChange(addMonths(safeMonth, -1))}
@@ -115,13 +114,11 @@ export default function CalendarGrid({
               const inWindow = d >= tmr && d <= end;
 
               const base =
-                "aspect-square rounded-xl text-sm transition-all ring-1 ring-[rgba(146,180,255,.18)] relative overflow-hidden";
-              const enabled = "bg-[#0d1b34] hover:bg-[#15284a] text-white/90";
-              // Card-like selection: blue ring + soft glow using global --color-lightblue
-              const selectedCls =
-                "ring-[var(--color-lightblue)] shadow-[0_0_10px_1px_var(--color-lightblue)]";
+                "aspect-square rounded-xl text-sm transition-all relative overflow-hidden";
+              const enabled =
+                "bg-[#0d1b34] hover:bg-[#15284a] text-white/90 ring-1 ring-[rgba(146,180,255,.18)]";
+              const selectedCls = "bg-[#0d1b34] text-white selected-glow";
               const disabled = "bg-[#0b1220] opacity-45 cursor-not-allowed";
-              // Grey out only if outside AND not available/in-window
               const outsideCls =
                 outside && (!hasAvail || !inWindow) ? "opacity-35" : "";
 
@@ -133,8 +130,7 @@ export default function CalendarGrid({
                   className={[
                     base,
                     outsideCls,
-                    hasAvail && inWindow ? enabled : disabled,
-                    selected ? selectedCls : "",
+                    selected ? selectedCls : (hasAvail && inWindow ? enabled : disabled),
                   ].join(" ")}
                 >
                   <div className="flex h-full w-full items-center justify-center relative">
