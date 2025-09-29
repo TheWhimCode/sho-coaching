@@ -26,14 +26,22 @@ export const CFG_SERVER = Object.freeze({
   CRON_SECRET: must("CRON_SECRET"),
   ICS_SIGN_SECRET: must("ICS_SIGN_SECRET"),
 
-  // Booking config (all UTC-based on the server)
-  booking: Object.freeze({
-    BUFFER_AFTER_MIN:  int("BUFFER_AFTER_MIN", 30),
-    LEAD_MINUTES:      int("LEAD_MINUTES", 1080), // 18h
+  // New secrets
+  PATREON_WEBHOOK_SECRET: must("PATREON_WEBHOOK_SECRET"),
+  RIOT_API_KEY: must("RIOT_API_KEY"),
 
-    MAX_ADVANCE_DAYS:  int("MAX_ADVANCE_DAYS", 15),
-    OPEN_HOUR:         int("OPEN_HOUR", 0),
-    CLOSE_HOUR:        int("CLOSE_HOUR", 24),
-    PER_DAY_CAP:       int("PER_DAY_CAP", 2),
+  // Booking (UTC)
+  booking: Object.freeze({
+    BUFFER_AFTER_MIN: int("BUFFER_AFTER_MIN", 30),
+    LEAD_MINUTES:     int("LEAD_MINUTES", 1080),
+    MAX_ADVANCE_DAYS: int("MAX_ADVANCE_DAYS", 15),
+    OPEN_HOUR:        int("OPEN_HOUR", 0),
+    CLOSE_HOUR:       int("CLOSE_HOUR", 24),
+    PER_DAY_CAP:      int("PER_DAY_CAP", 2),
   }),
+});
+
+export const CFG_PUBLIC = Object.freeze({
+  SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? "",
+  STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
 });
