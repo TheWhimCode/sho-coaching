@@ -23,7 +23,6 @@ function minToHHMM(m: number) {
 }
 const clampMin = (n: number) => Math.max(0, Math.min(1440, n));
 
-// UTC <-> Local (Europe/Berlin) conversions
 function utcMinToLocalHHMM(ymd: string, utcMin: number) {
   const utcMid = new Date(`${ymd}T00:00:00Z`);
   const utcTime = new Date(utcMid.getTime() + utcMin * 60_000);
@@ -36,7 +35,6 @@ function utcMinToLocalHHMM(ymd: string, utcMin: number) {
 }
 function localHHMMtoUtcMin(ymd: string, hhmm: string) {
   const [h, m] = hhmm.split(":").map(Number);
-  // Local midnight for that YMD in Europe/Berlin
   const localMid = new Date(
     new Date(`${ymd}T00:00:00`).toLocaleString("en-US", { timeZone: TZ })
   );
@@ -46,17 +44,15 @@ function localHHMMtoUtcMin(ymd: string, hhmm: string) {
   return Math.round((localTime.getTime() - utcMid) / 60_000);
 }
 
-// defaults if no rule
-const DEFAULT_OPEN = 13 * 60; // 13:00
-const DEFAULT_CLOSE = 24 * 60; // 24:00
+const DEFAULT_OPEN = 13 * 60;
+const DEFAULT_CLOSE = 24 * 60;
 
-// pick anchor date dynamically (so DST is respected automatically)
 function getAnchorYMDForWeekday(weekday: number) {
   const today = new Date();
   const diff = (weekday - today.getDay() + 7) % 7;
   const anchor = new Date(today);
   anchor.setDate(today.getDate() + diff);
-  return anchor.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  return anchor.toISOString().slice(0, 10);
 }
 
 export default function AdminSlotsPage() {
@@ -65,13 +61,12 @@ export default function AdminSlotsPage() {
   const [loading, setLoading] = useState(true);
   const [log, setLog] = useState("");
 
-  // mode + uniform inputs
-  const [mode, setMode] = useState<"individual" | "uniform">("individual");
+  // default to uniform mode
+  const [mode, setMode] = useState<"individual" | "uniform">("uniform");
   const [uniformOpen, setUniformOpen] = useState("13:00");
-  const [uniformClose, setUniformClose] = useState("23:59"); // HTML time can't input 24:00
-  const [uniformFullDay, setUniformFullDay] = useState(false); // send "24:00" if needed
+  const [uniformClose, setUniformClose] = useState("23:59");
+  const [uniformFullDay, setUniformFullDay] = useState(false); // still used internally
 
-  // new exception form
   const [exDate, setExDate] = useState(() => {
     const today = new Date();
     return today.toISOString().slice(0, 10);
@@ -80,7 +75,6 @@ export default function AdminSlotsPage() {
   const [exClose, setExClose] = useState("15:00");
   const [exBlocked, setExBlocked] = useState(false);
 
-  // Load rules + exceptions
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -103,7 +97,6 @@ export default function AdminSlotsPage() {
 
       setRules(normalized);
 
-      // seed uniform inputs from Monday (or Sunday) to mirror current rules
       const sample = normalized[1] ?? normalized[0];
       const ymd = getAnchorYMDForWeekday(sample.weekday);
       setUniformOpen(utcMinToLocalHHMM(ymd, sample.openMinute));
@@ -119,9 +112,7 @@ export default function AdminSlotsPage() {
     })();
   }, []);
 
-  // Save rules
   async function saveRules() {
-    // Build the 7-day payload the server already expects.
     let toSend: { open: string; close: string }[];
 
     if (mode === "uniform") {
@@ -134,7 +125,7 @@ export default function AdminSlotsPage() {
 
         const open = minToHHMM(clampMin(openMinUtc));
         const close =
-          (uniformFullDay || closeMinUtc >= 1440)
+          uniformFullDay || closeMinUtc >= 1440
             ? "24:00"
             : minToHHMM(clampMin(closeMinUtc));
 
@@ -165,7 +156,6 @@ export default function AdminSlotsPage() {
     setLog("✨ Weekly rules saved.");
   }
 
-  // Create exception
   async function addException() {
     const body = {
       date: exDate,
@@ -195,7 +185,6 @@ export default function AdminSlotsPage() {
     setLog("🪄 Exception saved.");
   }
 
-  // Delete exception
   async function deleteException(id: string) {
     const res = await fetch(`/api/admin/availability/exceptions?id=${id}`, {
       method: "DELETE",
@@ -209,7 +198,6 @@ export default function AdminSlotsPage() {
     setLog("💨 Exception deleted.");
   }
 
-  // Recompute slots
   async function regenerateSlots() {
     const res = await fetch("/api/admin/slots/recompute", { method: "POST" });
     if (!res.ok) {
@@ -235,250 +223,252 @@ export default function AdminSlotsPage() {
 
   if (loading) {
     return (
-      <div className="grid place-items-center min-h-screen text-white">
-        <div className="text-sm opacity-80">Loading your spellbook…</div>
+      <div className="min-h-screen text-white relative">
+        <div className="fixed inset-0 z-0 bg-gradient-to-br from-purple-900 via-black to-indigo-950" />
+        <div className="grid place-items-center min-h-screen relative z-10">
+          <div className="text-sm opacity-80">Loading your spellbook…</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-black to-indigo-950 text-white">
-      <div className="w-full max-w-5xl space-y-10 p-8 bg-black/40 rounded-3xl border border-purple-500/30 shadow-[0_0_30px_rgba(150,0,255,0.3)]">
-        <motion.h1
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-5xl font-extrabold text-center bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent"
-        >
-          🧙 Master Wizard Panel
-        </motion.h1>
-        <p className="text-center text-purple-300">
-          Times shown in:{" "}
-          <span className="text-purple-100 font-medium">{prettyTZ}</span>
-        </p>
+    <div className="min-h-screen text-white relative">
+      {/* background gradient always visible */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-purple-900 via-black to-indigo-950" />
 
-        {/* Weekly Rules */}
-        <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">📜 Weekly Rules</h2>
-            <div className="flex items-center gap-4 text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="mode"
-                  value="individual"
-                  checked={mode === "individual"}
-                  onChange={() => setMode("individual")}
-                />
-                Edit weekdays individually
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="mode"
-                  value="uniform"
-                  checked={mode === "uniform"}
-                  onChange={() => setMode("uniform")}
-                />
-                One range for all weekdays
-              </label>
-            </div>
-          </div>
+      <div className="flex items-center justify-center min-h-screen relative z-10">
+        <div className="w-full max-w-5xl space-y-10 p-8 bg-black/40 rounded-3xl border border-purple-500/30 shadow-[0_0_30px_rgba(150,0,255,0.3)]">
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-5xl font-extrabold text-center bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent"
+          >
+            🧙 Master Wizard Panel
+          </motion.h1>
+          <p className="text-center text-purple-300">
+            Times shown in:{" "}
+            <span className="text-purple-100 font-medium">{prettyTZ}</span>
+          </p>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* INDIVIDUAL */}
-            <div
-              className={`rounded-xl p-4 border ${
-                mode === "individual"
-                  ? "border-purple-400/60"
-                  : "border-neutral-700/80 opacity-60"
-              }`}
-            >
-              <h3 className="font-semibold mb-3">Per-day editor</h3>
-              <div className="grid gap-3">
-                {weekdays.map((d, i) => {
-                  const rule = rules.find((r) => r.weekday === i)!;
-                  const ymd = getAnchorYMDForWeekday(i);
-                  return (
-                    <div key={i} className="flex gap-3 items-center">
-                      <span className="w-10">{d}</span>
-                      <input
-                        type="time"
-                        value={utcMinToLocalHHMM(ymd, rule.openMinute)}
-                        onChange={(e) => {
-                          const copy = [...rules];
-                          const idx = copy.findIndex((r) => r.weekday === i);
-                          copy[idx] = {
-                            ...copy[idx],
-                            openMinute: localHHMMtoUtcMin(ymd, e.target.value),
-                          };
-                          setRules(copy);
-                        }}
-                        disabled={mode !== "individual"}
-                        className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
-                      />
-                      <span>–</span>
-                      <input
-                        type="time"
-                        value={utcMinToLocalHHMM(ymd, rule.closeMinute)}
-                        onChange={(e) => {
-                          const copy = [...rules];
-                          const idx = copy.findIndex((r) => r.weekday === i);
-                          copy[idx] = {
-                            ...copy[idx],
-                            closeMinute: localHHMMtoUtcMin(ymd, e.target.value),
-                          };
-                          setRules(copy);
-                        }}
-                        disabled={mode !== "individual"}
-                        className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* UNIFORM */}
-            <div
-              className={`rounded-xl p-4 border ${
-                mode === "uniform"
-                  ? "border-purple-400/60"
-                  : "border-neutral-700/80 opacity-60"
-              }`}
-            >
-              <h3 className="font-semibold mb-3">Uniform editor</h3>
-              <div className="flex flex-wrap gap-3 items-center">
-                <span className="w-28 opacity-80">All weekdays</span>
-                <input
-                  type="time"
-                  value={uniformOpen}
-                  onChange={(e) => setUniformOpen(e.target.value)}
-                  disabled={mode !== "uniform"}
-                  className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
-                />
-                <span>–</span>
-                <input
-                  type="time"
-                  value={uniformClose}
-                  onChange={(e) => setUniformClose(e.target.value)}
-                  disabled={mode !== "uniform" || uniformFullDay}
-                  className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
-                />
-                <label className="flex items-center gap-2 text-xs opacity-80">
+          {/* Weekly Rules */}
+          <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold">📜 Weekly Rules</h2>
+              <div className="flex items-center gap-4 text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
-                    type="checkbox"
-                    checked={uniformFullDay}
-                    onChange={(e) => setUniformFullDay(e.target.checked)}
-                    disabled={mode !== "uniform"}
+                    type="radio"
+                    name="mode"
+                    value="individual"
+                    checked={mode === "individual"}
+                    onChange={() => setMode("individual")}
                   />
-                  Full day (send close = 24:00)
+                  Edit weekdays individually
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="mode"
+                    value="uniform"
+                    checked={mode === "uniform"}
+                    onChange={() => setMode("uniform")}
+                  />
+                  One range for all weekdays
                 </label>
               </div>
-              <p className="text-xs opacity-70 mt-2">
-                Saving in “One range” mode overwrites all 7 days with this range.
-              </p>
             </div>
-          </div>
 
-          <button
-            onClick={saveRules}
-            className="mt-6 px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-400 hover:opacity-90 font-medium shadow-[0_0_10px_rgba(0,255,200,0.5)]"
-          >
-            Save Rules ✍️
-          </button>
-        </section>
-
-        {/* Exceptions */}
-        <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4">🎩 Exceptions</h2>
-
-          <div className="space-y-2 mb-4">
-            {exceptions.map((ex) => (
-              <motion.div
-                key={ex.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex justify-between items-center bg-neutral-800/70 px-3 py-2 rounded-lg border border-purple-700/40"
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* INDIVIDUAL */}
+              <div
+                className={`rounded-xl p-4 border ${
+                  mode === "individual"
+                    ? "border-purple-400/60"
+                    : "border-neutral-700/80 opacity-60"
+                }`}
               >
-                <span>
-                  {formatLocalDate(ex.date)} —{" "}
-                  {ex.blocked
-                    ? "❌ Blocked all day"
-                    : `${utcMinToLocalHHMM(
-                        ex.date.slice(0, 10),
-                        ex.openMinute ?? 0
-                      )}–${utcMinToLocalHHMM(
-                        ex.date.slice(0, 10),
-                        ex.closeMinute ?? 1440
-                      )}`}
-                </span>
-                <button
-                  onClick={() => deleteException(ex.id)}
-                  className="text-rose-400 hover:text-rose-300"
-                >
-                  Vanish
-                </button>
-              </motion.div>
-            ))}
-          </div>
+                <h3 className="font-semibold mb-3">Per-day editor</h3>
+                <div className="grid gap-3">
+                  {weekdays.map((d, i) => {
+                    const rule = rules.find((r) => r.weekday === i)!;
+                    const ymd = getAnchorYMDForWeekday(i);
+                    return (
+                      <div key={i} className="flex gap-3 items-center">
+                        <span className="w-10">{d}</span>
+                        <input
+                          type="time"
+                          value={utcMinToLocalHHMM(ymd, rule.openMinute)}
+                          onChange={(e) => {
+                            const copy = [...rules];
+                            const idx = copy.findIndex((r) => r.weekday === i);
+                            copy[idx] = {
+                              ...copy[idx],
+                              openMinute: localHHMMtoUtcMin(
+                                ymd,
+                                e.target.value
+                              ),
+                            };
+                            setRules(copy);
+                          }}
+                          disabled={mode !== "individual"}
+                          className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                        />
+                        <span>–</span>
+                        <input
+                          type="time"
+                          value={utcMinToLocalHHMM(ymd, rule.closeMinute)}
+                          onChange={(e) => {
+                            const copy = [...rules];
+                            const idx = copy.findIndex((r) => r.weekday === i);
+                            copy[idx] = {
+                              ...copy[idx],
+                              closeMinute: localHHMMtoUtcMin(
+                                ymd,
+                                e.target.value
+                              ),
+                            };
+                            setRules(copy);
+                          }}
+                          disabled={mode !== "individual"}
+                          className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-          <div className="mt-2 flex flex-wrap gap-3 items-center">
-            <input
-              type="date"
-              value={exDate}
-              onChange={(e) => setExDate(e.target.value)}
-              className="bg-neutral-800 px-2 py-1 rounded"
-            />
-            {!exBlocked && (
-              <>
-                <input
-                  type="time"
-                  value={exOpen}
-                  onChange={(e) => setExOpen(e.target.value)}
-                  className="bg-neutral-800 px-2 py-1 rounded"
-                />
-                <input
-                  type="time"
-                  value={exClose}
-                  onChange={(e) => setExClose(e.target.value)}
-                  className="bg-neutral-800 px-2 py-1 rounded"
-                />
-              </>
-            )}
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={exBlocked}
-                onChange={(e) => setExBlocked(e.target.checked)}
-              />
-              Block entire day
-            </label>
+              {/* UNIFORM */}
+              <div
+                className={`rounded-xl p-4 border ${
+                  mode === "uniform"
+                    ? "border-purple-400/60"
+                    : "border-neutral-700/80 opacity-60"
+                }`}
+              >
+                <h3 className="font-semibold mb-3">Uniform editor</h3>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <span className="w-28 opacity-80">All weekdays</span>
+                  <input
+                    type="time"
+                    value={uniformOpen}
+                    onChange={(e) => setUniformOpen(e.target.value)}
+                    disabled={mode !== "uniform"}
+                    className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                  />
+                  <span>–</span>
+                  <input
+                    type="time"
+                    value={uniformClose}
+                    onChange={(e) => setUniformClose(e.target.value)}
+                    disabled={mode !== "uniform"}
+                    className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                  />
+                </div>
+              </div>
+            </div>
+
             <button
-              onClick={addException}
-              disabled={!exDate}
-              className="px-4 py-2 rounded-xl disabled:opacity-40 bg-gradient-to-r from-sky-500 to-purple-500 hover:opacity-90 shadow-[0_0_10px_rgba(100,100,255,0.5)]"
+              onClick={saveRules}
+              className="mt-6 px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-400 hover:opacity-90 font-medium shadow-[0_0_10px_rgba(0,255,200,0.5)]"
             >
-              + Conjure Exception
+              Save Rules ✍️
             </button>
-          </div>
-        </section>
+          </section>
 
-        {/* Maintenance */}
-        <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4">🔥 Spell Maintenance</h2>
-          <button
-            onClick={regenerateSlots}
-            className="px-5 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-red-500 hover:opacity-90 shadow-[0_0_15px_rgba(255,80,0,0.5)]"
-          >
-            Re-summon Future Slots
-          </button>
-        </section>
+          {/* Exceptions */}
+          <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
+            <h2 className="text-2xl font-semibold mb-4">🎩 Exceptions</h2>
 
-        {log && (
-          <pre className="bg-neutral-900/80 rounded-lg p-3 text-sm text-purple-300">
-            {log}
-          </pre>
-        )}
+            <div className="space-y-2 mb-4">
+              {exceptions.map((ex) => (
+                <motion.div
+                  key={ex.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex justify-between items-center bg-neutral-800/70 px-3 py-2 rounded-lg border border-purple-700/40"
+                >
+                  <span>
+                    {formatLocalDate(ex.date)} —{" "}
+                    {ex.blocked
+                      ? "❌ Blocked all day"
+                      : `${utcMinToLocalHHMM(
+                          ex.date.slice(0, 10),
+                          ex.openMinute ?? 0
+                        )}–${utcMinToLocalHHMM(
+                          ex.date.slice(0, 10),
+                          ex.closeMinute ?? 1440
+                        )}`}
+                  </span>
+                  <button
+                    onClick={() => deleteException(ex.id)}
+                    className="text-rose-400 hover:text-rose-300"
+                  >
+                    Vanish
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-3 items-center">
+              <input
+                type="date"
+                value={exDate}
+                onChange={(e) => setExDate(e.target.value)}
+                className="bg-neutral-800 px-2 py-1 rounded"
+              />
+              {!exBlocked && (
+                <>
+                  <input
+                    type="time"
+                    value={exOpen}
+                    onChange={(e) => setExOpen(e.target.value)}
+                    className="bg-neutral-800 px-2 py-1 rounded"
+                  />
+                  <input
+                    type="time"
+                    value={exClose}
+                    onChange={(e) => setExClose(e.target.value)}
+                    className="bg-neutral-800 px-2 py-1 rounded"
+                  />
+                </>
+              )}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={exBlocked}
+                  onChange={(e) => setExBlocked(e.target.checked)}
+                />
+                Block entire day
+              </label>
+              <button
+                onClick={addException}
+                disabled={!exDate}
+                className="px-4 py-2 rounded-xl disabled:opacity-40 bg-gradient-to-r from-sky-500 to-purple-500 hover:opacity-90 shadow-[0_0_10px_rgba(100,100,255,0.5)]"
+              >
+                + Conjure Exception
+              </button>
+            </div>
+          </section>
+
+          {/* Maintenance */}
+          <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
+            <h2 className="text-2xl font-semibold mb-4">🔥 Spell Maintenance</h2>
+            <button
+              onClick={regenerateSlots}
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-red-500 hover:opacity-90 shadow-[0_0_15px_rgba(255,80,0,0.5)]"
+            >
+              Re-summon Future Slots
+            </button>
+          </section>
+
+          {log && (
+            <pre className="bg-neutral-900/80 rounded-lg p-3 text-sm text-purple-300">
+              {log}
+            </pre>
+          )}
+        </div>
       </div>
     </div>
   );

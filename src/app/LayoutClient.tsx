@@ -17,11 +17,13 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const showNav = !(hideCoaching || hideCheckout);
 
-  return (
-    <>
-      {showNav && <NavBar />}
-      {/* Match NavBar height (h-16 md:h-20) → pad for the larger one */}
-<main className={showNav ? "pt-16 md:pt-20" : ""}>{children}</main>
-    </>
-  );
+// LayoutClient.tsx
+return (
+  <>
+    {showNav && <NavBar />}
+    {showNav && <div className="h-16 md:h-20" />} {/* spacer */}
+    <main>{children}</main> {/* no pt-* here */}
+  </>
+);
+
 }
