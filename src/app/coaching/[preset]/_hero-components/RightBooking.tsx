@@ -4,6 +4,7 @@
 import { motion } from "framer-motion";
 import AvailableSlots, { Slot as UiSlot } from "@/components/AvailableSlots";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
+import SlotSkeletons from "@/components/SlotSkeletons";
 
 type Props = {
   liveMinutes: number;
@@ -12,28 +13,6 @@ type Props = {
   onOpenCalendar?: (opts: { slotId?: string; liveMinutes: number }) => void;
   onCustomize?: () => void;
 };
-
-// Single shimmer row (self-contained sweep)
-function ShimmerRow() {
-  return (
-    <div
-      className="relative h-10 rounded-lg ring-1 ring-white/12 bg-white/[0.05] overflow-hidden"
-      aria-busy="true"
-    >
-      <motion.div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)",
-          mixBlendMode: "overlay",
-        }}
-        initial={{ x: "-100%" }}
-        animate={{ x: "100%" }}
-        transition={{ duration: 1.2, ease: "linear", repeat: Infinity }}
-      />
-    </div>
-  );
-}
 
 export default function RightBookingPanel({
   liveMinutes,
@@ -50,7 +29,7 @@ export default function RightBookingPanel({
       className="self-start md:justify-self-end w-full max-w-sm"
     >
       {/* Let children control spacing explicitly */}
-      <GlassPanel className="p-5 flex flex-col">
+      <GlassPanel className="p-4 md:p-5 flex flex-col">
         {/* CTA + Customize: match AvailableSlots button spacing (gap-2) */}
         <div className="flex flex-col gap-2">
           <div className="relative">
@@ -74,28 +53,36 @@ export default function RightBookingPanel({
         </div>
 
         {/* Spacer equal to panel padding (p-5 = 20px) ONLY here */}
-        {(onCustomize ?? false) && <div className="h-5" />}
+        {(onCustomize ?? false) && <div className="h-4 md:h-5" />}
 
-        {/* Slots / loading / empty */}
-        {loading ? (
-          <div className="flex flex-col gap-2">
-            <ShimmerRow />
-            <ShimmerRow />
-            <ShimmerRow />
+        {/* Header + slots/skeletons share the same grid to keep spacing identical */}
+        <div className="grid grid-cols-1 gap-2">
+          {/* Header moved here (remove it from AvailableSlots) */}
+          <div className="whitespace-pre tabular-nums text-xs leading-none">
+            <span style={{ color: "var(--color-lightblue)" }}>
+              Next available times — in your timezone
+            </span>
           </div>
-        ) : slots.length ? (
-          <AvailableSlots
-            slots={slots}
-            onPick={(id) => onOpenCalendar?.({ slotId: id, liveMinutes })}
-          />
-        ) : (
-          <div className="text-xs text-white/60">
-            No times found in the next 2 weeks.
-          </div>
-        )}
+
+          {loading ? (
+            // Your SlotSkeletons adds mt-1; cancel it so spacing matches exactly.
+            <div>
+              <SlotSkeletons count={3} />
+            </div>
+          ) : slots.length ? (
+            <AvailableSlots
+              slots={slots}
+              onPick={(id) => onOpenCalendar?.({ slotId: id, liveMinutes })}
+            />
+          ) : (
+            <div className="text-xs text-white/60">
+              No times found in the next 2 weeks.
+            </div>
+          )}
+        </div>
 
         {/* Same padding-sized spacer between AvailableSlots and footer */}
-        <div className="h-5" />
+        <div className="h-4 md:h-5" />
 
         {/* Footer untouched */}
         <p className="text-xs text-white/60">Secure checkout (Stripe)</p>

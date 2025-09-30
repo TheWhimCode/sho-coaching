@@ -1,8 +1,8 @@
 // src/app/coaching/_components/SessionHero.tsx
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ReactNode, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import type { Slot as UiSlot } from "@/components/AvailableSlots";
 import CenterSessionPanel from "./CenterSessionPanel";
 import { fetchSuggestedStarts } from "@/lib/booking/suggest";
@@ -31,15 +31,15 @@ type Props = {
   isDrawerOpen?: boolean;
   liveBlocks?: number;
   presetOverride?: "vod" | "signature" | "instant" | "custom";
+  /** 0 = fixed, 1 = same as content */
+  parallaxSpeed?: number;
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-// Fast background fade; delay the rest a touch so BG is visible first.
 const BG_FADE_DURATION = 1;
 const CONTENT_BASE_DELAY = 0.8;
 
-// Element delays (stacked on top of CONTENT_BASE_DELAY)
 const TITLE_DELAY   = CONTENT_BASE_DELAY + 0.15;
 const TAGLINE_DELAY = CONTENT_BASE_DELAY + 0.35;
 const PANEL_DELAY   = {
@@ -48,19 +48,11 @@ const PANEL_DELAY   = {
   right:  CONTENT_BASE_DELAY + 1.00,
 } as const;
 
-/** Separate variants for first mount vs preset changes */
 const makeTitleVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -24 },
   show: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      // unchanged feel on first load; quicker on change
-      duration: firstLoad ? 0.40 : 0.22,
-      ease: EASE,
-      // keep change delay small
-      delay: firstLoad ? TITLE_DELAY : 0.25,
-    },
+    opacity: 1, x: 0,
+    transition: { duration: firstLoad ? 0.40 : 0.22, ease: EASE, delay: firstLoad ? TITLE_DELAY : 0.25 },
   },
   exit: { opacity: 0, x: 24, transition: { duration: 0.18, ease: EASE } },
 });
@@ -68,14 +60,8 @@ const makeTitleVariants = (firstLoad: boolean) => ({
 const makeTaglineVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -20 },
   show: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: firstLoad ? 0.38 : 0.20,
-      ease: EASE,
-      // NOTICEABLE STAGGER on preset change (title 0.05 → tagline 0.20)
-      delay: firstLoad ? TAGLINE_DELAY : 0.40,
-    },
+    opacity: 1, x: 0,
+    transition: { duration: firstLoad ? 0.38 : 0.20, ease: EASE, delay: firstLoad ? TAGLINE_DELAY : 0.40 },
   },
   exit: { opacity: 0, x: 20, transition: { duration: 0.16, ease: EASE } },
 });
@@ -93,6 +79,7 @@ export default function SessionHero({
   isDrawerOpen = false,
   liveBlocks = 0,
   presetOverride,
+  parallaxSpeed = 0.1,
 }: Props) {
   const [autoSlots, setAutoSlots] = useState<UiSlot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +92,6 @@ export default function SessionHero({
 
   const [drawerW, setDrawerW] = useState(0);
 
-  // Track first render to switch variants after mount
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   useEffect(() => { setIsFirstLoad(false); }, []);
 
@@ -124,6 +110,41 @@ export default function SessionHero({
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  // Parallax (mobile only) — cover-by-extension
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [bgExtra, setBgExtra] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      if (isDesktop) { setBgExtra(0); return; }
+      const sectionH = el.offsetHeight;
+      const vh = window.innerHeight;
+      const scrollable = Math.max(0, sectionH - vh);
+      const speed = Math.max(0, Math.min(1, parallaxSpeed));
+      const travel = scrollable * (1 - speed);
+      setBgExtra(travel);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [parallaxSpeed, isDesktop]);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, bgExtra]);
 
   useEffect(() => {
     const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
@@ -189,44 +210,51 @@ export default function SessionHero({
   };
 
   return (
-    <section className="relative isolate min-h-screen md:h-[100svh] overflow-hidden text-white vignette">
-      {/* background — fade in ASAP */}
+    <section
+      ref={sectionRef}
+      className="relative isolate min-h-[100svh] md:h-[100svh] overflow-hidden overscroll-contain text-white vignette"
+    >
+      {/* background */}
       <motion.div
         className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: BG_FADE_DURATION, ease: EASE }}
       >
-{/* Desktop: video (unchanged) */}
-<video
-  src="/videos/customize/Particle1_slow.webm"
-  autoPlay
-  muted
-  loop
-  playsInline
-  className="hidden md:block h-full w-full object-cover object-left md:object-center"
-/>
+        {/* Desktop: video */}
+        <video
+          src="/videos/customize/Particle1_slow.webm"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="hidden md:block h-full w-full object-cover object-left md:object-center"
+        />
 
-{/* Mobile: static image (new) */}
-<img
-  src="/videos/customize/Particle_static.png"
-  alt=""
-  className="block md:hidden h-full w-full object-cover object-left"
-  loading="eager"
-/>
+        {/* Mobile: static image with parallax */}
+        <motion.img
+          src="/videos/customize/Particle_static.png"
+          alt=""
+          className="block md:hidden w-full object-cover object-left will-change-transform"
+          loading="eager"
+          style={{
+            height: bgExtra ? `calc(100% + ${bgExtra}px)` : "100%",
+            y: isDesktop ? 0 : bgY,
+          }}
+        />
 
         <div className="absolute inset-0 bg-black/20" />
       </motion.div>
 
-      {/* content — delay a bit so BG is visible first */}
+      {/* content */}
       <motion.div
-        className="relative z-20 h-full flex items-center py-10 md:py-14"
+        className="relative z-20 h-full flex items-center py-5 md:py-14"
         animate={{ x: shiftX }}
         transition={{ duration: 0.35, ease: EASE }}
       >
-        <div className="mx-auto w-full max-w-7xl px-6 md:px-8">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
-<header className="md:col-span-3 mb-0 md:mb-4">
+        <div className="mx-auto w-full max-w-7xl px-5 md:px-8">
+          <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
+            <header className="md:col-span-3 mb-0 md:mb-4">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={preset}
@@ -297,6 +325,20 @@ export default function SessionHero({
           </div>
         </div>
       </motion.div>
+
+      {/* Mobile dimmer ONLY when calendar is open (not for drawer) */}
+      <AnimatePresence>
+        {showCal && (
+          <motion.div
+            key="mobile-dim"
+            className="fixed inset-0 z-30 md:hidden bg-black"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}   // darker
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Calendar overlay */}
       {showCal && (

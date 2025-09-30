@@ -63,6 +63,33 @@ export default function Client({ preset }: { preset: string }) {
     getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks)
   );
 
+  // Hide scrollbar (but keep scrolling) for this page only
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    html.classList.add("no-scrollbar");
+    body.classList.add("no-scrollbar");
+    return () => {
+      html.classList.remove("no-scrollbar");
+      body.classList.remove("no-scrollbar");
+    };
+  }, []);
+
+  // Disable scroll when drawer or calendar are open
+  useEffect(() => {
+    const body = document.body;
+
+    if (drawerOpen || calendarOpen) {
+      body.style.overflow = "hidden";
+    } else {
+      body.style.overflow = "";
+    }
+
+    return () => {
+      body.style.overflow = "";
+    };
+  }, [drawerOpen, calendarOpen]);
+
   // If route segment changes, reset cfg accordingly (but ‘custom’ stays on its seeded values)
   useEffect(() => {
     setCfg(init.cfg);
@@ -107,7 +134,8 @@ export default function Client({ preset }: { preset: string }) {
 
   return (
     <LayoutGroup id="booking-flow">
-      <main className="relative min-h-screen text-white overflow-x-hidden">
+      {/* Use svh to avoid iOS toolbar-induced scroll and keep the doc height tight */}
+      <main className="relative min-h-[100svh] text-white overflow-x-hidden">
         <SessionHero
           presetOverride={activePreset}
           title={init.title}
@@ -124,6 +152,8 @@ export default function Client({ preset }: { preset: string }) {
             setLiveMinutes(liveMinutes);
             setCalendarOpen(true);
           }}
+          // keep your chosen parallax speed here
+          parallaxSpeed={0.1}
         />
 
         <AnimatePresence>
@@ -163,6 +193,23 @@ export default function Client({ preset }: { preset: string }) {
           highlightKey={focus === "followups" ? "followups" : undefined}
         />
       </main>
+
+      {/* Global CSS to hide browser scrollbars while preserving scroll */}
+      <style jsx global>{`
+        html.no-scrollbar,
+        body.no-scrollbar {
+          -ms-overflow-style: none; /* IE/Edge */
+          scrollbar-width: none;    /* Firefox */
+          overscroll-behavior: none;
+        }
+        html.no-scrollbar::-webkit-scrollbar,
+        body.no-scrollbar::-webkit-scrollbar {
+          display: none;  /* Chrome/Safari/WebKit */
+          width: 0;
+          height: 0;
+          background: transparent;
+        }
+      `}</style>
     </LayoutGroup>
   );
 }

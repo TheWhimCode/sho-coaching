@@ -32,12 +32,7 @@ export default function AvailableSlots({
 }) {
   return (
     <div className="grid grid-cols-1 gap-2">
-      {/* Heading */}
-      <div className=" whitespace-pre tabular-nums text-xs leading-none">
-        <span style={{ color: "var(--color-lightblue)" }}>
-          Next available times — in your timezone
-        </span>
-      </div>
+
 
       {slots
         .filter(

@@ -213,14 +213,14 @@ export default function CenterSessionPanel({
         <li>Quick fixes with big payoff</li>
         <li>Skills you personally value most</li>
       </ul>
-      <p className="mt-3 text-white/70">Find out where you should start improving.</p>
+      <p className="mt-4 md:mt-5 text-white/70">Find out where you should start improving.</p>
     </div>
   );
 
   const statsContent = (
-    <>
+    <div className="grid gap-3">
       <div
-        className="text-[12px] font-semibold tracking-wide uppercase mb-3"
+        className="text-[12px] font-semibold tracking-wide uppercase"
         style={{ color: ring, filter: `drop-shadow(0 0 6px ${glow})` }}
       >
         Session profile
@@ -230,7 +230,7 @@ export default function CenterSessionPanel({
           <StatRow key={s.label} icon={s.icon} label={s.label} value={s.value} ring={ring} glow={glow} />
         ))}
       </div>
-    </>
+    </div>
   );
 
   return (
@@ -241,7 +241,7 @@ export default function CenterSessionPanel({
       className="relative w-full max-w-md"
     >
       {/* Use GlassPanel as the background/border only; no extra spacing/visuals here */}
-      <GlassPanel className="p-6">
+      <GlassPanel className="p-4 md:p-5">
         <SessionBlock
           title={title}
           minutes={baseOnly}
@@ -253,7 +253,7 @@ export default function CenterSessionPanel({
           className="p-0"
         />
 
-        <div className="mt-4 mb-3 h-px w-full bg-gradient-to-r from-transparent via-white/8 to-transparent" />
+        <div className="mt-4 md:mt-5 mb-3 md:mb-3 h-px w-full bg-gradient-to-r from-transparent via-white/8 to-transparent" />
 
         <div style={{ height: STATS_AREA_HEIGHT }} className="relative">
           {!revealed ? (
