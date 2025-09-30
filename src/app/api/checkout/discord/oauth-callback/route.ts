@@ -7,27 +7,24 @@ export const dynamic = "force-dynamic";
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET!;
 
-// Sends an OBJECT via postMessage. Using "*" temporarily to debug delivery.
-// After it works, replace targetOrigin with the real `origin` for security.
+// Send OBJECT back to opener (payload injected via base64 to avoid </script> issues)
 function htmlCloseWithMessage(origin: string, type: string, payload?: unknown) {
   const obj = { type, ...(payload ? (payload as any) : {}) };
+  const b64 = Buffer.from(JSON.stringify(obj), "utf8").toString("base64"); // node Buffer ok in runtime=nodejs
   return `<!doctype html><meta charset="utf-8" />
 <script>
- (function(){
-   var targetOrigin = "*"; // TODO: change to ${JSON.stringify(origin)} after verifying messages arrive
-   var payload = ${JSON.stringify(obj)};
-   try {
-     console.log("[oauth-callback] posting to", targetOrigin, payload);
-     if (window.opener) { window.opener.postMessage(payload, targetOrigin); }
-   } catch(e) { console.error("[oauth-callback] postMessage failed", e); }
-   window.close();
- })();
+(function(){
+  var targetOrigin = "*"; // TODO: replace with ${JSON.stringify(origin)} once verified
+  var payload = JSON.parse(atob(${JSON.stringify(b64)}));
+  try { if (window.opener) window.opener.postMessage(payload, targetOrigin); } catch(e){}
+  window.close();
+})();
 </script>`;
 }
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const origin = url.origin; // matches the host that started the flow
+  const origin = url.origin;
   const REDIRECT_URI = `${origin}/api/checkout/discord/oauth-callback`;
 
   const code = url.searchParams.get("code");
@@ -57,7 +54,7 @@ export async function GET(req: NextRequest) {
         client_secret: DISCORD_CLIENT_SECRET,
         grant_type: "authorization_code",
         code,
-        redirect_uri: REDIRECT_URI, // must equal the authorize step
+        redirect_uri: REDIRECT_URI,
       }),
     });
 
@@ -103,7 +100,7 @@ export async function GET(req: NextRequest) {
       htmlCloseWithMessage(origin, "discord-auth-success", { user }),
       { headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
-  } catch (e) {
+  } catch {
     return new NextResponse(
       htmlCloseWithMessage(origin, "discord-auth-cancel", { error: "exception" }),
       { headers: { "Content-Type": "text/html; charset=utf-8" } }

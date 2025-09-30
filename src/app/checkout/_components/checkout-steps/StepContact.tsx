@@ -22,12 +22,10 @@ type Props = {
   onRiotVerified?: (d: { riotTag: string; puuid: string; region: string }) => void;
 };
 
-// Quick format check: GameName#TAG
 function isValidRiotTagFormat(v: string) {
   const s = v.trim();
   return /^[A-Za-z0-9 .'_\-]{3,16}#[A-Za-z0-9]{3,5}$/.test(s);
 }
-
 type CheckStatus = "idle" | "checking" | "ok" | "bad";
 
 export default function StepContact({
@@ -47,8 +45,6 @@ export default function StepContact({
 
   const [submitted, setSubmitted] = React.useState(false);
   const [checkStatus, setCheckStatus] = React.useState<CheckStatus>("idle");
-  const [puuid, setPuuid] = React.useState<string | null>(null);
-  const [region, setRegion] = React.useState<string | null>(null);
 
   const lastVerifiedRef = React.useRef<string>("");
   const abortRef = React.useRef<AbortController | null>(null);
@@ -58,21 +54,17 @@ export default function StepContact({
   const okRing = "ring-white/12 focus:ring-white/25";
   const badRing = "ring-red-500/70 focus:ring-red-500";
 
-  // ---- Async RiotTag verification (debounced) ----
+  // RiotTag verify (debounced)
   React.useEffect(() => {
     const val = riotVal.trim();
 
     if (!val || !isValidRiotTagFormat(val)) {
       setCheckStatus(val ? "bad" : "idle");
-      setPuuid(null);
-      setRegion(null);
       abortRef.current?.abort();
       return;
     }
 
     setCheckStatus("checking");
-    setPuuid(null);
-    setRegion(null);
 
     const t = setTimeout(async () => {
       try {
@@ -87,18 +79,10 @@ export default function StepContact({
           signal: ctrl.signal,
         });
 
-        if (!res.ok) {
-          setCheckStatus("bad");
-          setPuuid(null);
-          setRegion(null);
-          return;
-        }
+        if (!res.ok) { setCheckStatus("bad"); return; }
         const data = await res.json().catch(() => ({}));
         if (data?.puuid) {
           setCheckStatus("ok");
-          setPuuid(String(data.puuid));
-          setRegion(String(data.region || "") || null);
-
           if (onRiotVerified && lastVerifiedRef.current !== val) {
             lastVerifiedRef.current = val;
             onRiotVerified({
@@ -109,14 +93,9 @@ export default function StepContact({
           }
         } else {
           setCheckStatus("bad");
-          setPuuid(null);
-          setRegion(null);
         }
       } catch (e: any) {
-        if (e?.name === "AbortError") return;
-        setCheckStatus("bad");
-        setPuuid(null);
-        setRegion(null);
+        if (e?.name !== "AbortError") setCheckStatus("bad");
       }
     }, 500);
 
@@ -124,34 +103,25 @@ export default function StepContact({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
 
-  // OAuth popup handler: just open the popup.
+  // Open popup
   const openDiscordOAuth = React.useCallback(() => {
-    window.open(
-      "/api/checkout/discord/oauth-start",
-      "discord_oauth",
-      "width=520,height=700"
-    );
+    window.open("/api/checkout/discord/oauth-start", "discord_oauth", "width=520,height=700");
   }, []);
 
-  // Global message listener (accept object or string; log for debugging)
+  // Global message listener
   React.useEffect(() => {
     const receive = (ev: MessageEvent) => {
-      // For debugging, don't block on origin. After working, enforce:
+      // Leave origin open while debugging; tighten later:
       // if (ev.origin !== window.location.origin) return;
-      // eslint-disable-next-line no-console
-      console.log("[checkout] message from", ev.origin, "data:", ev.data);
 
       let data: any = ev.data;
       if (typeof data === "string") {
-        try { data = JSON.parse(data); } catch { /* ignore parse errors */ }
+        try { data = JSON.parse(data); } catch { /* ignore */ }
       }
       if (!data || typeof data !== "object") return;
 
       if (data.type === "discord-auth-success" && data.user) {
         onDiscordLinked(data.user as DiscordIdentity);
-      } else if (data.type === "discord-auth-cancel") {
-        // eslint-disable-next-line no-console
-        console.warn("[checkout] OAuth cancel:", data);
       }
     };
 
@@ -165,33 +135,19 @@ export default function StepContact({
 
   // Icons
   const Spinner = () => (
-    <svg
-      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
+    <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70" viewBox="0 0 24 24" aria-hidden="true">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
       <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z" />
     </svg>
   );
-
   const OkIcon = () => (
-    <svg
-      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
-      viewBox="0 0 20 20"
-      aria-hidden="true"
-    >
+    <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4" viewBox="0 0 20 20" aria-hidden="true">
       <circle cx="10" cy="10" r="9" fill="#60a5fa" />
       <path d="M5 10.5l3 3 7-7" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-
   const BadIcon = () => (
-    <svg
-      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
-      viewBox="0 0 20 20"
-      aria-hidden="true"
-    >
+    <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4" viewBox="0 0 20 20" aria-hidden="true">
       <circle cx="10" cy="10" r="9" fill="#ef4444" />
       <path d="M6 6l8 8M14 6l-8 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
     </svg>
@@ -223,7 +179,7 @@ export default function StepContact({
         className="flex-1 flex flex-col"
       >
         <div className="flex-1 space-y-3">
-          {/* RiotTag (async verified) */}
+          {/* RiotTag */}
           <label className="block">
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/65">Summoner name</span>
@@ -258,7 +214,6 @@ export default function StepContact({
                   <span className="font-medium">
                     {discordIdentity.globalName || discordIdentity.username}
                   </span>
-                  <span className="text-white/50 ml-2">({discordIdentity.id})</span>
                 </div>
               ) : (
                 <div className="text-sm text-white/70">Not linked to Discord</div>
@@ -267,8 +222,7 @@ export default function StepContact({
               <button
                 type="button"
                 onClick={openDiscordOAuth}
-                className="ml-3 rounded-lg px-3 py-2 text-sm font-semibold text-[#0A0A0A]
-                           bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-white/15"
+                className="ml-3 rounded-lg px-3 py-2 text-sm font-semibold text-[#0A0A0A] bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-white/15"
               >
                 {discordIdentity?.id ? "Relink Discord" : "Link Discord"}
               </button>
@@ -291,7 +245,6 @@ export default function StepContact({
             />
           </label>
 
-          {/* API / form error */}
           {contactErr && <div className="text-sm text-red-400 mt-1">{contactErr}</div>}
         </div>
 
