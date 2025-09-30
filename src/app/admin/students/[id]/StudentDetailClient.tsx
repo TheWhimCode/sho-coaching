@@ -10,7 +10,7 @@ import MatchHistory from '../_components/MatchHistory';
 import SessionTemplate from '../_components/SessionNotes';
 import GlassPanel from '@/app/_components/panels/GlassPanel';
 
-type EditablePatch = Partial<Pick<Student, 'name' | 'discord' | 'riotTag' | 'server'>>;
+type EditablePatch = Partial<Pick<Student, 'name' | 'discordId' | 'discordName' | 'riotTag' | 'server'>>;
 
 const SERVER_ALIAS: Record<string, string> = {
   euw: 'euw1', eu: 'euw1', euw1: 'euw1',
@@ -70,7 +70,7 @@ export default function StudentDetailClient() {
         return r.json();
       })
       .then((j) => {
-        const s = j.student as any;
+        const s = j.student as Student | null;
         if (!s) throw new Error('Not found');
         setStudent(s);
         setRiotTag(s.riotTag || '');
@@ -219,7 +219,7 @@ export default function StudentDetailClient() {
 
   return (
     <main className="relative min-h-screen text-white overflow-x-clip">
-      {/* BG LAYERS: fixed so they sit behind the transparent, fixed navbar and are NOT pushed by layout spacing */}
+      {/* BG LAYERS */}
       <div
         aria-hidden
         className="fixed inset-0 z-0 pointer-events-none"
@@ -237,10 +237,9 @@ export default function StudentDetailClient() {
         style={{ backgroundImage: "url('/images/coaching/texture.png')", backgroundRepeat: 'repeat' }}
       />
 
-      {/* content (sits above bg; actual offset comes from global layout spacer) */}
+      {/* content */}
       <div className="relative z-10 pb-20">
         <div className="mx-auto w-full max-w-6xl px-6 space-y-10">
-          {/* tiny top spacer for breathing room within the page block */}
           <div className="h-1" />
 
           <GlassPanel className="p-6 md:p-8">
@@ -248,7 +247,8 @@ export default function StudentDetailClient() {
               student={{
                 id: student.id,
                 name: student.name,
-                discord: student.discord,
+                discordId: student.discordId ?? null,
+                discordName: student.discordName ?? null,
                 riotTag: student.riotTag,
                 server,
                 puuid: puuid ?? null,

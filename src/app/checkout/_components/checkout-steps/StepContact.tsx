@@ -1,7 +1,7 @@
 // src/pages/customization/checkout/rcolumn/checkout-steps/StepContact.tsx
 "use client";
 import * as React from "react";
-import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA"; // 👈 import
+import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 
 type DiscordIdentity = {
   id: string;
@@ -284,16 +284,14 @@ export default function StepContact({
           {contactErr && <div className="text-sm text-red-400 mt-1">{contactErr}</div>}
         </div>
 
-        {/* 👇 use PrimaryCTA with same sizing + text */}
+        {/* Submit: PrimaryCTA with same sizing & no halo */}
         <PrimaryCTA
           type="submit"
-          fullWidth
           disabled={!canSubmit}
-          className="px-5 py-3 text-base"
+          className="px-5 py-3 text-base w-full"
         >
           Continue
         </PrimaryCTA>
-
       </form>
     </div>
   );

@@ -4,14 +4,14 @@ import type { Student } from '@prisma/client';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Hash, MessageCircle, Server, Pencil } from 'lucide-react';
 import RankCard from './_components/RankCard';
-import RankGraph from './_components/StudentSummary/RankGraph'; // ⬅️ added
+import RankGraph from './_components/StudentSummary/RankGraph';
 
 type MinimalStudent = Pick<
   Student,
-  'id' | 'name' | 'discord' | 'riotTag' | 'server' | 'puuid' | 'createdAt' | 'updatedAt'
+  'id' | 'name' | 'discordId' | 'discordName' | 'riotTag' | 'server' | 'puuid' | 'createdAt' | 'updatedAt'
 >;
 
-type EditablePatch = Partial<Pick<Student, 'name' | 'discord' | 'riotTag' | 'server'>>;
+type EditablePatch = Partial<Pick<Student, 'name' | 'discordId' | 'discordName' | 'riotTag' | 'server'>>;
 
 type Props = {
   student: MinimalStudent;
@@ -30,6 +30,7 @@ const SERVER_ALIAS: Record<string, string> = {
   ru: 'ru', kr: 'kr',
   jp: 'jp1', jp1: 'jp1',
   ph: 'ph2', ph2: 'ph2',
+  sg: 'sg2', sg2: 'sg2',
   th: 'th2', th2: 'th2',
   tw: 'tw2', tw2: 'tw2',
   vn: 'vn2', vn2: 'vn2',
@@ -46,7 +47,8 @@ const parseRiot = (v: string) => {
 
 export default function StudentSummary({ student, onChange }: Props) {
   const [name, setName] = useState(student.name || '');
-  const [discord, setDiscord] = useState(student.discord || '');
+  const [discordId, setDiscordId] = useState(student.discordId || '');
+  const [discordName, setDiscordName] = useState(student.discordName || '');
   const [riotTag, setRiotTag] = useState(student.riotTag || '');
   const [server, setServer] = useState(student.server || '');
   const [isEditingRiot, setIsEditingRiot] = useState(false);
@@ -54,16 +56,25 @@ export default function StudentSummary({ student, onChange }: Props) {
   // Keep local inputs in sync with incoming props (unless Riot is being edited)
   useEffect(() => {
     setName(student.name || '');
-    setDiscord(student.discord || '');
+    setDiscordId(student.discordId || '');
+    setDiscordName(student.discordName || '');
     setServer(student.server || '');
     if (!isEditingRiot) setRiotTag(student.riotTag || '');
-  }, [student.id, student.name, student.discord, student.server, student.riotTag, isEditingRiot]);
+  }, [
+    student.id,
+    student.name,
+    student.discordId,
+    student.discordName,
+    student.server,
+    student.riotTag,
+    isEditingRiot,
+  ]);
 
-  // 🔸 Kick the parent once per student to mimic a user edit on first load
+  // Kick parent once per student to mimic a user edit on first load (for resolve/fetch)
   const kickedForIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!onChange) return;
-    if (kickedForIdRef.current === student.id) return; // only once per student
+    if (kickedForIdRef.current === student.id) return;
     kickedForIdRef.current = student.id;
 
     const rt = (student.riotTag || '').trim();
@@ -116,12 +127,22 @@ export default function StudentSummary({ student, onChange }: Props) {
             text-lg text-zinc-200
           "
         >
+          {/* Discord Name */}
           <Meta
             icon={<MessageCircle className="h-5 w-5" />}
-            label="Discord"
-            value={discord || ''}
-            onChange={(v) => setDiscord(v)}
-            onBlur={() => emit({ discord })}
+            label="Discord name"
+            value={discordName || ''}
+            onChange={(v) => setDiscordName(v)}
+            onBlur={() => emit({ discordName })}
+          />
+
+          {/* Discord ID */}
+          <Meta
+            icon={<MessageCircle className="h-5 w-5" />}
+            label="Discord ID"
+            value={discordId || ''}
+            onChange={(v) => setDiscordId(v)}
+            onBlur={() => emit({ discordId })}
           />
 
           {/* Riot#Tag */}
