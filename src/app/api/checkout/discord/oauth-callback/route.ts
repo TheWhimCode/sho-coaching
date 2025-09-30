@@ -7,18 +7,19 @@ export const dynamic = "force-dynamic";
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET!;
 
-// Post an OBJECT (not a string) back to the opener
+// Sends an OBJECT via postMessage. Using "*" temporarily to debug delivery.
+// After it works, replace targetOrigin with the real `origin` for security.
 function htmlCloseWithMessage(origin: string, type: string, payload?: unknown) {
   const obj = { type, ...(payload ? (payload as any) : {}) };
   return `<!doctype html><meta charset="utf-8" />
 <script>
  (function(){
+   var targetOrigin = "*"; // TODO: change to ${JSON.stringify(origin)} after verifying messages arrive
    var payload = ${JSON.stringify(obj)};
    try {
-     if (window.opener) {
-       window.opener.postMessage(payload, ${JSON.stringify(origin)});
-     }
-   } catch(e) {}
+     console.log("[oauth-callback] posting to", targetOrigin, payload);
+     if (window.opener) { window.opener.postMessage(payload, targetOrigin); }
+   } catch(e) { console.error("[oauth-callback] postMessage failed", e); }
    window.close();
  })();
 </script>`;
@@ -83,8 +84,9 @@ export async function GET(req: NextRequest) {
     });
 
     if (!meRes.ok) {
+      const detail = await meRes.text().catch(() => "");
       return new NextResponse(
-        htmlCloseWithMessage(origin, "discord-auth-cancel", { error: "user_failed" }),
+        htmlCloseWithMessage(origin, "discord-auth-cancel", { error: "user_failed", detail }),
         { headers: { "Content-Type": "text/html; charset=utf-8" } }
       );
     }
@@ -101,7 +103,7 @@ export async function GET(req: NextRequest) {
       htmlCloseWithMessage(origin, "discord-auth-success", { user }),
       { headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
-  } catch {
+  } catch (e) {
     return new NextResponse(
       htmlCloseWithMessage(origin, "discord-auth-cancel", { error: "exception" }),
       { headers: { "Content-Type": "text/html; charset=utf-8" } }

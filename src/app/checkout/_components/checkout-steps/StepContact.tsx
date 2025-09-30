@@ -124,21 +124,24 @@ export default function StepContact({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
 
-  // OAuth popup handler
+  // OAuth popup handler: just open the popup.
   const openDiscordOAuth = React.useCallback(() => {
-    const w = window.open(
+    window.open(
       "/api/checkout/discord/oauth-start",
       "discord_oauth",
       "width=520,height=700"
     );
-    if (!w) return;
+  }, []);
 
-    const receive = (ev: MessageEvent<any>) => {
-      // Ensure message comes from our own origin
-      if (ev.origin !== window.location.origin) return;
+  // Global message listener (accept object or string; log for debugging)
+  React.useEffect(() => {
+    const receive = (ev: MessageEvent) => {
+      // For debugging, don't block on origin. After working, enforce:
+      // if (ev.origin !== window.location.origin) return;
+      // eslint-disable-next-line no-console
+      console.log("[checkout] message from", ev.origin, "data:", ev.data);
 
-      let data: any = ev?.data;
-      // Accept either object or stringified JSON
+      let data: any = ev.data;
       if (typeof data === "string") {
         try { data = JSON.parse(data); } catch { /* ignore parse errors */ }
       }
@@ -146,21 +149,14 @@ export default function StepContact({
 
       if (data.type === "discord-auth-success" && data.user) {
         onDiscordLinked(data.user as DiscordIdentity);
-        window.removeEventListener("message", receive);
-      }
-      if (data.type === "discord-auth-cancel") {
-        window.removeEventListener("message", receive);
+      } else if (data.type === "discord-auth-cancel") {
+        // eslint-disable-next-line no-console
+        console.warn("[checkout] OAuth cancel:", data);
       }
     };
 
     window.addEventListener("message", receive);
-    // Optional: cleanup if user closes popup without completing
-    const timer = window.setInterval(() => {
-      if (w.closed) {
-        window.removeEventListener("message", receive);
-        window.clearInterval(timer);
-      }
-    }, 500);
+    return () => window.removeEventListener("message", receive);
   }, [onDiscordLinked]);
 
   const formatValid = isValidRiotTagFormat(riotVal);
