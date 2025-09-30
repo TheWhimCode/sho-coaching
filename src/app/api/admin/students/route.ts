@@ -13,7 +13,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
-        discord: true,
+        discordId: true,
         riotTag: true,
         server: true,
         puuid: true,

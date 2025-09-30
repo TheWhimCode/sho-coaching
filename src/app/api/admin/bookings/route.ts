@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     select: {
       id: true,
       liveMinutes: true,
-      discord: true,
+      discordId: true,
       sessionType: true,
       followups: true,
       notes: true,
