@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET!;
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
-const REDIRECT_URI = `${SITE_URL}/api/discord/oauth/callback`;
+const REDIRECT_URI = `${SITE_URL}/api/checkout/discord/oauth-callback`;
 
 function htmlCloseWithMessage(type: string, payload?: unknown) {
   const origin = SITE_URL;
