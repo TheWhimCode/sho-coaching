@@ -21,7 +21,6 @@ type ActivePM = "card" | "paypal" | "revolut_pay" | "klarna";
 
 type Props = {
   piId?: string | null;
-  email?: string;
   activePm: ActivePM;
   onElementsReady?: () => void;
   onBillingCountryChange?: (code: string) => void;
@@ -59,7 +58,6 @@ export default function CardForm({
   const okRing = "ring-white/12 focus-within:ring-white/25";
   const badRing = "ring-red-500/70 focus-within:ring-red-500";
 
-  // Slightly shorter rows; tighter vertical spacing
   const rowShell =
     "mt-0.5 w-full rounded-lg bg-white/[.05] ring-1 px-4 text-base text-white/90 outline-none transition h-[48px] overflow-hidden";
   const innerWrap = "h-full flex items-center";

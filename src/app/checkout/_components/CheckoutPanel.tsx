@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 
-// SSR-safe steps
+// Steps
 import StepContact from "./checkout-steps/StepContact";
 import StepChoose from "./checkout-steps/StepChoose";
 const StepPayDetails = dynamic(() => import("./checkout-steps/StepPayDetails"), { ssr: false });
@@ -19,7 +19,6 @@ import StepSummary from "./checkout-steps/StepSummary";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 import { getPreset } from "@/lib/sessions/preset";
 
-// 🔹 Extend with Klarna 
 type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna";
 
 type Payload = {
@@ -29,7 +28,6 @@ type Payload = {
   liveMinutes: number;
   followups: number;
   liveBlocks: number;
-  discord: string;
   preset: string;
   holdKey: string;
   startTime?: string | number;
@@ -37,7 +35,7 @@ type Payload = {
 
 type PayloadForBackend = Pick<
   Payload,
-  "slotId" | "sessionType" | "liveMinutes" | "followups" | "liveBlocks" | "discord" | "preset" | "holdKey"
+  "slotId" | "sessionType" | "liveMinutes" | "followups" | "liveBlocks" | "preset" | "holdKey"
 > & {
   startTime?: string | number | Date;
 };
@@ -57,7 +55,6 @@ const DEFAULT_PAYLOAD: Payload = {
   liveMinutes: 60,
   followups: 0,
   liveBlocks: 0,
-  discord: "",
   preset: "",
   holdKey: "",
 };
@@ -68,6 +65,12 @@ type SavedCard = {
   last4: string | null;
   exp_month: number | null;
   exp_year: number | null;
+};
+
+type DiscordIdentity = {
+  id: string;
+  username?: string | null;
+  globalName?: string | null;
 };
 
 export default function CheckoutPanel({
@@ -98,10 +101,13 @@ export default function CheckoutPanel({
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
-
   const goNext = () => {
     setDir(1);
     setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3)));
+  };
+  const goBack = () => {
+    setDir(-1);
+    setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
   };
 
   // Payment/intent state
@@ -114,47 +120,17 @@ export default function CheckoutPanel({
   const [cardPmId, setCardPmId] = useState<string | null>(null);
   const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
 
-  // ⬇️ Do NOT clear payment state when going back — preserves card details and avoids stuck skeleton
-  const goBack = () => {
-    setDir(-1);
-    setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
-  };
-
   // Contact state
-  const [email, setEmail] = useState("");
-  const [discord, setDiscord] = useState("");
+  const [riotTag, setRiotTag] = useState("");
   const [notes, setNotes] = useState("");
+  const [discordIdentity, setDiscordIdentity] = useState<DiscordIdentity | null>(null);
   const [contactErr, setContactErr] = useState<string | null>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const discordRef = useRef<HTMLInputElement>(null);
+  const riotRef = useRef<HTMLInputElement>(null);
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const discordRegex = /^[A-Za-z0-9][A-Za-z0-9._]{1,31}$/;
-
-  function validateContact(): boolean {
-    const e = email.trim();
-    const d = discord.trim();
-    emailRef.current?.setCustomValidity("");
-    discordRef.current?.setCustomValidity("");
-    if (!e || !d) {
-      setContactErr("Please enter both email and Discord.");
-      if (!e) emailRef.current?.focus();
-      else discordRef.current?.focus();
-      return false;
-    }
-    if (!emailRegex.test(e)) {
-      setContactErr("");
-      emailRef.current?.reportValidity();
-      return false;
-    }
-    if (!discordRegex.test(d)) {
-      setContactErr("");
-      discordRef.current?.reportValidity();
-      return false;
-    }
-    setContactErr(null);
-    return true;
-  }
+  const discordDisplay = useMemo(
+    () => discordIdentity?.globalName || discordIdentity?.username || "",
+    [discordIdentity]
+  );
 
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
@@ -187,10 +163,11 @@ export default function CheckoutPanel({
             slotId: safePayload.slotId,
             liveMinutes: totalLiveMinutes,
             followups: safePayload.followups,
-            discord,
+            riotTag,
+            discordId: discordIdentity?.id ?? null,
+            discordName: discordDisplay || null,
             notes,
             waiverAccepted: waiver,
-            email,
           }),
         });
 
@@ -203,6 +180,19 @@ export default function CheckoutPanel({
         const j = await make.json();
         bid = j.bookingId as string;
         setBookingId(bid);
+
+        // Optional: persist Discord link to the booking/user immediately
+        if (discordIdentity?.id) {
+          await fetch("/api/booking/attach-discord", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingId: j.bookingId,
+              discordId: discordIdentity.id,
+              discordName: discordDisplay || null,
+            }),
+          }).catch(() => {});
+        }
       }
 
       // Create a PI for this booking & method
@@ -211,13 +201,14 @@ export default function CheckoutPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingId: bid,
-          email,
           payMethod: m,
         }),
       });
 
       if (res.status === 409) {
-        console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
+        console.warn(
+          "Selected start time can’t fit this duration. Choose another start or shorten the session."
+        );
         setStep(0);
         setLoadingIntent(false);
         return;
@@ -280,6 +271,23 @@ export default function CheckoutPanel({
     }
   }, [payloadForBackend, safePayload]);
 
+  // Handle Discord OAuth success from StepContact
+  const handleDiscordLinked = async (u: DiscordIdentity) => {
+    setDiscordIdentity(u);
+
+    if (bookingId) {
+      await fetch("/api/booking/attach-discord", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId,
+          discordId: u.id,
+          discordName: u.globalName || u.username || null,
+        }),
+      }).catch(() => {});
+    }
+  };
+
   return (
     <div className="relative rounded-2xl isolate w-full">
       <div
@@ -299,7 +307,6 @@ export default function CheckoutPanel({
             opacity-100 blur-[14px]
           "
         />
-        {/* OPEN: content wrapper */}
         <div className="relative space-y-3">
           <SessionBlock
             layoutId="session-block"
@@ -314,7 +321,6 @@ export default function CheckoutPanel({
 
           <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-          {/* Steps */}
           <div className="relative min-h-[440px] overflow-visible pt-1 md:min-h-[440px]">
             <AnimatePresence custom={dir} mode="wait" initial={false}>
               {step === 0 && (
@@ -329,40 +335,41 @@ export default function CheckoutPanel({
                   className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
                 >
                   <StepContact
-                    email={email}
-                    discord={discord}
+                    riotTag={riotTag}
                     notes={notes}
-                    setEmail={setEmail}
-                    setDiscord={setDiscord}
+                    setRiotTag={setRiotTag}
                     setNotes={setNotes}
+                    onDiscordLinked={handleDiscordLinked}
+                    discordIdentity={discordIdentity}
                     contactErr={contactErr}
-                    emailInputRef={emailRef}
-                    discordInputRef={discordRef}
-                    onSubmit={() => validateContact() && goNext()}
+                    riotInputRef={riotRef}
+                    onSubmit={() => {
+                      setContactErr(null);
+                      goNext();
+                    }}
                   />
                 </motion.div>
               )}
 
-{step === 1 && (
-  <motion.div
-    key="step-choose"
-    custom={dir}
-    variants={variants}
-    initial="enter"
-    animate="center"
-    exit="exit"
-    transition={{ duration: 0.22, ease: "easeOut" }}
-    className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
-  >
-    <Elements
-      stripe={stripePromise}
-      options={{ appearance: appearanceToUse, loader: "never" }}
-    >
-      <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
-    </Elements>
-  </motion.div>
-)}
-
+              {step === 1 && (
+                <motion.div
+                  key="step-choose"
+                  custom={dir}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+                >
+                  <Elements
+                    stripe={stripePromise}
+                    options={{ appearance: appearanceToUse, loader: "never" }}
+                  >
+                    <StepChoose goBack={goBack} onChoose={(m) => chooseAndGo(m as PayMethod)} />
+                  </Elements>
+                </motion.div>
+              )}
 
               {step === 2 && (
                 <motion.div
@@ -384,7 +391,6 @@ export default function CheckoutPanel({
                       <StepPayDetails
                         mode="form"
                         goBack={goBack}
-                        email={email}
                         payMethod={(payMethod || "card") as Exclude<PayMethod, "">}
                         onContinue={goNext}
                         piId={piId}
@@ -425,8 +431,7 @@ export default function CheckoutPanel({
                       payload={safePayload}
                       breakdown={breakdown}
                       payMethod={(payMethod || "card") as Exclude<PayMethod, "">}
-                      email={email}
-                      discord={discord}
+                      discord={discordDisplay}
                       notes={notes}
                       sessionType={sessionBlockTitle}
                       piId={piId}
@@ -442,7 +447,6 @@ export default function CheckoutPanel({
             </AnimatePresence>
           </div>
 
-          {/* Footer badges */}
           <div className="flex items-center gap-3 pt-4 text-white/75">
             <span className="inline-flex items-center gap-1 text-xs">
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="text-violet-400">
@@ -461,9 +465,7 @@ export default function CheckoutPanel({
             </span>
           </div>
         </div>
-        {/* CLOSE: content wrapper */}
       </div>
-      {/* CLOSE inner container */}
     </div>
     /* CLOSE outer wrapper */
   );

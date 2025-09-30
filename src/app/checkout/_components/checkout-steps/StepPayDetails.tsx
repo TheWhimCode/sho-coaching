@@ -22,7 +22,6 @@ type Common = { goBack: () => void; payMethod?: Method };
 type LoadingProps = Common & { mode: "loading"; loadingIntent?: boolean };
 type FormProps = Common & {
   mode: "form";
-  email: string;
   payMethod: Method;
   onContinue: () => void;
   piId?: string | null;
@@ -79,7 +78,7 @@ export default function StepPayDetails(props: Props) {
   }
 
   // ---- FORM MODE ----
-  const { goBack, email, payMethod, onContinue, piId, setCardPmId, setSavedCard, savedCard } = props;
+  const { goBack, payMethod, onContinue, piId, setCardPmId, setSavedCard, savedCard } = props;
 
   return (
     <div className="h-full flex flex-col pt-1">
@@ -102,7 +101,6 @@ export default function StepPayDetails(props: Props) {
       <div className="flex-1 flex flex-col">
         <div className="flex-1 relative min-h-[260px]">
           <FormBody
-            email={email}
             payMethod={payMethod}
             piId={piId}
             onContinue={onContinue}
@@ -118,7 +116,6 @@ export default function StepPayDetails(props: Props) {
 
 /** ---------- Inner form body (uses parent <Elements> context) ---------- */
 function FormBody({
-  email,
   payMethod,
   piId,
   onContinue,
@@ -126,7 +123,6 @@ function FormBody({
   setSavedCard,
   savedCard,
 }: {
-  email: string;
   payMethod: Method;
   piId?: string | null;
   onContinue: () => void;
@@ -183,7 +179,7 @@ function FormBody({
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: "card",
         card,
-        billing_details: { email: email || undefined },
+
       });
 
       if (error || !paymentMethod) {
@@ -292,13 +288,16 @@ function FormBody({
       {/* layered real form + skeleton */}
       <div className="relative flex-1 min-h-[260px]">
         {/* Real content */}
-        <div className={`absolute inset-0 transition-opacity duration-150 ${showSkeleton ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        <div
+          className={`absolute inset-0 transition-opacity duration-150 ${
+            showSkeleton ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
+        >
           {payMethod === "card" ? (
             savedCard ? (
               <SavedCardPanel />
             ) : (
               <CardForm
-                email={email}
                 activePm="card"
                 submitted={submitted}
                 onPaymentChange={() => {}}
@@ -312,7 +311,6 @@ function FormBody({
             )
           ) : (
             <CardForm
-              email={email}
               activePm={payMethod}
               onElementsReady={() => {
                 if (!readyLocked.current) {

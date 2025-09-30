@@ -19,7 +19,6 @@ type Props = {
   };
   breakdown: Breakdown;
   payMethod: Method;
-  email: string;
   discord?: string;
   notes?: string;
   sessionType?: string;
@@ -48,7 +47,6 @@ export default function StepSummary({
   payload,
   breakdown: b,
   payMethod,
-  email,
   discord,
   notes,
   sessionType,
@@ -91,7 +89,7 @@ export default function StepSummary({
       {/* Keep a Payment Element mounted (hidden) for non-card methods */}
       {payMethod !== "card" && (
         <div aria-hidden className="sr-only">
-          <CardForm email={email} activePm={payMethod} onElementsReady={() => {}} />
+          <CardForm activePm={payMethod} onElementsReady={() => {}} />
         </div>
       )}
 
@@ -178,7 +176,6 @@ export default function StepSummary({
 
           <div className="-mt-2">
             <PayButton
-              email={email}
               discord={discord ?? ""}
               notes={notes ?? ""}
               sessionType={sessionType ?? ""}
@@ -200,7 +197,6 @@ export default function StepSummary({
 }
 
 function PayButton({
-  email,
   discord,
   notes,
   sessionType,
@@ -214,7 +210,6 @@ function PayButton({
   cardPmId,
   bookingId,
 }: {
-  email: string;
   discord: string;
   notes: string;
   sessionType: string;
@@ -254,7 +249,7 @@ function PayButton({
     const returnUrl = `${window.location.origin}/checkout/success`;
 
     try {
-      // 🔹 update waiver in DB before confirming payment
+      // update waiver in DB before confirming payment
       await updateWaiver();
 
       if (payMethod === "card") {
@@ -287,6 +282,7 @@ function PayButton({
         return;
       }
 
+      // Non-card: confirm via Payment Element (provider collects details)
       if (!elements) {
         setError("Payment form not ready.");
         setSubmitting(false);
@@ -304,7 +300,6 @@ function PayButton({
         elements,
         confirmParams: {
           return_url: returnUrl,
-          payment_method_data: { billing_details: { email: email || undefined } },
         },
       })) as PaymentIntentResult;
 

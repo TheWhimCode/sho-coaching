@@ -17,22 +17,26 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
+  // Validate core checkout fields (slotId, liveMinutes, followups, etc.)
   const parsed = CheckoutZ.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
-
   const { slotId, liveMinutes, followups } = parsed.data;
 
+  // New/updated fields
   const sessionType = (body.sessionType ?? "").trim();
-  const discord = (body.discord ?? "").trim();
+  const riotTag = (body.riotTag ?? "").trim();              // REQUIRED now
+  const discordId: string | null = body.discordId ?? null;   // optional
+  const discordName: string | null = body.discordName ?? null; // optional
   const notes = (body.notes ?? "").trim() || null;
+
   const waiverAccepted = body.waiverAccepted === true || body.waiver === true;
   const waiverIp = waiverAccepted ? ip : null;
   const waiverAcceptedAt = waiverAccepted ? new Date() : null;
-  const customerEmail = (body.email ?? "").trim() || null;
 
-  if (!sessionType || !discord) {
+  // Require RiotTag + sessionType (discord/email no longer required)
+  if (!sessionType || !riotTag) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
@@ -51,7 +55,6 @@ export async function POST(req: Request) {
   });
 
   try {
-    // Update existing unpaid session for this slot (preferred)
     if (existing) {
       const b = await prisma.session.update({
         where: { id: existing.id },
@@ -59,13 +62,14 @@ export async function POST(req: Request) {
           sessionType,
           liveMinutes,
           followups,
-          discord,
+          riotTag,
+          discordId,
+          discordName,
           notes,
           scheduledStart: slot.startTime,
           scheduledMinutes: liveMinutes,
           currency: "eur",
           amountCents,
-          customerEmail,
           waiverAccepted,
           waiverIp,
           waiverAcceptedAt,
@@ -85,16 +89,18 @@ export async function POST(req: Request) {
         slotId, // still unique; there will be at most one unpaid row per slot
         liveMinutes,
         followups,
-        discord,
+        riotTag,
+        discordId,
+        discordName,
         notes,
         scheduledStart: slot.startTime,
         scheduledMinutes: liveMinutes,
         currency: "eur",
         amountCents,
-        customerEmail,
         waiverAccepted,
         waiverIp,
         waiverAcceptedAt,
+        status: "unpaid",
       },
       select: { id: true },
     });
@@ -115,7 +121,6 @@ export async function POST(req: Request) {
         return res;
       }
     }
-    // Unknown error
     console.error("BOOKING_CREATE_ERROR", e);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

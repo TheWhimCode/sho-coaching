@@ -17,7 +17,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
   }
 
-  // Simple per-IP rate limit
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!rateLimit(`from-ref:${ip}`, 60, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
@@ -29,7 +28,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  // NOTE: stripeSessionId was removed from the schema. Only use paymentRef now.
+  // Look up by paymentRef (Stripe PI id or your token)
   const s = await prisma.session.findFirst({
     where: { paymentRef: ref },
     include: { slot: true },
@@ -44,7 +43,8 @@ export async function GET(req: Request) {
     sessionType: s.sessionType,
     liveMinutes: s.liveMinutes,
     followups: s.followups,
-    discord: s.discord ?? "",
+    riotTag: s.riotTag,
+    hasDiscord: !!s.discordId, // PII-safe
     currency: (s.currency || "eur").toLowerCase(),
     amountCents: s.amountCents ?? null,
     startISO: s.slot.startTime.toISOString(),

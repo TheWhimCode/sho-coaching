@@ -17,8 +17,6 @@ model Slot {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   status    SlotStatus @default(free)
-
-  // Relation to Session (anchor slot)
   session   Session?   @relation("SlotSession")
 
   @@index([startTime])
@@ -46,40 +44,38 @@ model AvailabilityException {
 }
 
 model Session {
-  id               String     @id @default(cuid())
+  id               String   @id @default(cuid())
   sessionType      String
-  status           String     @default("unpaid")
-  slotId           String?    @unique
+  status           String   @default("unpaid")
+  slotId           String?  @unique
   liveMinutes      Int
-  followups        Int        @default(0)
-  discord          String
-  riotTag          String?
+  followups        Int      @default(0)
+  riotTag          String
+  discordId        String?
+  discordName      String?
   notes            String?
-  createdAt        DateTime   @default(now())
+  createdAt        DateTime @default(now())
   paymentProvider  String?
-  paymentRef       String?    @unique
+  paymentRef       String?  @unique
   amountCents      Int?
-  currency         String     @default("eur")
+  currency         String   @default("eur")
   blockCsv         String?
-  customerEmail    String?
   scheduledStart   DateTime
   scheduledMinutes Int
-  liveBlocks       Int        @default(0)
-  waiverAccepted   Boolean    @default(false)
+  liveBlocks       Int      @default(0)
+  waiverAccepted   Boolean  @default(false)
   waiverAcceptedAt DateTime?
   waiverIp         String?
-
-  // relations
-  slot       Slot?       @relation("SlotSession", fields: [slotId], references: [id])
-  emailLogs  EmailLog[]
-  studentId  String?
-  student    Student?    @relation(fields: [studentId], references: [id])
-
-  // One-to-one link to SessionDoc
-  sessionDoc SessionDoc? @relation("SessionToDoc")
+  slot             Slot?    @relation("SlotSession", fields: [slotId], references: [id])
+  studentId        String?
+  student          Student? @relation(fields: [studentId], references: [id])
+  sessionDoc       SessionDoc? @relation("SessionToDoc")
 
   @@index([createdAt])
   @@index([scheduledStart])
+  @@index([riotTag])
+  @@index([discordId])
+  @@index([studentId])
 }
 
 model ProcessedEvent {
@@ -87,18 +83,6 @@ model ProcessedEvent {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
-}
-
-model EmailLog {
-  id        String   @id @default(cuid())
-  sessionId String
-  kind      String
-  sentAt    DateTime @default(now())
-  createdAt DateTime @default(now())
-  session   Session  @relation(fields: [sessionId], references: [id])
-
-  @@unique([sessionId, kind])
-  @@index([sessionId])
 }
 
 model WebhookEvent {
@@ -116,18 +100,16 @@ enum SlotStatus {
   blocked
 }
 
-// ===== Models =====
 model Student {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  discord   String?  @unique
-  puuid     String?  @unique
-  server    String?  // e.g., euw1, na1, kr
-  riotTag   String?  // "GameName#Tag"
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id          String   @id @default(cuid())
+  name        String   @unique
+  discordId   String?  @unique
+  discordName String?
+  riotTag     String?  @unique
+  puuid       String?  @unique
+  server      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   sessions      Session[]
   sessionDocs   SessionDoc[]
   rankSnapshots RankSnapshot[]
@@ -136,7 +118,6 @@ model Student {
   @@index([puuid])
 }
 
-// Global asset library (all graphics/resources you upload)
 model AssetLibrary {
   id         String   @id @default(cuid())
   name       String
@@ -146,19 +127,16 @@ model AssetLibrary {
   mime       String?
   size       Int?
   createdAt  DateTime @default(now())
-
   students   StudentAsset[]
 }
 
-// Attach assets from the library to students
 model StudentAsset {
-  id         String        @id @default(cuid())
+  id         String       @id @default(cuid())
   studentId  String
   assetId    String
-  createdAt  DateTime      @default(now())
-
-  student    Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  asset      AssetLibrary  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+  student    Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  asset      AssetLibrary @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, assetId])
   @@index([studentId])
@@ -172,7 +150,6 @@ model RankSnapshot {
   tier       String
   division   String?
   lp         Int
-
   student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId, capturedAt])
@@ -186,11 +163,8 @@ model SessionDoc {
   notes      Json     @default("{}")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  // One-to-one FK to Session (+ relation wiring)
   sessionId  String?  @unique
   session    Session? @relation("SessionToDoc", fields: [sessionId], references: [id], onDelete: SetNull)
-
   student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, number])

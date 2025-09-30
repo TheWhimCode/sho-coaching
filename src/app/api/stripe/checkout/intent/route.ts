@@ -19,6 +19,7 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   const key = CFG_SERVER.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe not configured");
+  // keep your pinned version; adjust if needed
   stripe = new Stripe(key, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
 }
@@ -39,23 +40,27 @@ export async function POST(req: Request) {
     if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
     const bookingId = (body as { bookingId?: string }).bookingId?.trim() || null;
-    const emailRaw = (body as { email?: string }).email?.trim() || undefined;
-    const postalCode = (body as { postalCode?: string }).postalCode?.trim() || undefined;
-
     const { payMethod = "card" } = body as {
       payMethod?: "card" | "paypal" | "revolut_pay" | "klarna";
     };
 
-    // ---- Load inputs either from DB (preferred: bookingId) or from request (legacy path)
+    // ---- Load inputs (prefer bookingId)
     let slotId: string;
     let liveMinutes: number;
     let followups: number;
     let sessionType: string;
+    let riotTag: string | null = null;
 
     if (bookingId) {
       const booking = await prisma.session.findUnique({
         where: { id: bookingId },
-        select: { slotId: true, liveMinutes: true, followups: true, sessionType: true, customerEmail: true },
+        select: {
+          slotId: true,
+          liveMinutes: true,
+          followups: true,
+          sessionType: true,
+          riotTag: true,
+        },
       });
       if (!booking || !booking.slotId) {
         return NextResponse.json({ error: "booking_not_found" }, { status: 404 });
@@ -64,9 +69,7 @@ export async function POST(req: Request) {
       liveMinutes = booking.liveMinutes;
       followups = booking.followups;
       sessionType = booking.sessionType?.trim() || "";
-      if (!emailRaw && booking.customerEmail) {
-        (body as any).email = booking.customerEmail;
-      }
+      riotTag = booking.riotTag ?? null;
     } else {
       const parsed = CheckoutZ.safeParse(body);
       if (!parsed.success) {
@@ -77,9 +80,9 @@ export async function POST(req: Request) {
       liveMinutes = d.liveMinutes;
       followups = d.followups ?? 0;
       sessionType = ((body as { sessionType?: string }).sessionType ?? "").trim();
+      // riotTag not available in fallback; fine (metadata stays minimal)
     }
 
-    // Sanity guard
     if (liveMinutes < 30 || liveMinutes > 240) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
     }
@@ -99,9 +102,9 @@ export async function POST(req: Request) {
     // 2) Contiguous block check
     let slotIds = await getBlockIdsByTime(anchor.startTime, liveMinutes, prisma);
 
-    // 3) Fallback window check (no pre-buffer in new config)
+    // 3) Fallback window check (no pre-buffer)
     if (!slotIds) {
-      const BUFFER_BEFORE_MIN = 0; // local default to match config removal
+      const BUFFER_BEFORE_MIN = 0;
       const { BUFFER_AFTER_MIN } = CFG_SERVER.booking;
 
       const windowStart = new Date(anchor.startTime.getTime() - BUFFER_BEFORE_MIN * 60_000);
@@ -137,7 +140,7 @@ export async function POST(req: Request) {
 
     if (!slotIds?.length) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
-    // 4) Claim/extend hold (NO status flip)
+    // 4) Claim/extend hold
     const now = new Date();
     const holdUntil = new Date(now.getTime() + HOLD_TTL_MIN * 60_000);
     await prisma.slot.updateMany({
@@ -154,7 +157,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 5) Limit payment methods — include Klarna
+    // 5) Limit payment methods
     const pmTypes: Array<"card" | "paypal" | "revolut_pay" | "klarna"> =
       payMethod === "paypal"
         ? ["paypal"]
@@ -164,7 +167,7 @@ export async function POST(req: Request) {
         ? ["klarna"]
         : ["card"];
 
-    // 6) Create PaymentIntent
+    // 6) Create or update PaymentIntent
     const idemKey = makeIdempotencyKey(slotIds, amountCents, anchor.holdKey ?? effKey, payMethod);
 
     const metadata: Record<string, string> = {
@@ -172,6 +175,7 @@ export async function POST(req: Request) {
       slotId,
       slotIds: slotIds.join(","),
       ...(sessionType ? { sessionType } : {}),
+      ...(riotTag ? { riotTag } : {}), // ok to include; not PII
     };
 
     const pi = await getStripe().paymentIntents.create(
@@ -179,21 +183,18 @@ export async function POST(req: Request) {
         amount: amountCents,
         currency: "eur",
         payment_method_types: pmTypes,
-        receipt_email: emailRaw || undefined,
         metadata,
-        // NOTE: AVS checks billing postal code, which must be set on the PaymentMethod at confirm time.
-        // We optionally include shipping here for your records, but it won't affect AVS.
-        ...(postalCode
-          ? {
-              shipping: {
-                address: { postal_code: postalCode, country: "DE" }, // adjust country if you collect it
-                name: emailRaw || "Customer",
-              },
-            }
-          : {}),
       },
       { idempotencyKey: idemKey }
     );
+
+    // Persist PI id for lookups (/booking/from-ref) and ensure amount stored
+    if (bookingId) {
+      await prisma.session.update({
+        where: { id: bookingId },
+        data: { paymentRef: pi.id, amountCents, currency: "eur" },
+      });
+    }
 
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });
     res.headers.set("Cache-Control", "no-store");
