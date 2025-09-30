@@ -133,18 +133,34 @@ export default function StepContact({
     );
     if (!w) return;
 
-    const receive = (ev: MessageEvent) => {
-      if (!ev?.data || typeof ev.data !== "object") return;
-      if (ev.data.type === "discord-auth-success" && ev.data.user) {
-        const u = ev.data.user as DiscordIdentity;
-        onDiscordLinked(u);
+    const receive = (ev: MessageEvent<any>) => {
+      // Ensure message comes from our own origin
+      if (ev.origin !== window.location.origin) return;
+
+      let data: any = ev?.data;
+      // Accept either object or stringified JSON
+      if (typeof data === "string") {
+        try { data = JSON.parse(data); } catch { /* ignore parse errors */ }
+      }
+      if (!data || typeof data !== "object") return;
+
+      if (data.type === "discord-auth-success" && data.user) {
+        onDiscordLinked(data.user as DiscordIdentity);
         window.removeEventListener("message", receive);
       }
-      if (ev.data.type === "discord-auth-cancel") {
+      if (data.type === "discord-auth-cancel") {
         window.removeEventListener("message", receive);
       }
     };
+
     window.addEventListener("message", receive);
+    // Optional: cleanup if user closes popup without completing
+    const timer = window.setInterval(() => {
+      if (w.closed) {
+        window.removeEventListener("message", receive);
+        window.clearInterval(timer);
+      }
+    }, 500);
   }, [onDiscordLinked]);
 
   const formatValid = isValidRiotTagFormat(riotVal);
@@ -169,7 +185,7 @@ export default function StepContact({
       viewBox="0 0 20 20"
       aria-hidden="true"
     >
-      <circle cx="10" cy="10" r="9" fill="#60a5fa" />{/* blue */}
+      <circle cx="10" cy="10" r="9" fill="#60a5fa" />
       <path d="M5 10.5l3 3 7-7" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -180,12 +196,11 @@ export default function StepContact({
       viewBox="0 0 20 20"
       aria-hidden="true"
     >
-      <circle cx="10" cy="10" r="9" fill="#ef4444" />{/* red */}
+      <circle cx="10" cy="10" r="9" fill="#ef4444" />
       <path d="M6 6l8 8M14 6l-8 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 
-  // Right-aligned hint in label row
   const hint =
     !formatValid && riotVal.trim()
       ? ""
@@ -284,12 +299,7 @@ export default function StepContact({
           {contactErr && <div className="text-sm text-red-400 mt-1">{contactErr}</div>}
         </div>
 
-        {/* Submit: PrimaryCTA with same sizing & no halo */}
-        <PrimaryCTA
-          type="submit"
-          disabled={!canSubmit}
-          className="px-5 py-3 text-base w-full"
-        >
+        <PrimaryCTA type="submit" disabled={!canSubmit} className="px-5 py-3 text-base w-full">
           Continue
         </PrimaryCTA>
       </form>
