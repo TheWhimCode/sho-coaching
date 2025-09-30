@@ -35,7 +35,6 @@ export async function POST(req: Request) {
   const waiverIp = waiverAccepted ? ip : null;
   const waiverAcceptedAt = waiverAccepted ? new Date() : null;
 
-  // Require RiotTag + sessionType (discord/email no longer required)
   if (!sessionType || !riotTag) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
