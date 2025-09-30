@@ -1,5 +1,7 @@
+// src/pages/customization/checkout/rcolumn/checkout-steps/StepContact.tsx
 "use client";
 import * as React from "react";
+import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA"; // 👈 import
 
 type DiscordIdentity = {
   id: string;
@@ -17,13 +19,16 @@ type Props = {
   contactErr: string | null;
   riotInputRef: React.RefObject<HTMLInputElement | null>;
   onSubmit: () => void;
+  onRiotVerified?: (d: { riotTag: string; puuid: string; region: string }) => void;
 };
 
-// Riot ID validator: GameName#TAG
-function isValidRiotTag(v: string) {
+// Quick format check: GameName#TAG
+function isValidRiotTagFormat(v: string) {
   const s = v.trim();
   return /^[A-Za-z0-9 .'_\-]{3,16}#[A-Za-z0-9]{3,5}$/.test(s);
 }
+
+type CheckStatus = "idle" | "checking" | "ok" | "bad";
 
 export default function StepContact({
   riotTag,
@@ -35,21 +40,94 @@ export default function StepContact({
   contactErr,
   riotInputRef,
   onSubmit,
+  onRiotVerified,
 }: Props) {
   const riotVal = riotTag ?? "";
   const notesVal = notes ?? "";
+
   const [submitted, setSubmitted] = React.useState(false);
-  const riotInvalid = riotVal.trim() === "" || !isValidRiotTag(riotVal);
+  const [checkStatus, setCheckStatus] = React.useState<CheckStatus>("idle");
+  const [puuid, setPuuid] = React.useState<string | null>(null);
+  const [region, setRegion] = React.useState<string | null>(null);
+
+  const lastVerifiedRef = React.useRef<string>("");
+  const abortRef = React.useRef<AbortController | null>(null);
 
   const baseInput =
     "mt-1 w-full rounded-lg bg-white/[.05] ring-1 px-4 py-3 text-base text-white/90 outline-none transition";
   const okRing = "ring-white/12 focus:ring-white/25";
   const badRing = "ring-red-500/70 focus:ring-red-500";
 
+  // ---- Async RiotTag verification (debounced) ----
+  React.useEffect(() => {
+    const val = riotVal.trim();
+
+    if (!val || !isValidRiotTagFormat(val)) {
+      setCheckStatus(val ? "bad" : "idle");
+      setPuuid(null);
+      setRegion(null);
+      abortRef.current?.abort();
+      return;
+    }
+
+    setCheckStatus("checking");
+    setPuuid(null);
+    setRegion(null);
+
+    const t = setTimeout(async () => {
+      try {
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
+
+        const res = await fetch("/api/riot/resolve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ riotTag: val }),
+          signal: ctrl.signal,
+        });
+
+        if (!res.ok) {
+          setCheckStatus("bad");
+          setPuuid(null);
+          setRegion(null);
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        if (data?.puuid) {
+          setCheckStatus("ok");
+          setPuuid(String(data.puuid));
+          setRegion(String(data.region || "") || null);
+
+          if (onRiotVerified && lastVerifiedRef.current !== val) {
+            lastVerifiedRef.current = val;
+            onRiotVerified({
+              riotTag: val,
+              puuid: String(data.puuid),
+              region: String(data.region || "europe"),
+            });
+          }
+        } else {
+          setCheckStatus("bad");
+          setPuuid(null);
+          setRegion(null);
+        }
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
+        setCheckStatus("bad");
+        setPuuid(null);
+        setRegion(null);
+      }
+    }, 500);
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riotVal]);
+
   // OAuth popup handler
   const openDiscordOAuth = React.useCallback(() => {
     const w = window.open(
-      "/api/discord/oauth/start",
+      "/api/checkout/discord/oauth-start",
       "discord_oauth",
       "width=520,height=700"
     );
@@ -69,7 +147,51 @@ export default function StepContact({
     window.addEventListener("message", receive);
   }, [onDiscordLinked]);
 
-  const canSubmit = !riotInvalid && !!discordIdentity?.id;
+  const formatValid = isValidRiotTagFormat(riotVal);
+  const riotShowError = checkStatus === "bad" || (submitted && !formatValid);
+  const canSubmit = checkStatus === "ok" && !!discordIdentity?.id;
+
+  // Icons
+  const Spinner = () => (
+    <svg
+      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+      <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z" />
+    </svg>
+  );
+
+  const OkIcon = () => (
+    <svg
+      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="10" r="9" fill="#60a5fa" />{/* blue */}
+      <path d="M5 10.5l3 3 7-7" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
+  const BadIcon = () => (
+    <svg
+      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="10" r="9" fill="#ef4444" />{/* red */}
+      <path d="M6 6l8 8M14 6l-8 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+
+  // Right-aligned hint in label row
+  const hint =
+    !formatValid && riotVal.trim()
+      ? ""
+      : checkStatus === "bad"
+      ? "Invalid Riot#tag — check spelling"
+      : "";
 
   return (
     <div className="h-full flex flex-col pt-2">
@@ -90,30 +212,34 @@ export default function StepContact({
         className="flex-1 flex flex-col"
       >
         <div className="flex-1 space-y-3">
-          {/* RiotTag */}
+          {/* RiotTag (async verified) */}
           <label className="block">
-            <span className="text-xs text-white/65">RiotTag</span>
-            <input
-              ref={riotInputRef}
-              type="text"
-              value={riotVal}
-              onChange={(e) => setRiotTag(e.target.value)}
-              placeholder="GameName#TAG (e.g., CoachCat#EUW)"
-              aria-invalid={submitted && riotInvalid}
-              className={`${baseInput} ${
-                submitted && riotInvalid ? badRing : okRing
-              }`}
-            />
-            {submitted && riotInvalid && (
-              <div className="mt-1 text-xs text-red-400">
-                Use the format GameName#TAG (GameName 3–16 chars; TAG 3–5).
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/65">Summoner name</span>
+              {hint ? <span className="text-[11px] text-red-400">{hint}</span> : null}
+            </div>
+            <div className="relative">
+              <input
+                ref={riotInputRef}
+                type="text"
+                value={riotVal}
+                onChange={(e) => setRiotTag(e.target.value)}
+                placeholder="Riot#Tag of your main account"
+                aria-invalid={riotShowError}
+                spellCheck={false}
+                className={`${baseInput} ${riotShowError ? badRing : okRing} pr-9`}
+              />
+              {checkStatus === "checking" && <Spinner />}
+              {checkStatus === "ok" && <OkIcon />}
+              {checkStatus === "bad" && riotVal.trim() && <BadIcon />}
+            </div>
           </label>
 
           {/* Discord OAuth */}
           <div className="block">
-            <span className="text-xs text-white/65">Discord</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/65">Discord</span>
+            </div>
             <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-white/12 px-3 py-2">
               {discordIdentity?.id ? (
                 <div className="text-sm text-white/90">
@@ -121,14 +247,10 @@ export default function StepContact({
                   <span className="font-medium">
                     {discordIdentity.globalName || discordIdentity.username}
                   </span>
-                  <span className="text-white/50 ml-2">
-                    ({discordIdentity.id})
-                  </span>
+                  <span className="text-white/50 ml-2">({discordIdentity.id})</span>
                 </div>
               ) : (
-                <div className="text-sm text-white/70">
-                  Not linked to Discord
-                </div>
+                <div className="text-sm text-white/70">Not linked to Discord</div>
               )}
 
               <button
@@ -141,42 +263,37 @@ export default function StepContact({
               </button>
             </div>
             {!discordIdentity?.id && submitted && (
-              <div className="mt-1 text-xs text-red-400">
-                Please link your Discord account.
-              </div>
+              <div className="mt-1 text-xs text-red-400">Please link your Discord account.</div>
             )}
           </div>
 
           {/* Notes */}
           <label className="block">
-            <span className="text-xs text-white/65">
-              Anything you want me to know
-            </span>
+            <span className="text-xs text-white/65">Anything you want me to know</span>
             <textarea
               value={notesVal}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="(Optional)"
+              spellCheck={false}
               className={`${baseInput} ${okRing} resize-none min-h-[110px]`}
             />
           </label>
 
           {/* API / form error */}
-          {contactErr && (
-            <div className="text-sm text-red-400 mt-1">{contactErr}</div>
-          )}
+          {contactErr && <div className="text-sm text-red-400 mt-1">{contactErr}</div>}
         </div>
 
-        <button
+        {/* 👇 use PrimaryCTA with same sizing + text */}
+        <PrimaryCTA
           type="submit"
+          fullWidth
           disabled={!canSubmit}
-          className={`w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
-            ${canSubmit ? "bg-[#fc8803] hover:bg-[#f8a81a]" : "bg-white/15"}
-            transition shadow-[0_10px_28px_rgba(245,158,11,.35)]
-            ring-1 ring-[rgba(255,190,80,.55)] disabled:opacity-60`}
+          className="px-5 py-3 text-base"
         >
           Continue
-        </button>
+        </PrimaryCTA>
+
       </form>
     </div>
   );

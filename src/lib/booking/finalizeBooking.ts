@@ -1,4 +1,6 @@
+// src/lib/booking/finalizeBooking.ts
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { SlotStatus } from "@prisma/client";
 import { getPreset } from "@/lib/sessions/preset";
 
@@ -6,60 +8,171 @@ export type FinalizeMeta = {
   bookingId?: string;
   slotId?: string;
   slotIds?: string;
+
   sessionType?: string;
   liveMinutes?: string;
   followups?: string;
-
-  discord?: string;
-  notes?: string;
-  email?: string;
-  timeZone?: string;
   liveBlocks?: string;
-  waiverAccepted?: string;
-  waiverIp?: string;
 
-  stripeSessionId?: string;
+  // optional passthrough (usually the session already has it)
+  riotTag?: string;
+
+  // echoes (normally already stored on Session via /booking/update-waiver)
+  waiverAccepted?: string; // "true" | "false"
+  waiverIp?: string;
 };
 
 function titleFromPreset(baseMinutes: number, followups: number, liveBlocks: number): string {
   const preset = getPreset(baseMinutes, followups, liveBlocks);
   switch (preset) {
-    case "vod": return "VOD Review";
-    case "instant": return "Instant Insight";
-    case "signature": return "Signature Session";
-    default: return "Custom Session";
+    case "vod":
+      return "VOD Review";
+    case "instant":
+      return "Instant Insight";
+    case "signature":
+      return "Signature Session";
+    default:
+      return "Custom Session";
   }
 }
 
+function isP2002(e: unknown): boolean {
+  return typeof e === "object" && e !== null && "code" in e && (e as any).code === "P2002";
+}
+
+// ---- Student resolution (canonical) -----------------------------------------
+
 /**
- * Finalizes a Session after payment:
- *  - Marks slots as taken
- *  - Links/reuses/creates a Student
- *  - Updates the Session row to "paid" (same tx) with amounts/currency/ref/schedule + studentId
- *  - Ensures a SessionDoc exists
+ * Resolve/create the canonical Student, then force-set latest identity:
+ * - prefer lookup by discordId, else by riotTag
+ * - overwrite discordId/discordName/riotTag with latest values
+ * - if unique conflict (P2002), null the conflicting student's field then retry
  */
+async function resolveCanonicalStudent(
+  tx: Prisma.TransactionClient,
+  args: { discordId?: string | null; discordName?: string | null; riotTag: string }
+) {
+  const { discordId, discordName, riotTag } = args;
+
+  // 1) find by discordId (immutable) or riotTag
+  let student =
+    (discordId ? await tx.student.findUnique({ where: { discordId } }) : null) ??
+    (await tx.student.findUnique({ where: { riotTag } }));
+
+  // 2) create if none
+  if (!student) {
+    const baseName = riotTag || "Student";
+    let name = baseName;
+    for (let i = 0; i < 5; i++) {
+      try {
+        student = await tx.student.create({
+          data: {
+            name,
+            riotTag: riotTag || null,
+            discordId: discordId ?? null,
+            discordName: discordName ?? null,
+          },
+        });
+        break;
+      } catch (e) {
+        if (isP2002(e)) {
+          name = `${baseName}-${Math.floor(Math.random() * 1000)}`;
+          continue;
+        }
+        throw e;
+      }
+    }
+    if (!student) throw new Error("failed_to_create_student");
+  }
+
+  // 3) force latest identity fields
+  // 3a) discordId (unique)
+  if (discordId && discordId !== student.discordId) {
+    try {
+      student = await tx.student.update({ where: { id: student.id }, data: { discordId } });
+    } catch (e) {
+      if (!isP2002(e)) throw e;
+      const conflict = await tx.student.findUnique({ where: { discordId } });
+      if (conflict && conflict.id !== student.id) {
+        await tx.student.update({ where: { id: conflict.id }, data: { discordId: null } });
+      }
+      student = await tx.student.update({ where: { id: student.id }, data: { discordId } });
+    }
+  }
+
+  // 3b) discordName (not unique)
+  if (discordName && discordName !== student.discordName) {
+    student = await tx.student.update({ where: { id: student.id }, data: { discordName } });
+  }
+
+  // 3c) riotTag (unique)
+  if (riotTag && riotTag !== student.riotTag) {
+    try {
+      student = await tx.student.update({ where: { id: student.id }, data: { riotTag } });
+    } catch (e) {
+      if (!isP2002(e)) throw e;
+      const conflict = await tx.student.findUnique({ where: { riotTag } });
+      if (conflict && conflict.id !== student.id) {
+        await tx.student.update({ where: { id: conflict.id }, data: { riotTag: null } });
+      }
+      student = await tx.student.update({ where: { id: student.id }, data: { riotTag } });
+    }
+  }
+
+  return student;
+}
+
+// ---- Main finalize ----------------------------------------------------------
+
 export async function finalizeBooking(
   meta: FinalizeMeta,
   amountCents?: number,
   currency?: string,
   paymentRef?: string,
-  provider: "stripe" | "paypal" = "stripe"
+  provider: string = "stripe"
 ) {
   if (!paymentRef) throw new Error("paymentRef missing");
 
-  // 1) Locate the Session
+  // We only select the fields we actually use to avoid stale type drift.
+  const sessionSelect = {
+    id: true,
+    status: true,
+    sessionType: true,
+    slotId: true,
+    liveMinutes: true,
+    followups: true,
+    liveBlocks: true,
+    riotTag: true,
+    discordId: true,
+    discordName: true,
+    waiverAccepted: true,
+    waiverAcceptedAt: true,
+    waiverIp: true,
+    blockCsv: true,
+    currency: true,
+    amountCents: true,
+  } as const;
+
+  // 1) locate the session (prefer bookingId)
   let sessionRow =
-    (meta.bookingId && (await prisma.session.findUnique({ where: { id: meta.bookingId } }))) ||
-    (meta.slotId && (await prisma.session.findFirst({ where: { slotId: meta.slotId } }))) ||
+    (meta.bookingId &&
+      (await prisma.session.findUnique({ where: { id: meta.bookingId }, select: sessionSelect }))) ||
+    (meta.slotId &&
+      (await prisma.session.findFirst({ where: { slotId: meta.slotId }, select: sessionSelect }))) ||
     null;
 
   if (!sessionRow && meta.slotIds) {
     const first = meta.slotIds.split(",").filter(Boolean)[0];
-    if (first) sessionRow = await prisma.session.findFirst({ where: { slotId: first } });
+    if (first) {
+      sessionRow = await prisma.session.findFirst({ where: { slotId: first }, select: sessionSelect });
+    }
   }
   if (!sessionRow) throw new Error("booking not found");
 
-  // 2) Derive details
+  // Idempotency: already paid → no-op
+  if (sessionRow.status === "paid") return;
+
+  // 2) derive numbers
   const liveBlocks =
     Number.isFinite(Number(meta.liveBlocks)) ? parseInt(meta.liveBlocks!, 10) : (sessionRow.liveBlocks ?? 0);
   const liveMinutes =
@@ -72,30 +185,25 @@ export async function finalizeBooking(
   const computedTitle = titleFromPreset(baseMinutes, followups, liveBlocks);
   const sessionType = providedTitle || sessionRow.sessionType || computedTitle;
 
+  // slots
   const slotIdsCsv = (meta.slotIds ?? sessionRow.blockCsv ?? "").trim();
   const slotIds = slotIdsCsv ? slotIdsCsv.split(",").filter(Boolean) : [];
   const firstSlotId = sessionRow.slotId || slotIds[0];
   if (!firstSlotId) throw new Error("slotId missing");
 
-  const customerEmail = sessionRow.customerEmail || meta.email || undefined;
+  // identity (latest from session + meta)
+  const riotTag = (meta.riotTag ?? sessionRow.riotTag ?? "").trim();
+  if (!riotTag) throw new Error("riotTag missing on session");
+  const discordId = sessionRow.discordId ?? null;
+  const discordName = sessionRow.discordName ?? null;
 
+  // waiver: respect what is already on the session; only set if not set yet
   const waiverAccepted = sessionRow.waiverAccepted || meta.waiverAccepted === "true" ? true : false;
   const waiverAcceptedAt =
     waiverAccepted && !sessionRow.waiverAccepted ? new Date() : sessionRow.waiverAcceptedAt || undefined;
   const waiverIp = sessionRow.waiverIp || (meta.waiverIp || undefined);
 
-  const normDiscord = (s?: string | null) => (s ?? "").trim();
-  const normRiot = (s?: string | null) => {
-    const v = (s ?? "").trim();
-    const m = v.match(/^([^#]+)#(.+)$/);
-    return m ? `${m[1].trim()}#${m[2].trim()}` : v;
-  };
-  const discordKey = normDiscord(meta.discord ?? sessionRow.discord);
-  const riotKey = normRiot(sessionRow.riotTag);
-  const emailKey = (customerEmail ?? "").trim().toLowerCase();
-  const ipKey = (waiverIp ?? "").trim();
-
-  // 3) Atomic: link/create Student, take slots, finalize session to "paid"
+  // 3) single transaction
   await prisma.$transaction(async (tx) => {
     // 3.1 take slots
     if (slotIds.length) {
@@ -117,51 +225,10 @@ export async function finalizeBooking(
     });
     if (!startSlot) throw new Error("slot not found");
 
-    // 3.3 find/create student BEFORE marking paid
-    let student =
-      (discordKey ? await tx.student.findUnique({ where: { discord: discordKey } }) : null) ||
-      (riotKey ? await tx.student.findFirst({ where: { riotTag: riotKey } }) : null);
+    // 3.3 resolve canonical student and overwrite outdated identity
+    const student = await resolveCanonicalStudent(tx, { discordId, discordName, riotTag });
 
-    if (!student && emailKey) {
-      const priorByEmail = await tx.session.findFirst({
-        where: { customerEmail: emailKey, studentId: { not: null } },
-        orderBy: { createdAt: "desc" },
-        select: { studentId: true },
-      });
-      if (priorByEmail?.studentId) {
-        student = await tx.student.findUnique({ where: { id: priorByEmail.studentId } });
-      }
-    }
-    if (!student && ipKey) {
-      const priorByIp = await tx.session.findFirst({
-        where: { waiverIp: ipKey, studentId: { not: null } },
-        orderBy: { createdAt: "desc" },
-        select: { studentId: true },
-      });
-      if (priorByIp?.studentId) {
-        student = await tx.student.findUnique({ where: { id: priorByIp.studentId } });
-      }
-    }
-
-    if (!student) {
-      const fallbackBase =
-        discordKey || riotKey || (emailKey ? emailKey.split("@")[0] : "") || `Student ${new Date().toISOString().slice(0, 10)}`;
-      let name = fallbackBase;
-      for (let i = 0; i < 5; i++) {
-        try {
-          student = await tx.student.create({
-            data: { name, discord: discordKey || null, riotTag: riotKey || null },
-          });
-          break;
-        } catch (e: any) {
-          if (e?.code === "P2002") { name = `${fallbackBase}-${Math.floor(Math.random() * 1000)}`; continue; }
-          throw e;
-        }
-      }
-      if (!student) throw new Error("failed to create student");
-    }
-
-    // 3.4 finalize session (studentId + paid in one update)
+    // 3.4 finalize session
     await tx.session.update({
       where: { id: sessionRow.id },
       data: {
@@ -176,34 +243,33 @@ export async function finalizeBooking(
         scheduledStart: startSlot.startTime,
         scheduledMinutes: liveMinutes,
         liveBlocks,
-        customerEmail,
         waiverAccepted,
         waiverAcceptedAt,
         waiverIp,
+        // identity snapshots on Session (riotTag/discordName) are already present
       },
     });
 
     // 3.5 ensure SessionDoc
-    try {
-      const already = await tx.sessionDoc.findFirst({ where: { sessionId: sessionRow.id }, select: { id: true } });
-      if (!already) {
-        const last = await tx.sessionDoc.findFirst({
-          where: { studentId: student.id },
-          orderBy: { number: "desc" },
-          select: { number: true },
-        });
-        const nextNumber = (last?.number ?? 0) + 1;
-        await tx.sessionDoc.create({
-          data: {
-            studentId: student.id,
-            sessionId: sessionRow.id,
-            number: nextNumber,
-            notes: { title: sessionType, md: "" },
-          },
-        });
-      }
-    } catch {
-      // ignore doc errors; session is already finalized
+    const exists = await tx.sessionDoc.findFirst({
+      where: { sessionId: sessionRow.id },
+      select: { id: true },
+    });
+    if (!exists) {
+      const last = await tx.sessionDoc.findFirst({
+        where: { studentId: student.id },
+        orderBy: { number: "desc" },
+        select: { number: true },
+      });
+      const nextNumber = (last?.number ?? 0) + 1;
+      await tx.sessionDoc.create({
+        data: {
+          studentId: student.id,
+          sessionId: sessionRow.id,
+          number: nextNumber,
+          notes: { title: sessionType, md: "" },
+        },
+      });
     }
   });
 }

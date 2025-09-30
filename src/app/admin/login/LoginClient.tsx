@@ -23,7 +23,7 @@ export default function LoginClient() {
   }
 
   return (
-<main className="flex min-h-screen items-center justify-center">
+<main className="flex min-h-screen pt-60 justify-center">
   <div className="w-full max-w-sm p-6">
     <h1 className="text-xl font-semibold mb-4">Admin Login</h1>
     <form onSubmit={onSubmit} className="space-y-3">

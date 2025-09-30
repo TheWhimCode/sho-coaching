@@ -3,10 +3,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { finalizeBooking } from "@/lib/booking/finalizeBooking";
-import { sendBookingEmail } from "@/lib/email";
 import { CFG_SERVER } from "@/lib/config.server";
 import { SlotStatus } from "@prisma/client";
-import { sign } from "@/lib/sign";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,22 +17,6 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
-}
-
-async function extractEmailFromPI(pi: Stripe.PaymentIntent): Promise<string | undefined> {
-  if (pi.receipt_email) return pi.receipt_email;
-
-  const cRef = pi.customer;
-  if (typeof cRef === "string") {
-    const cust = await getStripe().customers.retrieve(cRef);
-    if (!("deleted" in cust)) return (cust as Stripe.Customer).email ?? undefined;
-  } else if (cRef && !("deleted" in cRef)) {
-    return (cRef as Stripe.Customer).email ?? undefined;
-  }
-
-  const piExpanded = await getStripe().paymentIntents.retrieve(pi.id, { expand: ["latest_charge"] });
-  const lc = piExpanded.latest_charge as Stripe.Charge | null;
-  return lc?.billing_details?.email ?? undefined;
 }
 
 async function commitTakenSlots(slotIdsCsv: string | undefined) {
@@ -69,10 +51,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
   }
 
+  // Idempotency guard
   try {
     await prisma.processedEvent.create({ data: { id: event.id } });
   } catch (e: unknown) {
-    if (isUniqueViolation(e)) return NextResponse.json({ ok: true });
+    if (isUniqueViolation(e)) return NextResponse.json({ ok: true }); // already processed
     throw e;
   }
 
@@ -80,8 +63,7 @@ export async function POST(req: Request) {
     meta: Record<string, string>,
     amount?: number,
     currency?: string,
-    paymentRef?: string,
-    email?: string
+    paymentRef?: string
   ) => {
     const hasIdentifier = Boolean(meta.bookingId || meta.slotId || meta.slotIds);
     if (!hasIdentifier) {
@@ -89,49 +71,17 @@ export async function POST(req: Request) {
       return;
     }
 
+    // Source of truth: finalize the booking
     await finalizeBooking(
-      { ...meta, email }, // meta minimal; DB holds rich fields
+      meta,                                // { bookingId, slotId/slotIds, riotTag?, sessionType? }
       amount,
       (currency ?? "eur").toLowerCase(),
       paymentRef,
       "stripe"
     );
 
+    // Mark slots as taken
     await commitTakenSlots(meta.slotIds);
-
-    if (email && paymentRef) {
-      try {
-        const booking = await prisma.session.findFirst({
-          where: { paymentRef },
-          select: {
-            id: true,
-            scheduledStart: true,
-            scheduledMinutes: true,
-            sessionType: true,
-            followups: true,
-          },
-        });
-
-        if (booking?.scheduledStart) {
-          const startISO = booking.scheduledStart.toISOString();
-          const base = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
-          const icsUrl = `${base}/api/ics?bookingId=${booking.id}&sig=${sign(booking.id)}`;
-
-          await sendBookingEmail(email, {
-            title: booking.sessionType ?? "Coaching Session",
-            startISO,
-            minutes: booking.scheduledMinutes,
-            followups: booking.followups,
-            priceEUR: (amount ?? 0) / 100,
-            bookingId: booking.id,
-            timeZone: meta.timeZone || meta.tz,
-          });
-        }
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
-        console.warn("[webhook] email failed (ignored):", msg);
-      }
-    }
   };
 
   try {
@@ -140,11 +90,12 @@ export async function POST(req: Request) {
         const piEvent = event.data.object as Stripe.PaymentIntent;
         const pi = await getStripe().paymentIntents.retrieve(piEvent.id);
         const meta = (pi.metadata ?? {}) as Record<string, string>;
-        const email = (await extractEmailFromPI(pi)) || undefined;
-        await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id, email);
+        await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id);
         break;
       }
+
       case "checkout.session.completed": {
+        // If you ever use Stripe Checkout; Elements flow may never hit this
         const csEvent = event.data.object as Stripe.Checkout.Session;
         const cs = await getStripe().checkout.sessions.retrieve(csEvent.id, { expand: ["payment_intent"] });
 
@@ -157,24 +108,18 @@ export async function POST(req: Request) {
 
         const piMeta = (pi?.metadata ?? {}) as Record<string, string>;
         const csMeta = (cs.metadata ?? {}) as Record<string, string>;
-
-        // Prefer PI metadata; pass CS id so finalizeBooking can persist it in stripeSessionId
         const meta = { ...csMeta, ...piMeta, stripeSessionId: cs.id };
 
-        const email =
-          (await (pi ? extractEmailFromPI(pi) : Promise.resolve<string | undefined>(undefined))) ||
-          cs.customer_details?.email ||
-          undefined;
-
-        // IMPORTANT: prefer PI id for paymentRef so /from-ref?ref=pi_... resolves
-        const paymentRef = pi?.id ?? cs.id;
-
-        await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", paymentRef, email);
+        const paymentRef = pi?.id ?? cs.id; // prefer PI id
+        await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", paymentRef);
         break;
       }
+
       default:
+        // ignore other events
         break;
     }
+
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
