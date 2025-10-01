@@ -2,18 +2,16 @@
 "use client";
 import * as React from "react";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
+import InfoTooltip from "@/app/_components/small/InfoTooltip";
 
-type DiscordIdentity = {
-  id: string;
-  username?: string | null; // username only
-};
+type DiscordIdentity = { id: string; username?: string | null };
 
 type Props = {
   riotTag?: string;
   notes?: string;
   setRiotTag: (v: string) => void;
   setNotes: (v: string) => void;
-  onDiscordLinked: (u: DiscordIdentity) => void; // parent/hook persists on Continue
+  onDiscordLinked: (u: DiscordIdentity) => void;
   discordIdentity?: DiscordIdentity | null;
   contactErr: string | null;
   riotInputRef: React.RefObject<HTMLInputElement | null>;
@@ -21,8 +19,12 @@ type Props = {
   onRiotVerified?: (d: { riotTag: string; puuid: string; region: string }) => void;
 };
 
+// keep spaces elsewhere, but remove spaces around '#'
+function normalizeRiotTag(v: string) {
+  return v.trim().replace(/\s*#\s*/g, "#");
+}
 function isValidRiotTagFormat(v: string) {
-  const s = v.trim();
+  const s = normalizeRiotTag(v);
   return /^[A-Za-z0-9 .'_\-]{3,16}#[A-Za-z0-9]{3,5}$/.test(s);
 }
 type CheckStatus = "idle" | "checking" | "ok" | "bad";
@@ -53,16 +55,14 @@ export default function StepContact({
   const okRing = "ring-white/12 focus:ring-white/25";
   const badRing = "ring-red-500/70 focus:ring-red-500";
 
-  // ---- RiotTag verification (debounced, read-only) ----
+  // Riot verify (debounced, read-only)
   React.useEffect(() => {
-    const val = riotVal.trim();
-
+    const val = normalizeRiotTag(riotVal);
     if (!val || !isValidRiotTagFormat(val)) {
       setCheckStatus(val ? "bad" : "idle");
       abortRef.current?.abort();
       return;
     }
-
     setCheckStatus("checking");
 
     const t = setTimeout(async () => {
@@ -102,50 +102,44 @@ export default function StepContact({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
 
-  // ---- Discord OAuth popup ----
+  // OAuth popup
   const openDiscordOAuth = React.useCallback(() => {
     window.open("/api/checkout/discord/oauth-start", "discord_oauth", "width=520,height=700");
   }, []);
 
-  // Normalize and handle incoming messages
+  // Receive OAuth payloads
   const handleIncoming = React.useCallback((incoming: any) => {
     let data = incoming;
     if (typeof data === "string") { try { data = JSON.parse(data); } catch { return; } }
     if (!data || typeof data !== "object") return;
-
     if (data.type === "discord-auth-success" && data.user) {
-      onDiscordLinked(data.user as DiscordIdentity); // UI fills with username; DB saved on Continue by parent
+      onDiscordLinked(data.user as DiscordIdentity);
     }
   }, [onDiscordLinked]);
 
-  // Listen: postMessage + BroadcastChannel + localStorage (on focus)
   React.useEffect(() => {
     const onMsg = (ev: MessageEvent) => handleIncoming(ev.data);
     window.addEventListener("message", onMsg);
-
     let bc: BroadcastChannel | null = null;
-    try {
-      bc = new BroadcastChannel("dc_oauth");
-      bc.onmessage = (ev) => handleIncoming((ev as MessageEvent).data);
-    } catch {}
-
+    try { bc = new BroadcastChannel("dc_oauth"); bc.onmessage = (ev) => handleIncoming((ev as MessageEvent).data); } catch {}
     const onFocus = () => {
       try {
         const raw = localStorage.getItem("dc_oauth_payload");
-        if (raw) {
-          handleIncoming(raw);
-          localStorage.removeItem("dc_oauth_payload");
-        }
+        if (raw) { handleIncoming(raw); localStorage.removeItem("dc_oauth_payload"); }
       } catch {}
     };
     window.addEventListener("focus", onFocus);
-
     return () => {
       window.removeEventListener("message", onMsg);
       window.removeEventListener("focus", onFocus);
       try { bc?.close(); } catch {}
     };
   }, [handleIncoming]);
+
+  // Normalize on input
+  const onRiotInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRiotTag(normalizeRiotTag(e.target.value));
+  };
 
   const formatValid = isValidRiotTagFormat(riotVal);
   const riotShowError = checkStatus === "bad" || (submitted && !formatValid);
@@ -189,26 +183,46 @@ export default function StepContact({
 
       <form
         noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSubmitted(true);
-          if (canSubmit) onSubmit(); // parent/hook persists id+username on Continue
-        }}
+        onSubmit={(e) => { e.preventDefault(); setSubmitted(true); if (canSubmit) onSubmit(); }}
         className="flex-1 flex flex-col"
       >
         <div className="flex-1 space-y-3">
           {/* RiotTag */}
           <label className="block">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-white/65">Summoner name</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/65">Summoner name</span>
+
+                {/* Hover tooltip with autoplay video */}
+<InfoTooltip
+  ariaLabel="How to find your Riot#Tag"
+  className="cursor-help"
+  contentClassName="w-[320px]"
+>
+  <video
+    src="/videos/riot-tag-help.mp4"   // replace path later
+    autoPlay
+    muted
+    loop
+    playsInline
+    preload="auto"
+    className="rounded-lg w-full h-auto"
+  />
+</InfoTooltip>
+
+                    
+                  
+                
+              </div>
               {hint ? <span className="text-[11px] text-red-400">{hint}</span> : null}
             </div>
+
             <div className="relative">
               <input
                 ref={riotInputRef}
                 type="text"
                 value={riotVal}
-                onChange={(e) => setRiotTag(e.target.value)}
+                onChange={onRiotInputChange}
                 placeholder="Riot#Tag of your main account"
                 aria-invalid={riotShowError}
                 spellCheck={false}
@@ -220,7 +234,7 @@ export default function StepContact({
             </div>
           </label>
 
-          {/* Discord OAuth (aligned like input, bold + slightly smaller) */}
+          {/* Discord (aligned like input, bold + slightly smaller) */}
           <div className="block">
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/65">Discord</span>
