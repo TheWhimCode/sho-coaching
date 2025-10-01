@@ -1,3 +1,4 @@
+// src/app/(wherever)/useCheckoutFlow.ts
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -6,7 +7,6 @@ import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 import { getPreset } from "@/lib/sessions/preset";
 
-/** ---- Shared types (match your previous local types) ---- */
 export type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna";
 
 export type Payload = {
@@ -28,7 +28,7 @@ export type PayloadForBackend = Pick<
   startTime?: string | number | Date;
 };
 
-export type DiscordIdentity = { id: string; username?: string | null; globalName?: string | null };
+export type DiscordIdentity = { id: string; username?: string | null };
 
 export type SavedCard = {
   id: string;
@@ -57,7 +57,6 @@ const DEFAULT_PAYLOAD: Payload = {
   holdKey: "",
 };
 
-/** ---- The main hook that holds all state/logic ---- */
 export function useCheckoutFlow({
   payload,
   breakdown,
@@ -99,40 +98,26 @@ export function useCheckoutFlow({
   const [notes, setNotes] = useState("");
   const [discordIdentity, setDiscordIdentity] = useState<DiscordIdentity | null>(null);
 
-  const discordDisplay = useMemo(
-    () => discordIdentity?.globalName || discordIdentity?.username || "",
-    [discordIdentity]
-  );
-
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
 
   // Track last verified PUUID to clear stale Discord if identity changes
   const lastPuuidRef = useRef<string | null>(null);
 
-  // Selected start time (for SessionBlock header)
+  // Selected start time (if any)
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
   useEffect(() => {
     function coerceToDate(v: unknown): Date | null {
       if (v == null) return null;
       if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-      if (typeof v === "number") {
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? null : d;
-        }
-      if (typeof v === "string") {
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? null : d;
-      }
+      if (typeof v === "number") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+      if (typeof v === "string") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
       return null;
     }
-
-    const fromPayloadBackend = coerceToDate(payloadForBackend?.startTime);
+    const fromBackend = coerceToDate(payloadForBackend?.startTime);
     const fromPayload = coerceToDate(safePayload.startTime);
-
-    if (fromPayloadBackend) { setSelectedStart(fromPayloadBackend); return; }
+    if (fromBackend) { setSelectedStart(fromBackend); return; }
     if (fromPayload) { setSelectedStart(fromPayload); return; }
-
     if (typeof window !== "undefined") {
       const s = new URLSearchParams(window.location.search).get("startTime");
       const fromQuery = coerceToDate(s || undefined);
@@ -140,115 +125,45 @@ export function useCheckoutFlow({
     }
   }, [payloadForBackend, safePayload]);
 
-  /** When RiotTag verifies: create/update unpaid session + try to auto-fill Discord by PUUID */
+  /** When RiotTag verifies: ONLY local changes; optional Discord autofill (read-only) */
   const handleRiotVerified = async ({
     riotTag: verifiedTag,
     puuid,
-  }: {
-    riotTag: string;
-    puuid: string;
-    region: string;
-  }) => {
+    region,
+  }: { riotTag: string; puuid: string; region: string }) => {
     setRiotTag(verifiedTag);
 
     const puuidChanged = lastPuuidRef.current && lastPuuidRef.current !== puuid;
-    let effectiveBookingId = bookingId;
+    if (puuidChanged) setDiscordIdentity(null);
 
-    // Ensure unpaid session exists/updated with latest RiotTag (idempotent by slotId)
+    // Autofill by PUUID (read-only)
     try {
-      const make = await fetch("/api/booking/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionType: sessionBlockTitle,
-          slotId: safePayload.slotId,
-          liveMinutes: totalLiveMinutes,
-          followups: safePayload.followups,
-          riotTag: verifiedTag,
-          notes,
-          waiverAccepted: waiver,
-        }),
-      });
-
-      if (make.ok) {
-        const j = await make.json().catch(() => ({}));
-        if (!effectiveBookingId && j?.bookingId) {
-          effectiveBookingId = j.bookingId as string;
-          setBookingId(effectiveBookingId);
-        }
-      } else {
-        console.warn("CREATE/UPDATE_BOOKING_ON_VERIFY_FAILED", await make.text().catch(() => ""));
-      }
-    } catch { /* ignore */ }
-
-    // If the identity changed, clear stale Discord in UI
-    if (puuidChanged) {
-      setDiscordIdentity(null);
-      // (Optional) clear on server as well if you support nulls in attach endpoint
-      // if (effectiveBookingId) {
-      //   await fetch("/api/booking/attach-discord", {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify({ bookingId: effectiveBookingId, discordId: null, discordName: null }),
-      //   }).catch(() => {});
-      // }
-    }
-
-    // Lookup Student by PUUID to auto-fill Discord if known
-    try {
-      const resp = await fetch(`/api/checkout/student/by-puuid?puuid=${encodeURIComponent(puuid)}`, { cache: "no-store" }).catch(() => null);
-      if (resp?.ok) {
+      const resp = await fetch(`/api/checkout/student/by-puuid?puuid=${encodeURIComponent(puuid)}`, { cache: "no-store" });
+      if (resp.ok) {
         const data = await resp.json().catch(() => null);
         if (data?.discordId) {
-          const identity: DiscordIdentity = {
+          setDiscordIdentity({
             id: String(data.discordId),
-            globalName: data.discordName ?? null,
-            username: data.discordName ?? null,
-          };
-          setDiscordIdentity(identity);
-
-          if (effectiveBookingId) {
-            await fetch("/api/booking/attach-discord", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                bookingId: effectiveBookingId,
-                discordId: identity.id,
-                discordName: identity.globalName || identity.username || null,
-              }),
-            }).catch(() => {});
-          }
+            username: data.discordName ?? null, // treat stored name as username
+          });
         }
       }
-    } catch { /* ignore */ }
-
+    } catch {}
     lastPuuidRef.current = puuid;
   };
 
-  /** Discord OAuth success */
+  /** Discord OAuth success: local state only; persist on Continue */
   const handleDiscordLinked = async (u: DiscordIdentity) => {
-    setDiscordIdentity(u);
-    if (bookingId) {
-      await fetch("/api/booking/attach-discord", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId,
-          discordId: u.id,
-          discordName: u.globalName || u.username || null,
-        }),
-      }).catch(() => {});
-    }
+    setDiscordIdentity({ id: u.id, username: u.username ?? null });
   };
 
-  /** Choose method -> create PI (and booking if needed) then go to Step 2 */
+  /** Continue flow: (up)create booking with latest Riot+Discord, then create PI */
   async function chooseAndGo(m: PayMethod) {
     if (!m) return;
     setDir(1);
     setPayMethod(m);
     currentMethodRef.current = m;
 
-    // Reset Stripe state ONLY when the user changes the method
     setClientSecret(null);
     setPiId(null);
     setCardPmId(null);
@@ -258,51 +173,39 @@ export function useCheckoutFlow({
     setLoadingIntent(true);
 
     try {
-      let bid = bookingId;
+      // Upsert unpaid booking by slotId
+      const make = await fetch("/api/booking/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionType: sessionBlockTitle,
+          slotId: safePayload.slotId,
+          liveMinutes: totalLiveMinutes,
+          followups: safePayload.followups,
+          riotTag,                                      // latest
+          discordId: discordIdentity?.id ?? null,       // id
+          discordName: discordIdentity?.username ?? null, // username only
+          notes,
+          waiverAccepted: waiver,
+        }),
+      });
 
-      // Create the booking once if not created during Riot verify
-      if (!bid) {
-        const make = await fetch("/api/booking/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionType: sessionBlockTitle,
-            slotId: safePayload.slotId,
-            liveMinutes: totalLiveMinutes,
-            followups: safePayload.followups,
-            riotTag,
-            discordId: discordIdentity?.id ?? null,
-            discordName: discordDisplay || null,
-            notes,
-            waiverAccepted: waiver,
-          }),
-        });
-
-        if (!make.ok) {
-          console.error("CREATE_BOOKING_FAILED", await make.json().catch(() => ({})));
-          setLoadingIntent(false);
-          return;
+      if (!make.ok) {
+        if (make.status === 409) {
+          console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
+          setStep(0);
+        } else {
+          console.error("CREATE/UPDATE_BOOKING_FAILED", await make.text().catch(() => ""));
         }
-
-        const j = await make.json();
-        bid = j.bookingId as string;
-        setBookingId(bid);
-
-        // Persist Discord link immediately if we have it
-        if (discordIdentity?.id) {
-          await fetch("/api/booking/attach-discord", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              bookingId: j.bookingId,
-              discordId: discordIdentity.id,
-              discordName: discordDisplay || null,
-            }),
-          }).catch(() => {});
-        }
+        setLoadingIntent(false);
+        return;
       }
 
-      // Create a PI for this booking & method
+      const j = await make.json();
+      const bid = j.bookingId as string;
+      setBookingId(bid);
+
+      // Create PaymentIntent for this booking & method
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -333,23 +236,19 @@ export function useCheckoutFlow({
   }
 
   return {
-    // Expose original inputs too
     payload: safePayload,
     breakdown,
     stripePromise,
     appearance: appearanceToUse,
 
-    // SessionBlock helpers
     sessionBlockTitle,
     selectedStart,
 
-    // Step state
     step,
     dir,
     goNext,
     goBack,
 
-    // Payment state
     payMethod,
     clientSecret,
     piId,
@@ -359,7 +258,6 @@ export function useCheckoutFlow({
     setSavedCard,
     savedCard,
 
-    // Contact state
     riotTag,
     setRiotTag,
     notes,
@@ -368,9 +266,8 @@ export function useCheckoutFlow({
     waiver,
     setWaiver,
 
-    // Handlers
-    handleRiotVerified,
-    handleDiscordLinked,
-    chooseAndGo,
+    handleRiotVerified,   // read-only
+    handleDiscordLinked,  // local only; persist on Continue
+    chooseAndGo,          // upsert booking with id+username
   };
 }

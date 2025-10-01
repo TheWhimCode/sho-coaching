@@ -5,8 +5,7 @@ import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 
 type DiscordIdentity = {
   id: string;
-  username?: string | null;
-  globalName?: string | null;
+  username?: string | null; // username only
 };
 
 type Props = {
@@ -14,7 +13,7 @@ type Props = {
   notes?: string;
   setRiotTag: (v: string) => void;
   setNotes: (v: string) => void;
-  onDiscordLinked: (u: DiscordIdentity) => void; // parent persists on Continue
+  onDiscordLinked: (u: DiscordIdentity) => void; // parent/hook persists on Continue
   discordIdentity?: DiscordIdentity | null;
   contactErr: string | null;
   riotInputRef: React.RefObject<HTMLInputElement | null>;
@@ -54,7 +53,7 @@ export default function StepContact({
   const okRing = "ring-white/12 focus:ring-white/25";
   const badRing = "ring-red-500/70 focus:ring-red-500";
 
-  // RiotTag verification (read-only)
+  // ---- RiotTag verification (debounced, read-only) ----
   React.useEffect(() => {
     const val = riotVal.trim();
 
@@ -103,7 +102,7 @@ export default function StepContact({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
 
-  // Open popup
+  // ---- Discord OAuth popup ----
   const openDiscordOAuth = React.useCallback(() => {
     window.open("/api/checkout/discord/oauth-start", "discord_oauth", "width=520,height=700");
   }, []);
@@ -115,7 +114,7 @@ export default function StepContact({
     if (!data || typeof data !== "object") return;
 
     if (data.type === "discord-auth-success" && data.user) {
-      onDiscordLinked(data.user as DiscordIdentity); // UI fills name now; DB saved on Continue
+      onDiscordLinked(data.user as DiscordIdentity); // UI fills with username; DB saved on Continue by parent
     }
   }, [onDiscordLinked]);
 
@@ -152,6 +151,7 @@ export default function StepContact({
   const riotShowError = checkStatus === "bad" || (submitted && !formatValid);
   const canSubmit = checkStatus === "ok" && !!discordIdentity?.id;
 
+  // Icons
   const Spinner = () => (
     <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70" viewBox="0 0 24 24" aria-hidden="true">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -192,7 +192,7 @@ export default function StepContact({
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
-          if (canSubmit) onSubmit();
+          if (canSubmit) onSubmit(); // parent/hook persists id+username on Continue
         }}
         className="flex-1 flex flex-col"
       >
@@ -220,32 +220,31 @@ export default function StepContact({
             </div>
           </label>
 
-          {/* Discord OAuth */}
+          {/* Discord OAuth (aligned like input, bold + slightly smaller) */}
           <div className="block">
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/65">Discord</span>
             </div>
-            <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-white/12 px-3 py-2">
-              {discordIdentity?.id ? (
-                <div className="text-sm text-white/90">
-                  Linked:{" "}
-                  <span className="font-medium">
-                    {discordIdentity.globalName || discordIdentity.username}
-                  </span>
-                </div>
-              ) : (
-                <div className="text-sm text-white/70">Not linked to Discord</div>
-              )}
+
+            <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 min-h-[48px]">
+              <div className="truncate text-[13px] font-semibold">
+                {discordIdentity?.id ? (
+                  <span className="text-white/90">{discordIdentity.username}</span>
+                ) : (
+                  <span className="text-white/80">Not linked to Discord</span>
+                )}
+              </div>
 
               <button
                 type="button"
                 onClick={openDiscordOAuth}
-                className="ml-3 rounded-lg px-3 py-2 text-sm font-semibold text-[#0A0A0A]
+                className="ml-3 rounded-lg px-3 h-9 text-[13px] font-semibold text-[#0A0A0A]
                            bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-white/15"
               >
                 {discordIdentity?.id ? "Relink Discord" : "Link Discord"}
               </button>
             </div>
+
             {!discordIdentity?.id && submitted && (
               <div className="mt-1 text-xs text-red-400">Please link your Discord account.</div>
             )}
