@@ -7,17 +7,25 @@ export const dynamic = "force-dynamic";
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID!;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET!;
 
-// Send OBJECT back to opener (payload injected via base64 to avoid </script> issues)
+// Post the result back to the opener AND provide fallbacks.
 function htmlCloseWithMessage(origin: string, type: string, payload?: unknown) {
   const obj = { type, ...(payload ? (payload as any) : {}) };
-  const b64 = Buffer.from(JSON.stringify(obj), "utf8").toString("base64"); // node Buffer ok in runtime=nodejs
+  const b64 = Buffer.from(JSON.stringify(obj), "utf8").toString("base64");
   return `<!doctype html><meta charset="utf-8" />
 <script>
 (function(){
-  var targetOrigin = "*"; // TODO: replace with ${JSON.stringify(origin)} once verified
   var payload = JSON.parse(atob(${JSON.stringify(b64)}));
-  try { if (window.opener) window.opener.postMessage(payload, targetOrigin); } catch(e){}
-  window.close();
+
+  // 1) Try postMessage to opener (opener may be null due to COOP)
+  try { if (window.opener) window.opener.postMessage(payload, "*"); } catch(e){}
+
+  // 2) BroadcastChannel fallback
+  try { var bc = new BroadcastChannel("dc_oauth"); bc.postMessage(payload); bc.close(); } catch(e){}
+
+  // 3) localStorage fallback (main window reads on focus)
+  try { localStorage.setItem("dc_oauth_payload", JSON.stringify(payload)); } catch(e){}
+
+  setTimeout(function(){ window.close(); }, 80);
 })();
 </script>`;
 }
