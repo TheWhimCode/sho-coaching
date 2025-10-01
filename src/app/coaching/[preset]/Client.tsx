@@ -1,4 +1,3 @@
-// src/app/coaching/[preset]/Client.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -15,19 +14,16 @@ import { useSearchParams } from "next/navigation";
 export default function Client({ preset }: { preset: string }) {
   const params = useSearchParams();
   const wantsCustomize = params.get("open") === "customize";
-  const focus = params.get("focus"); // e.g. "followups"
+  const focus = params.get("focus");
 
-  // Read query once for initial seeding
   const qBase = Number(params.get("base") ?? NaN);
   const qFU   = Number(params.get("followups") ?? NaN);
   const qLive = Number(params.get("live") ?? NaN);
 
   const init = useMemo(() => {
-    // helper to clamp & coerce
     const safe = (n: number, def: number) => (Number.isFinite(n) ? n : def);
 
     if (preset === "custom") {
-      // Start with the linked values if present (so no post-mount flip)
       const liveMin   = safe(qBase, 60);
       const followups = Math.max(0, Math.min(2, safe(qFU, 0)));
       const liveBlocks= Math.max(0, Math.min(2, safe(qLive, 0)));
@@ -46,24 +42,20 @@ export default function Client({ preset }: { preset: string }) {
       default:
         return { title: "VOD Review",        cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preset, qBase, qFU, qLive]);
 
   const [cfg, setCfg] = useState<Cfg>(init.cfg);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Overlay + prefetch
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [initialSlotId, setInitialSlotId] = useState<string | undefined>();
   const [liveMinutes, setLiveMinutes] = useState(init.cfg.liveMin);
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
 
-  // Active preset follows current config (so hero/steps update)
   const [activePreset, setActivePreset] = useState<Preset>(() =>
     getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks)
   );
 
-  // Hide scrollbar (but keep scrolling) for this page only
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -75,34 +67,24 @@ export default function Client({ preset }: { preset: string }) {
     };
   }, []);
 
-  // Disable scroll when drawer or calendar are open
   useEffect(() => {
     const body = document.body;
-
-    if (drawerOpen || calendarOpen) {
-      body.style.overflow = "hidden";
-    } else {
-      body.style.overflow = "";
-    }
-
-    return () => {
-      body.style.overflow = "";
-    };
+    if (drawerOpen || calendarOpen) body.style.overflow = "hidden";
+    else body.style.overflow = "";
+    return () => { body.style.overflow = ""; };
   }, [drawerOpen, calendarOpen]);
 
-  // If route segment changes, reset cfg accordingly (but ‘custom’ stays on its seeded values)
   useEffect(() => {
     setCfg(init.cfg);
     setLiveMinutes(init.cfg.liveMin);
     setActivePreset(getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks));
   }, [init]);
 
-  // Keep active preset synced as user customizes
   useEffect(() => {
     setActivePreset(getPreset(cfg.liveMin, cfg.followups, cfg.liveBlocks));
   }, [cfg.liveMin, cfg.followups, cfg.liveBlocks]);
 
-  // Prefetch availability when base minutes change
+  // Prefetch availability when minutes change
   useEffect(() => {
     let on = true;
     const now = new Date();
@@ -110,31 +92,31 @@ export default function Client({ preset }: { preset: string }) {
     const end = new Date(start);
     end.setDate(end.getDate() + 14);
     end.setHours(23, 59, 59, 999);
+
+    const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;
+
     (async () => {
       try {
-        const data = await fetchSlots(start, end, cfg.liveMin);
+        const data = await fetchSlots(start, end, totalMinutes);
         if (on) setPrefetchedSlots(data);
       } catch {}
     })();
+
     return () => { on = false; };
-  }, [cfg.liveMin]);
+  }, [cfg.liveMin, cfg.liveBlocks]);
 
   const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;
   const { priceEUR } = computePriceEUR(totalMinutes, cfg.followups);
 
-  // Auto-open drawer with delayed timing on deep-link
   useEffect(() => {
     if (preset === "custom" && wantsCustomize) {
-      // Base 0.8 + right 1.0 + extra 1.0 = 2.8s
-      const delay = 2800;
-      const t = setTimeout(() => setDrawerOpen(true), delay);
+      const t = setTimeout(() => setDrawerOpen(true), 2800);
       return () => clearTimeout(t);
     }
   }, [preset, wantsCustomize]);
 
   return (
     <LayoutGroup id="booking-flow">
-      {/* Use svh to avoid iOS toolbar-induced scroll and keep the doc height tight */}
       <main className="relative min-h-[100svh] text-white overflow-x-hidden">
         <SessionHero
           presetOverride={activePreset}
@@ -152,7 +134,6 @@ export default function Client({ preset }: { preset: string }) {
             setLiveMinutes(liveMinutes);
             setCalendarOpen(true);
           }}
-          // keep your chosen parallax speed here
           parallaxSpeed={0.1}
         />
 
@@ -170,7 +151,6 @@ export default function Client({ preset }: { preset: string }) {
           )}
         </AnimatePresence>
 
-        {/* mobile backdrop for drawer */}
         <AnimatePresence>
           {drawerOpen && (
             <motion.div
@@ -194,17 +174,16 @@ export default function Client({ preset }: { preset: string }) {
         />
       </main>
 
-      {/* Global CSS to hide browser scrollbars while preserving scroll */}
       <style jsx global>{`
         html.no-scrollbar,
         body.no-scrollbar {
-          -ms-overflow-style: none; /* IE/Edge */
-          scrollbar-width: none;    /* Firefox */
+          -ms-overflow-style: none;
+          scrollbar-width: none;
           overscroll-behavior: none;
         }
         html.no-scrollbar::-webkit-scrollbar,
         body.no-scrollbar::-webkit-scrollbar {
-          display: none;  /* Chrome/Safari/WebKit */
+          display: none;
           width: 0;
           height: 0;
           background: transparent;

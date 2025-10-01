@@ -14,7 +14,6 @@ export default function CheckoutSteps({
   flow: ReturnType<typeof import("./useCheckoutFlow").useCheckoutFlow>;
 }) {
   const {
-    // state + values from the hook
     step,
     dir,
     goBack,
@@ -40,12 +39,10 @@ export default function CheckoutSteps({
     breakdown,
     sessionBlockTitle,
 
-    // payment helpers
     setCardPmId,
     setSavedCard,
     savedCard,
 
-    // misc
     loadingIntent,
   } = flow;
 
@@ -56,7 +53,13 @@ export default function CheckoutSteps({
   };
 
   return (
-    <div className="relative min-h-[440px] overflow-visible pt-1 md:min-h-[440px]">
+    <div
+      className="
+        relative pt-1 flex flex-col
+        overflow-hidden md:overflow-visible
+        h-full md:h-[440px]      /* mobile: take parent's height; desktop fixed */
+      "
+    >
       <AnimatePresence custom={dir} mode="wait" initial={false}>
         {step === 0 && (
           <motion.div
@@ -67,7 +70,11 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+            className="
+              relative flex flex-col flex-1 min-h-0
+              w-full
+              md:absolute md:inset-0 md:h-full
+            "
           >
             <StepContact
               riotTag={riotTag}
@@ -93,7 +100,11 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+            className="
+              relative flex flex-col flex-1 min-h-0
+              w-full
+              md:absolute md:inset-0 md:h-full
+            "
           >
             <Elements stripe={stripePromise} options={{ appearance, loader: "never" }}>
               <StepChoose goBack={goBack} onChoose={chooseAndGo as any} />
@@ -110,7 +121,11 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+            className="
+              relative flex flex-col flex-1 min-h-0
+              w-full
+              md:absolute md:inset-0 md:h-full
+            "
           >
             {clientSecret ? (
               <Elements
@@ -149,7 +164,11 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="relative flex flex-col w-full md:absolute md:inset-0 md:h-full"
+            className="
+              relative flex flex-col flex-1 min-h-0
+              w-full
+              md:absolute md:inset-0 md:h-full
+            "
           >
             <Elements
               key={clientSecret || "loading-step3"}
@@ -161,7 +180,7 @@ export default function CheckoutSteps({
                 payload={payload}
                 breakdown={breakdown}
                 payMethod={(payMethod || "card") as any}
-discord={discordIdentity?.username ?? ""}
+                discord={discordIdentity?.username ?? ""}
                 notes={notes}
                 sessionType={sessionBlockTitle}
                 piId={piId}

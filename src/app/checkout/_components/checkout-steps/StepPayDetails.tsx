@@ -133,11 +133,9 @@ function FormBody({
   const stripe = useStripe();
   const elements = useElements();
 
-  // Show skeleton once until Stripe Elements report ready.
   const [showSkeleton, setShowSkeleton] = useState(true);
-  const readyLocked = useRef(false); // guards multiple onReady calls in dev/StrictMode
+  const readyLocked = useRef(false);
 
-  // When method changes, re-show skeleton only if we're not using a saved card.
   useEffect(() => {
     if (payMethod === "card" && savedCard) {
       setShowSkeleton(false);
@@ -158,7 +156,6 @@ function FormBody({
     setErr(null);
 
     if (payMethod === "card") {
-      // If already saved, just continue.
       if (savedCard?.id) {
         setChecking(false);
         onContinue();
@@ -179,7 +176,6 @@ function FormBody({
       const { error, paymentMethod } = await stripe.createPaymentMethod({
         type: "card",
         card,
-
       });
 
       if (error || !paymentMethod) {
@@ -202,7 +198,7 @@ function FormBody({
       return;
     }
 
-    // Non-card methods (paypal, revolut_pay, klarna): validate Payment Element
+    // Non-card methods
     if (!elements) {
       setErr("Payment form not ready.");
       setChecking(false);
@@ -226,7 +222,9 @@ function FormBody({
     const last4 = savedCard.last4 ?? "••••";
     const exp =
       savedCard.exp_month && savedCard.exp_year
-        ? `${String(savedCard.exp_month).padStart(2, "0")}/${String(savedCard.exp_year).slice(-2)}`
+        ? `${String(savedCard.exp_month).padStart(2, "0")}/${String(
+            savedCard.exp_year
+          ).slice(-2)}`
         : null;
 
     return (
@@ -256,9 +254,9 @@ function FormBody({
           <button
             type="button"
             onClick={() => {
-              setSavedCard(null);          // return to editable fields
-              setShowSkeleton(true);       // show skeleton while Elements re-mount
-              readyLocked.current = false; // allow next onReady to hide it
+              setSavedCard(null);
+              setShowSkeleton(true);
+              readyLocked.current = false;
             }}
             className="
               inline-flex items-center gap-1.5
@@ -322,7 +320,7 @@ function FormBody({
           )}
         </div>
 
-        {/* Skeleton overlay (single, guarded) */}
+        {/* Skeleton overlay */}
         {showSkeleton && (
           <div className="absolute inset-0">
             <PaymentSkeleton method={payMethod} />

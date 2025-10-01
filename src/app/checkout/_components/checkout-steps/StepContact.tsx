@@ -3,17 +3,14 @@
 import * as React from "react";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 
-type DiscordIdentity = {
-  id: string;
-  username?: string | null; // username only
-};
+type DiscordIdentity = { id: string; username?: string | null };
 
 type Props = {
   riotTag?: string;
   notes?: string;
   setRiotTag: (v: string) => void;
   setNotes: (v: string) => void;
-  onDiscordLinked: (u: DiscordIdentity) => void; // parent/hook persists on Continue
+  onDiscordLinked: (u: DiscordIdentity) => void;
   discordIdentity?: DiscordIdentity | null;
   contactErr: string | null;
   riotInputRef: React.RefObject<HTMLInputElement | null>;
@@ -50,35 +47,30 @@ export default function StepContact({
 
   const baseInput =
     "mt-1 w-full rounded-lg bg-white/[.05] ring-1 px-4 py-3 text-base text-white/90 outline-none transition";
-  const okRing = "ring-white/12 focus:ring-white/25";
-  const badRing = "ring-red-500/70 focus:ring-red-500";
+  const okRing = "ring-inset ring-white/12 focus:ring-inset focus:ring-white/25";
+  const badRing = "ring-inset ring-red-500/70 focus:ring-inset focus:ring-red-500";
 
-  // ---- RiotTag verification (debounced, read-only) ----
+  // Riot tag verification
   React.useEffect(() => {
     const val = riotVal.trim();
-
     if (!val || !isValidRiotTagFormat(val)) {
       setCheckStatus(val ? "bad" : "idle");
       abortRef.current?.abort();
       return;
     }
-
     setCheckStatus("checking");
-
     const t = setTimeout(async () => {
       try {
         abortRef.current?.abort();
         const ctrl = new AbortController();
         abortRef.current = ctrl;
-
         const res = await fetch("/api/riot/resolve", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ riotTag: val }),
           signal: ctrl.signal,
         });
-
-        if (!res.ok) { setCheckStatus("bad"); return; }
+        if (!res.ok) return setCheckStatus("bad");
         const data = await res.json().catch(() => ({}));
         if (data?.puuid) {
           setCheckStatus("ok");
@@ -90,56 +82,49 @@ export default function StepContact({
               region: String(data.region || "europe"),
             });
           }
-        } else {
-          setCheckStatus("bad");
-        }
+        } else setCheckStatus("bad");
       } catch (e: any) {
         if (e?.name !== "AbortError") setCheckStatus("bad");
       }
     }, 500);
-
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
 
-  // ---- Discord OAuth popup ----
+  // Discord OAuth
   const openDiscordOAuth = React.useCallback(() => {
     window.open("/api/checkout/discord/oauth-start", "discord_oauth", "width=520,height=700");
   }, []);
 
-  // Normalize and handle incoming messages
-  const handleIncoming = React.useCallback((incoming: any) => {
-    let data = incoming;
-    if (typeof data === "string") { try { data = JSON.parse(data); } catch { return; } }
-    if (!data || typeof data !== "object") return;
+  const handleIncoming = React.useCallback(
+    (incoming: any) => {
+      let data = incoming;
+      if (typeof data === "string") {
+        try { data = JSON.parse(data); } catch { return; }
+      }
+      if (!data || typeof data !== "object") return;
+      if (data.type === "discord-auth-success" && data.user) {
+        onDiscordLinked(data.user as DiscordIdentity);
+      }
+    },
+    [onDiscordLinked]
+  );
 
-    if (data.type === "discord-auth-success" && data.user) {
-      onDiscordLinked(data.user as DiscordIdentity); // UI fills with username; DB saved on Continue by parent
-    }
-  }, [onDiscordLinked]);
-
-  // Listen: postMessage + BroadcastChannel + localStorage (on focus)
   React.useEffect(() => {
     const onMsg = (ev: MessageEvent) => handleIncoming(ev.data);
     window.addEventListener("message", onMsg);
-
     let bc: BroadcastChannel | null = null;
     try {
       bc = new BroadcastChannel("dc_oauth");
       bc.onmessage = (ev) => handleIncoming((ev as MessageEvent).data);
     } catch {}
-
     const onFocus = () => {
       try {
         const raw = localStorage.getItem("dc_oauth_payload");
-        if (raw) {
-          handleIncoming(raw);
-          localStorage.removeItem("dc_oauth_payload");
-        }
+        if (raw) { handleIncoming(raw); localStorage.removeItem("dc_oauth_payload"); }
       } catch {}
     };
     window.addEventListener("focus", onFocus);
-
     return () => {
       window.removeEventListener("message", onMsg);
       window.removeEventListener("focus", onFocus);
@@ -151,7 +136,6 @@ export default function StepContact({
   const riotShowError = checkStatus === "bad" || (submitted && !formatValid);
   const canSubmit = checkStatus === "ok" && !!discordIdentity?.id;
 
-  // Icons
   const Spinner = () => (
     <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70" viewBox="0 0 24 24" aria-hidden="true">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -172,14 +156,12 @@ export default function StepContact({
   );
 
   const hint =
-    !formatValid && riotVal.trim()
-      ? ""
-      : checkStatus === "bad"
-      ? "Invalid Riot#tag — check spelling"
-      : "";
+    !formatValid && riotVal.trim() ? "" : checkStatus === "bad" ? "Invalid Riot#tag — check spelling" : "";
 
   return (
-    <div className="h-full flex flex-col pt-2">
+    // Root: header (auto) + form (1fr)
+    <div className="h-full min-h-0 grid grid-rows-[auto,1fr] pt-2">
+      {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <div className="text-sm text-white/80">Contact details</div>
@@ -187,16 +169,18 @@ export default function StepContact({
         <div className="mt-2 border-t border-white/10" />
       </div>
 
+      {/* Form: body (1fr) + footer (auto) */}
       <form
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
-          if (canSubmit) onSubmit(); // parent/hook persists id+username on Continue
+          if (canSubmit) onSubmit();
         }}
-        className="flex-1 flex flex-col"
+        className="min-h-0 grid grid-rows-[1fr,auto]"
       >
-        <div className="flex-1 space-y-3">
+        {/* Body */}
+        <div className="min-h-0 space-y-3 px-1 md:overflow-visible">
           {/* RiotTag */}
           <label className="block">
             <div className="flex items-center justify-between">
@@ -220,13 +204,13 @@ export default function StepContact({
             </div>
           </label>
 
-          {/* Discord OAuth (aligned like input, bold + slightly smaller) */}
+          {/* Discord */}
           <div className="block">
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/65">Discord</span>
             </div>
 
-            <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-white/12 px-4 py-3 min-h-[48px]">
+            <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-inset ring-white/12 px-4 py-3 min-h-[48px]">
               <div className="truncate text-[13px] font-semibold">
                 {discordIdentity?.id ? (
                   <span className="text-white/90">{discordIdentity.username}</span>
@@ -239,7 +223,7 @@ export default function StepContact({
                 type="button"
                 onClick={openDiscordOAuth}
                 className="ml-3 rounded-lg px-3 h-9 text-[13px] font-semibold text-[#0A0A0A]
-                           bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-white/15"
+                           bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-inset ring-white/15"
               >
                 {discordIdentity?.id ? "Relink Discord" : "Link Discord"}
               </button>
@@ -266,9 +250,12 @@ export default function StepContact({
           {contactErr && <div className="text-sm text-red-400 mt-1">{contactErr}</div>}
         </div>
 
-        <PrimaryCTA type="submit" disabled={!canSubmit} className="px-5 py-3 text-base w-full">
-          Continue
-        </PrimaryCTA>
+        {/* Footer */}
+        <div className="pt-3 px-1 pb-[env(safe-area-inset-bottom)]">
+          <PrimaryCTA type="submit" disabled={!canSubmit} className="px-5 py-3 text-base w-full">
+            Continue
+          </PrimaryCTA>
+        </div>
       </form>
     </div>
   );
