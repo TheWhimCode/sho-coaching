@@ -128,13 +128,13 @@ export default function SessionBlock({
         />
       )}
 
-      {/* Super faint border (same trigger as texture) */}
-      {showAffordance && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-2xl border border-white/10"
-        />
-      )}
+      {/* Border: always on; stronger while customizing */}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 rounded-2xl border transition-colors duration-300 ${
+          showAffordance ? "border-white/10" : "border-white/5"
+        }`}
+      />
 
       {/* Emblem */}
       <div className="pointer-events-none absolute right-6 top-5">

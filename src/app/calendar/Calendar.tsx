@@ -1,3 +1,4 @@
+// src/app/calendar/Calendar.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -21,13 +22,13 @@ import { ArrowLeft } from "lucide-react";
 
 type Props = {
   sessionType: string;
-  liveMinutes: number;
+  liveMinutes: number;   // base minutes (30..120)
   followups?: number;
   onClose?: () => void;
   initialSlotId?: string | null;
   /** seed with already-fetched availability (kept up to date by parent) */
   prefetchedSlots?: Slot[];
-  liveBlocks?: number;
+  liveBlocks?: number;   // 0..2 (each 45m)
 };
 
 const overlay: Variants = {
@@ -59,6 +60,10 @@ export default function Calendar({
   liveBlocks = 0,
 }: Props) {
   const router = useRouter();
+
+  // total session minutes (base + in-game)
+  const blocks = liveBlocks ?? 0;
+  const totalMinutes = liveMinutes + blocks * 45;
 
   const [month, setMonth] = useState(() => {
     const d = new Date();
@@ -106,7 +111,7 @@ export default function Calendar({
     if (selectedSlotId && !prefetchedSlots.some((s) => s.id === selectedSlotId)) {
       setSelectedSlotId(null);
     }
-  }, [prefetchedSlots]);
+  }, [prefetchedSlots, selectedSlotId]);
 
   useEffect(() => {
     let ignore = false;
@@ -120,7 +125,8 @@ export default function Calendar({
       if (doSpinner) setLoading(true);
       setHydrating(true); setError(null);
       try {
-        const data = await fetchSlots(startBoundary, end, liveMinutes);
+        // Use totalMinutes so returned starts already guarantee a full chain
+        const data = await fetchSlots(startBoundary, end, totalMinutes);
         if (!ignore) {
           setSlots(data);
           if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
@@ -135,7 +141,7 @@ export default function Calendar({
     })();
 
     return () => { ignore = true; };
-  }, [liveMinutes]);
+  }, [totalMinutes]); // recompute availability when session length changes
 
   const preselectedOnce = useRef(false);
   useEffect(() => {
@@ -190,12 +196,16 @@ export default function Calendar({
     setDErr(null);
     setPending(true);
     try {
-      const { holdKey: k } = await holdSlot(selectedSlotId, holdKey || undefined);
+      // Hold the full chain for the total (base + in-game) minutes
+      const { holdKey: k, slotIds } = await holdSlot(
+        selectedSlotId,
+        totalMinutes,
+        holdKey || undefined
+      );
       setHoldKey(k);
       if (typeof window !== "undefined") sessionStorage.setItem(`hold:${selectedSlotId}`, k);
 
-      const blocks = liveBlocks ?? 0;
-      const baseOnly = Math.max(30, liveMinutes - blocks * 45);
+      const baseOnly = Math.max(30, liveMinutes); // liveMinutes prop is base-only
       const preset = getPreset(baseOnly, followups ?? 0, blocks);
 
       const url = new URL("/checkout", window.location.origin);
@@ -206,6 +216,7 @@ export default function Calendar({
       url.searchParams.set("preset", preset);
       url.searchParams.set("holdKey", k);
       if (blocks) url.searchParams.set("liveBlocks", String(blocks));
+      if (slotIds?.length) url.searchParams.set("slotIds", slotIds.join(","));
 
       const selectedLocal =
         displayableStartsForSelected.find(({ id }) => id === selectedSlotId)?.local ??
@@ -228,18 +239,15 @@ export default function Calendar({
     }
   }
 
+  // Release the entire chain by holdKey if the overlay closes without checkout
   useEffect(() => {
     return () => {
       if (goingToCheckout.current) return;
-      if (
-        selectedSlotId &&
-        typeof window !== "undefined" &&
-        !window.location.pathname.startsWith("/checkout")
-      ) {
-        releaseHold(selectedSlotId, holdKey || undefined);
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/checkout")) {
+        releaseHold(holdKey || undefined);
       }
     };
-  }, [selectedSlotId, holdKey]);
+  }, [holdKey]);
 
   const handleExitComplete = () => {
     if (!isOpen) onClose?.();

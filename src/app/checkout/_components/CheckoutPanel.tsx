@@ -9,7 +9,7 @@ export default function CheckoutPanel(props: Parameters<typeof useCheckoutFlow>[
   const { payload, breakdown, selectedStart } = flow;
 
   return (
-    // Mobile: fullscreen overlay ignoring parent padding; Desktop: normal static panel
+    // Mobile: fullscreen overlay; Desktop: static panel
     <div
       className="
         fixed inset-0 z-40 w-screen h-[100svh]
@@ -37,15 +37,15 @@ export default function CheckoutPanel(props: Parameters<typeof useCheckoutFlow>[
         />
       </div>
 
-      {/* Content: scrolls inside on mobile; desktop keeps original padding */}
+      {/* Content: no mobile scroll, full-height column */}
       <div
         className="
-          relative flex h-full flex-col overflow-y-auto
+          relative flex h-full flex-col overflow-hidden
           px-6 py-6
           md:p-6
         "
       >
-        <div className="relative space-y-3 flex-1">
+        <div className="relative flex-1 min-h-0 space-y-3">
           <SessionBlock
             layoutId="session-block"
             minutes={payload.baseMinutes}
@@ -62,8 +62,8 @@ export default function CheckoutPanel(props: Parameters<typeof useCheckoutFlow>[
 
           <CheckoutSteps flow={flow} />
 
-          {/* Footer badges */}
-          <div className="flex items-center gap-3 pt-4 text-white/75">
+          {/* Footer badges (hide on mobile to avoid extra height) */}
+          <div className="hidden md:flex items-center gap-3 pt-4 text-white/75">
             <span className="inline-flex items-center gap-1 text-xs">
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="text-violet-400">
                 <path d="M12 2 3 7l9 5 9-5-9-5Z" fill="currentColor" opacity=".9" />
