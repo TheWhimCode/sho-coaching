@@ -14,7 +14,7 @@ type Props = {
   notes?: string;
   setRiotTag: (v: string) => void;
   setNotes: (v: string) => void;
-  onDiscordLinked: (u: DiscordIdentity) => void;
+  onDiscordLinked: (u: DiscordIdentity) => void; // parent/hook saves to DB on Continue
   discordIdentity?: DiscordIdentity | null;
   contactErr: string | null;
   riotInputRef: React.RefObject<HTMLInputElement | null>;
@@ -22,6 +22,7 @@ type Props = {
   onRiotVerified?: (d: { riotTag: string; puuid: string; region: string }) => void;
 };
 
+// Riot tag quick format check
 function isValidRiotTagFormat(v: string) {
   const s = v.trim();
   return /^[A-Za-z0-9 .'_\-]{3,16}#[A-Za-z0-9]{3,5}$/.test(s);
@@ -54,7 +55,7 @@ export default function StepContact({
   const okRing = "ring-white/12 focus:ring-white/25";
   const badRing = "ring-red-500/70 focus:ring-red-500";
 
-  // RiotTag verify (debounced)
+  // ---- RiotTag verification (debounced, read-only) ----
   React.useEffect(() => {
     const val = riotVal.trim();
 
@@ -103,31 +104,59 @@ export default function StepContact({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
 
-  // Open popup
+  // ---- Discord OAuth popup ----
   const openDiscordOAuth = React.useCallback(() => {
-    window.open("/api/checkout/discord/oauth-start", "discord_oauth", "width=520,height=700");
+    window.open(
+      "/api/checkout/discord/oauth-start",
+      "discord_oauth",
+      "width=520,height=700"
+    );
   }, []);
 
-  // Global message listener
-  React.useEffect(() => {
-    const receive = (ev: MessageEvent) => {
-      // Leave origin open while debugging; tighten later:
-      // if (ev.origin !== window.location.origin) return;
+  // Handle incoming payloads (object or string)
+  const handleIncoming = React.useCallback((incoming: any) => {
+    let data = incoming;
+    if (typeof data === "string") {
+      try { data = JSON.parse(data); } catch { return; }
+    }
+    if (!data || typeof data !== "object") return;
 
-      let data: any = ev.data;
-      if (typeof data === "string") {
-        try { data = JSON.parse(data); } catch { /* ignore */ }
-      }
-      if (!data || typeof data !== "object") return;
-
-      if (data.type === "discord-auth-success" && data.user) {
-        onDiscordLinked(data.user as DiscordIdentity);
-      }
-    };
-
-    window.addEventListener("message", receive);
-    return () => window.removeEventListener("message", receive);
+    if (data.type === "discord-auth-success" && data.user) {
+      onDiscordLinked(data.user as DiscordIdentity); // UI fills name; DB saved on Continue by parent/hook
+    }
   }, [onDiscordLinked]);
+
+  // Listen for OAuth result (postMessage + BroadcastChannel + focus/localStorage fallback)
+  React.useEffect(() => {
+    const onMsg = (ev: MessageEvent) => {
+      // If needed later: if (ev.origin !== window.location.origin) return;
+      handleIncoming(ev.data);
+    };
+    window.addEventListener("message", onMsg);
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("dc_oauth");
+      bc.onmessage = (ev) => handleIncoming((ev as MessageEvent).data);
+    } catch {}
+
+    const onFocus = () => {
+      try {
+        const raw = localStorage.getItem("dc_oauth_payload");
+        if (raw) {
+          handleIncoming(raw);
+          localStorage.removeItem("dc_oauth_payload");
+        }
+      } catch {}
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("message", onMsg);
+      window.removeEventListener("focus", onFocus);
+      try { bc?.close(); } catch {}
+    };
+  }, [handleIncoming]);
 
   const formatValid = isValidRiotTagFormat(riotVal);
   const riotShowError = checkStatus === "bad" || (submitted && !formatValid);
@@ -174,12 +203,12 @@ export default function StepContact({
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
-          if (canSubmit) onSubmit();
+          if (canSubmit) onSubmit(); // parent/hook will persist discordId/discordName + riotTag on Continue
         }}
         className="flex-1 flex flex-col"
       >
         <div className="flex-1 space-y-3">
-          {/* RiotTag */}
+          {/* RiotTag (async verified) */}
           <label className="block">
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/65">Summoner name</span>
@@ -222,7 +251,8 @@ export default function StepContact({
               <button
                 type="button"
                 onClick={openDiscordOAuth}
-                className="ml-3 rounded-lg px-3 py-2 text-sm font-semibold text-[#0A0A0A] bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-white/15"
+                className="ml-3 rounded-lg px-3 py-2 text-sm font-semibold text-[#0A0A0A]
+                           bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-white/15"
               >
                 {discordIdentity?.id ? "Relink Discord" : "Link Discord"}
               </button>

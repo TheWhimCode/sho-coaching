@@ -6,31 +6,46 @@ import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock"
 
 export default function CheckoutPanel(props: Parameters<typeof useCheckoutFlow>[0]) {
   const flow = useCheckoutFlow(props);
-
   const { payload, breakdown, selectedStart } = flow;
 
   return (
-    <div className="relative rounded-2xl isolate w-full">
+    // Mobile: fullscreen overlay ignoring parent padding; Desktop: normal static panel
+    <div
+      className="
+        fixed inset-0 z-40 w-screen h-[100svh]
+        md:static md:inset-auto md:z-auto md:w-full md:h-auto md:rounded-2xl
+      "
+    >
+      {/* Background / halo */}
       <div
+        aria-hidden
         className="
-          relative rounded-2xl p-5 md:p-6
+          absolute inset-0 md:rounded-2xl md:overflow-hidden
           bg-[linear-gradient(135deg,#11182a_0%,#0e1526_45%,#0c1322_100%)]
-          border border-[rgba(146,180,255,0.12)]
-          ring-1 ring-[rgba(146,180,255,0.14)]
-          shadow-[0_12px_40px_rgba(0,0,0,0.5)]
+          md:border md:border-[rgba(146,180,255,0.12)]
+          md:ring-1 md:ring-[rgba(146,180,255,0.14)]
+          md:shadow-[0_12px_40px_rgba(0,0,0,0.5)]
         "
       >
         <span
-          aria-hidden
           className="
-            pointer-events-none absolute inset-0 rounded-2xl
+            pointer-events-none absolute inset-0
             bg-[radial-gradient(120%_120%_at_50%_0%,rgba(105,168,255,0.25),transparent_60%)]
             opacity-100 blur-[14px]
+            md:rounded-2xl
           "
         />
+      </div>
 
-        {/* Header / summary block (unchanged) */}
-        <div className="relative space-y-3">
+      {/* Content: scrolls inside on mobile; desktop keeps original padding */}
+      <div
+        className="
+          relative flex h-full flex-col overflow-y-auto
+          px-6 py-6
+          md:p-6
+        "
+      >
+        <div className="relative space-y-3 flex-1">
           <SessionBlock
             layoutId="session-block"
             minutes={payload.baseMinutes}
@@ -42,12 +57,12 @@ export default function CheckoutPanel(props: Parameters<typeof useCheckoutFlow>[
             selectedDate={selectedStart}
           />
 
-          <div className="-mx-5 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
+          {/* Divider spans content width on mobile, panel width on desktop */}
+          <div className="-mx-4 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-          {/* Steps */}
           <CheckoutSteps flow={flow} />
 
-          {/* Footer badges (unchanged) */}
+          {/* Footer badges */}
           <div className="flex items-center gap-3 pt-4 text-white/75">
             <span className="inline-flex items-center gap-1 text-xs">
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="text-violet-400">
