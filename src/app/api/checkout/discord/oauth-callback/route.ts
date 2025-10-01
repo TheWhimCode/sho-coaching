@@ -96,7 +96,6 @@ export async function GET(req: NextRequest) {
     const user = {
       id: String(me.id),
       username: me.username ?? null,   // username only
-      // globalName deliberately omitted
       avatar: me.avatar ?? null,
     };
 

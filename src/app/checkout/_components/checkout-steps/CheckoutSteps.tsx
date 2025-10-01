@@ -161,7 +161,7 @@ export default function CheckoutSteps({
                 payload={payload}
                 breakdown={breakdown}
                 payMethod={(payMethod || "card") as any}
-                discord={discordIdentity?.globalName || discordIdentity?.username || ""}
+discord={discordIdentity?.username ?? ""}
                 notes={notes}
                 sessionType={sessionBlockTitle}
                 piId={piId}
