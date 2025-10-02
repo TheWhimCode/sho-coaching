@@ -46,17 +46,14 @@ CREATE TABLE "public"."Session" (
     "slotId" TEXT,
     "liveMinutes" INTEGER NOT NULL,
     "followups" INTEGER NOT NULL DEFAULT 0,
-    "discord" TEXT NOT NULL,
-    "riotTag" TEXT,
+    "riotTag" TEXT NOT NULL,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "stripeSessionId" TEXT,
     "paymentProvider" TEXT,
     "paymentRef" TEXT,
     "amountCents" INTEGER,
     "currency" TEXT NOT NULL DEFAULT 'eur',
     "blockCsv" TEXT,
-    "customerEmail" TEXT,
     "scheduledStart" TIMESTAMP(3) NOT NULL,
     "scheduledMinutes" INTEGER NOT NULL,
     "liveBlocks" INTEGER NOT NULL DEFAULT 0,
@@ -64,6 +61,8 @@ CREATE TABLE "public"."Session" (
     "waiverAcceptedAt" TIMESTAMP(3),
     "waiverIp" TEXT,
     "studentId" TEXT,
+    "discordId" TEXT,
+    "discordName" TEXT,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
@@ -74,17 +73,6 @@ CREATE TABLE "public"."ProcessedEvent" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "ProcessedEvent_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."EmailLog" (
-    "id" TEXT NOT NULL,
-    "sessionId" TEXT NOT NULL,
-    "kind" TEXT NOT NULL,
-    "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "EmailLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -101,12 +89,13 @@ CREATE TABLE "public"."WebhookEvent" (
 CREATE TABLE "public"."Student" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "discord" TEXT,
     "puuid" TEXT,
     "server" TEXT,
     "riotTag" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "discordId" TEXT,
+    "discordName" TEXT,
 
     CONSTRAINT "Student_pkey" PRIMARY KEY ("id")
 );
@@ -155,6 +144,7 @@ CREATE TABLE "public"."SessionDoc" (
     "notes" JSONB NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "sessionId" TEXT,
 
     CONSTRAINT "SessionDoc_pkey" PRIMARY KEY ("id")
 );
@@ -181,9 +171,6 @@ CREATE INDEX "AvailabilityException_date_idx" ON "public"."AvailabilityException
 CREATE UNIQUE INDEX "Session_slotId_key" ON "public"."Session"("slotId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Session_stripeSessionId_key" ON "public"."Session"("stripeSessionId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Session_paymentRef_key" ON "public"."Session"("paymentRef");
 
 -- CreateIndex
@@ -193,13 +180,16 @@ CREATE INDEX "Session_createdAt_idx" ON "public"."Session"("createdAt");
 CREATE INDEX "Session_scheduledStart_idx" ON "public"."Session"("scheduledStart");
 
 -- CreateIndex
+CREATE INDEX "Session_riotTag_idx" ON "public"."Session"("riotTag");
+
+-- CreateIndex
+CREATE INDEX "Session_discordId_idx" ON "public"."Session"("discordId");
+
+-- CreateIndex
+CREATE INDEX "Session_studentId_idx" ON "public"."Session"("studentId");
+
+-- CreateIndex
 CREATE INDEX "ProcessedEvent_createdAt_idx" ON "public"."ProcessedEvent"("createdAt");
-
--- CreateIndex
-CREATE INDEX "EmailLog_sessionId_idx" ON "public"."EmailLog"("sessionId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "EmailLog_sessionId_kind_key" ON "public"."EmailLog"("sessionId", "kind");
 
 -- CreateIndex
 CREATE INDEX "WebhookEvent_type_createdAt_idx" ON "public"."WebhookEvent"("type", "createdAt");
@@ -208,10 +198,13 @@ CREATE INDEX "WebhookEvent_type_createdAt_idx" ON "public"."WebhookEvent"("type"
 CREATE UNIQUE INDEX "Student_name_key" ON "public"."Student"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Student_discord_key" ON "public"."Student"("discord");
+CREATE UNIQUE INDEX "Student_puuid_key" ON "public"."Student"("puuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Student_puuid_key" ON "public"."Student"("puuid");
+CREATE UNIQUE INDEX "Student_riotTag_key" ON "public"."Student"("riotTag");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Student_discordId_key" ON "public"."Student"("discordId");
 
 -- CreateIndex
 CREATE INDEX "Student_puuid_idx" ON "public"."Student"("puuid");
@@ -232,7 +225,13 @@ CREATE INDEX "RankSnapshot_studentId_capturedAt_idx" ON "public"."RankSnapshot"(
 CREATE INDEX "RankSnapshot_capturedAt_idx" ON "public"."RankSnapshot"("capturedAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "SessionDoc_sessionId_key" ON "public"."SessionDoc"("sessionId");
+
+-- CreateIndex
 CREATE INDEX "SessionDoc_studentId_idx" ON "public"."SessionDoc"("studentId");
+
+-- CreateIndex
+CREATE INDEX "SessionDoc_sessionId_idx" ON "public"."SessionDoc"("sessionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SessionDoc_studentId_number_key" ON "public"."SessionDoc"("studentId", "number");
@@ -244,16 +243,16 @@ ALTER TABLE "public"."Session" ADD CONSTRAINT "Session_slotId_fkey" FOREIGN KEY 
 ALTER TABLE "public"."Session" ADD CONSTRAINT "Session_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."EmailLog" ADD CONSTRAINT "EmailLog_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "public"."Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "public"."StudentAsset" ADD CONSTRAINT "StudentAsset_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "public"."AssetLibrary"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."StudentAsset" ADD CONSTRAINT "StudentAsset_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."StudentAsset" ADD CONSTRAINT "StudentAsset_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "public"."AssetLibrary"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."RankSnapshot" ADD CONSTRAINT "RankSnapshot_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."RankSnapshot" ADD CONSTRAINT "RankSnapshot_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."SessionDoc" ADD CONSTRAINT "SessionDoc_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "public"."Session"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."SessionDoc" ADD CONSTRAINT "SessionDoc_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE CASCADE ON UPDATE CASCADE;

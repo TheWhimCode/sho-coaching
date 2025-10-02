@@ -1,8 +1,13 @@
 // src/lib/booking/finalizeBooking.ts
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { Prisma as PrismaNS } from "@prisma/client";
 import { SlotStatus } from "@prisma/client";
 import { getPreset } from "@/lib/sessions/preset";
+import { Prisma as P } from '@prisma/client';
+console.log('Client ver:', P.prismaVersion.client);
+console.log('Session fields:', P.dmmf.datamodel.models.find(m=>m.name==='Session')?.fields.map(f=>f.name));
+
 
 export type FinalizeMeta = {
   bookingId?: string;
@@ -240,7 +245,7 @@ export async function finalizeBooking(
     }
 
     // 3.2 anchor start time
-    console.log("[finalizeBooking.tx] 3.2 fetch start slot");
+    console.log("[finalizeBooking.tx] 3.2 fetch start slot]");
     const startSlot = await tx.slot.findUnique({
       where: { id: firstSlotId },
       select: { startTime: true },
@@ -252,35 +257,31 @@ export async function finalizeBooking(
     const student = await resolveCanonicalStudent(tx, { discordId, discordName, riotTag });
     console.log("[finalizeBooking.tx] student resolved", student.id);
 
-    // 3.4 finalize session
-    console.log("[finalizeBooking.tx] 3.4 update session");
-    const updateData = {
-      studentId: student.id,
-      sessionType,
-      status: "paid",
-      amountCents: amountCents ?? sessionRow.amountCents ?? undefined,
-      currency: (currency ?? sessionRow.currency ?? "eur").toLowerCase(),
-      blockCsv: slotIds.join(","),
-      paymentProvider: provider,
-      paymentRef,
-      scheduledStart: startSlot.startTime,
-      scheduledMinutes: liveMinutes,
-      liveBlocks,
-      waiverAccepted,
-      waiverAcceptedAt,
-      waiverIp,
-      // NOTE: no discord* fields here; if Prisma tries to set "discord",
-      // it is coming from stale build or middleware mutating params.
-    };
-    console.log("[finalizeBooking.tx] updateData =", updateData);
+    // 3.4 finalize session (RAW UPDATE to avoid Prisma RETURNING stale columns)
+    console.log("[finalizeBooking.tx] 3.4 update session (raw)");
+    const sessionId = sessionRow.id;
+    const currencyLower = (currency ?? sessionRow.currency ?? "eur").toLowerCase();
+    const blockCsv = slotIds.join(",");
 
-   // in finalizeBooking.ts, the tx.session.update call:
-await tx.session.update({
-  where: { id: sessionRow.id },
-  data: updateData,
-  select: { id: true }, // <- temporary patch
-});
-
+    await tx.$executeRaw(PrismaNS.sql`
+      UPDATE "public"."Session"
+      SET
+        "studentId" = ${student.id},
+        "sessionType" = ${sessionType},
+        "status" = 'paid',
+        "amountCents" = ${amountCents ?? sessionRow.amountCents ?? null},
+        "currency" = ${currencyLower},
+        "blockCsv" = ${blockCsv},
+        "paymentProvider" = ${provider},
+        "paymentRef" = ${paymentRef},
+        "scheduledStart" = ${startSlot.startTime},
+        "scheduledMinutes" = ${liveMinutes},
+        "liveBlocks" = ${liveBlocks},
+        "waiverAccepted" = ${waiverAccepted},
+        "waiverAcceptedAt" = ${waiverAcceptedAt ?? null},
+        "waiverIp" = ${waiverIp ?? null}
+      WHERE "id" = ${sessionId}
+    `);
 
     // 3.5 ensure SessionDoc
     console.log("[finalizeBooking.tx] 3.5 ensure sessionDoc");
