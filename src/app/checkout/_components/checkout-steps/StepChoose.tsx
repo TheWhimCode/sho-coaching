@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import PaymentChooser, { PayMethod } from "@/app/checkout/_components/checkout-steps/step-components/PaymentChooser";
 import { ArrowLeft } from "lucide-react";
+import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 
 type Props = {
   goBack: () => void;
@@ -17,14 +18,33 @@ export default function StepChoose({ goBack, onChoose }: Props) {
   // gate the one-time animation with sessionStorage
   const [playReveal, setPlayReveal] = useState(false);
 
+  // Hide the centralized PrimaryCTA on this step
+  const [, setFooter] = useFooter();
+  useEffect(() => {
+    setFooter({ hidden: true, disabled: true, onClick: undefined, label: undefined, loading: false });
+    return () => setFooter((s) => ({ ...s, hidden: false }));
+  }, [setFooter]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const shouldAnimate = sessionStorage.getItem("secureLineAnimated") !== "1";
     if (shouldAnimate) setPlayReveal(true);
   }, []);
 
+  // Prevent accidental submit bubbling from nested buttons (desktop issue)
+  const preventSubmitDefaults = (e: React.SyntheticEvent) => {
+    const t = e.target as HTMLElement | null;
+    if (t && t.tagName === "BUTTON") {
+      const btn = t as HTMLButtonElement;
+      if (!btn.type || btn.type.toLowerCase() === "submit") e.preventDefault();
+    }
+  };
+  const preventEnterSubmit = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") e.preventDefault();
+  };
+
   return (
-    <div className="h-full flex flex-col pt-2">
+    <div className="h-full flex flex-col pt-2" onClickCapture={preventSubmitDefaults} onKeyDownCapture={preventEnterSubmit}>
       {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">

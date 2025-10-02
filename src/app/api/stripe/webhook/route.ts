@@ -28,10 +28,6 @@ async function commitTakenSlots(slotIdsCsv: string | undefined) {
   });
 }
 
-function isUniqueViolation(e: unknown): boolean {
-  return typeof e === "object" && e !== null && "code" in e && (e as { code?: string }).code === "P2002";
-}
-
 export async function POST(req: Request) {
   if (req.method !== "POST") {
     return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
@@ -51,12 +47,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "verify_failed" }, { status: 400 });
   }
 
-  // Idempotency guard
-  try {
-    await prisma.processedEvent.create({ data: { id: event.id } });
-  } catch (e: unknown) {
-    if (isUniqueViolation(e)) return NextResponse.json({ ok: true }); // already processed
-    throw e;
+  // Idempotency: only mark processed AFTER success; if already processed, exit early.
+  const already = await prisma.processedEvent.findUnique({ where: { id: event.id } }).catch(() => null);
+  if (already) {
+    return NextResponse.json({ ok: true });
   }
 
   const handle = async (
@@ -67,35 +61,49 @@ export async function POST(req: Request) {
   ) => {
     const hasIdentifier = Boolean(meta.bookingId || meta.slotId || meta.slotIds);
     if (!hasIdentifier) {
-      console.warn("[webhook] skipping event without identifiers (bookingId/slotId/slotIds)", { paymentRef });
+      console.warn("[webhook] skipping: no identifiers", { paymentRef, meta });
       return;
     }
 
-    // Source of truth: finalize the booking
-    await finalizeBooking(
-      meta,                                // { bookingId, slotId/slotIds, riotTag?, sessionType? }
-      amount,
-      (currency ?? "eur").toLowerCase(),
-      paymentRef,
-      "stripe"
-    );
+    console.log("[webhook] finalize start", { paymentRef, amount, currency, meta });
 
-    // Mark slots as taken
+    try {
+      await finalizeBooking(
+        meta,                                // { bookingId, slotId/slotIds, riotTag?, sessionType? }
+        amount,
+        (currency ?? "eur").toLowerCase(),
+        paymentRef,
+        "stripe"
+      );
+    } catch (e: any) {
+      console.error("[webhook] finalize error", {
+        msg: e?.message,
+        name: e?.name,
+        code: e?.code,
+        stack: e?.stack,
+      });
+      // Re-throw so outer catch 500s with an explicit reason
+      throw new Error(`[finalizeBooking] ${e?.message || "unknown_error"}`);
+    }
+
     await commitTakenSlots(meta.slotIds);
+
+    console.log("[webhook] finalize done", { paymentRef });
   };
 
   try {
     switch (event.type) {
       case "payment_intent.succeeded": {
         const piEvent = event.data.object as Stripe.PaymentIntent;
+        // Fetch fresh PI to ensure latest metadata
         const pi = await getStripe().paymentIntents.retrieve(piEvent.id);
+        console.log("[webhook] PI meta", { id: pi.id, metadata: pi.metadata });
         const meta = (pi.metadata ?? {}) as Record<string, string>;
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id);
         break;
       }
 
       case "checkout.session.completed": {
-        // If you ever use Stripe Checkout; Elements flow may never hit this
         const csEvent = event.data.object as Stripe.Checkout.Session;
         const cs = await getStripe().checkout.sessions.retrieve(csEvent.id, { expand: ["payment_intent"] });
 
@@ -110,6 +118,8 @@ export async function POST(req: Request) {
         const csMeta = (cs.metadata ?? {}) as Record<string, string>;
         const meta = { ...csMeta, ...piMeta, stripeSessionId: cs.id };
 
+        console.log("[webhook] CS meta", { csId: cs.id, meta });
+
         const paymentRef = pi?.id ?? cs.id; // prefer PI id
         await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", paymentRef);
         break;
@@ -120,8 +130,16 @@ export async function POST(req: Request) {
         break;
     }
 
+    // Mark processed AFTER successful handling
+    try {
+      await prisma.processedEvent.create({ data: { id: event.id } });
+    } catch (e) {
+      console.warn("[webhook] processedEvent create race (ignore)", event.id);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
+    // Do NOT mark processed; allow Stripe to retry.
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[webhook] unhandled error:", msg);
     return NextResponse.json({ error: "webhook_error", detail: msg }, { status: 500 });

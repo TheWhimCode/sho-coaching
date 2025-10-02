@@ -19,7 +19,6 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   const key = CFG_SERVER.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe not configured");
-  // keep your pinned version; adjust if needed
   stripe = new Stripe(key, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
 }
@@ -80,7 +79,8 @@ export async function POST(req: Request) {
       liveMinutes = d.liveMinutes;
       followups = d.followups ?? 0;
       sessionType = ((body as { sessionType?: string }).sessionType ?? "").trim();
-      // riotTag not available in fallback; fine (metadata stays minimal)
+      // Allow riotTag to be passed in fallback flows to satisfy finalizeBooking
+      riotTag = ((body as { riotTag?: string }).riotTag ?? "").trim() || null;
     }
 
     if (liveMinutes < 30 || liveMinutes > 240) {
@@ -167,7 +167,7 @@ export async function POST(req: Request) {
         ? ["klarna"]
         : ["card"];
 
-    // 6) Create or update PaymentIntent
+    // 6) Create or update PaymentIntent (ensure metadata is attached even under idempotency reuse)
     const idemKey = makeIdempotencyKey(slotIds, amountCents, anchor.holdKey ?? effKey, payMethod);
 
     const metadata: Record<string, string> = {
@@ -175,7 +175,7 @@ export async function POST(req: Request) {
       slotId,
       slotIds: slotIds.join(","),
       ...(sessionType ? { sessionType } : {}),
-      ...(riotTag ? { riotTag } : {}), // ok to include; not PII
+      ...(riotTag ? { riotTag } : {}),
     };
 
     const pi = await getStripe().paymentIntents.create(
@@ -183,18 +183,33 @@ export async function POST(req: Request) {
         amount: amountCents,
         currency: "eur",
         payment_method_types: pmTypes,
-        metadata,
+        metadata, // may be ignored if an older PI is returned due to idempotency
       },
       { idempotencyKey: idemKey }
     );
+
+    // Force-attach metadata to cover idempotent reuse cases that return an older PI
+    try {
+      await getStripe().paymentIntents.update(pi.id, { metadata });
+    } catch (e) {
+      console.warn("[intent] failed to update PI metadata (non-fatal)", pi.id, e);
+    }
 
     // Persist PI id for lookups (/booking/from-ref) and ensure amount stored
     if (bookingId) {
       await prisma.session.update({
         where: { id: bookingId },
-        data: { paymentRef: pi.id, amountCents, currency: "eur" },
+        data: {
+          paymentRef: pi.id,
+          amountCents,
+          currency: "eur",
+          // Hint for observability (finalizeBooking will still set provider + paid):
+          paymentProvider: "stripe",
+        },
       });
     }
+
+    console.log("[intent] created PI", { piId: pi.id, bookingId, slotId, slotIds: slotIds.length });
 
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });
     res.headers.set("Cache-Control", "no-store");

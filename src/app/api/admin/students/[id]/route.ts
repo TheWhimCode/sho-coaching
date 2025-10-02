@@ -19,11 +19,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const body = await req.json().catch(() => ({} as any));
 
   const data: Record<string, unknown> = {};
-  if ('name'    in body) data.name = body.name;
-  if ('discord' in body) data.discord = body.discord ?? null;
+  if ('name' in body) data.name = body.name;
+  if ('discordId' in body) data.discordId = body.discordId ?? null;
+  if ('discordName' in body) data.discordName = body.discordName ?? null;
   if ('riotTag' in body) data.riotTag = body.riotTag ?? null;
-  if ('server'  in body) data.server = body.server ?? null;
-  if ('puuid'   in body) data.puuid = body.puuid ?? null; // ✅ added
+  if ('server' in body) data.server = body.server ?? null;
+  if ('puuid' in body) data.puuid = body.puuid ?? null;
 
   try {
     const student = await prisma.student.update({ where: { id }, data });

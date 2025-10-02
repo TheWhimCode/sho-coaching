@@ -44,31 +44,31 @@ model AvailabilityException {
 }
 
 model Session {
-  id               String   @id @default(cuid())
+  id               String      @id @default(cuid())
   sessionType      String
-  status           String   @default("unpaid")
-  slotId           String?  @unique
+  status           String      @default("unpaid")
+  slotId           String?     @unique
   liveMinutes      Int
-  followups        Int      @default(0)
+  followups        Int         @default(0)
   riotTag          String
-  discordId        String?
-  discordName      String?
   notes            String?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime    @default(now())
   paymentProvider  String?
-  paymentRef       String?  @unique
+  paymentRef       String?     @unique
   amountCents      Int?
-  currency         String   @default("eur")
+  currency         String      @default("eur")
   blockCsv         String?
   scheduledStart   DateTime
   scheduledMinutes Int
-  liveBlocks       Int      @default(0)
-  waiverAccepted   Boolean  @default(false)
+  liveBlocks       Int         @default(0)
+  waiverAccepted   Boolean     @default(false)
   waiverAcceptedAt DateTime?
   waiverIp         String?
-  slot             Slot?    @relation("SlotSession", fields: [slotId], references: [id])
   studentId        String?
-  student          Student? @relation(fields: [studentId], references: [id])
+  discordId        String?
+  discordName      String?
+  slot             Slot?       @relation("SlotSession", fields: [slotId], references: [id])
+  student          Student?    @relation(fields: [studentId], references: [id])
   sessionDoc       SessionDoc? @relation("SessionToDoc")
 
   @@index([createdAt])
@@ -94,55 +94,50 @@ model WebhookEvent {
   @@index([type, createdAt])
 }
 
-enum SlotStatus {
-  free
-  taken
-  blocked
-}
-
 model Student {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  discordId   String?  @unique
-  discordName String?
-  riotTag     String?  @unique
-  puuid       String?  @unique
-  server      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String         @id @default(cuid())
+  name          String         @unique
+  puuid         String?        @unique
+  server        String?
+  riotTag       String?        @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  discordId     String?        @unique
+  discordName   String?
+  rankSnapshots RankSnapshot[]
   sessions      Session[]
   sessionDocs   SessionDoc[]
-  rankSnapshots RankSnapshot[]
   assets        StudentAsset[]
 
   @@index([puuid])
 }
 
 model AssetLibrary {
-  id         String   @id @default(cuid())
+  id         String         @id @default(cuid())
   name       String
   type       String
   storageKey String
   url        String
   mime       String?
   size       Int?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime       @default(now())
   students   StudentAsset[]
 }
 
 model StudentAsset {
-  id         String       @id @default(cuid())
-  studentId  String
-  assetId    String
-  createdAt  DateTime     @default(now())
-  student    Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  asset      AssetLibrary @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id        String       @id @default(cuid())
+  studentId String
+  assetId   String
+  createdAt DateTime     @default(now())
+  asset     AssetLibrary @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  student   Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, assetId])
   @@index([studentId])
   @@index([assetId])
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model RankSnapshot {
   id         String   @id @default(cuid())
   studentId  String
@@ -157,17 +152,23 @@ model RankSnapshot {
 }
 
 model SessionDoc {
-  id         String   @id @default(cuid())
-  studentId  String
-  number     Int
-  notes      Json     @default("{}")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  sessionId  String?  @unique
-  session    Session? @relation("SessionToDoc", fields: [sessionId], references: [id], onDelete: SetNull)
-  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  studentId String
+  number    Int
+  notes     Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessionId String?  @unique
+  session   Session? @relation("SessionToDoc", fields: [sessionId], references: [id])
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, number])
   @@index([studentId])
   @@index([sessionId])
+}
+
+enum SlotStatus {
+  free
+  taken
+  blocked
 }

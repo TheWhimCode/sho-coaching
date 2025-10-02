@@ -23,19 +23,19 @@ export default function UsefulToKnow() {
         <PrepItem
           color="sky"
           title="Join Discord"
-          description="You will meet with Sho on his Discord server, make sure you join! You’ll find some additional resources there as well. Before your session, double-check your mic & audio."
+          description="We will meet on my Discord server, make sure you join! You’ll find some additional resources there as well. Before your session, double-check your mic & audio."
           icon={<FaDiscord size={20} />} // 👈 swapped in FontAwesome Discord
         />
         <PrepItem
           color="violet"
           title="Know your goal"
-          description="Ask yourself the most important question: Why are you getting coaching? Sho will ask you this. If you know exactly what you want, he will be able to tailor the session to your goals."
+          description="Ask yourself the most important question: Why are you getting coaching? I will ask you this. If you know exactly what you want, I will be able to tailor the session to your goals."
           icon={<Target size={20} weight="regular" />}
         />
         <PrepItem
           color="orange"
           title="Bring a POV"
-          description="Record your point of view of the game you want to review. This way you’ll be able to review the game from your own perspective. There are many softwares to make this easy: Insights.gg, Outplayed, Replays.gg. Upload to Google Drive/Youtube for smooth playback."
+          description="Record your point of view of the game you want to review. This way we’ll be able to review the game from your own perspective. There are many softwares to make this easy: Insights.gg, Outplayed, Replays.gg. Upload to Google Drive/Youtube for smooth playback."
           icon={<FilmReel size={20} weight="regular" />}
         />
       </ul>

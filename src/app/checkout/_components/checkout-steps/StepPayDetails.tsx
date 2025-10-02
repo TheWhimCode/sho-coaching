@@ -1,4 +1,3 @@
-// src/pages/customization/checkout/rcolumn/checkout-steps/StepPayDetails.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -7,6 +6,7 @@ import { useElements, useStripe, CardNumberElement } from "@stripe/react-stripe-
 import CardForm from "@/app/checkout/_components/checkout-steps/step-components/CardForm";
 import PaymentSkeleton from "@/app/checkout/_components/checkout-steps/step-components/PaymentSkeleton";
 import { ArrowLeft, CreditCard } from "lucide-react";
+import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 
 type Method = "card" | "paypal" | "revolut_pay" | "klarna";
 
@@ -34,15 +34,31 @@ type FormProps = Common & {
 type Props = LoadingProps | FormProps;
 
 export default function StepPayDetails(props: Props) {
+  const [, setFooter] = useFooter();
+
+  // Always call hooks: manage loading footer state here instead of conditionally
+  useEffect(() => {
+    if (props.mode === "loading") {
+      setFooter({
+        label: "Loading…",
+        disabled: true,
+        loading: true,
+        onClick: undefined,
+        hidden: false,
+      });
+    }
+  }, [props.mode, setFooter]);
+
   if (props.mode === "loading") {
     const { goBack, payMethod } = props;
 
     return (
-      <div className="h-full flex flex-col pt-1">
+      <div className="flex h-full flex-col md:pt-1">
         {/* header */}
         <div className="mb-3">
           <div className="relative h-7 flex items-center justify-center">
             <button
+              type="button"
               onClick={goBack}
               className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
             >
@@ -54,25 +70,22 @@ export default function StepPayDetails(props: Props) {
           <div className="mt-2 border-t border-white/10" />
         </div>
 
-        {/* body + pinned footer */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 min-h-[260px]">
-            <PaymentSkeleton method={(payMethod ?? "card") as Method} />
-          </div>
-
-          <div className="mt-auto pt-2">
-            <button
-              disabled
-              className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
-                         bg-[#fc8803] transition
-                         shadow-[0_10px_28px_rgba(245,158,11,.35)]
-                         ring-1 ring-[rgba(255,190,80,.55)]
-                         opacity-50"
-            >
-              Loading…
-            </button>
+        {/* body (skeleton) */}
+        <div className="flex flex-col flex-1">
+          <div className="px-1 flex-1 min-h-0 overflow-y-auto md:overflow-visible">
+            <div className="relative min-h-[260px]">
+              {/* Real content placeholder keeps layout stable */}
+              <div className="opacity-0 pointer-events-none">
+                <PaymentSkeleton method={(payMethod ?? "card") as Method} />
+              </div>
+              {/* Skeleton overlay (visual only) */}
+              <div className="absolute inset-0">
+                <PaymentSkeleton method={(payMethod ?? "card") as Method} />
+              </div>
+            </div>
           </div>
         </div>
+        {/* No local footer – parent renders PrimaryCTA */}
       </div>
     );
   }
@@ -81,11 +94,12 @@ export default function StepPayDetails(props: Props) {
   const { goBack, payMethod, onContinue, piId, setCardPmId, setSavedCard, savedCard } = props;
 
   return (
-    <div className="h-full flex flex-col pt-1">
+    <div className="flex h-full flex-col md:pt-1">
       {/* header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
+            type="button"
             onClick={goBack}
             className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
           >
@@ -97,19 +111,15 @@ export default function StepPayDetails(props: Props) {
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      {/* body */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 relative min-h-[260px]">
-          <FormBody
-            payMethod={payMethod}
-            piId={piId}
-            onContinue={onContinue}
-            setCardPmId={setCardPmId}
-            setSavedCard={setSavedCard}
-            savedCard={savedCard}
-          />
-        </div>
-      </div>
+      {/* body (form) */}
+      <FormBody
+        payMethod={payMethod}
+        piId={piId}
+        onContinue={onContinue}
+        setCardPmId={setCardPmId}
+        setSavedCard={setSavedCard}
+        savedCard={savedCard}
+      />
     </div>
   );
 }
@@ -148,6 +158,21 @@ function FormBody({
   const [checking, setChecking] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  const [, setFooter] = useFooter();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Publish footer state (centralized CTA)
+  useEffect(() => {
+    const disabled = !stripe || showSkeleton || checking;
+    setFooter({
+      label: checking ? "Checking…" : "Continue",
+      disabled,
+      loading: checking,
+      onClick: () => formRef.current?.requestSubmit(),
+      hidden: false,
+    });
+  }, [setFooter, stripe, showSkeleton, checking]);
 
   async function validateAndContinue() {
     if (!stripe) return;
@@ -222,9 +247,7 @@ function FormBody({
     const last4 = savedCard.last4 ?? "••••";
     const exp =
       savedCard.exp_month && savedCard.exp_year
-        ? `${String(savedCard.exp_month).padStart(2, "0")}/${String(
-            savedCard.exp_year
-          ).slice(-2)}`
+        ? `${String(savedCard.exp_month).padStart(2, "0")}/${String(savedCard.exp_year).slice(-2)}`
         : null;
 
     return (
@@ -277,28 +300,48 @@ function FormBody({
 
   return (
     <form
-      className="flex flex-col h-full"
+      ref={formRef}
+      noValidate
+      onKeyDownCapture={(e) => {
+        // Prevent accidental implicit submits (desktop Enter key)
+        if (e.key === "Enter" && (e.target as HTMLElement)?.tagName !== "TEXTAREA") {
+          e.preventDefault();
+        }
+      }}
+      className="flex flex-col flex-1"
       onSubmit={(e) => {
         e.preventDefault();
         if (!checking) validateAndContinue();
       }}
     >
-      {/* layered real form + skeleton */}
-      <div className="relative flex-1 min-h-[260px]">
-        {/* Real content */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-150 ${
-            showSkeleton ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
-          {payMethod === "card" ? (
-            savedCard ? (
-              <SavedCardPanel />
+      {/* Body: single render path (no duplicate Elements). Scroll if tall. */}
+      <div className="px-1 flex-1 min-h-0 overflow-y-auto md:overflow-visible">
+        <div className={`relative ${payMethod === "card" && !savedCard ? "min-h-[330px]" : "min-h-0"}`}>
+          {/* Real content stays in flow; we only fade it while loading */}
+          <div
+            className={`transition-opacity duration-150 ${
+              showSkeleton ? "opacity-0 pointer-events-none" : "opacity-100"
+            }`}
+          >
+            {payMethod === "card" ? (
+              savedCard ? (
+                <SavedCardPanel />
+              ) : (
+                <CardForm
+                  activePm="card"
+                  submitted={submitted}
+                  onPaymentChange={() => {}}
+                  onElementsReady={() => {
+                    if (!readyLocked.current) {
+                      readyLocked.current = true;
+                      setShowSkeleton(false);
+                    }
+                  }}
+                />
+              )
             ) : (
               <CardForm
-                activePm="card"
-                submitted={submitted}
-                onPaymentChange={() => {}}
+                activePm={payMethod}
                 onElementsReady={() => {
                   if (!readyLocked.current) {
                     readyLocked.current = true;
@@ -306,43 +349,20 @@ function FormBody({
                   }
                 }}
               />
-            )
-          ) : (
-            <CardForm
-              activePm={payMethod}
-              onElementsReady={() => {
-                if (!readyLocked.current) {
-                  readyLocked.current = true;
-                  setShowSkeleton(false);
-                }
-              }}
-            />
+            )}
+          </div>
+
+          {/* Skeleton overlay (visual only) */}
+          {showSkeleton && (
+            <div className="absolute inset-0">
+              <PaymentSkeleton method={payMethod} />
+            </div>
           )}
         </div>
-
-        {/* Skeleton overlay */}
-        {showSkeleton && (
-          <div className="absolute inset-0">
-            <PaymentSkeleton method={payMethod} />
-          </div>
-        )}
       </div>
 
-      {/* pinned footer */}
-      <div className="mt-auto pt-3">
-        {err && <p className="sr-only">{err}</p>}
-        <button
-          type="submit"
-          disabled={!stripe || checking || showSkeleton}
-          className="w-full rounded-xl px-5 py-3 text-base font-semibold text-[#0A0A0A]
-                     bg-[#fc8803] hover:bg-[#f8a81a] transition
-                     shadow-[0_10px_28px_rgba(245,158,11,.35)]
-                     ring-1 ring-[rgba(255,190,80,.55)]
-                     disabled:opacity-50"
-        >
-          {checking ? "Checking…" : "Continue"}
-        </button>
-      </div>
+      {/* Screen-reader error (visual CTA handled by parent) */}
+      {err && <p className="sr-only">{err}</p>}
     </form>
   );
 }

@@ -1,3 +1,4 @@
+// src/app/checkout/CheckoutClient.tsx
 "use client";
 
 import { useMemo } from "react";
@@ -81,7 +82,8 @@ export default function CheckoutClient() {
       liveMinutes: totalMins,
       followups: getNum("followups", 0),
       liveBlocks,
-      discord: getStr("discord"),
+      discordId: getStr("discordId"),     // ✅ new
+      discordName: getStr("discordName"), // ✅ new
       preset: getStr("preset", "custom"),
       holdKey: getStr("holdKey"),
     };
@@ -99,7 +101,8 @@ export default function CheckoutClient() {
       liveMinutes: payload.liveMinutes,
       followups: payload.followups,
       liveBlocks: payload.liveBlocks,
-      discord: payload.discord,
+      discordId: payload.discordId,       // ✅ new
+      discordName: payload.discordName,   // ✅ new
       preset: payload.preset,
       holdKey: payload.holdKey,
     }),
@@ -128,12 +131,12 @@ export default function CheckoutClient() {
               <div className="w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
             </div>
 
-            {/* Right column animates in */}
+            {/* Right column */}
             <motion.div
               variants={rightCol}
               initial="hidden"
               animate="show"
-              className="w-full mx-auto lg:w-[400px] relative z-0 lg:justify-self-end"
+              className="w-full mx-auto lg:w-[400px] relative z-0 lg:justify-self-end h-[730px]"
             >
               <CheckoutPanel
                 payload={payload}

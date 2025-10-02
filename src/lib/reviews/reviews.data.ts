@@ -21,12 +21,12 @@ export const REVIEWS: Review[] = [
     champion: "Akali",
   },
   {
-    name: "Marco",
+    name: "Redemption",
     text:
-      "Super clear, no fluff. He spotted macro mistakes fast and explained the why behind every change. Notes after the call kept me accountable and I climbed steadily the following week.",
-    rankFrom: "Silver I",
-    rankTo: "Gold III",
-    champion: "Viktor",
+      "Sho took my scattered and vague approach to the game that is so common in the lower elos and helped sharpen it into something much more focused and intentional.",
+    rankFrom: "Bronze I",
+    rankTo: "Platinum IV",
+    champion: "Lux",
   },
   {
     name: "Ari",

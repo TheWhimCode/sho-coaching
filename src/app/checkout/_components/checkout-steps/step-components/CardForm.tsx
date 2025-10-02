@@ -122,7 +122,7 @@ export default function CardForm({
 
   return (
     <div className="max-w-md">
-      <div className="min-h-[330px]">
+      <div className={isCard ? "min-h-[330px]" : "min-h-0"}>
         {!isCard ? (
           <PaymentElement
             id="pe"

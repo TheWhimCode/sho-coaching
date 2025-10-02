@@ -1,8 +1,6 @@
-// src/pages/customization/checkout/rcolumn/checkout-steps/StepContact.tsx
 "use client";
 import * as React from "react";
-import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
-import InfoTooltip from "@/app/_components/small/InfoTooltip";
+import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 
 type DiscordIdentity = { id: string; username?: string | null };
 
@@ -11,7 +9,7 @@ type Props = {
   notes?: string;
   setRiotTag: (v: string) => void;
   setNotes: (v: string) => void;
-  onDiscordLinked: (u: DiscordIdentity) => void; // parent/hook persists on Continue
+  onDiscordLinked: (u: DiscordIdentity) => void;
   discordIdentity?: DiscordIdentity | null;
   contactErr: string | null;
   riotInputRef: React.RefObject<HTMLInputElement | null>;
@@ -50,15 +48,16 @@ export default function StepContact({
   const lastVerifiedRef = React.useRef<string>("");
   const abortRef = React.useRef<AbortController | null>(null);
 
+  const [, setFooter] = useFooter();
+  const formRef = React.useRef<HTMLFormElement>(null);
+
   const baseInput =
     "mt-1 w-full rounded-lg bg-white/[.05] ring-1 px-4 py-3 text-base text-white/90 outline-none transition";
   const okRing = "ring-inset ring-white/12 focus:ring-inset focus:ring-white/25";
-  const badRing = "ring-inset ring-red-500/70 focus:ring-inset focus:ring-red-500";
+  const badRing = "ring-inset ring-red-500/70 focus:ring-inset ring-red-500";
 
-  // ---- RiotTag verification (debounced, read-only) ----
   React.useEffect(() => {
     const val = riotVal.trim();
-
     if (!val || !isValidRiotTagFormat(val)) {
       setCheckStatus(val ? "bad" : "idle");
       abortRef.current?.abort();
@@ -97,21 +96,27 @@ export default function StepContact({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
 
-  // ---- Discord OAuth popup ----
   const openDiscordOAuth = React.useCallback(() => {
     window.open("/api/checkout/discord/oauth-start", "discord_oauth", "width=520,height=700");
   }, []);
 
-  // Normalize and handle incoming messages
-  const handleIncoming = React.useCallback((incoming: any) => {
-    let data = incoming;
-    if (typeof data === "string") { try { data = JSON.parse(data); } catch { return; } }
-    if (!data || typeof data !== "object") return;
-
-    if (data.type === "discord-auth-success" && data.user) {
-      onDiscordLinked(data.user as DiscordIdentity); // UI fills with username; DB saved on Continue by parent
-    }
-  }, [onDiscordLinked]);
+  const handleIncoming = React.useCallback(
+    (incoming: any) => {
+      let data = incoming;
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch {
+          return;
+        }
+      }
+      if (!data || typeof data !== "object") return;
+      if (data.type === "discord-auth-success" && data.user) {
+        onDiscordLinked(data.user as DiscordIdentity);
+      }
+    },
+    [onDiscordLinked]
+  );
 
   React.useEffect(() => {
     const onMsg = (ev: MessageEvent) => handleIncoming(ev.data);
@@ -121,22 +126,25 @@ export default function StepContact({
       bc = new BroadcastChannel("dc_oauth");
       bc.onmessage = (ev) => handleIncoming((ev as MessageEvent).data);
     } catch {}
-
     const onFocus = () => {
       try {
         const raw = localStorage.getItem("dc_oauth_payload");
-        if (raw) { handleIncoming(raw); localStorage.removeItem("dc_oauth_payload"); }
+        if (raw) {
+          handleIncoming(raw);
+          localStorage.removeItem("dc_oauth_payload");
+        }
       } catch {}
     };
     window.addEventListener("focus", onFocus);
     return () => {
       window.removeEventListener("message", onMsg);
       window.removeEventListener("focus", onFocus);
-      try { bc?.close(); } catch {}
+      try {
+        bc?.close();
+      } catch {}
     };
   }, [handleIncoming]);
 
-  // Normalize on input
   const onRiotInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRiotTag(normalizeRiotTag(e.target.value));
   };
@@ -167,9 +175,19 @@ export default function StepContact({
   const hint =
     !formatValid && riotVal.trim() ? "" : checkStatus === "bad" ? "Invalid Riot#tag — check spelling" : "";
 
+  // Publish CTA to parent
+  React.useEffect(() => {
+    setFooter({
+      label: "Continue",
+      disabled: !canSubmit,
+      loading: false,
+      onClick: () => formRef.current?.requestSubmit(),
+      hidden: false,
+    });
+  }, [setFooter, canSubmit]);
+
   return (
-    // Root: header (auto) + form (1fr)
-    <div className="h-full min-h-0 grid grid-rows-[auto,1fr] pt-2">
+    <div className="flex h-full flex-col md:pt-2">
       {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
@@ -178,44 +196,24 @@ export default function StepContact({
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      {/* Form: body (1fr) + footer (auto) */}
+      {/* Form (body grows; footer is handled by parent) */}
       <form
+        ref={formRef}
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
           setSubmitted(true);
-          if (canSubmit) onSubmit(); // parent/hook persists id+username on Continue
+          if (canSubmit) onSubmit();
         }}
-        className="flex-1 flex flex-col"
+        className="flex flex-col flex-1"
       >
         {/* Body */}
-        <div className="min-h-0 space-y-3 px-1 md:overflow-visible">
+        <div className="flex-1 min-h-0 space-y-3 px-1 overflow-y-auto md:overflow-visible">
           {/* RiotTag */}
           <label className="block">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-white/65">Summoner name</span>
-
-                {/* Hover tooltip with autoplay video */}
-<InfoTooltip
-  ariaLabel="How to find your Riot#Tag"
-  className="cursor-help"
-  contentClassName="w-[320px]"
->
-  <video
-    src="/videos/riot-tag-help.mp4"   // replace path later
-    autoPlay
-    muted
-    loop
-    playsInline
-    preload="auto"
-    className="rounded-lg w-full h-auto"
-  />
-</InfoTooltip>
-
-                    
-                  
-                
               </div>
               {hint ? <span className="text-[11px] text-red-400">{hint}</span> : null}
             </div>
@@ -237,7 +235,7 @@ export default function StepContact({
             </div>
           </label>
 
-          {/* Discord OAuth (aligned like input, bold + slightly smaller) */}
+          {/* Discord OAuth */}
           <div className="block">
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/65">Discord</span>
@@ -281,13 +279,6 @@ export default function StepContact({
           </label>
 
           {contactErr && <div className="text-sm text-red-400 mt-1">{contactErr}</div>}
-        </div>
-
-        {/* Footer */}
-        <div className="pt-3 px-1 pb-[env(safe-area-inset-bottom)]">
-          <PrimaryCTA type="submit" disabled={!canSubmit} className="px-5 py-3 text-base w-full">
-            Continue
-          </PrimaryCTA>
         </div>
       </form>
     </div>

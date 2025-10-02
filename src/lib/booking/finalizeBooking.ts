@@ -52,6 +52,7 @@ async function resolveCanonicalStudent(
   tx: Prisma.TransactionClient,
   args: { discordId?: string | null; discordName?: string | null; riotTag: string }
 ) {
+  console.log("[finalizeBooking] resolveCanonicalStudent args", args);
   const { discordId, discordName, riotTag } = args;
 
   // 1) find by discordId (immutable) or riotTag
@@ -131,6 +132,7 @@ export async function finalizeBooking(
   paymentRef?: string,
   provider: string = "stripe"
 ) {
+  console.log("[finalizeBooking] called with meta", meta, { amountCents, currency, paymentRef, provider });
   if (!paymentRef) throw new Error("paymentRef missing");
 
   // We only select the fields we actually use to avoid stale type drift.
@@ -154,6 +156,7 @@ export async function finalizeBooking(
   } as const;
 
   // 1) locate the session (prefer bookingId)
+  console.log("[finalizeBooking] locating session…");
   let sessionRow =
     (meta.bookingId &&
       (await prisma.session.findUnique({ where: { id: meta.bookingId }, select: sessionSelect }))) ||
@@ -169,8 +172,13 @@ export async function finalizeBooking(
   }
   if (!sessionRow) throw new Error("booking not found");
 
+  console.log("[finalizeBooking] sessionRow", sessionRow);
+
   // Idempotency: already paid → no-op
-  if (sessionRow.status === "paid") return;
+  if (sessionRow.status === "paid") {
+    console.log("[finalizeBooking] already paid → skipping");
+    return;
+  }
 
   // 2) derive numbers
   const liveBlocks =
@@ -203,9 +211,22 @@ export async function finalizeBooking(
     waiverAccepted && !sessionRow.waiverAccepted ? new Date() : sessionRow.waiverAcceptedAt || undefined;
   const waiverIp = sessionRow.waiverIp || (meta.waiverIp || undefined);
 
+  console.log("[finalizeBooking] computed values ready", {
+    liveBlocks,
+    liveMinutes,
+    followups,
+    sessionType,
+    slotIds,
+    firstSlotId,
+    riotTag,
+    discordId,
+    discordName,
+  });
+
   // 3) single transaction
   await prisma.$transaction(async (tx) => {
     // 3.1 take slots
+    console.log("[finalizeBooking.tx] 3.1 take slots");
     if (slotIds.length) {
       await tx.slot.updateMany({
         where: { id: { in: slotIds }, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
@@ -219,6 +240,7 @@ export async function finalizeBooking(
     }
 
     // 3.2 anchor start time
+    console.log("[finalizeBooking.tx] 3.2 fetch start slot");
     const startSlot = await tx.slot.findUnique({
       where: { id: firstSlotId },
       select: { startTime: true },
@@ -226,31 +248,58 @@ export async function finalizeBooking(
     if (!startSlot) throw new Error("slot not found");
 
     // 3.3 resolve canonical student and overwrite outdated identity
+    console.log("[finalizeBooking.tx] 3.3 resolve student");
     const student = await resolveCanonicalStudent(tx, { discordId, discordName, riotTag });
+    console.log("[finalizeBooking.tx] student resolved", student.id);
 
     // 3.4 finalize session
-    await tx.session.update({
-      where: { id: sessionRow.id },
-      data: {
-        studentId: student.id,
-        sessionType,
-        status: "paid",
-        amountCents: amountCents ?? sessionRow.amountCents ?? undefined,
-        currency: (currency ?? sessionRow.currency ?? "eur").toLowerCase(),
-        blockCsv: slotIds.join(","),
-        paymentProvider: provider,
-        paymentRef,
-        scheduledStart: startSlot.startTime,
-        scheduledMinutes: liveMinutes,
-        liveBlocks,
-        waiverAccepted,
-        waiverAcceptedAt,
-        waiverIp,
-        // identity snapshots on Session (riotTag/discordName) are already present
-      },
-    });
+    console.log("[finalizeBooking.tx] 3.4 update session");
+    const updateData = {
+      studentId: student.id,
+      sessionType,
+      status: "paid",
+      amountCents: amountCents ?? sessionRow.amountCents ?? undefined,
+      currency: (currency ?? sessionRow.currency ?? "eur").toLowerCase(),
+      blockCsv: slotIds.join(","),
+      paymentProvider: provider,
+      paymentRef,
+      scheduledStart: startSlot.startTime,
+      scheduledMinutes: liveMinutes,
+      liveBlocks,
+      waiverAccepted,
+      waiverAcceptedAt,
+      waiverIp,
+      // NOTE: no discord* fields here; if Prisma tries to set "discord",
+      // it is coming from stale build or middleware mutating params.
+    };
+    console.log("[finalizeBooking.tx] updateData =", updateData);
+
+   // in finalizeBooking.ts, the tx.session.update call:
+await tx.session.update({
+  where: { id: sessionRow.id },
+  data: {
+    studentId: student.id,
+    sessionType,
+    status: "paid",
+    amountCents: amountCents ?? sessionRow.amountCents ?? undefined,
+    currency: (currency ?? sessionRow.currency ?? "eur").toLowerCase(),
+    blockCsv: slotIds.join(","),
+    paymentProvider: provider,
+    paymentRef,
+    scheduledStart: startSlot.startTime,
+    scheduledMinutes: liveMinutes,
+    liveBlocks,
+    waiverAccepted,
+    waiverAcceptedAt,
+    waiverIp,
+  },
+  // ↓ Only return id so Prisma won’t try to load any other fields
+  select: { id: true },
+});
+
 
     // 3.5 ensure SessionDoc
+    console.log("[finalizeBooking.tx] 3.5 ensure sessionDoc");
     const exists = await tx.sessionDoc.findFirst({
       where: { sessionId: sessionRow.id },
       select: { id: true },
@@ -271,5 +320,8 @@ export async function finalizeBooking(
         },
       });
     }
+    console.log("[finalizeBooking.tx] done ✅");
   });
+
+  console.log("[finalizeBooking] finished successfully ✅");
 }

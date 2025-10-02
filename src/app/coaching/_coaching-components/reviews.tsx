@@ -157,17 +157,20 @@ const ReviewItem = ({ r }: { r: Review }) => {
           {r.name}
         </span>
 
-        <Image
-          src={avatarSrc}
-          alt={`${r.name} avatar`}
-          width={28}
-          height={28}
-          className="ml-1 inline-block h-7 w-7 rounded-full object-cover ring-1 ring-white/15 align-middle"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src =
-              "/images/coaching/reviews/placeholder-avatar.png";
-          }}
-        />
+        {/* Avatar container with overflow-hidden + slight zoom on the image */}
+        <span className="ml-1 inline-block h-7 w-7 rounded-full overflow-hidden ring-1 ring-white/15 align-middle">
+          <Image
+            src={avatarSrc}
+            alt={`${r.name} avatar`}
+            width={28}
+            height={28}
+            className="h-full w-full object-cover scale-[1.12]"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src =
+                "/images/coaching/reviews/placeholder-avatar.png";
+            }}
+          />
+        </span>
 
         {typeof r.rating === "number" ? (
           <span className="sr-only">Rating: {r.rating} out of 5</span>
