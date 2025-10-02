@@ -8,7 +8,7 @@ import { colorsByPreset } from "@/lib/sessions/colors";
 type BookingRow = {
   id: string;
   liveMinutes: number;
-  discord: string;
+  discordName: string | null;
   sessionType: string;
   followups: number;
   liveBlocks: number | null; // may come back null/undefined from API
@@ -18,7 +18,7 @@ type BookingRow = {
 
 type DayGroup = { key: string; label: string; items: BookingRow[] };
 
-// Columns: dot | time | length | live blocks | follow-ups | discord | notes
+// Columns: dot | time | length | live blocks | follow-ups | discordName | notes
 const GRID =
   "grid grid-cols-[20px_110px_96px_120px_130px_minmax(0,1fr)_minmax(0,1.2fr)] gap-x-4 items-center";
 
@@ -184,17 +184,17 @@ export default function AdminBookingsPage() {
             </Chip>
           </div>
 
-          {/* discord (click-to-copy) */}
+          {/* discordName (click-to-copy) */}
           <div className="truncate">
-            {r.discord ? (
+            {r.discordName ? (
               <button
-                onClick={() => copy(r.discord, r.id)}
-                title="Click to copy Discord"
+                onClick={() => copy(r.discordName!, r.id)}
+                title="Click to copy Discord name"
                 className={`text-left truncate hover:underline decoration-white/40 ${
                   copiedId === r.id ? "text-emerald-300" : "text-white/90"
                 }`}
               >
-                {r.discord}
+                {r.discordName}
               </button>
             ) : (
               <span className="text-white/40">—</span>

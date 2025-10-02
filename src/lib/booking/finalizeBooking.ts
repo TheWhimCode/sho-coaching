@@ -277,24 +277,8 @@ export async function finalizeBooking(
    // in finalizeBooking.ts, the tx.session.update call:
 await tx.session.update({
   where: { id: sessionRow.id },
-  data: {
-    studentId: student.id,
-    sessionType,
-    status: "paid",
-    amountCents: amountCents ?? sessionRow.amountCents ?? undefined,
-    currency: (currency ?? sessionRow.currency ?? "eur").toLowerCase(),
-    blockCsv: slotIds.join(","),
-    paymentProvider: provider,
-    paymentRef,
-    scheduledStart: startSlot.startTime,
-    scheduledMinutes: liveMinutes,
-    liveBlocks,
-    waiverAccepted,
-    waiverAcceptedAt,
-    waiverIp,
-  },
-  // ↓ Only return id so Prisma won’t try to load any other fields
-  select: { id: true },
+  data: updateData,
+  select: { id: true }, // <- temporary patch
 });
 
 

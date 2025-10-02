@@ -7,7 +7,7 @@ import Link from "next/link";
 type Student = {
   id: string;
   name: string;
-  discord: string | null;
+  discordName: string | null;
   riotTag: string | null;
   server: string | null;
   createdAt: string;
@@ -38,7 +38,7 @@ export default function StudentsPage() {
         const list = (j.students ?? []).map((s: any) => ({
           id: String(s.id),
           name: String(s.name ?? ""),
-          discord: s.discord ?? null,
+          discordName: s.discordName ?? null,
           riotTag: s.riotTag ?? null,
           server: s.server ?? null,
           createdAt:
@@ -61,7 +61,7 @@ export default function StudentsPage() {
     const s = q.trim().toLowerCase();
     if (!s) return students;
     return students.filter((x) =>
-      [x.name, x.discord ?? "", x.riotTag ?? "", x.server ?? ""].some((v) =>
+      [x.name, x.discordName ?? "", x.riotTag ?? "", x.server ?? ""].some((v) =>
         v.toLowerCase().includes(s)
       )
     );
@@ -79,7 +79,7 @@ export default function StudentsPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search name / discord / riot tag / server"
+            placeholder="Search name / discord name / riot tag / server"
             className="w-80 rounded-xl bg-black/40 px-3 py-2 text-sm ring-1 ring-white/15 text-white placeholder:text-white/50 focus:outline-none focus:ring-white/30"
           />
         </div>
@@ -99,7 +99,7 @@ export default function StudentsPage() {
                   <div className="text-lg font-semibold tracking-tight">{s.name}</div>
                   <div className="mt-1 text-xs text-zinc-300 flex flex-wrap gap-x-3 gap-y-1">
                     <span>
-                      Discord: <span className="text-zinc-100">{s.discord || "—"}</span>
+                      Discord: <span className="text-zinc-100">{s.discordName || "—"}</span>
                     </span>
                     <span>
                       Riot: <span className="text-zinc-100">{s.riotTag || "—"}</span>
