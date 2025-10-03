@@ -70,21 +70,22 @@ export default function DocTemplate({ session, onChange }: Props) {
     },
   })
 
-  // Seed once on mount
-  useEffect(() => {
-    if (!editor) return
-    editor.commands.setContent(initialHTML, false)
-    if (!session.content?.trim()) onChange?.({ content: initialHTML })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor])
+// Seed once on mount
+useEffect(() => {
+  if (!editor) return
+  editor.commands.setContent(initialHTML, { emitUpdate: false })
+  if (!session.content?.trim()) onChange?.({ content: initialHTML })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [editor])
 
-  // Reseed when switching sessions
-  useEffect(() => {
-    if (!editor) return
-    editor.commands.setContent(initialHTML, false)
-    if (!session.content?.trim()) onChange?.({ content: initialHTML })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.id, editor])
+// Reseed when switching sessions
+useEffect(() => {
+  if (!editor) return
+  editor.commands.setContent(initialHTML, { emitUpdate: false })
+  if (!session.content?.trim()) onChange?.({ content: initialHTML })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [session.id, editor])
+
 
   // Save on blur
   useEffect(() => {
