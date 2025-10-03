@@ -56,6 +56,13 @@ export default function StepContact({
   const okRing = "ring-inset ring-white/12 focus:ring-inset focus:ring-white/25";
   const badRing = "ring-inset ring-red-500/70 focus:ring-inset ring-red-500";
 
+  // normalize prop when it changes (keeps UI + DB clean)
+  React.useEffect(() => {
+    if (!riotTag) return;
+    const n = normalizeRiotTag(riotTag);
+    if (n !== riotTag) setRiotTag(n);
+  }, [riotTag, setRiotTag]);
+
   React.useEffect(() => {
     const val = riotVal.trim();
     if (!val || !isValidRiotTagFormat(val)) {
@@ -148,32 +155,76 @@ export default function StepContact({
   const onRiotInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRiotTag(normalizeRiotTag(e.target.value));
   };
+  const onRiotInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setRiotTag(normalizeRiotTag(e.target.value));
+  };
 
   const formatValid = isValidRiotTagFormat(riotVal);
   const riotShowError = checkStatus === "bad" || (submitted && !formatValid);
   const canSubmit = checkStatus === "ok" && !!discordIdentity?.id;
 
   const Spinner = () => (
-    <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70" viewBox="0 0 24 24" aria-hidden="true">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-      <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z" />
+    <svg
+      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+        fill="none"
+      />
+      <path
+        className="opacity-90"
+        fill="currentColor"
+        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
+      />
     </svg>
   );
   const OkIcon = () => (
-    <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4" viewBox="0 0 20 20" aria-hidden="true">
+    <svg
+      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
       <circle cx="10" cy="10" r="9" fill="#60a5fa" />
-      <path d="M5 10.5l3 3 7-7" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5 10.5l3 3 7-7"
+        fill="none"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
   const BadIcon = () => (
-    <svg className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4" viewBox="0 0 20 20" aria-hidden="true">
+    <svg
+      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
       <circle cx="10" cy="10" r="9" fill="#ef4444" />
-      <path d="M6 6l8 8M14 6l-8 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M6 6l8 8M14 6l-8 8"
+        fill="none"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 
   const hint =
-    !formatValid && riotVal.trim() ? "" : checkStatus === "bad" ? "Invalid Riot#tag — check spelling" : "";
+    !formatValid && riotVal.trim()
+      ? ""
+      : checkStatus === "bad"
+      ? "Invalid Riot#tag — check spelling"
+      : "";
 
   // Publish CTA to parent
   React.useEffect(() => {
@@ -224,6 +275,7 @@ export default function StepContact({
                 type="text"
                 value={riotVal}
                 onChange={onRiotInputChange}
+                onBlur={onRiotInputBlur}
                 placeholder="Riot#Tag of your main account"
                 aria-invalid={riotShowError}
                 spellCheck={false}
@@ -241,7 +293,8 @@ export default function StepContact({
               <span className="text-xs text-white/65">Discord</span>
             </div>
 
-            <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-inset ring-white/12 px-4 py-3 min-h-[48px]">
+            {/* MATCH RIOT INPUT HEIGHT: h-12 (48px), no vertical padding */}
+            <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-inset ring-white/12 h-12 px-4">
               <div className="truncate text-[13px] font-semibold">
                 {discordIdentity?.id ? (
                   <span className="text-white/90">{discordIdentity.username}</span>
@@ -253,8 +306,8 @@ export default function StepContact({
               <button
                 type="button"
                 onClick={openDiscordOAuth}
-                className="ml-3 rounded-lg px-3 h-9 text-[13px] font-semibold text-[#0A0A0A]
-                           bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-inset ring-white/15"
+                className="rounded-lg px-3 h-9 text-[13px] font-semibold text-[#0A0A0A]
+                           bg-[#59f] hover:bg-[#7ab0ff] transition ring-1 ring-inset ring-white/15 -mr-2"
               >
                 {discordIdentity?.id ? "Relink Discord" : "Link Discord"}
               </button>

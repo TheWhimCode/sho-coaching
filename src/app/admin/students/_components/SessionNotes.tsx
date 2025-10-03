@@ -1,24 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import type { Student, Session as PrismaSession } from '@prisma/client';
 import DocTemplate from './_components/DocTemplate';
 import { defaultTitle, buildDefaultMd } from './_components/noteDefaults';
 
 export type NoteSession = {
-  id: string;        // session id if exists, else doc id like "doc-<n>"
-  number: number;    // 1..n per student
-  title: string;     // UI title (derived from sessionType when available)
-  content: string;   // markdown
-  createdAt: string; // ISO
+  id: string;
+  number: number;
+  title: string;
+  content: string;
+  createdAt: string;
 };
 
 type Props = {
   student: Student;
-  sessions: PrismaSession[]; // must include sessionType, notes?, createdAt, scheduledStart
-  onCreateSession?: (s: NoteSession) => void;
-  onUpdateSession?: (s: NoteSession) => void; // parent persists using studentId + number
+  sessions: PrismaSession[];
+  onCreateSession?: (s: NoteSession) => void; // unused now
+  onUpdateSession?: (s: NoteSession) => void;
 };
 
 function sessionDate(s: PrismaSession) {
@@ -29,7 +29,6 @@ function sessionDate(s: PrismaSession) {
 export default function SessionNotes({
   student,
   sessions,
-  onCreateSession,
   onUpdateSession,
 }: Props) {
   const sortedSessions = useMemo(
@@ -46,8 +45,6 @@ export default function SessionNotes({
   const [activeId, setActiveId] = useState<string>('');
   const active = local.find((s) => s.id === activeId) ?? local[0];
 
-  // Load docs + contents; overlay Session info if present.
-  // IMPORTANT: prefer session.sessionType for the displayed title.
   useEffect(() => {
     let aborted = false;
     if (!student?.id) return;
@@ -61,7 +58,6 @@ export default function SessionNotes({
         const listJson = listRes.ok ? await listRes.json() : { docs: [] as Array<{ id: string; number: number }> };
         const docs: Array<{ id: string; number: number }> = listJson?.docs ?? [];
 
-        // If there are no stored docs yet, seed purely from sessions.
         if (!docs.length) {
           const mapped = sortedSessions.map((s, i) => {
             const n = i + 1;
@@ -75,7 +71,9 @@ export default function SessionNotes({
               createdAt: sessionDate(s).toISOString(),
             } as NoteSession;
           });
+
           if (aborted) return;
+
           const seed =
             mapped.length
               ? mapped
@@ -86,12 +84,12 @@ export default function SessionNotes({
                   content: buildDefaultMd(),
                   createdAt: new Date().toISOString(),
                 }];
+
           setLocal(seed);
-          setActiveId(seed[0]?.id ?? 'doc-1');
+          setActiveId(seed[seed.length - 1]?.id ?? 'doc-1');
           return;
         }
 
-        // We do have docs: fetch each and merge with session data.
         const details = await Promise.all(
           docs.map(async (d) => {
             try {
@@ -141,74 +139,24 @@ export default function SessionNotes({
 
         if (aborted) return;
         setLocal(items);
-        setActiveId(items[0]?.id ?? '');
+        setActiveId(items[items.length - 1]?.id ?? '');
       } catch {
         if (aborted) return;
-        setLocal([{
+        const fallback = [{
           id: 'doc-1',
           number: 1,
           title: defaultTitle(1),
           content: buildDefaultMd(),
           createdAt: new Date().toISOString(),
-        }]);
-        setActiveId('doc-1');
+        }];
+        setLocal(fallback);
+        setActiveId(fallback[0].id);
       }
     })();
 
     return () => { aborted = true; };
   }, [student?.id, sortedSessions.length]);
 
-  // Create a new doc on the server immediately
-  const createSession = async () => {
-    if (!student?.id) return;
-    const fallbackNumber = (local.reduce((m, x) => Math.max(m, x.number), 0) || 0) + 1;
-    const md = buildDefaultMd();
-
-    // Prefer sessionType if a matching session exists for that index
-    const relatedSession = sortedSessions[fallbackNumber - 1];
-    const computedTitle =
-      (relatedSession as any)?.sessionType?.trim() || defaultTitle(fallbackNumber);
-
-    let newId = `doc-${Date.now()}`;
-    let newNumber = fallbackNumber;
-    let newTitle = computedTitle;
-
-    try {
-      const res = await fetch('/api/session-docs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId: student.id,
-          notes: { md, title: computedTitle },
-          number: fallbackNumber,
-        }),
-      });
-      if (res.ok) {
-        const { doc } = await res.json();
-        newId = doc.id;
-        newNumber = doc.number;
-        if (doc?.notes && typeof doc.notes === 'object' && 'title' in doc.notes) {
-          newTitle = String(doc.notes.title);
-        }
-      }
-    } catch {
-      // ignore network errors; keep optimistic state
-    }
-
-    const s: NoteSession = {
-      id: newId,
-      number: newNumber,
-      title: newTitle,
-      content: md,
-      createdAt: new Date().toISOString(),
-    };
-
-    setLocal((xs) => [...xs, s].sort((a, b) => a.number - b.number));
-    setActiveId(s.id);
-    onCreateSession?.(s);
-  };
-
-  // Patch active and bubble up (content only)
   const patchActive = (patch: Partial<NoteSession>) => {
     const current = local.find((s) => s.id === activeId);
     if (!current) return;
@@ -219,29 +167,33 @@ export default function SessionNotes({
 
   return (
     <div className="flex gap-6">
-      <aside className="w-56 shrink-0">
+      {/* Sidebar wider */}
+      <aside className="w-80 shrink-0">
         <div className="flex flex-col gap-3">
-          <button
-            onClick={createSession}
-            className="inline-flex items-center gap-2 h-12 px-4 w-full rounded-xl bg-zinc-800 text-zinc-100 hover:bg-zinc-700 border border-zinc-700 transition"
-          >
-            <Plus className="h-5 w-5" />
-            <span className="font-medium">New session</span>
-          </button>
-
           {local.map((s) => (
             <button
               key={s.id}
               onClick={() => setActiveId(s.id)}
-              className={`inline-flex items-center gap-2 text-left h-12 px-4 w-full rounded-xl border transition ${
+              className={`flex flex-col items-start gap-2 text-left pt-4 h-40 px-4 w-full rounded-xl border transition ${
                 activeId === s.id
                   ? 'bg-zinc-900 text-white border-zinc-600 ring-2 ring-zinc-500/40'
                   : 'bg-zinc-800 text-zinc-200 border-zinc-700 hover:bg-zinc-700'
               }`}
               title={s.title}
             >
-              <FileText className="h-5 w-5 opacity-90" />
-              <span className="truncate font-medium">#{s.number} — {s.title}</span>
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 opacity-90" />
+                <span className="truncate font-medium">
+                  #{s.number} — {s.title}
+                </span>
+              </div>
+              {/* Placeholder labels */}
+              <div className="text-xs text-zinc-400 ml-7">
+                Placeholder label 1
+              </div>
+              <div className="text-xs text-zinc-500 ml-7">
+                Placeholder label 2
+              </div>
             </button>
           ))}
         </div>

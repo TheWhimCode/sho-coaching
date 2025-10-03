@@ -109,7 +109,7 @@ export default function StudentDetailClient() {
 
       let usePuuid = puuid;
 
-      // resolve if needed
+      // resolve if needed (by tag+server)
       if (!usePuuid) {
         try {
           const res = await fetch(`/api/riot/resolve`, {
@@ -137,6 +137,34 @@ export default function StudentDetailClient() {
           }
           return;
         }
+      }
+
+      // NEW: get canonical riotTag by puuid (and persist if different)
+      try {
+        if (usePuuid) {
+          const res2 = await fetch(`/api/riot/resolve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ puuid: usePuuid, server: sv }),
+            signal: controller.signal,
+          });
+          const j2 = await res2.json().catch(() => ({}));
+
+          const resolvedTag: string | undefined =
+            j2.riotTag ??
+            (j2.gameName && j2.tagLine ? `${j2.gameName}#${j2.tagLine}` : undefined);
+
+          if (resolvedTag && resolvedTag !== rt) {
+            setRiotTag(resolvedTag);
+            fetch(`/api/admin/students/${encodeURIComponent(id)}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ riotTag: resolvedTag }),
+            }).catch(() => {});
+          }
+        }
+      } catch {
+        // non-fatal
       }
 
       // fetch solo (matches only needed for MatchHistory)

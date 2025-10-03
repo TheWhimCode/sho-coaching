@@ -1,39 +1,46 @@
-'use client';
+'use client'
 
-import { useEffect, useMemo, useState } from 'react';
-import type { NoteSession as Session } from '@/app/admin/students/_components/SessionNotes';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-import { Markdown } from 'tiptap-markdown';
+import { useEffect, useMemo, useState } from 'react'
+import type { NoteSession as Session } from '@/app/admin/students/_components/SessionNotes'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Placeholder from '@tiptap/extension-placeholder'
 
-type Props = { session: Session; onChange?: (patch: Partial<Session>) => void };
+type Props = { session: Session; onChange?: (patch: Partial<Session>) => void }
 
-const DEFAULT_TEMPLATE = `## General
-- 
+// Switched from Markdown to HTML content.
+// This default is rendered with headings + lists via StarterKit.
+const DEFAULT_HTML = `
+  <h2>General</h2>
+  <ul><li></li></ul>
 
-## Earlygame
-- 
+  <h2>Earlygame</h2>
+  <ul><li></li></ul>
 
-## Midgame
-- 
+  <h2>Midgame</h2>
+  <ul><li></li></ul>
 
-## Lategame
-- 
-`;
+  <h2>Lategame</h2>
+  <ul><li></li></ul>
+`.trim()
 
 export default function DocTemplate({ session, onChange }: Props) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
-  // Read-only title: provided by parent (session.title = sessionType or fallback)
-  const [title, setTitle] = useState(session.title);
-  useEffect(() => { setTitle(session.title); }, [session.id, session.title]);
+  // Read-only title comes from parent
+  const [title, setTitle] = useState(session.title)
+  useEffect(() => {
+    setTitle(session.title)
+  }, [session.id, session.title])
 
-  const initialMarkdown = useMemo(
-    () => (session.content?.trim() ? session.content : DEFAULT_TEMPLATE),
-    [session.content]
-  );
+  // Prefer existing HTML content; if it's not HTML, fall back to DEFAULT_HTML
+  const initialHTML = useMemo(() => {
+    const raw = (session.content ?? '').trim()
+    if (!raw) return DEFAULT_HTML
+    const looksLikeHtml = raw.startsWith('<')
+    return looksLikeHtml ? raw : DEFAULT_HTML
+  }, [session.content])
 
   const editor = useEditor({
     extensions: [
@@ -43,11 +50,6 @@ export default function DocTemplate({ session, onChange }: Props) {
         orderedList: { keepMarks: true, keepAttributes: true },
       }),
       Placeholder.configure({ placeholder: 'Start writing the session notes…' }),
-      Markdown.configure({
-        html: false,
-        transformPastedText: true,
-        transformCopiedText: true,
-      }),
     ],
     content: '',
     editorProps: {
@@ -60,49 +62,42 @@ export default function DocTemplate({ session, onChange }: Props) {
         spellcheck: 'false',
       },
     },
+    // Keep this to avoid immediate SSR render issues
     immediatelyRender: false,
     onUpdate({ editor }) {
-      const md = ((editor.storage as any).markdown?.getMarkdown?.() as string) ?? '';
-      onChange?.({ content: md });
+      const html = editor.getHTML()
+      onChange?.({ content: html })
     },
-  });
+  })
 
   // Seed once on mount
   useEffect(() => {
-    if (!editor) return;
-    const hasSetMarkdown = typeof (editor.commands as any).setMarkdown === 'function';
-    if (hasSetMarkdown) {
-      (editor.chain() as any).setMarkdown(initialMarkdown).run();
-    } else {
-      editor.commands.setContent(initialMarkdown);
-    }
-    if (!session.content?.trim()) onChange?.({ content: initialMarkdown });
+    if (!editor) return
+    editor.commands.setContent(initialHTML, false)
+    if (!session.content?.trim()) onChange?.({ content: initialHTML })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor]);
+  }, [editor])
 
   // Reseed when switching sessions
   useEffect(() => {
-    if (!editor) return;
-    const hasSetMarkdown = typeof (editor.commands as any).setMarkdown === 'function';
-    if (hasSetMarkdown) {
-      (editor.chain() as any).setMarkdown(initialMarkdown).run();
-    } else {
-      editor.commands.setContent(initialMarkdown);
-    }
-    if (!session.content?.trim()) onChange?.({ content: initialMarkdown });
+    if (!editor) return
+    editor.commands.setContent(initialHTML, false)
+    if (!session.content?.trim()) onChange?.({ content: initialHTML })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.id, editor]);
+  }, [session.id, editor])
 
   // Save on blur
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) return
     const handler = () => {
-      const md = ((editor.storage as any).markdown?.getMarkdown?.() as string) ?? '';
-      onChange?.({ content: md });
-    };
-    editor.on('blur', handler);
-    return () => { editor.off('blur', handler); };
-  }, [editor, onChange]);
+      const html = editor.getHTML()
+      onChange?.({ content: html })
+    }
+    editor.on('blur', handler)
+    return () => {
+      editor.off('blur', handler)
+    }
+  }, [editor, onChange])
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -122,5 +117,5 @@ export default function DocTemplate({ session, onChange }: Props) {
         <div className="w-full min-h-[360px] rounded-xl bg-transparent p-4" />
       )}
     </div>
-  );
+  )
 }

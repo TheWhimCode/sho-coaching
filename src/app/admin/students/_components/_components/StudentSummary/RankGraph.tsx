@@ -2,18 +2,48 @@
 
 import useSWR from 'swr';
 import { useMemo } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+} from 'recharts';
 import { rankMiniCrestSvg } from '@/lib/league/datadragon';
 
-type RankPoint = { date: string; tier: string; division?: string | null; lp: number };
-type PointsDatum = { date: string; points: number; tier: string; division: string | null; lp: number };
+type ApiSeries = { date: string; tier: string; division?: string | null; lp: number };
+type ApiResp = {
+  series: ApiSeries[];
+  sessions: { id: string; scheduledStart: string; day: string }[];
+  climbed?: { date: string; climbed: number }[];
+  sessionId?: string;
+};
 
-const fetcher = (url: string) => fetch(url).then(r => r.json() as Promise<RankPoint[]>);
+type PointsDatum = {
+  date: string;
+  points: number;
+  tier: string;
+  division: string | null;
+  lp: number;
+};
+
+const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 const TIER_ORDER = [
-  'IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'
+  'IRON',
+  'BRONZE',
+  'SILVER',
+  'GOLD',
+  'PLATINUM',
+  'EMERALD',
+  'DIAMOND',
+  'MASTER',
+  'GRANDMASTER',
+  'CHALLENGER',
 ] as const;
-const DIV_ORDER = ['IV','III','II','I'] as const;
+const DIV_ORDER = ['IV', 'III', 'II', 'I'] as const;
 
 function rankToPoints(tier: string, division: string | null | undefined, lp: number): number {
   const t = (tier ?? '').toUpperCase();
@@ -25,7 +55,7 @@ function rankToPoints(tier: string, division: string | null | undefined, lp: num
   const divOffset = (DIV_ORDER.length - 1 - di) * 100;
   return base + divOffset + Math.max(0, lp);
 }
-const pointsAt = (tier: string, division: 'IV'|'III'|'II'|'I', lp = 0) =>
+const pointsAt = (tier: string, division: 'IV' | 'III' | 'II' | 'I', lp = 0) =>
   rankToPoints(tier, division, lp);
 
 const rankText = (tier: string, division: string | null, lp: number) => {
@@ -35,13 +65,13 @@ const rankText = (tier: string, division: string | null, lp: number) => {
 };
 
 export default function RankGraph({ studentId }: { studentId: string }) {
-  const { data } = useSWR<RankPoint[]>(
-    `/api/admin/students/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
+  const { data } = useSWR<ApiResp>(
+    `/api/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
     fetcher
   );
 
-  const { chartData, yDomain, tierTicks } = useMemo(() => {
-    const rows: RankPoint[] = Array.isArray(data) ? [...data] : [];
+  const { chartData, yDomain, tierTicks, sessionXs } = useMemo(() => {
+    const rows: ApiSeries[] = Array.isArray(data?.series) ? [...data.series] : [];
     rows.sort((a, b) => a.date.localeCompare(b.date));
 
     const pts: PointsDatum[] = rows.map(d => ({
@@ -55,10 +85,14 @@ export default function RankGraph({ studentId }: { studentId: string }) {
     if (pts.length === 0) {
       const yMin = pointsAt('SILVER', 'IV', 0);
       const yMax = pointsAt('PLATINUM', 'I', 100);
-      return { chartData: [] as PointsDatum[], yDomain: [yMin, yMax] as [number, number], tierTicks: [] as { value:number; tier:string }[] };
+      return {
+        chartData: [] as PointsDatum[],
+        yDomain: [yMin, yMax] as [number, number],
+        tierTicks: [] as { value: number; tier: string }[],
+        sessionXs: [] as string[],
+      };
     }
 
-    // compute min/max tiers seen and expand one league on each side
     let minSeenIdx = Infinity;
     let maxSeenIdx = -Infinity;
     for (const p of pts) {
@@ -75,13 +109,14 @@ export default function RankGraph({ studentId }: { studentId: string }) {
         ? Math.max(...pts.map(p => p.points)) + 50
         : pointsAt(TIER_ORDER[maxIdx], 'I', 100);
 
-    // ticks on TIER BOUNDARIES so bottom tick == baseline
     const tierTicks = Array.from({ length: maxIdx - minIdx + 1 }, (_, k) => {
       const ti = minIdx + k;
       return { value: ti * 400, tier: TIER_ORDER[ti] as string };
     });
 
-    return { chartData: pts, yDomain: [yMin, yMax] as [number, number], tierTicks };
+    const sessionXs = (data?.sessions ?? []).map(s => s.scheduledStart);
+
+    return { chartData: pts, yDomain: [yMin, yMax] as [number, number], tierTicks, sessionXs };
   }, [data]);
 
   return (
@@ -89,12 +124,10 @@ export default function RankGraph({ studentId }: { studentId: string }) {
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
-          margin={{ top: 0, right: 0, bottom: 0, left: 0 }} // kill outer padding
-          style={{ overflow: 'visible' }} // allow crest to extend outside
+          margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+          style={{ overflow: 'visible' }}
         >
-          {/* X axis: line only; zero reserved height */}
           <XAxis dataKey="date" tick={false} tickLine={false} axisLine height={1} />
-          {/* Y axis: crest ticks; bottom crest sits ON baseline */}
           <YAxis
             type="number"
             domain={yDomain}
@@ -108,7 +141,7 @@ export default function RankGraph({ studentId }: { studentId: string }) {
               const href = rankMiniCrestSvg(tier as any);
               const size = 24;
               const isBottom = payload.value === yDomain[0];
-              const yPos = isBottom ? (y - size + 0.5) : (y - size / 2);
+              const yPos = isBottom ? y - size + 0.5 : y - size / 2;
               return (
                 <g transform={`translate(${x - size - 6},${yPos})`}>
                   <image href={href} width={size} height={size} />
@@ -116,6 +149,18 @@ export default function RankGraph({ studentId }: { studentId: string }) {
               );
             }}
           />
+
+          {/* Vertical dotted lines for sessions */}
+          {sessionXs.map((x, i) => (
+            <ReferenceLine
+              key={x + i}
+              x={x}
+              ifOverflow="extendDomain"
+              strokeDasharray="3 3"
+              strokeOpacity={0.35}
+              strokeWidth={1}
+            />
+          ))}
 
           <Tooltip
             cursor={{ strokeOpacity: 0.25 }}
@@ -126,16 +171,22 @@ export default function RankGraph({ studentId }: { studentId: string }) {
                 month: 'short',
                 day: 'numeric',
               });
+
+              const isSessionDay =
+                !!(data?.sessions ?? []).some(s => s.day === d.date);
+
               return (
                 <div className="bg-zinc-900/90 text-white text-xs px-2 py-1 rounded">
                   <div>{rankText(d.tier, d.division, d.lp)}</div>
-                  <div>{dateLabel}</div>
+                  <div>
+                    {dateLabel}
+                    {isSessionDay ? ' · Coaching session' : ''}
+                  </div>
                 </div>
               );
             }}
           />
 
-          {/* smooth line */}
           <Line type="monotone" dataKey="points" dot={false} strokeWidth={2} />
         </LineChart>
       </ResponsiveContainer>

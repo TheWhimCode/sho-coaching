@@ -1,7 +1,7 @@
+// src/app/admin/availability/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 
 type Rule = { weekday: number; openMinute: number; closeMinute: number };
 type Exception = {
@@ -65,7 +65,7 @@ export default function AdminSlotsPage() {
   const [mode, setMode] = useState<"individual" | "uniform">("uniform");
   const [uniformOpen, setUniformOpen] = useState("13:00");
   const [uniformClose, setUniformClose] = useState("23:59");
-  const [uniformFullDay, setUniformFullDay] = useState(false); // still used internally
+  const [uniformFullDay, setUniformFullDay] = useState(false);
 
   const [exDate, setExDate] = useState(() => {
     const today = new Date();
@@ -97,6 +97,7 @@ export default function AdminSlotsPage() {
 
       setRules(normalized);
 
+      // seed uniform fields from Monday (or first)
       const sample = normalized[1] ?? normalized[0];
       const ymd = getAnchorYMDForWeekday(sample.weekday);
       setUniformOpen(utcMinToLocalHHMM(ymd, sample.openMinute));
@@ -113,6 +114,8 @@ export default function AdminSlotsPage() {
   }, []);
 
   async function saveRules() {
+    // Only save the currently active editor.
+    // We also include the mode so the server can branch if needed.
     let toSend: { open: string; close: string }[];
 
     if (mode === "uniform") {
@@ -141,19 +144,19 @@ export default function AdminSlotsPage() {
       });
     }
 
-    const res = await fetch("/api/admin/availability/rules", {
+    const res = await fetch(`/api/admin/availability/rules?mode=${mode}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rules: toSend }),
+      body: JSON.stringify({ mode, rules: toSend }),
     });
 
     if (!res.ok) {
       const txt = await res.text();
-      setLog(`❌ Failed to save rules: ${txt}`);
+      setLog(`Failed to save ${mode} rules: ${txt}`);
       return;
     }
 
-    setLog("✨ Weekly rules saved.");
+    setLog(`Weekly rules saved (${mode}).`);
   }
 
   async function addException() {
@@ -174,7 +177,7 @@ export default function AdminSlotsPage() {
 
     if (!res.ok) {
       const txt = await res.text();
-      setLog(`❌ Failed to save exception: ${txt}`);
+      setLog(`Failed to save exception: ${txt}`);
       return;
     }
 
@@ -182,7 +185,7 @@ export default function AdminSlotsPage() {
       r.json()
     );
     setExceptions(e as Exception[]);
-    setLog("🪄 Exception saved.");
+    setLog("Exception saved.");
   }
 
   async function deleteException(id: string) {
@@ -191,22 +194,22 @@ export default function AdminSlotsPage() {
     });
     if (!res.ok) {
       const txt = await res.text();
-      setLog(`❌ Failed to delete: ${txt}`);
+      setLog(`Failed to delete: ${txt}`);
       return;
     }
     setExceptions((prev) => prev.filter((x) => x.id !== id));
-    setLog("💨 Exception deleted.");
+    setLog("Exception deleted.");
   }
 
   async function regenerateSlots() {
     const res = await fetch("/api/admin/slots/recompute", { method: "POST" });
     if (!res.ok) {
       const txt = await res.text();
-      setLog(`❌ Re-summon failed: ${txt}`);
+      setLog(`Recompute failed: ${txt}`);
       return;
     }
     const data = await res.json();
-    setLog(`🔮 Re-summoned. Deleted: ${data.deleted}, Created: ${data.created}`);
+    setLog(`Recomputed. Deleted: ${data.deleted}, Created: ${data.created}`);
   }
 
   function formatLocalDate(iso: string) {
@@ -223,40 +226,75 @@ export default function AdminSlotsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen text-white relative">
-        <div className="fixed inset-0 z-0 bg-gradient-to-br from-purple-900 via-black to-indigo-950" />
-        <div className="grid place-items-center min-h-screen relative z-10">
-          <div className="text-sm opacity-80">Loading your spellbook…</div>
+      <main className="relative min-h-screen text-white overflow-x-clip">
+        {/* BG LAYERS */}
+        <div
+          aria-hidden
+          className="fixed inset-0 z-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle at 22% 18%, rgba(0,130,255,0.28), transparent 58%)," +
+              "radial-gradient(circle at 78% 32%, rgba(255,100,30,0.24), transparent 58%)," +
+              "radial-gradient(circle at 25% 82%, rgba(0,130,255,0.20), transparent 58%)," +
+              "radial-gradient(circle at 80% 75%, rgba(255,100,30,0.18), transparent 58%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
+          style={{
+            backgroundImage: "url('/images/coaching/texture.png')",
+            backgroundRepeat: "repeat",
+          }}
+        />
+        <div className="relative z-10 grid place-items-center min-h-screen">
+          <div className="text-sm text-white/80">Loading…</div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen text-white relative">
-      {/* background gradient always visible */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-purple-900 via-black to-indigo-950" />
+    <main className="relative min-h-screen text-white overflow-x-clip">
+      {/* BG LAYERS — match students/bookings */}
+      <div
+        aria-hidden
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 22% 18%, rgba(0,130,255,0.28), transparent 58%)," +
+            "radial-gradient(circle at 78% 32%, rgba(255,100,30,0.24), transparent 58%)," +
+            "radial-gradient(circle at 25% 82%, rgba(0,130,255,0.20), transparent 58%)," +
+            "radial-gradient(circle at 80% 75%, rgba(255,100,30,0.18), transparent 58%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
+        style={{
+          backgroundImage: "url('/images/coaching/texture.png')",
+          backgroundRepeat: "repeat",
+        }}
+      />
 
-      <div className="flex items-center justify-center min-h-screen relative z-10">
-        <div className="w-full max-w-5xl space-y-10 p-8 bg-black/40 rounded-3xl border border-purple-500/30 shadow-[0_0_30px_rgba(150,0,255,0.3)]">
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-5xl font-extrabold text-center bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent"
-          >
-            🧙 Master Wizard Panel
-          </motion.h1>
-          <p className="text-center text-purple-300">
-            Times shown in:{" "}
-            <span className="text-purple-100 font-medium">{prettyTZ}</span>
-          </p>
+      {/* CONTENT WRAPPER — 5xl + 24px padding */}
+      <div className="relative z-10 pb-20">
+        <div className="mx-auto w-full max-w-5xl px-6 space-y-6">
+          <div className="h-1" />
+
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-xl font-semibold">Availability</h1>
+            <div className="text-sm text-white/70">
+              Times shown in <span className="text-white/90 font-medium">{prettyTZ}</span>
+            </div>
+          </div>
 
           {/* Weekly Rules */}
-          <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold">📜 Weekly Rules</h2>
+          <section className="rounded-2xl p-6 bg-zinc-900/70 ring-1 ring-white/10 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold">Weekly Rules</h2>
               <div className="flex items-center gap-4 text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="mode"
@@ -264,9 +302,9 @@ export default function AdminSlotsPage() {
                     checked={mode === "individual"}
                     onChange={() => setMode("individual")}
                   />
-                  Edit weekdays individually
+                  Edit per weekday
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="mode"
@@ -274,7 +312,7 @@ export default function AdminSlotsPage() {
                     checked={mode === "uniform"}
                     onChange={() => setMode("uniform")}
                   />
-                  One range for all weekdays
+                  Same for all days
                 </label>
               </div>
             </div>
@@ -282,20 +320,18 @@ export default function AdminSlotsPage() {
             <div className="grid gap-6 md:grid-cols-2">
               {/* INDIVIDUAL */}
               <div
-                className={`rounded-xl p-4 border ${
-                  mode === "individual"
-                    ? "border-purple-400/60"
-                    : "border-neutral-700/80 opacity-60"
+                className={`rounded-xl p-4 ring-1 ${
+                  mode === "individual" ? "ring-white/20" : "ring-white/10 opacity-70"
                 }`}
               >
-                <h3 className="font-semibold mb-3">Per-day editor</h3>
+                <h3 className="font-medium mb-3">Per-day editor</h3>
                 <div className="grid gap-3">
                   {weekdays.map((d, i) => {
                     const rule = rules.find((r) => r.weekday === i)!;
                     const ymd = getAnchorYMDForWeekday(i);
                     return (
                       <div key={i} className="flex gap-3 items-center">
-                        <span className="w-10">{d}</span>
+                        <span className="w-10 text-white/80">{d}</span>
                         <input
                           type="time"
                           value={utcMinToLocalHHMM(ymd, rule.openMinute)}
@@ -304,15 +340,12 @@ export default function AdminSlotsPage() {
                             const idx = copy.findIndex((r) => r.weekday === i);
                             copy[idx] = {
                               ...copy[idx],
-                              openMinute: localHHMMtoUtcMin(
-                                ymd,
-                                e.target.value
-                              ),
+                              openMinute: localHHMMtoUtcMin(ymd, e.target.value),
                             };
                             setRules(copy);
                           }}
                           disabled={mode !== "individual"}
-                          className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                          className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1 disabled:opacity-50"
                         />
                         <span>–</span>
                         <input
@@ -323,15 +356,12 @@ export default function AdminSlotsPage() {
                             const idx = copy.findIndex((r) => r.weekday === i);
                             copy[idx] = {
                               ...copy[idx],
-                              closeMinute: localHHMMtoUtcMin(
-                                ymd,
-                                e.target.value
-                              ),
+                              closeMinute: localHHMMtoUtcMin(ymd, e.target.value),
                             };
                             setRules(copy);
                           }}
                           disabled={mode !== "individual"}
-                          className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                          className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1 disabled:opacity-50"
                         />
                       </div>
                     );
@@ -341,21 +371,19 @@ export default function AdminSlotsPage() {
 
               {/* UNIFORM */}
               <div
-                className={`rounded-xl p-4 border ${
-                  mode === "uniform"
-                    ? "border-purple-400/60"
-                    : "border-neutral-700/80 opacity-60"
+                className={`rounded-xl p-4 ring-1 ${
+                  mode === "uniform" ? "ring-white/20" : "ring-white/10 opacity-70"
                 }`}
               >
-                <h3 className="font-semibold mb-3">Uniform editor</h3>
+                <h3 className="font-medium mb-3">Uniform editor</h3>
                 <div className="flex flex-wrap gap-3 items-center">
-                  <span className="w-28 opacity-80">All weekdays</span>
+                  <span className="w-28 text-white/80">All weekdays</span>
                   <input
                     type="time"
                     value={uniformOpen}
                     onChange={(e) => setUniformOpen(e.target.value)}
                     disabled={mode !== "uniform"}
-                    className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                    className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1 disabled:opacity-50"
                   />
                   <span>–</span>
                   <input
@@ -363,7 +391,7 @@ export default function AdminSlotsPage() {
                     value={uniformClose}
                     onChange={(e) => setUniformClose(e.target.value)}
                     disabled={mode !== "uniform"}
-                    className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
+                    className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1 disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -371,28 +399,28 @@ export default function AdminSlotsPage() {
 
             <button
               onClick={saveRules}
-              className="mt-6 px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-400 hover:opacity-90 font-medium shadow-[0_0_10px_rgba(0,255,200,0.5)]"
+              className="mt-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 ring-1 ring-white/10 text-sm"
             >
-              Save Rules ✍️
+              {mode === "uniform"
+                ? "Save Rules (Uniform)"
+                : "Save Rules (Per-day)"}
             </button>
           </section>
 
           {/* Exceptions */}
-          <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
-            <h2 className="text-2xl font-semibold mb-4">🎩 Exceptions</h2>
+          <section className="rounded-2xl p-6 bg-zinc-900/70 ring-1 ring-white/10 space-y-4">
+            <h2 className="text-base font-semibold">Exceptions</h2>
 
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2">
               {exceptions.map((ex) => (
-                <motion.div
+                <div
                   key={ex.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex justify-between items-center bg-neutral-800/70 px-3 py-2 rounded-lg border border-purple-700/40"
+                  className="flex items-center justify-between bg-black/20 ring-1 ring-white/10 px-3 py-2 rounded-lg"
                 >
-                  <span>
+                  <span className="text-sm">
                     {formatLocalDate(ex.date)} —{" "}
                     {ex.blocked
-                      ? "❌ Blocked all day"
+                      ? "Blocked all day"
                       : `${utcMinToLocalHHMM(
                           ex.date.slice(0, 10),
                           ex.openMinute ?? 0
@@ -403,11 +431,11 @@ export default function AdminSlotsPage() {
                   </span>
                   <button
                     onClick={() => deleteException(ex.id)}
-                    className="text-rose-400 hover:text-rose-300"
+                    className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 ring-1 ring-white/10 text-sm"
                   >
-                    Vanish
+                    Delete
                   </button>
-                </motion.div>
+                </div>
               ))}
             </div>
 
@@ -416,7 +444,7 @@ export default function AdminSlotsPage() {
                 type="date"
                 value={exDate}
                 onChange={(e) => setExDate(e.target.value)}
-                className="bg-neutral-800 px-2 py-1 rounded"
+                className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1"
               />
               {!exBlocked && (
                 <>
@@ -424,13 +452,13 @@ export default function AdminSlotsPage() {
                     type="time"
                     value={exOpen}
                     onChange={(e) => setExOpen(e.target.value)}
-                    className="bg-neutral-800 px-2 py-1 rounded"
+                    className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1"
                   />
                   <input
                     type="time"
                     value={exClose}
                     onChange={(e) => setExClose(e.target.value)}
-                    className="bg-neutral-800 px-2 py-1 rounded"
+                    className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1"
                   />
                 </>
               )}
@@ -445,31 +473,29 @@ export default function AdminSlotsPage() {
               <button
                 onClick={addException}
                 disabled={!exDate}
-                className="px-4 py-2 rounded-xl disabled:opacity-40 bg-gradient-to-r from-sky-500 to-purple-500 hover:opacity-90 shadow-[0_0_10px_rgba(100,100,255,0.5)]"
+                className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 ring-1 ring-white/10 text-sm disabled:opacity-50"
               >
-                + Conjure Exception
+                Add Exception
               </button>
             </div>
           </section>
 
           {/* Maintenance */}
-          <section className="bg-neutral-900/70 rounded-2xl p-6 shadow-lg">
-            <h2 className="text-2xl font-semibold mb-4">🔥 Spell Maintenance</h2>
+          <section className="rounded-2xl p-6 bg-zinc-900/70 ring-1 ring-white/10 space-y-3">
+            <h2 className="text-base font-semibold">Maintenance</h2>
             <button
               onClick={regenerateSlots}
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-red-500 hover:opacity-90 shadow-[0_0_15px_rgba(255,80,0,0.5)]"
+              className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 ring-1 ring-white/10 text-sm"
             >
-              Re-summon Future Slots
+              Recompute Future Slots
             </button>
           </section>
 
           {log && (
-            <pre className="bg-neutral-900/80 rounded-lg p-3 text-sm text-purple-300">
-              {log}
-            </pre>
+            <pre className="bg-black/30 rounded-lg p-3 text-sm text-white/80">{log}</pre>
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
