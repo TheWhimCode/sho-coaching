@@ -22,7 +22,9 @@ export default function StudentSummary({ student, onChange }: Props) {
 
       {/* Middle column: Rank graph */}
       <div className="mx-8 w-[420px] shrink-0 border-l border-white/10 pl-6">
+      <div className="h-36 md:h-48">
         <RankGraph studentId={student.id} />
+      </div>
       </div>
 
       {/* Right: compact column */}

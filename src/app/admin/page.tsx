@@ -43,7 +43,7 @@ export default function AdminPage() {
         className="fixed z-50 left-0 top-1/2 -translate-y-1/2 flex flex-col items-stretch gap-3"
       >
         <TabButton id="hub"      label="📊 Hub" />
-        <TabButton id="slots"    label="🧙 Slots" />
+        <TabButton id="slots"    label="🧙 Availability" />
         <TabButton id="sessions" label="✨ Sessions" />
         <TabButton id="students" label="🎓 Students" />
       </motion.div>

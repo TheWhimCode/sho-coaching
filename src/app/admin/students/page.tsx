@@ -1,7 +1,7 @@
 // src/app/admin/students/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 
@@ -55,6 +55,82 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
   const loadedOnce = useRef(false);
+
+  // --- Add Student overlay state ---
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newRiot, setNewRiot] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitErr, setSubmitErr] = useState<string | null>(null);
+
+  // close on ESC
+  useEffect(() => {
+    if (!showAdd) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowAdd(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showAdd]);
+
+  const handleCreate = useCallback(async () => {
+    setSubmitErr(null);
+
+    const name = newName.trim();
+    const riotTag = newRiot.trim() || null;
+
+    if (!name) {
+      setSubmitErr("Name is required.");
+      return;
+    }
+    // basic riot tag format hint (optional)
+    if (riotTag && !/.+#.+/.test(riotTag)) {
+      setSubmitErr("Riot tag should look like Name#TAG (e.g. Faker#KR1).");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const r = await fetch("/api/admin/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, riotTag }),
+      });
+
+      if (!r.ok) {
+        const msg = await r.text();
+        throw new Error(msg || `${r.status} ${r.statusText}`);
+      }
+
+      const j = await r.json();
+
+      // normalize just like initial fetch does
+      const created: Student = {
+        id: String(j.id),
+        name: String(j.name ?? ""),
+        discordName: j.discordName ?? null,
+        riotTag: j.riotTag ?? null,
+        server: j.server ?? null,
+        createdAt:
+          typeof j.createdAt === "string"
+            ? j.createdAt
+            : new Date(j.createdAt).toISOString(),
+        updatedAt:
+          typeof j.updatedAt === "string"
+            ? j.updatedAt
+            : new Date(j.updatedAt).toISOString(),
+      };
+
+      setStudents((prev) => [created, ...prev].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+      setShowAdd(false);
+      setNewName("");
+      setNewRiot("");
+    } catch (e: any) {
+      setSubmitErr(e?.message || "Failed to create student.");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [newName, newRiot]);
 
   useEffect(() => {
     if (loadedOnce.current) return;
@@ -136,12 +212,20 @@ export default function StudentsPage() {
 
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-xl font-semibold">Students</h1>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search name / discord / riot tag / server"
-              className="w-80 rounded-xl bg-black/40 px-3 py-2 text-sm ring-1 ring-white/15 text-white placeholder:text-white/50 focus:outline-none focus:ring-white/30"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search name / discord / riot tag / server"
+                className="w-80 rounded-xl bg-black/40 px-3 py-2 text-sm ring-1 ring-white/15 text-white placeholder:text-white/50 focus:outline-none focus:ring-white/30"
+              />
+              <button
+                onClick={() => setShowAdd(true)}
+                className="rounded-xl bg-blue-600/90 hover:bg-blue-600 px-3 py-2 text-sm font-medium ring-1 ring-white/10"
+              >
+                + Add student
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -190,6 +274,83 @@ export default function StudentsPage() {
           )}
         </div>
       </div>
+
+      {/* ADD STUDENT OVERLAY */}
+      {showAdd && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="add-student-title"
+        >
+          {/* backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowAdd(false)}
+          />
+          {/* dialog */}
+          <div className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/95 p-5 shadow-xl ring-1 ring-white/10">
+            <div className="flex items-start justify-between gap-3">
+              <h2 id="add-student-title" className="text-lg font-semibold">
+                Add student
+              </h2>
+              <button
+                className="text-zinc-400 hover:text-zinc-200"
+                onClick={() => setShowAdd(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <label className="block">
+                <span className="text-sm text-zinc-300">Name</span>
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. Hide on Bush"
+                  className="mt-1 w-full rounded-xl bg-black/40 px-3 py-2 text-sm ring-1 ring-white/15 text-white placeholder:text-white/50 focus:outline-none focus:ring-white/30"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm text-zinc-300">Riot tag</span>
+                <input
+                  value={newRiot}
+                  onChange={(e) => setNewRiot(e.target.value)}
+                  placeholder="e.g. Faker#KR1"
+                  className="mt-1 w-full rounded-xl bg-black/40 px-3 py-2 text-sm ring-1 ring-white/15 text-white placeholder:text-white/50 focus:outline-none focus:ring-white/30"
+                />
+                <p className="mt-1 text-[11px] text-zinc-400">
+                  Optional. Format: Name#TAG
+                </p>
+              </label>
+
+              {submitErr && (
+                <div className="text-sm text-red-400">{submitErr}</div>
+              )}
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setShowAdd(false)}
+                  className="rounded-xl bg-zinc-800 px-3 py-2 text-sm ring-1 ring-white/10 hover:bg-zinc-700"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreate}
+                  className="rounded-xl bg-blue-600/90 hover:bg-blue-600 px-3 py-2 text-sm font-medium ring-1 ring-white/10 disabled:opacity-60"
+                  disabled={submitting}
+                >
+                  {submitting ? "Creating…" : "Create"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

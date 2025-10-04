@@ -13,183 +13,195 @@ import {
 } from 'recharts';
 import { rankMiniCrestSvg } from '@/lib/league/datadragon';
 
-type ApiSeries = { date: string; tier: string; division?: string | null; lp: number };
-type ApiResp = {
-  series: ApiSeries[];
-  sessions: { id: string; scheduledStart: string; day: string }[];
-  climbed?: { date: string; climbed: number }[];
-  sessionId?: string;
-};
-
-type PointsDatum = {
-  date: string;
-  points: number;
-  tier: string;
-  division: string | null;
-  lp: number;
-};
-
-const fetcher = (url: string) => fetch(url).then(r => r.json());
-
+// --- shared rank math (keep identical to server) ---
 const TIER_ORDER = [
-  'IRON',
-  'BRONZE',
-  'SILVER',
-  'GOLD',
-  'PLATINUM',
-  'EMERALD',
-  'DIAMOND',
-  'MASTER',
-  'GRANDMASTER',
-  'CHALLENGER',
+  'IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'
 ] as const;
-const DIV_ORDER = ['IV', 'III', 'II', 'I'] as const;
+const DIV_ORDER  = ['IV','III','II','I'] as const;
+const MASTER_BASE = TIER_ORDER.indexOf('MASTER') * 400; // 2800
+const MASTER_IDX  = TIER_ORDER.indexOf('MASTER');
 
 function rankToPoints(tier: string, division: string | null | undefined, lp: number): number {
   const t = (tier ?? '').toUpperCase();
-  const d = (division ?? 'IV').toUpperCase();
-  const ti = Math.max(0, TIER_ORDER.indexOf(t as typeof TIER_ORDER[number]));
-  const base = ti * 400;
-  if (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER') return base + Math.max(0, lp);
-  const di = Math.max(0, DIV_ORDER.indexOf(d as typeof DIV_ORDER[number]));
-  const divOffset = (DIV_ORDER.length - 1 - di) * 100;
-  return base + divOffset + Math.max(0, lp);
+  if (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER') {
+    return MASTER_BASE + Math.max(0, lp);
+  }
+  const d  = (division ?? 'IV').toUpperCase();
+  const ti = Math.max(0, TIER_ORDER.indexOf(t as any));
+  const di = Math.max(0, DIV_ORDER.indexOf(d as any));
+  return ti * 400 + (DIV_ORDER.length - 1 - di) * 100 + Math.max(0, lp);
 }
-const pointsAt = (tier: string, division: 'IV' | 'III' | 'II' | 'I', lp = 0) =>
-  rankToPoints(tier, division, lp);
 
-const rankText = (tier: string, division: string | null, lp: number) => {
+const rankText = (tier: string, division: string | null | undefined, lp: number) => {
   const t = (tier ?? '').toUpperCase();
-  if (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER') return `${t} · ${lp} LP`;
-  return `${t} ${division ?? 'IV'} · ${lp} LP`;
+  return (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER')
+    ? `${t} · ${lp} LP`
+    : `${t} ${division ?? 'IV'} · ${lp} LP`;
 };
+
+// --- types ---
+type ApiSeries = {
+  date: string;                // 'YYYY-MM-DD'
+  tier: string;
+  division?: string | null;
+  lp: number;
+  points?: number;             // server-provided
+};
+type ApiResp = {
+  series: ApiSeries[];
+  sessions: { id: string; scheduledStart: string; day: string }[];
+};
+
+// --- helpers ---
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+function formatDayLabel(yyyyMmDd: string) {
+  const [y, m, d] = yyyyMmDd.split('-').map(Number);
+  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1)).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
 export default function RankGraph({ studentId }: { studentId: string }) {
   const { data } = useSWR<ApiResp>(
-    `/api/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
+    `/api/admin/students/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
     fetcher
   );
 
-  const { chartData, yDomain, tierTicks, sessionXs } = useMemo(() => {
-    const rows: ApiSeries[] = Array.isArray(data?.series) ? [...data.series] : [];
+  const { chartData, yDomain, crestTiers, sessionXs } = useMemo(() => {
+    const rows: ApiSeries[] = Array.isArray(data?.series) ? [...data!.series] : [];
     rows.sort((a, b) => a.date.localeCompare(b.date));
 
-    const pts: PointsDatum[] = rows.map(d => ({
+    const pts = rows.map(d => ({
       date: d.date,
-      points: rankToPoints(d.tier, d.division ?? null, d.lp),
+      points: Number.isFinite(Number(d.points))
+        ? Number(d.points)
+        : rankToPoints(d.tier, d.division ?? 'IV', d.lp ?? 0),
       tier: (d.tier ?? '').toUpperCase(),
-      division: (d.division ?? null) as string | null,
-      lp: d.lp,
-    }));
+      division: (d.division ?? 'IV') as string | null,
+      lp: d.lp ?? 0,
+    })).filter(p => Number.isFinite(p.points));
 
-    if (pts.length === 0) {
-      const yMin = pointsAt('SILVER', 'IV', 0);
-      const yMax = pointsAt('PLATINUM', 'I', 100);
-      return {
-        chartData: [] as PointsDatum[],
-        yDomain: [yMin, yMax] as [number, number],
-        tierTicks: [] as { value: number; tier: string }[],
-        sessionXs: [] as string[],
-      };
-    }
-
-    let minSeenIdx = Infinity;
-    let maxSeenIdx = -Infinity;
+    // determine seen tier range (by points / 400)
+    let minSeen = Infinity;
+    let maxSeen = -Infinity;
     for (const p of pts) {
-      const ti = Math.max(0, TIER_ORDER.indexOf(p.tier as typeof TIER_ORDER[number]));
-      if (ti < minSeenIdx) minSeenIdx = ti;
-      if (ti > maxSeenIdx) maxSeenIdx = ti;
+      const ti = Math.floor(p.points / 400);
+      if (ti < minSeen) minSeen = ti;
+      if (ti > maxSeen) maxSeen = ti;
     }
-    const minIdx = Math.max(0, minSeenIdx - 1);
-    const maxIdx = Math.min(TIER_ORDER.length - 1, maxSeenIdx + 1);
+    if (!Number.isFinite(minSeen) || !Number.isFinite(maxSeen)) {
+      // fallback: show Silver..Platinum window
+      minSeen = TIER_ORDER.indexOf('SILVER');
+      maxSeen = TIER_ORDER.indexOf('PLATINUM');
+    }
 
-    const yMin = pointsAt(TIER_ORDER[minIdx], 'IV', 0);
-    const yMax =
-      maxIdx >= TIER_ORDER.indexOf('MASTER')
-        ? Math.max(...pts.map(p => p.points)) + 50
-        : pointsAt(TIER_ORDER[maxIdx], 'I', 100);
+    // New rule: bottom = lowest seen tier, top = one above highest seen (clamped to MASTER)
+    const bottomTier = Math.max(0, Math.floor(minSeen));
+    const topTier    = Math.min(MASTER_IDX, Math.floor(maxSeen) + 1);
 
-    const tierTicks = Array.from({ length: maxIdx - minIdx + 1 }, (_, k) => {
-      const ti = minIdx + k;
-      return { value: ti * 400, tier: TIER_ORDER[ti] as string };
-    });
+    // Domain spans full bottom band to full (top+1) band so the top crest has headroom
+    const yDomain: [number, number] = [bottomTier * 400, (topTier + 1) * 400];
 
-    const sessionXs = (data?.sessions ?? []).map(s => s.scheduledStart);
+    // Crests to render (self-contained, independent of Recharts ticks)
+    const crestTiers = [];
+    for (let ti = bottomTier; ti <= topTier; ti++) {
+      crestTiers.push({ ti, tier: TIER_ORDER[ti] as string, value: ti * 400 });
+    }
 
-    return { chartData: pts, yDomain: [yMin, yMax] as [number, number], tierTicks, sessionXs };
+    const sessionXs = (data?.sessions ?? []).map(s => s.day);
+
+    return { chartData: pts, yDomain, crestTiers, sessionXs };
   }, [data]);
 
+  // constants for the overlay crest column
+  const CREST_COL = 44; // px
+  const CREST_SIZE = 24; // px
+
+  // map a points value to a vertical percentage within yDomain (0 = bottom, 1 = top)
+  const pctFromPoints = (v: number) => {
+    const [y0, y1] = yDomain;
+    const span = Math.max(1, y1 - y0);
+    return Math.min(1, Math.max(0, (v - y0) / span));
+  };
+
   return (
-    <div className="w-full h-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={chartData}
-          margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
-          style={{ overflow: 'visible' }}
-        >
-          <XAxis dataKey="date" tick={false} tickLine={false} axisLine height={1} />
-          <YAxis
-            type="number"
-            domain={yDomain}
-            ticks={tierTicks.map(t => t.value)}
-            tickLine={false}
-            axisLine
-            width={36}
-            tick={(props: any) => {
-              const { x, y, payload } = props;
-              const tier = tierTicks.find(t => t.value === payload.value)?.tier ?? 'UNRANKED';
-              const href = rankMiniCrestSvg(tier as any);
-              const size = 24;
-              const isBottom = payload.value === yDomain[0];
-              const yPos = isBottom ? y - size + 0.5 : y - size / 2;
-              return (
-                <g transform={`translate(${x - size - 6},${yPos})`}>
-                  <image href={href} width={size} height={size} />
-                </g>
-              );
-            }}
-          />
-
-          {/* Vertical dotted lines for sessions */}
-          {sessionXs.map((x, i) => (
-            <ReferenceLine
-              key={x + i}
-              x={x}
-              ifOverflow="extendDomain"
-              strokeDasharray="3 3"
-              strokeOpacity={0.35}
-              strokeWidth={1}
+    <div className="relative w-full h-full">
+      {/* Left crest column (absolute, self-contained) */}
+      <div
+        className="absolute left-0 top-0 bottom-0 pointer-events-none"
+        style={{ width: CREST_COL }}
+      >
+        {crestTiers.map(({ ti, tier, value }) => {
+          const pct = pctFromPoints(value);       // 0..1 from bottom to top
+          const topPct = 100 - pct * 100;         // CSS top from top edge
+          const src = rankMiniCrestSvg(tier as any);
+          return (
+            <img
+              key={ti}
+              src={src}
+              alt={tier}
+              width={CREST_SIZE}
+              height={CREST_SIZE}
+              style={{
+                position: 'absolute',
+                left: (CREST_COL - CREST_SIZE) / 2,            // center in column
+                top: `calc(${topPct}% - ${CREST_SIZE / 2}px)`, // vertically center on tick
+                userSelect: 'none',
+              }}
             />
-          ))}
+          );
+        })}
+      </div>
 
-          <Tooltip
-            cursor={{ strokeOpacity: 0.25 }}
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
-              const d = payload[0].payload as PointsDatum;
-              const dateLabel = new Date(d.date).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              });
+      {/* Chart shifted right so it doesn't overlap the crest column */}
+      <div className="w-full h-full" style={{ paddingLeft: CREST_COL }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={chartData}
+            margin={{ top: 0, right: 8, bottom: 0, left: 8 }}
+          >
+            <XAxis dataKey="date" tick={false} tickLine={false} axisLine height={1} />
+            {/* YAxis is hidden; we keep it only to enforce the domain */}
+            <YAxis type="number" domain={yDomain} hide />
 
-              const isSessionDay =
-                !!(data?.sessions ?? []).some(s => s.day === d.date);
+            {/* Session lines */}
+            {sessionXs.map((x, i) => (
+              <ReferenceLine
+                key={x + i}
+                x={x}
+                ifOverflow="extendDomain"
+                strokeDasharray="3 3"
+                strokeOpacity={0.35}
+                strokeWidth={1}
+              />
+            ))}
 
-              return (
-                <div className="bg-zinc-900/90 text-white text-xs px-2 py-1 rounded">
-                  <div>{rankText(d.tier, d.division, d.lp)}</div>
-                  <div>
-                    {dateLabel}
-                    {isSessionDay ? ' · Coaching session' : ''}
+            <Tooltip
+              cursor={{ strokeOpacity: 0.25 }}
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0].payload as {
+                  date: string; tier: string; division: string | null; lp: number;
+                };
+                const isSessionDay = !!(data?.sessions ?? []).some(s => s.day === d.date);
+                return (
+                  <div className="bg-zinc-900/90 text-white text-xs px-2 py-1 rounded">
+                    <div>{rankText(d.tier, d.division, d.lp)}</div>
+                    <div>
+                      {formatDayLabel(d.date)}
+                      {isSessionDay ? ' · Coaching session' : ''}
+                    </div>
                   </div>
-                </div>
-              );
-            }}
-          />
+                );
+              }}
+            />
 
-          <Line type="monotone" dataKey="points" dot={false} strokeWidth={2} />
-        </LineChart>
-      </ResponsiveContainer>
+            <Line type="monotone" dataKey="points" dot={false} strokeWidth={2} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
