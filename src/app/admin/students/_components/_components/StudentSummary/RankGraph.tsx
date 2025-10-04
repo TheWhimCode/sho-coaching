@@ -41,11 +41,11 @@ const rankText = (tier: string, division: string | null | undefined, lp: number)
 
 // --- types ---
 type ApiSeries = {
-  date: string;                // 'YYYY-MM-DD'
+  date: string;
   tier: string;
   division?: string | null;
   lp: number;
-  points?: number;             // server-provided
+  points?: number;
 };
 type ApiResp = {
   series: ApiSeries[];
@@ -83,7 +83,7 @@ export default function RankGraph({ studentId }: { studentId: string }) {
       lp: d.lp ?? 0,
     })).filter(p => Number.isFinite(p.points));
 
-    // determine seen tier range (by points / 400)
+    // --- determine seen tier range ---
     let minSeen = Infinity;
     let maxSeen = -Infinity;
     for (const p of pts) {
@@ -91,36 +91,35 @@ export default function RankGraph({ studentId }: { studentId: string }) {
       if (ti < minSeen) minSeen = ti;
       if (ti > maxSeen) maxSeen = ti;
     }
+
     if (!Number.isFinite(minSeen) || !Number.isFinite(maxSeen)) {
-      // fallback: show Silver..Platinum window
+      // fallback window if no valid data
       minSeen = TIER_ORDER.indexOf('SILVER');
       maxSeen = TIER_ORDER.indexOf('PLATINUM');
     }
 
-    // New rule: bottom = lowest seen tier, top = one above highest seen (clamped to MASTER)
+    // bottom = lowest seen tier, top = MASTER (0 LP)
     const bottomTier = Math.max(0, Math.floor(minSeen));
-    const topTier    = Math.min(MASTER_IDX, Math.floor(maxSeen) + 1);
+    const topTier = MASTER_IDX; // Always show up to Master 0 LP
 
-    // Domain spans full bottom band to full (top+1) band so the top crest has headroom
-    const yDomain: [number, number] = [bottomTier * 400, (topTier + 1) * 400];
+    // domain spans exactly from bottom tier start → Master 0 LP
+    const yDomain: [number, number] = [bottomTier * 400, topTier * 400];
 
-    // Crests to render (self-contained, independent of Recharts ticks)
+    // crests: include all tiers from bottom → top (Master included)
     const crestTiers = [];
     for (let ti = bottomTier; ti <= topTier; ti++) {
       crestTiers.push({ ti, tier: TIER_ORDER[ti] as string, value: ti * 400 });
     }
 
     const sessionXs = (data?.sessions ?? []).map(s => s.day);
-
     return { chartData: pts, yDomain, crestTiers, sessionXs };
   }, [data]);
 
-  // constants for the overlay crest column
-  const CREST_COL = 44; // px
-  const CREST_SIZE = 24; // px
+  // overlay crest column
+  const CREST_COL = 44;
+  const CREST_SIZE = 24;
 
-  // map a points value to a vertical percentage within yDomain (0 = bottom, 1 = top)
-  const pctFromPoints = (v: number) => {
+  const pctFromPoints = (v: number, yDomain: [number, number]) => {
     const [y0, y1] = yDomain;
     const span = Math.max(1, y1 - y0);
     return Math.min(1, Math.max(0, (v - y0) / span));
@@ -128,14 +127,14 @@ export default function RankGraph({ studentId }: { studentId: string }) {
 
   return (
     <div className="relative w-full h-full">
-      {/* Left crest column (absolute, self-contained) */}
+      {/* Left crest column */}
       <div
         className="absolute left-0 top-0 bottom-0 pointer-events-none"
         style={{ width: CREST_COL }}
       >
         {crestTiers.map(({ ti, tier, value }) => {
-          const pct = pctFromPoints(value);       // 0..1 from bottom to top
-          const topPct = 100 - pct * 100;         // CSS top from top edge
+          const pct = pctFromPoints(value, yDomain);
+          const topPct = 100 - pct * 100;
           const src = rankMiniCrestSvg(tier as any);
           return (
             <img
@@ -146,8 +145,8 @@ export default function RankGraph({ studentId }: { studentId: string }) {
               height={CREST_SIZE}
               style={{
                 position: 'absolute',
-                left: (CREST_COL - CREST_SIZE) / 2,            // center in column
-                top: `calc(${topPct}% - ${CREST_SIZE / 2}px)`, // vertically center on tick
+                left: (CREST_COL - CREST_SIZE) / 2,
+                top: `calc(${topPct}% - ${CREST_SIZE / 2}px)`,
                 userSelect: 'none',
               }}
             />
@@ -155,7 +154,7 @@ export default function RankGraph({ studentId }: { studentId: string }) {
         })}
       </div>
 
-      {/* Chart shifted right so it doesn't overlap the crest column */}
+      {/* Chart area */}
       <div className="w-full h-full" style={{ paddingLeft: CREST_COL }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
@@ -163,10 +162,15 @@ export default function RankGraph({ studentId }: { studentId: string }) {
             margin={{ top: 0, right: 8, bottom: 0, left: 8 }}
           >
             <XAxis dataKey="date" tick={false} tickLine={false} axisLine height={1} />
-            {/* YAxis is hidden; we keep it only to enforce the domain */}
-            <YAxis type="number" domain={yDomain} hide />
+            <YAxis
+              type="number"
+              domain={yDomain}
+              tick={false}
+              tickLine={false}
+              width={2}
+              axisLine={{ stroke: 'rgba(255,255,255,0.18)' }}
+            />
 
-            {/* Session lines */}
             {sessionXs.map((x, i) => (
               <ReferenceLine
                 key={x + i}

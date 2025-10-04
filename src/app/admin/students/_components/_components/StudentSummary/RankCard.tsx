@@ -18,6 +18,8 @@ type RankData = {
   lp: number;
   wins: number;
   losses: number;
+  division?: string; // e.g. "I", "II", "III", "IV"
+  rank?: string;     // some APIs use "rank" instead of "division"
 } | null;
 
 // Tier → hex color (tweak as you like)
@@ -73,8 +75,16 @@ export default function RankCard({
   if (!data)   return <div className="text-sm text-zinc-300">Unranked</div>;
 
   const { tier, lp, wins, losses } = data;
+  const tierUpper = tier?.toUpperCase?.() || '';
   const emblem = rankEmblemUrl(tier as RankTier);
-  const color  = RANK_COLOR[tier?.toUpperCase?.() || ''] || '#ffffff';
+  const color  = RANK_COLOR[tierUpper] || '#ffffff';
+
+  // Show division for all tiers below Master/GM/Challenger.
+  const isTopTier = tierUpper === 'MASTER' || tierUpper === 'GRANDMASTER' || tierUpper === 'CHALLENGER';
+  const division = (data?.division ?? data?.rank ?? '').toString(); // fallback to whatever field exists
+  const tierLine = isTopTier
+    ? `${tier} ${lp} LP`
+    : `${tier}${division ? ` ${division}` : ''} ${lp} LP`;
 
   return (
     <div className={`inline-flex flex-col items-center justify-center p-0 ${widthClass ?? ''} ${className}`}>
@@ -94,7 +104,7 @@ export default function RankCard({
       {/* Text */}
       <div className="mt-3 text-center leading-tight">
         <p className="font-bold text-base" style={{ color }}>
-          {tier} {lp} LP
+          {tierLine}
         </p>
         <p className="text-sm text-zinc-300">
           {wins}W - {losses}L ({Math.round((wins/(wins+losses))*100)}%)

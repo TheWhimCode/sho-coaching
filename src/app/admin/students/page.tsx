@@ -1,4 +1,3 @@
-// src/app/admin/students/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
@@ -24,21 +23,26 @@ const climbFetcher = (url: string) =>
 
 function LPBadge({ studentId }: { studentId: string }) {
   const { data } = useSWR<ClimbResp>(
-    `/api/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
+    `/api/admin/students/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
     climbFetcher
   );
 
-  const delta = data?.overall?.deltaToLatest ?? 0;
+  const delta = data?.overall?.deltaToLatest;
+  const hasData = typeof delta === "number";
 
-  const badgeColor =
-    delta > 0
-      ? "text-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30"
-      : delta < 0
-      ? "text-red-500 bg-red-500/10 ring-1 ring-red-500/30"
-      : "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30";
+  const badgeColor = !hasData
+    ? "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30"
+    : delta > 0
+    ? "text-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30"
+    : delta < 0
+    ? "text-red-500 bg-red-500/10 ring-1 ring-red-500/30"
+    : "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30";
 
-  const formatted =
-    delta > 0 ? `+${delta}` : delta < 0 ? `-${Math.abs(delta)}` : "0";
+  const formatted = !hasData
+    ? "—"
+    : delta > 0
+    ? `+${delta}`
+    : `${delta}`;
 
   return (
     <span
@@ -121,7 +125,9 @@ export default function StudentsPage() {
             : new Date(j.updatedAt).toISOString(),
       };
 
-      setStudents((prev) => [created, ...prev].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+      setStudents((prev) =>
+        [created, ...prev].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      );
       setShowAdd(false);
       setNewName("");
       setNewRiot("");
@@ -136,10 +142,10 @@ export default function StudentsPage() {
     if (loadedOnce.current) return;
     loadedOnce.current = true;
 
-    const ac = new AbortController(); // keep exactly as in your original
+    const ac = new AbortController();
     setLoading(true);
 
-    fetch("/api/admin/students", { cache: "no-store" }) // NOTE: no signal passed
+    fetch("/api/admin/students", { cache: "no-store" })
       .then(async (r) => {
         if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
         const text = await r.text();
@@ -184,7 +190,7 @@ export default function StudentsPage() {
 
   return (
     <main className="relative min-h-screen text-white overflow-x-clip">
-      {/* BG LAYERS — identical to StudentDetailClient */}
+      {/* BG LAYERS */}
       <div
         aria-hidden
         className="fixed inset-0 z-0 pointer-events-none"
@@ -205,7 +211,7 @@ export default function StudentsPage() {
         }}
       />
 
-      {/* CONTENT WRAPPER — same spacing as detail page */}
+      {/* CONTENT */}
       <div className="relative z-10 pb-20">
         <div className="mx-auto w-full max-w-5xl px-6 space-y-6">
           <div className="h-1" />
@@ -283,12 +289,10 @@ export default function StudentsPage() {
           role="dialog"
           aria-labelledby="add-student-title"
         >
-          {/* backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowAdd(false)}
           />
-          {/* dialog */}
           <div className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/95 p-5 shadow-xl ring-1 ring-white/10">
             <div className="flex items-start justify-between gap-3">
               <h2 id="add-student-title" className="text-lg font-semibold">
