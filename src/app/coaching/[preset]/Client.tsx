@@ -149,7 +149,7 @@ export default function Client({ preset }: { preset: string }) {
             setLiveMinutes(liveMinutes);
             setCalendarOpen(true);
           }}
-          parallaxSpeed={0.1}
+          /* parallax removed */
         />
 
         <AnimatePresence>
