@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Slot as UiSlot } from "@/components/AvailableSlots";
 import CenterSessionPanel from "./CenterSessionPanel";
@@ -88,6 +88,28 @@ export default function SessionHero({
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
 
+  // ---- mobile height reservation (measure → apply min-height) ----
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const centerRef = useRef<HTMLDivElement | null>(null);
+  const rightRef = useRef<HTMLDivElement | null>(null);
+
+  // conservative defaults to avoid initial collapse on mobile
+  const [minHHeader, setMinHHeader] = useState<number>(110);
+  const [minHCenter, setMinHCenter] = useState<number>(400);
+  const [minHRight, setMinHRight] = useState<number>(300);
+
+  // helper to measure and set min-heights once content has laid out
+  const measureHeights = () => {
+    if (isDesktop) return; // desktop doesn't need reservations
+    const h = headerRef.current?.offsetHeight ?? minHHeader;
+    const c = centerRef.current?.offsetHeight ?? minHCenter;
+    const r = rightRef.current?.offsetHeight ?? minHRight;
+    // only grow, never shrink (prevents flicker)
+    setMinHHeader((prev) => Math.max(prev, h));
+    setMinHCenter((prev) => Math.max(prev, c));
+    setMinHRight((prev) => Math.max(prev, r));
+  };
+
   useEffect(() => setIsFirstLoad(false), []);
 
   useEffect(() => {
@@ -95,6 +117,13 @@ export default function SessionHero({
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
   }, []);
 
   const baseOnly = baseMinutes ?? 60;
@@ -105,14 +134,7 @@ export default function SessionHero({
   const preset = presetOverride ?? computedPreset;
   const leftSteps = stepsByPreset[preset];
 
-  useEffect(() => {
-    const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
-    calc();
-    window.addEventListener("resize", calc);
-    return () => window.removeEventListener("resize", calc);
-  }, []);
-
-  // Data fetching (unchanged)
+  // ---- data fetching (unchanged) ----
   useEffect(() => {
     let on = true;
     (async () => {
@@ -162,13 +184,20 @@ export default function SessionHero({
     label: q.label,
   }));
 
+  const shiftX = isDrawerOpen && isDesktop ? drawerW / 2 : 0;
+
+  // re-measure once content is in DOM and when loading flips
+  useEffect(() => {
+    // next frame & a micro delay to ensure layout finished
+    const t = setTimeout(measureHeights, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDesktop, loading, preset, baseMinutes, liveBlocks, followups]);
+
   const handleOpenCalendar = (opts: { slotId?: string; liveMinutes: number }) => {
     setInitialSlotId(opts.slotId ?? null);
     setShowCal(true);
   };
-
-  // match original: shift content only on desktop when drawer is open
-  const shiftX = isDrawerOpen && isDesktop ? drawerW / 2 : 0;
 
   return (
     <section className="relative isolate min-h-[100svh] md:h-[100svh] overflow-hidden overscroll-contain text-white vignette">
@@ -179,7 +208,7 @@ export default function SessionHero({
         animate={{ opacity: 1 }}
         transition={{ duration: BG_FADE_DURATION, ease: EASE }}
       >
-        {/* Desktop video: left-aligned on base, centered from md: up (like before) */}
+        {/* Desktop video (left aligned on base, center from md up to match previous) */}
         <video
           src="/videos/customize/Particle1_slow.webm"
           autoPlay
@@ -188,15 +217,13 @@ export default function SessionHero({
           playsInline
           className="hidden md:block h-full w-full object-cover object-left md:object-center"
         />
-
-        {/* Mobile image: keep left alignment */}
+        {/* Mobile static image, left aligned */}
         <img
           src="/videos/customize/Particle_static.png"
           alt=""
           className="block md:hidden h-full w-full object-cover object-left"
           loading="eager"
         />
-
         <div className="absolute inset-0 bg-black/20" />
       </motion.div>
 
@@ -208,8 +235,13 @@ export default function SessionHero({
       >
         <div className="mx-auto w-full max-w-7xl px-5 md:px-8">
           <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
-            <header className="md:col-span-3 mb-0 md:mb-4">
-              <AnimatePresence mode="wait">
+            {/* HEADER — measured & reserved on mobile */}
+            <div
+              style={!isDesktop ? { minHeight: minHHeader } : undefined}
+              ref={headerRef}
+              className="md:col-span-3 mb-0 md:mb-4"
+            >
+              <AnimatePresence>
                 <motion.h1
                   key={preset}
                   variants={makeTitleVariants(isFirstLoad)}
@@ -221,7 +253,7 @@ export default function SessionHero({
                   {titlesByPreset[preset]}
                 </motion.h1>
               </AnimatePresence>
-              <AnimatePresence mode="wait">
+              <AnimatePresence>
                 <motion.p
                   key={preset + "-tag"}
                   variants={makeTaglineVariants(isFirstLoad)}
@@ -233,13 +265,17 @@ export default function SessionHero({
                   {taglinesByPreset[preset]}
                 </motion.p>
               </AnimatePresence>
-            </header>
+            </div>
 
+            {/* LEFT — hidden on mobile */}
             <div className="hidden md:block self-start">
               <LeftSteps steps={leftSteps} title="How it works" animKey={preset} preset={preset} enterDelay={PANEL_DELAY.left} />
             </div>
 
+            {/* CENTER — measured & reserved on mobile */}
             <motion.div
+              style={!isDesktop ? { minHeight: minHCenter } : undefined}
+              ref={centerRef}
               className="self-start"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -254,7 +290,10 @@ export default function SessionHero({
               />
             </motion.div>
 
+            {/* RIGHT — measured & reserved on mobile */}
             <motion.div
+              style={!isDesktop ? { minHeight: minHRight } : undefined}
+              ref={rightRef}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
