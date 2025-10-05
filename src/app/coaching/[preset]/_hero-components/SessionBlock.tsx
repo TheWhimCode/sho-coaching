@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
+import TypingText from "@/app/_components/animations/TypingText"; // ⬅️ added
 
 // Icon libs
 import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react";
@@ -144,7 +145,17 @@ export default function SessionBlock({
       {/* Header row */}
       <div className="mb-2 flex items-center justify-between pr-10">
         <div className="text-xs uppercase tracking-wide text-white/65">
-          {dateLabel ?? "Session"}
+          {dateLabel ? (
+            <TypingText
+              key={dateLabel}
+              text={dateLabel}
+              speed={22}
+              delay={500}
+              color="rgba(255,255,255,0.65)"
+            />
+          ) : (
+            "Session"
+          )}
         </div>
       </div>
 

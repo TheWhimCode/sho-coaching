@@ -1,4 +1,3 @@
-// src/app/coaching/_components/SessionHero.tsx
 "use client";
 
 import { ReactNode, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
@@ -40,19 +39,20 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 const BG_FADE_DURATION = 1;
 const CONTENT_BASE_DELAY = 0.8;
 
-const TITLE_DELAY   = CONTENT_BASE_DELAY + 0.15;
+const TITLE_DELAY = CONTENT_BASE_DELAY + 0.15;
 const TAGLINE_DELAY = CONTENT_BASE_DELAY + 0.35;
-const PANEL_DELAY   = {
-  left:   CONTENT_BASE_DELAY + 0.20,
-  center: CONTENT_BASE_DELAY + 0.60,
-  right:  CONTENT_BASE_DELAY + 1.00,
+const PANEL_DELAY = {
+  left: CONTENT_BASE_DELAY + 0.2,
+  center: CONTENT_BASE_DELAY + 0.6,
+  right: CONTENT_BASE_DELAY + 1.0,
 } as const;
 
 const makeTitleVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -24 },
   show: {
-    opacity: 1, x: 0,
-    transition: { duration: firstLoad ? 0.40 : 0.22, ease: EASE, delay: firstLoad ? TITLE_DELAY : 0.25 },
+    opacity: 1,
+    x: 0,
+    transition: { duration: firstLoad ? 0.4 : 0.22, ease: EASE, delay: firstLoad ? TITLE_DELAY : 0.25 },
   },
   exit: { opacity: 0, x: 24, transition: { duration: 0.18, ease: EASE } },
 });
@@ -60,8 +60,9 @@ const makeTitleVariants = (firstLoad: boolean) => ({
 const makeTaglineVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -20 },
   show: {
-    opacity: 1, x: 0,
-    transition: { duration: firstLoad ? 0.38 : 0.20, ease: EASE, delay: firstLoad ? TAGLINE_DELAY : 0.40 },
+    opacity: 1,
+    x: 0,
+    transition: { duration: firstLoad ? 0.38 : 0.2, ease: EASE, delay: firstLoad ? TAGLINE_DELAY : 0.4 },
   },
   exit: { opacity: 0, x: 20, transition: { duration: 0.16, ease: EASE } },
 });
@@ -83,17 +84,15 @@ export default function SessionHero({
 }: Props) {
   const [autoSlots, setAutoSlots] = useState<UiSlot[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [seedSlots, setSeedSlots] = useState<Slot[]>([]);
   const [quickPool, setQuickPool] = useState<{ id: string; startISO: string }[]>([]);
-
   const [showCal, setShowCal] = useState(false);
   const [initialSlotId, setInitialSlotId] = useState<string | null>(null);
-
   const [drawerW, setDrawerW] = useState(0);
-
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  useEffect(() => { setIsFirstLoad(false); }, []);
+  useEffect(() => {
+    setIsFirstLoad(false);
+  }, []);
 
   const baseOnly = baseMinutes ?? 60;
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
@@ -111,22 +110,35 @@ export default function SessionHero({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Parallax (mobile only) — cover-by-extension
+  // Parallax (mobile only) — avoid first-load double jump
   const sectionRef = useRef<HTMLElement | null>(null);
   const [bgExtra, setBgExtra] = useState(0);
+  const [parallaxReady, setParallaxReady] = useState(false);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, bgExtra]);
 
   useLayoutEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
 
     const measure = () => {
-      if (isDesktop) { setBgExtra(0); return; }
+      if (isDesktop) {
+        setBgExtra(0);
+        setParallaxReady(false);
+        return;
+      }
       const sectionH = el.offsetHeight;
       const vh = window.innerHeight;
       const scrollable = Math.max(0, sectionH - vh);
       const speed = Math.max(0, Math.min(1, parallaxSpeed));
       const travel = scrollable * (1 - speed);
       setBgExtra(travel);
+      setParallaxReady(true);
     };
 
     measure();
@@ -138,13 +150,6 @@ export default function SessionHero({
       window.removeEventListener("resize", measure);
     };
   }, [parallaxSpeed, isDesktop]);
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end start"],
-  });
-
-  const bgY = useTransform(scrollYProgress, [0, 1], [0, bgExtra]);
 
   useEffect(() => {
     const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
@@ -165,10 +170,12 @@ export default function SessionHero({
         const rows = await fetchSlots(tomorrow, end, liveMinutes);
         if (!on) return;
         setSeedSlots(rows);
-        setQuickPool(rows.map(r => ({ id: r.id, startISO: r.startTime ?? (r as any).startISO })));
+        setQuickPool(rows.map((r) => ({ id: r.id, startISO: r.startTime ?? (r as any).startISO })));
       } catch {}
     })();
-    return () => { on = false; };
+    return () => {
+      on = false;
+    };
   }, [liveMinutes]);
 
   useEffect(() => {
@@ -190,7 +197,9 @@ export default function SessionHero({
         if (on) setLoading(false);
       }
     })();
-    return () => { on = false; };
+    return () => {
+      on = false;
+    };
   }, [liveMinutes]);
 
   const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
@@ -238,9 +247,10 @@ export default function SessionHero({
           className="block md:hidden w-full object-cover object-left will-change-transform"
           loading="eager"
           style={{
-            height: bgExtra ? `calc(100% + ${bgExtra}px)` : "100%",
-            y: isDesktop ? 0 : bgY,
+            height: parallaxReady && bgExtra ? `calc(100% + ${bgExtra}px)` : "100%",
+            y: !isDesktop && parallaxReady ? bgY : 0,
           }}
+          initial={false}
         />
 
         <div className="absolute inset-0 bg-black/20" />
@@ -283,13 +293,7 @@ export default function SessionHero({
 
             {/* LEFT — hidden on mobile */}
             <div className="hidden md:block self-start">
-              <LeftSteps
-                steps={leftSteps}
-                title="How it works"
-                animKey={preset}
-                preset={preset}
-                enterDelay={PANEL_DELAY.left}
-              />
+              <LeftSteps steps={leftSteps} title="How it works" animKey={preset} preset={preset} enterDelay={PANEL_DELAY.left} />
             </div>
 
             {/* CENTER */}
@@ -309,11 +313,7 @@ export default function SessionHero({
             </motion.div>
 
             {/* RIGHT */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: PANEL_DELAY.right }}>
               <RightBookingPanel
                 liveMinutes={liveMinutes}
                 loading={loading}
@@ -326,14 +326,14 @@ export default function SessionHero({
         </div>
       </motion.div>
 
-      {/* Mobile dimmer ONLY when calendar is open (not for drawer) */}
+      {/* Mobile dimmer when calendar is open */}
       <AnimatePresence>
         {showCal && (
           <motion.div
             key="mobile-dim"
             className="fixed inset-0 z-30 md:hidden bg-black"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.8 }}   // darker
+            animate={{ opacity: 0.8 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           />

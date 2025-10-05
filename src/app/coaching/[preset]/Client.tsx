@@ -17,16 +17,16 @@ export default function Client({ preset }: { preset: string }) {
   const focus = params.get("focus");
 
   const qBase = Number(params.get("base") ?? NaN);
-  const qFU   = Number(params.get("followups") ?? NaN);
+  const qFU = Number(params.get("followups") ?? NaN);
   const qLive = Number(params.get("live") ?? NaN);
 
   const init = useMemo(() => {
     const safe = (n: number, def: number) => (Number.isFinite(n) ? n : def);
 
     if (preset === "custom") {
-      const liveMin   = safe(qBase, 60);
+      const liveMin = safe(qBase, 60);
       const followups = Math.max(0, Math.min(2, safe(qFU, 0)));
-      const liveBlocks= Math.max(0, Math.min(2, safe(qLive, 0)));
+      const liveBlocks = Math.max(0, Math.min(2, safe(qLive, 0)));
       return {
         title: "Custom Session",
         cfg: { liveMin, followups, liveBlocks } as Cfg,
@@ -37,10 +37,10 @@ export default function Client({ preset }: { preset: string }) {
       case "signature":
         return { title: "Signature Session", cfg: { liveMin: 45, liveBlocks: 0, followups: 1 } as Cfg };
       case "instant":
-        return { title: "Instant Insight",   cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "Instant Insight", cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
       case "vod":
       default:
-        return { title: "VOD Review",        cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "VOD Review", cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
     }
   }, [preset, qBase, qFU, qLive]);
 
@@ -56,12 +56,23 @@ export default function Client({ preset }: { preset: string }) {
     getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks)
   );
 
+  // Defer scrollbar-hiding classes by a couple of frames to avoid first-paint vh reflow on mobile
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
-    html.classList.add("no-scrollbar");
-    body.classList.add("no-scrollbar");
+
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        html.classList.add("no-scrollbar");
+        body.classList.add("no-scrollbar");
+      });
+    });
+
     return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
       html.classList.remove("no-scrollbar");
       body.classList.remove("no-scrollbar");
     };
@@ -71,7 +82,9 @@ export default function Client({ preset }: { preset: string }) {
     const body = document.body;
     if (drawerOpen || calendarOpen) body.style.overflow = "hidden";
     else body.style.overflow = "";
-    return () => { body.style.overflow = ""; };
+    return () => {
+      body.style.overflow = "";
+    };
   }, [drawerOpen, calendarOpen]);
 
   useEffect(() => {
@@ -102,7 +115,9 @@ export default function Client({ preset }: { preset: string }) {
       } catch {}
     })();
 
-    return () => { on = false; };
+    return () => {
+      on = false;
+    };
   }, [cfg.liveMin, cfg.liveBlocks]);
 
   const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;

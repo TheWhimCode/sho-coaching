@@ -1,4 +1,3 @@
-// src/app/calendar/Calendar.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -23,19 +22,18 @@ import { ArrowLeft } from "lucide-react";
 
 type Props = {
   sessionType: string;
-  liveMinutes: number; // base minutes (30..120)
+  liveMinutes: number;
   followups?: number;
   onClose?: () => void;
   initialSlotId?: string | null;
-  /** seed with already-fetched availability (kept up to date by parent) */
   prefetchedSlots?: Slot[];
-  liveBlocks?: number; // 0..2 (each 45m)
+  liveBlocks?: number;
 };
 
 const overlay: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] } },
-  exit: { opacity: 0, transition: { duration: 0.12, ease: [0.2, 0.8, 0.2, 1] } },
+  exit: { opacity: 0 },
 };
 
 const shell: Variants = {
@@ -44,11 +42,29 @@ const shell: Variants = {
   exit: { opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] } },
 };
 
+const mobileStepVariants: Variants = {
+  enter: (d: 1 | -1) => ({ x: d * 40, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
+};
+
 function dayKeyLocal(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const da = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${da}`;
+}
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+  return isDesktop;
 }
 
 export default function Calendar({
@@ -61,8 +77,8 @@ export default function Calendar({
   liveBlocks = 0,
 }: Props) {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
 
-  // total session minutes (base + in-game)
   const blocks = liveBlocks ?? 0;
   const totalMinutes = liveMinutes + blocks * 45;
 
@@ -72,10 +88,19 @@ export default function Calendar({
     d.setHours(0, 0, 0, 0);
     return d;
   });
+
   const DISPLAY_STEP_MIN = 30;
   const LEAD_HOURS = 18;
 
   const [mobileStep, setMobileStep] = useState<"day" | "time">("day");
+  const [mobileDir, setMobileDir] = useState<1 | -1>(1);
+  const [wheelVisible, setWheelVisible] = useState(false);
+
+  function goStep(next: "day" | "time", dir: 1 | -1) {
+    setMobileDir(dir);
+    setMobileStep(next);
+    if (next === "day") setWheelVisible(false);
+  }
 
   function roundUpToStep(d: Date, stepMin: number) {
     const m = d.getMinutes();
@@ -91,17 +116,14 @@ export default function Calendar({
   }
 
   const [slots, setSlots] = useState<Slot[]>(() => prefetchedSlots ?? []);
-  const [loading, setLoading] = useState<boolean>(() => !(prefetchedSlots?.length));
-  const [hydrating, setHydrating] = useState(false);
+  const [loading, setLoading] = useState(() => !(prefetchedSlots?.length));
   const [error, setError] = useState<string | null>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-
   const [pending, setPending] = useState(false);
   const [holdKey, setHoldKey] = useState<string | null>(null);
   const [dErr, setDErr] = useState<string | null>(null);
-
   const goingToCheckout = useRef(false);
   const [isOpen, setIsOpen] = useState(true);
 
@@ -124,10 +146,8 @@ export default function Calendar({
 
     (async () => {
       if (doSpinner) setLoading(true);
-      setHydrating(true);
       setError(null);
       try {
-        // Use totalMinutes so returned starts already guarantee a full chain
         const data = await fetchSlots(startBoundary, end, totalMinutes);
         if (!ignore) {
           setSlots(data);
@@ -138,32 +158,14 @@ export default function Calendar({
       } catch (e) {
         if (!ignore) setError(e instanceof Error ? e.message : String(e));
       } finally {
-        if (!ignore) {
-          setHydrating(false);
-          if (doSpinner) setLoading(false);
-        }
+        if (!ignore && doSpinner) setLoading(false);
       }
     })();
 
     return () => {
       ignore = true;
     };
-  }, [totalMinutes]); // recompute availability when session length changes
-
-  const preselectedOnce = useRef(false);
-  useEffect(() => {
-    if (preselectedOnce.current || !initialSlotId || !slots.length) return;
-    const hit = slots.find((s) => s.id === initialSlotId);
-    if (!hit) return;
-    const dt = new Date(hit.startTime);
-    const m = new Date(dt);
-    m.setDate(1);
-    m.setHours(0, 0, 0, 0);
-    setMonth(m);
-    setSelectedDate(new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()));
-    setSelectedSlotId(hit.id);
-    preselectedOnce.current = true;
-  }, [initialSlotId, slots]);
+  }, [totalMinutes]);
 
   const startsByDay = useMemo(() => {
     const map = new Map<string, { id: string; local: Date }[]>();
@@ -179,6 +181,7 @@ export default function Calendar({
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push({ id: s.id, local: dt });
     }
+
     for (const arr of map.values())
       arr.sort((a, b) => a.local.getTime() - b.local.getTime());
     return map;
@@ -204,16 +207,11 @@ export default function Calendar({
     setDErr(null);
     setPending(true);
     try {
-      // Hold the full chain for the total (base + in-game) minutes
-      const { holdKey: k, slotIds } = await holdSlot(
-        selectedSlotId,
-        totalMinutes,
-        holdKey || undefined
-      );
+      const { holdKey: k, slotIds } = await holdSlot(selectedSlotId, totalMinutes, holdKey || undefined);
       setHoldKey(k);
       if (typeof window !== "undefined") sessionStorage.setItem(`hold:${selectedSlotId}`, k);
 
-      const baseOnly = Math.max(30, liveMinutes); // liveMinutes prop is base-only
+      const baseOnly = Math.max(30, liveMinutes);
       const preset = getPreset(baseOnly, followups ?? 0, blocks);
 
       const url = new URL("/checkout", window.location.origin);
@@ -226,17 +224,6 @@ export default function Calendar({
       if (blocks) url.searchParams.set("liveBlocks", String(blocks));
       if (slotIds?.length) url.searchParams.set("slotIds", slotIds.join(","));
 
-      const selectedLocal =
-        displayableStartsForSelected.find(({ id }) => id === selectedSlotId)?.local ??
-        (() => {
-          const s = slots.find((x) => x.id === selectedSlotId);
-          return s ? new Date(s.startTime) : null;
-        })();
-
-      if (selectedLocal && !isNaN(selectedLocal.getTime())) {
-        url.searchParams.set("startTime", selectedLocal.toISOString());
-      }
-
       goingToCheckout.current = true;
       router.push(url.toString());
     } catch (e: unknown) {
@@ -247,7 +234,6 @@ export default function Calendar({
     }
   }
 
-  // Release the entire chain by holdKey if the overlay closes without checkout
   useEffect(() => {
     return () => {
       if (goingToCheckout.current) return;
@@ -267,14 +253,12 @@ export default function Calendar({
     <AnimatePresence onExitComplete={handleExitComplete}>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 grid place-items-center
-                     bg-black/10 supports-[backdrop-filter]:backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/10 supports-[backdrop-filter]:backdrop-blur-[2px]"
           variants={overlay}
           initial="hidden"
           animate="show"
           exit="exit"
         >
-          {/* mobile-only extra dark overlay */}
           <motion.div
             className="absolute inset-0 bg-black/50 md:hidden"
             initial={{ opacity: 0 }}
@@ -291,29 +275,23 @@ export default function Calendar({
                        supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150"
             variants={shell}
           >
-            {/* header */}
             <div className="px-6 pt-5 pb-3 flex items-center justify-between">
               <div className="text-white/85">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-white/60">Schedule</div>
                 <div className="text-xl font-semibold">{sessionType}</div>
               </div>
-              <div />
             </div>
 
-            {/* body */}
             <div className="px-6 pb-4 flex-1 min-h-0">
               <div
                 className="h-full rounded-2xl ring-1 ring-[rgba(146,180,255,.20)]
                            bg-[rgba(12,22,44,.72)]
                            [background-image:linear-gradient(180deg,rgba(99,102,241,.12),transparent)]
-                           supports-[backdrop-filter]:backdrop-blur-md
-                           supports-[backdrop-filter]:backdrop-saturate-150
-                           supports-[backdrop-filter]:backdrop-contrast-125"
+                           supports-[backdrop-filter]:backdrop-blur-md supports-[backdrop-filter]:backdrop-saturate-150 supports-[backdrop-filter]:backdrop-contrast-125"
               >
                 <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1px_1.4fr] h-full">
                   {/* LEFT COLUMN */}
                   <div className="min-h-0 p-4 h-full">
-                    {/* DESKTOP */}
                     <div className="hidden md:block">
                       <CalendarGrid
                         month={month}
@@ -331,58 +309,74 @@ export default function Calendar({
 
                     {/* MOBILE */}
                     <div className="md:hidden flex flex-col h-full">
-                      {mobileStep === "day" && (
-                        <div className="flex-1 min-h-0">
-                          <DayPicker
-                            month={month}
-                            onMonthChange={setMonth}
-                            selectedDate={selectedDate}
-                            onSelectDate={(d) => {
-                              setSelectedDate(d);
-                              setSelectedSlotId(null);
-                              setMobileStep("time");
-                            }}
-                            validStartCountByDay={displayableStartCountByDay}
-                            loading={loading && slots.length === 0}
-                            error={error}
-                          />
-                        </div>
-                      )}
-
-                      {mobileStep === "time" && (
-                        <div className="flex-1 min-h-0 flex flex-col">
-                          {/* header row */}
-                          <div className="relative mb-2 flex items-center justify-center">
-                            <button
-                              type="button"
-                              onClick={() => setMobileStep("day")}
-                              className="absolute left-0 inline-flex items-center justify-center h-9 w-9 rounded-xl
-                                         ring-1 ring-[rgba(146,180,255,.22)]
-                                         bg-[rgba(16,24,40,.50)] hover:bg-[rgba(20,28,48,.70)]
-                                         text-white/90"
-                              aria-label="Back to day selection"
-                            >
-                              <ArrowLeft className="w-4 h-4" />
-                            </button>
-                            <div className="text-white/85 text-sm font-medium">
-                              {selectedDateLabel}
-                            </div>
-                          </div>
-
-                          {/* Wheel */}
-                          <div className="flex-1 flex items-center justify-center">
-                            <WheelPicker
-                              slots={displayableStartsForSelected}
-                              selectedSlotId={selectedSlotId}
-                              onSelectSlot={setSelectedSlotId}
+                      <AnimatePresence custom={mobileDir} mode="wait" initial={false}>
+                        {mobileStep === "day" ? (
+                          <motion.div
+                            key="day"
+                            custom={mobileDir}
+                            variants={mobileStepVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{ duration: 0.22, ease: "easeOut" }}
+                            className="flex-1 min-h-0 -m-4"
+                          >
+                            <DayPicker
+                              month={month}
+                              onMonthChange={setMonth}
+                              selectedDate={selectedDate}
+                              onSelectDate={(d) => {
+                                setSelectedDate(d);
+                                setSelectedSlotId(null);
+                              }}
+                              validStartCountByDay={displayableStartCountByDay}
+                              loading={loading && slots.length === 0}
+                              error={error}
                             />
-                          </div>
-                        </div>
-                      )}
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="time"
+                            custom={mobileDir}
+                            variants={mobileStepVariants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{ duration: 0.22, ease: "easeOut" }}
+                            className="flex-1 min-h-0 flex flex-col relative"
+                            onAnimationComplete={() => setWheelVisible(true)}
+                          >
+                            <div className="mb-3">
+                              <div className="relative h-7 flex items-center justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => goStep("day", -1)}
+                                  className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
+                                >
+                                  <ArrowLeft className="w-4 h-4" />
+                                  Back
+                                </button>
+                                <div className="text-sm text-white/80">{selectedDateLabel}</div>
+                              </div>
+                              <div className="mt-2 border-t border-white/10" />
+                            </div>
+
+                            <div className="flex-1 flex items-center justify-center">
+                              <WheelPicker
+                                key={mobileStep === "time" ? "wheelpicker" : "none"}
+                                slots={displayableStartsForSelected}
+                                selectedSlotId={selectedSlotId}
+                                onSelectSlot={setSelectedSlotId}
+                                showTimezoneNote={wheelVisible}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
 
-                  {/* divider (desktop) */}
+                  {/* divider */}
                   <div className="hidden md:block bg-[rgba(146,180,255,.24)]" />
 
                   {/* RIGHT COLUMN */}
@@ -398,7 +392,6 @@ export default function Calendar({
               </div>
             </div>
 
-            {/* footer */}
             <div className="px-6 py-4 border-t border-[rgba(146,180,255,.18)] flex items-center justify-between gap-3">
               {dErr && <div className="text-rose-400 text-sm">{dErr}</div>}
               <div className="ml-auto flex gap-2">
@@ -409,14 +402,35 @@ export default function Calendar({
                 >
                   Cancel
                 </OutlineCTA>
-                <PrimaryCTA
-                  withHalo={false}
-                  className="h-9 px-4 text-base"
-                  disabled={!selectedSlotId || pending}
-                  onClick={submitBooking}
-                >
-                  {pending ? "Opening checkout…" : "Continue to payment"}
-                </PrimaryCTA>
+
+                {isDesktop ? (
+                  <PrimaryCTA
+                    withHalo={false}
+                    className="h-9 px-4 text-base"
+                    disabled={!selectedSlotId || pending}
+                    onClick={submitBooking}
+                  >
+                    {pending ? "Opening checkout…" : "Continue to payment"}
+                  </PrimaryCTA>
+                ) : mobileStep === "day" ? (
+                  <PrimaryCTA
+                    withHalo={false}
+                    className="h-9 px-4 text-base"
+                    disabled={!selectedDate}
+                    onClick={() => goStep("time", 1)}
+                  >
+                    Confirm date
+                  </PrimaryCTA>
+                ) : (
+                  <PrimaryCTA
+                    withHalo={false}
+                    className="h-9 px-4 text-base"
+                    disabled={!selectedSlotId || pending}
+                    onClick={submitBooking}
+                  >
+                    {pending ? "Opening checkout…" : "Continue to payment"}
+                  </PrimaryCTA>
+                )}
               </div>
             </div>
           </motion.div>

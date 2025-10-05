@@ -88,6 +88,8 @@ export default function TimeSlotsList({
             speed={typingSpeedMs}
             delay={revealDelayMs}
             color="var(--color-lightblue)"
+              className="font-mono"   // <-- your base font here
+
           />
         </div>
       )}
