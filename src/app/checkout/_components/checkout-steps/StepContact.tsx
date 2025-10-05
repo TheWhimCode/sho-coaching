@@ -238,7 +238,7 @@ export default function StepContact({
   }, [setFooter, canSubmit]);
 
   return (
-    <div className="flex h-full flex-col md:pt-2">
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
@@ -247,7 +247,7 @@ export default function StepContact({
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      {/* Form (body grows; footer is handled by parent) */}
+      {/* Form */}
       <form
         ref={formRef}
         noValidate
@@ -258,15 +258,16 @@ export default function StepContact({
         }}
         className="flex flex-col flex-1"
       >
-        {/* Body */}
-        <div className="flex-1 min-h-0 space-y-3 px-1 overflow-y-auto md:overflow-visible">
+        <div className="flex-1 min-h-0 space-y-3 px-1">
           {/* RiotTag */}
           <label className="block">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-white/65">Summoner name</span>
               </div>
-              {hint ? <span className="text-[11px] text-red-400">{hint}</span> : null}
+              {hint ? (
+                <span className="text-xs font-semibold text-red-400">{hint}</span>
+              ) : null}
             </div>
 
             <div className="relative">
@@ -291,10 +292,21 @@ export default function StepContact({
           <div className="block">
             <div className="flex items-center justify-between">
               <span className="text-xs text-white/65">Discord</span>
+              {!discordIdentity?.id && submitted && (
+                <span className="text-xs font-semibold text-red-400">
+                  Please link your Discord account.
+                </span>
+              )}
             </div>
 
-            {/* MATCH RIOT INPUT HEIGHT: h-12 (48px), no vertical padding */}
-            <div className="mt-1 flex items-center justify-between rounded-lg bg-white/[.05] ring-1 ring-inset ring-white/12 h-12 px-4">
+            <div
+              className={`mt-1 flex items-center justify-between rounded-lg h-12 px-4
+                          bg-white/[.05] ring-1 ring-inset ${
+                            !discordIdentity?.id && submitted
+                              ? "ring-red-500/70"
+                              : "ring-white/12"
+                          }`}
+            >
               <div className="truncate text-[13px] font-semibold">
                 {discordIdentity?.id ? (
                   <span className="text-white/90">{discordIdentity.username}</span>
@@ -312,10 +324,6 @@ export default function StepContact({
                 {discordIdentity?.id ? "Relink Discord" : "Link Discord"}
               </button>
             </div>
-
-            {!discordIdentity?.id && submitted && (
-              <div className="mt-1 text-xs text-red-400">Please link your Discord account.</div>
-            )}
           </div>
 
           {/* Notes */}

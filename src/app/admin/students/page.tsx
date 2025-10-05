@@ -1,8 +1,8 @@
+// app/admin/students/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
-import useSWR from "swr";
-import Link from "next/link";
+import StudentCard from "./StudentCard";
 
 type Student = {
   id: string;
@@ -13,46 +13,6 @@ type Student = {
   createdAt: string;
   updatedAt: string;
 };
-
-type ClimbResp = {
-  overall?: { deltaToLatest: number } | null;
-};
-
-const climbFetcher = (url: string) =>
-  fetch(url).then((r) => r.json() as Promise<ClimbResp>);
-
-function LPBadge({ studentId }: { studentId: string }) {
-  const { data } = useSWR<ClimbResp>(
-    `/api/admin/students/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
-    climbFetcher
-  );
-
-  const delta = data?.overall?.deltaToLatest;
-  const hasData = typeof delta === "number";
-
-  const badgeColor = !hasData
-    ? "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30"
-    : delta > 0
-    ? "text-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30"
-    : delta < 0
-    ? "text-red-500 bg-red-500/10 ring-1 ring-red-500/30"
-    : "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30";
-
-  const formatted = !hasData
-    ? "—"
-    : delta > 0
-    ? `+${delta}`
-    : `${delta}`;
-
-  return (
-    <span
-      className={`ml-auto shrink-0 text-xs px-2 py-0.5 rounded-md font-medium tabular-nums ${badgeColor}`}
-      title="LP gained since first session"
-    >
-      {formatted} LP
-    </span>
-  );
-}
 
 export default function StudentsPage() {
   const [q, setQ] = useState("");
@@ -87,7 +47,6 @@ export default function StudentsPage() {
       setSubmitErr("Name is required.");
       return;
     }
-    // basic riot tag format hint (optional)
     if (riotTag && !/.+#.+/.test(riotTag)) {
       setSubmitErr("Riot tag should look like Name#TAG (e.g. Faker#KR1).");
       return;
@@ -108,7 +67,6 @@ export default function StudentsPage() {
 
       const j = await r.json();
 
-      // normalize just like initial fetch does
       const created: Student = {
         id: String(j.id),
         name: String(j.name ?? ""),
@@ -138,20 +96,26 @@ export default function StudentsPage() {
     }
   }, [newName, newRiot]);
 
+  // --- Fetch students ---
   useEffect(() => {
     if (loadedOnce.current) return;
-    loadedOnce.current = true;
 
     const ac = new AbortController();
     setLoading(true);
 
-    fetch("/api/admin/students", { cache: "no-store" })
-      .then(async (r) => {
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/students", {
+          cache: "no-store",
+          signal: ac.signal,
+        });
         if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+
         const text = await r.text();
-        return text ? JSON.parse(text) : { students: [] };
-      })
-      .then((j) => {
+        const j = text ? JSON.parse(text) : { students: [] };
+
+        if (ac.signal.aborted) return;
+
         const list = (j.students ?? []).map((s: any) => ({
           id: String(s.id),
           name: String(s.name ?? ""),
@@ -167,13 +131,20 @@ export default function StudentsPage() {
               ? s.updatedAt
               : new Date(s.updatedAt).toISOString(),
         })) as Student[];
+
         setStudents(list);
-      })
-      .catch((e) => {
-        console.error("students fetch failed:", e);
-        setStudents([]);
-      })
-      .finally(() => setLoading(false));
+        loadedOnce.current = true; // only mark done if successful
+      } catch (e: any) {
+        if (e?.name !== "AbortError") {
+          console.error("students fetch failed:", e);
+          setStudents([]);
+          loadedOnce.current = true; // mark done for real errors
+        }
+      } finally {
+        // always stop loading even if aborted
+        setLoading(false);
+      }
+    })();
 
     return () => ac.abort();
   }, []);
@@ -242,38 +213,7 @@ export default function StudentsPage() {
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((s) => (
                 <li key={s.id}>
-                  <Link
-                    href={`/admin/students/${s.id}`}
-                    className="block rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 hover:border-zinc-700 transition"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="text-lg font-semibold tracking-tight">
-                        {s.name}
-                      </div>
-                      <LPBadge studentId={s.id} />
-                    </div>
-                    <div className="mt-1 text-xs text-zinc-300 flex flex-wrap gap-x-3 gap-y-1">
-                      <span>
-                        Discord:{" "}
-                        <span className="text-zinc-100">
-                          {s.discordName || "—"}
-                        </span>
-                      </span>
-                      <span>
-                        Riot:{" "}
-                        <span className="text-zinc-100">{s.riotTag || "—"}</span>
-                      </span>
-                      <span>
-                        Server:{" "}
-                        <span className="text-zinc-100 uppercase">
-                          {s.server || "—"}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="mt-2 text-[11px] text-zinc-400">
-                      Updated {new Date(s.updatedAt).toLocaleString()}
-                    </div>
-                  </Link>
+                  <StudentCard student={s} />
                 </li>
               ))}
             </ul>

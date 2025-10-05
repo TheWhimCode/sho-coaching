@@ -1,7 +1,7 @@
 // src/app/checkout/CheckoutClient.tsx
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import UsefulToKnow from "@/app/checkout/_components/UsefulToKnow";
@@ -43,12 +43,24 @@ function mergedMinutes(baseMinutes: number, liveBlocks: number) {
   return Math.min(MAX, Math.max(MIN, baseMinutes + liveBlocks * LIVEBLOCK_MIN));
 }
 
-/** Element-level animation (right column only) */
-const EASE: [number, number, number, number] = [0.22, 0.61, 0.36, 1];
+/** desktop animation */
 const rightCol: Variants = {
-  hidden: { y: 14, opacity: 0 },
-  show: { y: 0, opacity: 1, transition: { duration: 0.42, ease: EASE } },
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.32, ease: [0.22, 0.61, 0.36, 1] } },
 };
+
+/** detect desktop viewport */
+function useIsDesktop() {
+  const [isDesk, set] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const handler = () => set(mql.matches);
+    handler();
+    mql.addEventListener?.("change", handler);
+    return () => mql.removeEventListener?.("change", handler);
+  }, []);
+  return isDesk;
+}
 
 export default function CheckoutClient() {
   const sp = useSearchParams();
@@ -82,8 +94,8 @@ export default function CheckoutClient() {
       liveMinutes: totalMins,
       followups: getNum("followups", 0),
       liveBlocks,
-      discordId: getStr("discordId"),     // ✅ new
-      discordName: getStr("discordName"), // ✅ new
+      discordId: getStr("discordId"),
+      discordName: getStr("discordName"),
       preset: getStr("preset", "custom"),
       holdKey: getStr("holdKey"),
     };
@@ -101,16 +113,24 @@ export default function CheckoutClient() {
       liveMinutes: payload.liveMinutes,
       followups: payload.followups,
       liveBlocks: payload.liveBlocks,
-      discordId: payload.discordId,       // ✅ new
-      discordName: payload.discordName,   // ✅ new
+      discordId: payload.discordId,
+      discordName: payload.discordName,
       preset: payload.preset,
       holdKey: payload.holdKey,
     }),
     [payload]
   );
 
+  const isDesktop = useIsDesktop();
+  const RightCol: any = isDesktop ? motion.div : "div";
+
   return (
-    <section className="relative isolate min-h-screen pt-8 md:pt-10 lg:pt-12 pb-10 text-white overflow-x-hidden overflow-y-hidden">
+    <section
+      className="
+        relative isolate min-h-dvh pt-8 md:pt-10 lg:pt-12 pb-10 text-white
+        overflow-x-hidden lg:overflow-y-hidden
+      "
+    >
       {/* Background */}
       <div className="absolute inset-0 -z-10 pointer-events-none isolate overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#05070f_0%,#070c18_40%,#0c1528_70%,#1c2f5c_100%)]" />
@@ -132,11 +152,11 @@ export default function CheckoutClient() {
             </div>
 
             {/* Right column */}
-            <motion.div
-              variants={rightCol}
-              initial="hidden"
-              animate="show"
-              className="w-full mx-auto lg:w-[400px] relative z-0 lg:justify-self-end h-[730px]"
+            <RightCol
+              {...(isDesktop
+                ? { variants: rightCol, initial: "hidden", animate: "show" }
+                : {})}
+              className="w-full mx-auto lg:w-[400px] relative z-0 lg:justify-self-end lg:h-[730px]"
             >
               <CheckoutPanel
                 payload={payload}
@@ -145,7 +165,7 @@ export default function CheckoutClient() {
                 appearance={appearanceDarkBrand}
                 payloadForBackend={payloadForBackend}
               />
-            </motion.div>
+            </RightCol>
           </div>
         </div>
       </div>

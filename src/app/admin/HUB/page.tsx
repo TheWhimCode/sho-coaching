@@ -1,20 +1,12 @@
+// src/app/admin/hub/page.tsx
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import SessionRowItem, { SessionRow as BookingRow } from "@/app/admin/sessions/SessionRow";
+import StudentCard from "@/app/admin/students/StudentCard";
 
 // ---- Types ----
-type BookingRow = {
-  id: string;
-  liveMinutes: number;
-  discordName: string | null;
-  sessionType: string;
-  followups: number;
-  liveBlocks: number | null;
-  notes: string | null;
-  scheduledStart: string; // ISO
-};
-
 type Student = {
   id: string;
   name: string;
@@ -27,7 +19,6 @@ type Student = {
 
 type ClimbResp = {
   overall?: { deltaToLatest: number } | null;
-  // optional richer shapes if your weekly endpoint returns them
   delta7d?: number;
 };
 
@@ -41,33 +32,11 @@ const Chip = ({ className = "", children }: { className?: string; children: Reac
   </span>
 );
 
-function Dot({ label }: { label: string }) {
-  const x = label.toLowerCase();
-  const color = x.includes("instant")
-    ? "#60a5fa"
-    : x.includes("signature")
-    ? "#f59e0b"
-    : x.includes("vod")
-    ? "#34d399"
-    : "#a3a3a3";
-  return (
-    <span
-      aria-label={label}
-      title={label}
-      className="inline-block rounded-full"
-      style={{ width: 10, height: 10, background: color }}
-    />
-  );
-}
-
 // ---- Time helpers ----
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 function formatTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-function isSameLocalDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 function startOfLocalDay(d = new Date()) {
   const x = new Date(d);
@@ -80,7 +49,7 @@ function endOfLocalDay(d = new Date()) {
   return x;
 }
 
-// ---- Weekly availability helpers (lifted & trimmed from your Availability page) ----
+// ---- Weekly availability helpers ----
 type Rule = { weekday: number; openMinute: number; closeMinute: number };
 type Exception = {
   id: string;
@@ -144,7 +113,6 @@ export default function AdminHubPage() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [exceptions, setExceptions] = useState<Exception[]>([]);
   const [loadingAvail, setLoadingAvail] = useState(true);
-  const [mode, setMode] = useState<"individual" | "uniform">("uniform");
   const [uniformOpen, setUniformOpen] = useState("13:00");
   const [uniformClose, setUniformClose] = useState("23:59");
   const [uniformFullDay, setUniformFullDay] = useState(false);
@@ -190,7 +158,6 @@ export default function AdminHubPage() {
         if (!on) return;
         setStudents(list);
 
-        // parallel LP lookups with graceful fallback
         const results = await Promise.all(
           list.map(async (s) => {
             try {
@@ -212,10 +179,7 @@ export default function AdminHubPage() {
           })
         );
         if (!on) return;
-        // sort by absolute movement and take top 3
-        const top = results
-          .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
-          .slice(0, 3);
+        const top = results.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 3);
         setMovers(top);
       } finally {
         if (on) setLoadingMovers(false);
@@ -265,52 +229,6 @@ export default function AdminHubPage() {
     })();
   }, []);
 
-  // ---- Actions for availability ----
-  async function saveRules() {
-    let toSend: { open: string; close: string }[];
-    if (mode === "uniform") {
-      toSend = Array.from({ length: 7 }, (_, weekday) => {
-        const ymd = getAnchorYMDForWeekday(weekday);
-        const openMinUtc = localHHMMtoUtcMin(ymd, uniformOpen);
-        const closeMinUtc = uniformFullDay ? 1440 : localHHMMtoUtcMin(ymd, uniformClose);
-        const open = minToHHMM(clampMin(openMinUtc));
-        const close = uniformFullDay || closeMinUtc >= 1440 ? "24:00" : minToHHMM(clampMin(closeMinUtc));
-        return { open, close };
-      });
-    } else {
-      const ordered = [...rules].sort((a, b) => a.weekday - b.weekday);
-      toSend = ordered.map((r) => {
-        const open = minToHHMM(clampMin(r.openMinute));
-        const close = r.closeMinute >= 1440 ? "24:00" : minToHHMM(clampMin(r.closeMinute));
-        return { open, close };
-      });
-    }
-    const res = await fetch("/api/admin/availability/rules", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rules: toSend }),
-    });
-
-    if (!res.ok) alert("Failed to save weekly rules");
-  }
-
-  async function addException(ex: { date: string; blocked: boolean; open?: string; close?: string }) {
-    const res = await fetch("/api/admin/availability/exceptions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(ex),
-    });
-    if (!res.ok) return alert("Failed to save exception");
-    const e = await fetch("/api/admin/availability/exceptions").then((r) => r.json());
-    setExceptions(e as Exception[]);
-  }
-
-  async function deleteException(id: string) {
-    const res = await fetch(`/api/admin/availability/exceptions?id=${id}`, { method: "DELETE" });
-    if (!res.ok) return alert("Failed to delete exception");
-    setExceptions((prev) => prev.filter((x) => x.id !== id));
-  }
-
   // ---- Derived booking lists ----
   const today = new Date();
   const tomorrow = useMemo(() => {
@@ -342,11 +260,48 @@ export default function AdminHubPage() {
       .sort((a, b) => +new Date(a.scheduledStart) - +new Date(b.scheduledStart));
   }, [bookings, tomorrow]);
 
-  // ---- Local state for exception editor ----
+  // ---- Uniform save ----
+  async function saveRules() {
+    const toSend = Array.from({ length: 7 }, (_, weekday) => {
+      const ymd = getAnchorYMDForWeekday(weekday);
+      const openMinUtc = localHHMMtoUtcMin(ymd, uniformOpen);
+      const closeMinUtc = uniformFullDay ? 1440 : localHHMMtoUtcMin(ymd, uniformClose);
+      const open = minToHHMM(clampMin(openMinUtc));
+      const close = uniformFullDay || closeMinUtc >= 1440 ? "24:00" : minToHHMM(clampMin(closeMinUtc));
+      return { open, close };
+    });
+
+    const res = await fetch("/api/admin/availability/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rules: toSend }),
+    });
+
+    if (!res.ok) alert("Failed to save weekly rules");
+  }
+
+  // ---- Exceptions ----
   const [exDate, setExDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [exOpen, setExOpen] = useState("13:00");
   const [exClose, setExClose] = useState("15:00");
   const [exBlocked, setExBlocked] = useState(false);
+
+  async function addException(ex: { date: string; blocked: boolean; open?: string; close?: string }) {
+    const res = await fetch("/api/admin/availability/exceptions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ex),
+    });
+    if (!res.ok) return alert("Failed to save exception");
+    const e = await fetch("/api/admin/availability/exceptions").then((r) => r.json());
+    setExceptions(e as Exception[]);
+  }
+
+  async function deleteException(id: string) {
+    const res = await fetch(`/api/admin/availability/exceptions?id=${id}`, { method: "DELETE" });
+    if (!res.ok) return alert("Failed to delete exception");
+    setExceptions((prev) => prev.filter((x) => x.id !== id));
+  }
 
   // ===================== UI =====================
   return (
@@ -374,184 +329,122 @@ export default function AdminHubPage() {
           <div className="h-1" />
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-xl font-semibold">Daily Hub</h1>
-            <div className="text-sm text-white/70">Times shown in <span className="text-white/90 font-medium">{TZ}</span></div>
+            <div className="text-sm text-white/70">
+              Times shown in <span className="text-white/90 font-medium">{TZ}</span>
+            </div>
           </div>
 
-          {/* ===== Today / Tomorrow ===== */}
-          <section className="grid gap-4 md:grid-cols-2">
-            <div className="overflow-hidden rounded-2xl ring-1 ring-white/10 bg-zinc-900/70">
-              <div className="sticky top-0 z-10 bg-zinc-900/80 backdrop-blur px-4 py-2 text-xs uppercase text-white/80">Today</div>
+          {/* ===== Sessions (Today & Tomorrow) + Top Movers (same row) ===== */}
+          <section className="grid gap-4 md:grid-cols-3">
+            {/* 2/3 width: Today & Tomorrow combined */}
+            <div className="md:col-span-2 overflow-hidden rounded-2xl ring-1 ring-white/10 bg-zinc-900/70">
+              <div className="sticky top-0 z-10 bg-zinc-900/80 backdrop-blur px-4 py-2 text-xs uppercase text-white/80">
+                Today & Tomorrow
+              </div>
+
               {loadingBookings ? (
                 <div className="p-4 text-white/80">Loading…</div>
-              ) : sessionsToday.length === 0 ? (
-                <div className="p-4 text-white/70">No sessions today.</div>
+              ) : sessionsToday.length === 0 && sessionsTomorrow.length === 0 ? (
+                <div className="p-4 text-white/70">No sessions today or tomorrow.</div>
               ) : (
-                <ul className="divide-y divide-white/10">
-                  {sessionsToday.map((r) => (
-                    <li key={r.id} className="px-4 py-3">
-                      <div className={GRID}>
-                        <Dot label={r.sessionType} />
-                        <div className="text-white/90 tabular-nums">{formatTime(r.scheduledStart)}</div>
-                        <div><Chip>{r.liveMinutes} min</Chip></div>
-                        <div><Chip>Live Blocks: {r.liveBlocks ?? 0}</Chip></div>
-                        <div><Chip>Follow-ups: {r.followups}</Chip></div>
-                        <div className="truncate text-white/90">{r.discordName ?? <span className="text-white/40">—</span>}</div>
-                        <div className="text-white/70 text-sm break-words">{r.notes ? r.notes : <span className="text-white/35">—</span>}</div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <div className="divide-y divide-white/10">
+                  {sessionsToday.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 text-[11px] uppercase tracking-wide text-white/60">Today</div>
+                      <ul className="divide-y divide-white/10">
+                        {sessionsToday.map((r) => (
+                          <SessionRowItem key={r.id} r={r} />
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {sessionsTomorrow.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 text-[11px] uppercase tracking-wide text-white/60">Tomorrow</div>
+                      <ul className="divide-y divide-white/10">
+                        {sessionsTomorrow.map((r) => (
+                          <SessionRowItem key={r.id} r={r} />
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            <div className="overflow-hidden rounded-2xl ring-1 ring-white/10 bg-zinc-900/70">
-              <div className="sticky top-0 z-10 bg-zinc-900/80 backdrop-blur px-4 py-2 text-xs uppercase text-white/80">Tomorrow</div>
-              {loadingBookings ? (
-                <div className="p-4 text-white/80">Loading…</div>
-              ) : sessionsTomorrow.length === 0 ? (
-                <div className="p-4 text-white/70">No sessions tomorrow.</div>
-              ) : (
-                <ul className="divide-y divide-white/10">
-                  {sessionsTomorrow.map((r) => (
-                    <li key={r.id} className="px-4 py-3">
-                      <div className={GRID}>
-                        <Dot label={r.sessionType} />
-                        <div className="text-white/90 tabular-nums">{formatTime(r.scheduledStart)}</div>
-                        <div><Chip>{r.liveMinutes} min</Chip></div>
-                        <div><Chip>Live Blocks: {r.liveBlocks ?? 0}</Chip></div>
-                        <div><Chip>Follow-ups: {r.followups}</Chip></div>
-                        <div className="truncate text-white/90">{r.discordName ?? <span className="text-white/40">—</span>}</div>
-                        <div className="text-white/70 text-sm break-words">{r.notes ? r.notes : <span className="text-white/35">—</span>}</div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            {/* 1/3 width: Top Movers (7d) — 3 StudentCards stacked */}
+            <div className="md:col-span-1 space-y-3">
+              <div className="overflow-hidden rounded-2xl ring-1 ring-white/10 bg-zinc-900/70">
+                <div className="sticky top-0 z-10 bg-zinc-900/80 backdrop-blur px-4 py-2 flex items-center justify-between">
+                  <h2 className="text-xs uppercase text-white/80">Top Movers (last 7 days)</h2>
+                  {!loadingMovers && (
+                    <span className="text-[11px] text-white/60">Top 3 by abs. Δ</span>
+                  )}
+                </div>
+
+                {loadingMovers ? (
+                  <div className="p-4 text-white/80">Crunching numbers…</div>
+                ) : movers.length === 0 ? (
+                  <div className="p-4 text-white/70">No data.</div>
+                ) : (
+                  <div className="p-3 space-y-3">
+                    {movers.map(({ s }) => (
+                      <StudentCard key={s.id} student={s} />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
-          {/* ===== Top Movers (7d) ===== */}
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Top Movers (last 7 days)</h2>
-              {!loadingMovers && (
-                <div className="text-sm text-white/60">Showing top 3 by absolute LP change</div>
-              )}
-            </div>
-            <div className="overflow-hidden rounded-2xl ring-1 ring-white/10 bg-zinc-900/70">
-              {loadingMovers ? (
-                <div className="p-4 text-white/80">Crunching numbers…</div>
-              ) : movers.length === 0 ? (
-                <div className="p-4 text-white/70">No data.</div>
-              ) : (
-                <ul className="divide-y divide-white/10">
-                  {movers.map(({ s, delta }) => (
-                    <li key={s.id} className="px-4 py-3 flex items-center gap-3">
-                      <Link href={`/admin/students/${s.id}`} className="font-medium hover:underline">
-                        {s.name}
-                      </Link>
-                      <Chip className={
-                        delta > 0
-                          ? "text-emerald-300 ring-emerald-400/30 bg-emerald-500/10"
-                          : delta < 0
-                          ? "text-rose-300 ring-rose-400/30 bg-rose-500/10"
-                          : "text-zinc-300 ring-white/10 bg-white/5"
-                      }>
-                        {delta > 0 ? `+${delta}` : `${delta}`} LP
-                      </Chip>
-                      <span className="text-xs text-white/60 ml-auto">{s.riotTag ?? "—"} · {(s.server ?? "").toUpperCase()}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
-
-          {/* ===== Availability ===== */}
+          {/* ===== Availability (Uniform only) ===== */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold">Availability</h2>
-              <div className="flex items-center gap-4 text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="mode" value="individual" checked={mode === "individual"} onChange={() => setMode("individual")} />
-                  Edit weekdays individually
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="mode" value="uniform" checked={mode === "uniform"} onChange={() => setMode("uniform")} />
-                  One range for all weekdays
-                </label>
-              </div>
+              <div className="text-sm text-white/70">Uniform editor</div>
             </div>
 
-            {/* Editor */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Individual */}
-              <div className={`rounded-2xl p-4 ring-1 ${mode === "individual" ? "ring-white/20" : "ring-white/10 opacity-60"} bg-zinc-900/70`}>
-                <h3 className="font-semibold mb-3">Per-day editor</h3>
-                {loadingAvail ? (
-                  <div className="text-sm text-white/70">Loading…</div>
-                ) : (
-                  <div className="grid gap-3">
-                    {weekdays.map((d, i) => {
-                      const rule = rules.find((r) => r.weekday === i)!;
-                      const ymd = getAnchorYMDForWeekday(i);
-                      return (
-                        <div key={i} className="flex gap-3 items-center">
-                          <span className="w-10">{d}</span>
-                          <input
-                            type="time"
-                            value={utcMinToLocalHHMM(ymd, rule.openMinute)}
-                            onChange={(e) => {
-                              const copy = [...rules];
-                              const idx = copy.findIndex((r) => r.weekday === i);
-                              copy[idx] = { ...copy[idx], openMinute: localHHMMtoUtcMin(ymd, e.target.value) };
-                              setRules(copy);
-                            }}
-                            disabled={mode !== "individual"}
-                            className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
-                          />
-                          <span>–</span>
-                          <input
-                            type="time"
-                            value={utcMinToLocalHHMM(ymd, rule.closeMinute)}
-                            onChange={(e) => {
-                              const copy = [...rules];
-                              const idx = copy.findIndex((r) => r.weekday === i);
-                              copy[idx] = { ...copy[idx], closeMinute: localHHMMtoUtcMin(ymd, e.target.value) };
-                              setRules(copy);
-                            }}
-                            disabled={mode !== "individual"}
-                            className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50"
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Uniform */}
-              <div className={`rounded-2xl p-4 ring-1 ${mode === "uniform" ? "ring-white/20" : "ring-white/10 opacity-60"} bg-zinc-900/70`}>
-                <h3 className="font-semibold mb-3">Uniform editor</h3>
-                {loadingAvail ? (
-                  <div className="text-sm text-white/70">Loading…</div>
-                ) : (
-                  <div className="flex flex-wrap gap-3 items-center">
-                    <span className="w-28 opacity-80">All weekdays</span>
-                    <input type="time" value={uniformOpen} onChange={(e) => setUniformOpen(e.target.value)} disabled={mode !== "uniform"} className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50" />
-                    <span>–</span>
-                    <input type="time" value={uniformClose} onChange={(e) => setUniformClose(e.target.value)} disabled={mode !== "uniform"} className="bg-neutral-800 px-2 py-1 rounded disabled:opacity-50" />
-                    <label className="flex items-center gap-2 text-sm ml-2">
-                      <input type="checkbox" checked={uniformFullDay} onChange={(e) => setUniformFullDay(e.target.checked)} />
-                      Full day
-                    </label>
-                  </div>
-                )}
-              </div>
+            {/* Uniform Editor */}
+            <div className="rounded-2xl p-4 ring-1 ring-white/20 bg-zinc-900/70">
+              {loadingAvail ? (
+                <div className="text-sm text-white/70">Loading…</div>
+              ) : (
+                <div className="flex flex-wrap gap-3 items-center">
+                  <span className="w-28 opacity-80">All weekdays</span>
+                  <input
+                    type="time"
+                    value={uniformOpen}
+                    onChange={(e) => setUniformOpen(e.target.value)}
+                    className="bg-neutral-800 px-2 py-1 rounded"
+                  />
+                  <span>–</span>
+                  <input
+                    type="time"
+                    value={uniformClose}
+                    onChange={(e) => setUniformClose(e.target.value)}
+                    className="bg-neutral-800 px-2 py-1 rounded"
+                    disabled={uniformFullDay}
+                  />
+                  <label className="flex items-center gap-2 text-sm ml-2">
+                    <input
+                      type="checkbox"
+                      checked={uniformFullDay}
+                      onChange={(e) => setUniformFullDay(e.target.checked)}
+                    />
+                    Full day
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={saveRules} className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 ring-1 ring-white/20">Save Rules</button>
+              <button
+                onClick={saveRules}
+                className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 ring-1 ring-white/20"
+              >
+                Save Rules
+              </button>
             </div>
 
             {/* Exceptions */}
@@ -574,15 +467,34 @@ export default function AdminHubPage() {
                 </button>
               </div>
               <div className="px-4 pb-4 flex flex-wrap gap-3 items-center">
-                <input type="date" value={exDate} onChange={(e) => setExDate(e.target.value)} className="bg-neutral-800 px-2 py-1 rounded" />
+                <input
+                  type="date"
+                  value={exDate}
+                  onChange={(e) => setExDate(e.target.value)}
+                  className="bg-neutral-800 px-2 py-1 rounded"
+                />
                 {!exBlocked && (
                   <>
-                    <input type="time" value={exOpen} onChange={(e) => setExOpen(e.target.value)} className="bg-neutral-800 px-2 py-1 rounded" />
-                    <input type="time" value={exClose} onChange={(e) => setExClose(e.target.value)} className="bg-neutral-800 px-2 py-1 rounded" />
+                    <input
+                      type="time"
+                      value={exOpen}
+                      onChange={(e) => setExOpen(e.target.value)}
+                      className="bg-neutral-800 px-2 py-1 rounded"
+                    />
+                    <input
+                      type="time"
+                      value={exClose}
+                      onChange={(e) => setExClose(e.target.value)}
+                      className="bg-neutral-800 px-2 py-1 rounded"
+                    />
                   </>
                 )}
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={exBlocked} onChange={(e) => setExBlocked(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={exBlocked}
+                    onChange={(e) => setExBlocked(e.target.checked)}
+                  />
                   Block entire day
                 </label>
               </div>
@@ -591,12 +503,27 @@ export default function AdminHubPage() {
                   const ymd = ex.date.slice(0, 10);
                   const label = ex.blocked
                     ? "❌ Blocked all day"
-                    : `${utcMinToLocalHHMM(ymd, ex.openMinute ?? 0)}–${utcMinToLocalHHMM(ymd, ex.closeMinute ?? 1440)}`;
-                  const dateStr = new Date(ymd + "T00:00:00Z").toLocaleDateString("de-DE", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Europe/Berlin" });
+                    : `${utcMinToLocalHHMM(ymd, ex.openMinute ?? 0)}–${utcMinToLocalHHMM(
+                        ymd,
+                        ex.closeMinute ?? 1440
+                      )}`;
+                  const dateStr = new Date(ymd + "T00:00:00Z").toLocaleDateString("de-DE", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    timeZone: "Europe/Berlin",
+                  });
                   return (
                     <li key={ex.id} className="px-4 py-2 flex items-center justify-between">
-                      <span className="text-sm">{dateStr} — {label}</span>
-                      <button onClick={() => deleteException(ex.id)} className="text-rose-400 hover:text-rose-300 text-sm">Delete</button>
+                      <span className="text-sm">
+                        {dateStr} — {label}
+                      </span>
+                      <button
+                        onClick={() => deleteException(ex.id)}
+                        className="text-rose-400 hover:text-rose-300 text-sm"
+                      >
+                        Delete
+                      </button>
                     </li>
                   );
                 })}
@@ -604,7 +531,11 @@ export default function AdminHubPage() {
             </div>
           </section>
 
-          {err && <pre className="bg-black/30 rounded-lg p-3 text-sm text-white/80 whitespace-pre-wrap">{err}</pre>}
+          {err && (
+            <pre className="bg-black/30 rounded-lg p-3 text-sm text-white/80 whitespace-pre-wrap">
+              {err}
+            </pre>
+          )}
         </div>
       </div>
     </main>

@@ -13,7 +13,8 @@ import { getPreset } from "@/lib/sessions/preset";
 
 import CalendarGrid from "./components/CalendarGrid";
 import TimeSlotsList from "./components/TimeSlotsList";
-import WheelPicker from "./components/WheelPicker";
+import WheelPicker from "./components/mobile/WheelPicker";
+import DayPicker from "./components/mobile/DayPicker";
 
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
@@ -22,13 +23,13 @@ import { ArrowLeft } from "lucide-react";
 
 type Props = {
   sessionType: string;
-  liveMinutes: number;   // base minutes (30..120)
+  liveMinutes: number; // base minutes (30..120)
   followups?: number;
   onClose?: () => void;
   initialSlotId?: string | null;
   /** seed with already-fetched availability (kept up to date by parent) */
   prefetchedSlots?: Slot[];
-  liveBlocks?: number;   // 0..2 (each 45m)
+  liveBlocks?: number; // 0..2 (each 45m)
 };
 
 const overlay: Variants = {
@@ -123,7 +124,8 @@ export default function Calendar({
 
     (async () => {
       if (doSpinner) setLoading(true);
-      setHydrating(true); setError(null);
+      setHydrating(true);
+      setError(null);
       try {
         // Use totalMinutes so returned starts already guarantee a full chain
         const data = await fetchSlots(startBoundary, end, totalMinutes);
@@ -136,11 +138,16 @@ export default function Calendar({
       } catch (e) {
         if (!ignore) setError(e instanceof Error ? e.message : String(e));
       } finally {
-        if (!ignore) { setHydrating(false); if (doSpinner) setLoading(false); }
+        if (!ignore) {
+          setHydrating(false);
+          if (doSpinner) setLoading(false);
+        }
       }
     })();
 
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, [totalMinutes]); // recompute availability when session length changes
 
   const preselectedOnce = useRef(false);
@@ -172,7 +179,8 @@ export default function Calendar({
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push({ id: s.id, local: dt });
     }
-    for (const arr of map.values()) arr.sort((a, b) => a.local.getTime() - b.local.getTime());
+    for (const arr of map.values())
+      arr.sort((a, b) => a.local.getTime() - b.local.getTime());
     return map;
   }, [slots]);
 
@@ -253,8 +261,7 @@ export default function Calendar({
     if (!isOpen) onClose?.();
   };
 
-  const selectedDateLabel =
-    selectedDate ? format(selectedDate, "EEEE, MMM d") : "Select a day";
+  const selectedDateLabel = selectedDate ? format(selectedDate, "EEEE, MMM d") : "Select a day";
 
   return (
     <AnimatePresence onExitComplete={handleExitComplete}>
@@ -277,7 +284,7 @@ export default function Calendar({
           />
 
           <motion.div
-            className="relative z-10 w-[92vw] max-w-[1200px] h-[88vh] rounded-2xl overflow-hidden
+            className="relative z-10 w-[100vw] md:w-[92vw] max-w-[1200px] h-[88vh] rounded-2xl overflow-hidden
                        flex flex-col shadow-[0_20px_80px_-20px_rgba(0,0,0,.6)]
                        ring-1 ring-[rgba(146,180,255,.18)]
                        bg-[rgba(11,18,32,.55)]
@@ -326,7 +333,7 @@ export default function Calendar({
                     <div className="md:hidden flex flex-col h-full">
                       {mobileStep === "day" && (
                         <div className="flex-1 min-h-0">
-                          <CalendarGrid
+                          <DayPicker
                             month={month}
                             onMonthChange={setMonth}
                             selectedDate={selectedDate}

@@ -1,3 +1,4 @@
+// src/app/checkout/_components/checkout-steps/CheckoutSteps.tsx
 "use client";
 
 import dynamic from "next/dynamic";
@@ -7,15 +8,12 @@ import StepContact from "./StepContact";
 import StepChoose from "./StepChoose";
 const StepPayDetails = dynamic(() => import("./StepPayDetails"), { ssr: false });
 import StepSummary from "./StepSummary";
-import { useFooter } from "./FooterContext";
 
 export default function CheckoutSteps({
   flow,
 }: {
   flow: ReturnType<typeof import("./useCheckoutFlow").useCheckoutFlow>;
 }) {
-  const [footer] = useFooter();
-
   const {
     step,
     dir,
@@ -24,11 +22,22 @@ export default function CheckoutSteps({
     chooseAndGo,
     handleRiotVerified,
     handleDiscordLinked,
-    riotTag, setRiotTag, notes, setNotes,
-    discordIdentity, clientSecret, piId, payMethod,
-    stripePromise, appearance, bookingId, waiver, setWaiver,
-    payload, breakdown, sessionBlockTitle,
-    setCardPmId, setSavedCard, savedCard,
+    riotTag,
+    setRiotTag,
+    notes,
+    setNotes,
+    discordIdentity,
+    clientSecret,
+    piId,
+    payMethod,
+    stripePromise,
+    appearance,
+    payload,
+    breakdown,
+    sessionBlockTitle,
+    setCardPmId,
+    setSavedCard,
+    savedCard,
     loadingIntent,
   } = flow;
 
@@ -38,9 +47,8 @@ export default function CheckoutSteps({
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
 
-  // FULL HEIGHT container so absolute panes size correctly
   return (
-    <div className="relative h-full">
+    <div className="flex flex-col flex-1 min-h-0 touch-pan-y">
       <AnimatePresence custom={dir} mode="wait" initial={false}>
         {step === 0 && (
           <motion.div
@@ -51,7 +59,7 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="absolute inset-0 flex flex-col"
+            className="flex flex-col"
           >
             <StepContact
               riotTag={riotTag}
@@ -77,13 +85,11 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="absolute inset-0 flex flex-col"
+            className="flex flex-col"
           >
-            <div className="flex flex-col flex-1 min-h-0">
-              <Elements stripe={stripePromise} options={{ appearance, loader: "never" }}>
-                <StepChoose goBack={goBack} onChoose={chooseAndGo as any} />
-              </Elements>
-            </div>
+            <Elements stripe={stripePromise} options={{ appearance, loader: "never" }}>
+              <StepChoose goBack={goBack} onChoose={chooseAndGo as any} />
+            </Elements>
           </motion.div>
         )}
 
@@ -96,36 +102,32 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="absolute inset-0 flex flex-col"
+            className="flex flex-col"
           >
             {clientSecret ? (
-              <div className="flex flex-col flex-1 min-h-0">
-                <Elements
-                  key={clientSecret || "loading-step2"}
-                  stripe={stripePromise}
-                  options={{ clientSecret, appearance, loader: "never" }}
-                >
-                  <StepPayDetails
-                    mode="form"
-                    goBack={goBack}
-                    payMethod={(payMethod || "card") as any}
-                    onContinue={goNext}
-                    piId={piId}
-                    setCardPmId={setCardPmId}
-                    setSavedCard={setSavedCard}
-                    savedCard={savedCard}
-                  />
-                </Elements>
-              </div>
-            ) : (
-              <div className="flex flex-col flex-1 min-h-0">
+              <Elements
+                key={clientSecret || "loading-step2"}
+                stripe={stripePromise}
+                options={{ clientSecret, appearance, loader: "never" }}
+              >
                 <StepPayDetails
-                  mode="loading"
+                  mode="form"
                   goBack={goBack}
                   payMethod={(payMethod || "card") as any}
-                  loadingIntent={loadingIntent}
+                  onContinue={goNext}
+                  piId={piId}
+                  setCardPmId={setCardPmId}
+                  setSavedCard={setSavedCard}
+                  savedCard={savedCard}
                 />
-              </div>
+              </Elements>
+            ) : (
+              <StepPayDetails
+                mode="loading"
+                goBack={goBack}
+                payMethod={(payMethod || "card") as any}
+                loadingIntent={loadingIntent}
+              />
             )}
           </motion.div>
         )}
@@ -139,33 +141,21 @@ export default function CheckoutSteps({
             animate="center"
             exit="exit"
             transition={{ duration: 0.22, ease: "easeOut" }}
-            className="absolute inset-0 flex flex-col"
+            className="flex flex-col"
           >
-            <div className="flex flex-col flex-1 min-h-0">
-              <Elements
-                key={clientSecret || "loading-step3"}
-                stripe={stripePromise}
-                options={{ clientSecret, appearance, loader: "never" }}
-              >
-               <StepSummary
-  goBack={goBack}
-  payload={payload}
-  breakdown={breakdown}
-  payMethod={(payMethod || "card") as any}
-  discordId={discordIdentity?.id ?? ""}        // ✅ new
-  discordName={discordIdentity?.username ?? ""} // ✅ new
-  notes={notes}
-  sessionType={sessionBlockTitle}
-  piId={piId}
-  waiver={waiver}
-  setWaiver={setWaiver}
-  clientSecret={clientSecret!}
-  cardPmId={null}
-  bookingId={bookingId}
-/>
-
-              </Elements>
-            </div>
+            <Elements
+              key={clientSecret || "loading-step3"}
+              stripe={stripePromise}
+              options={{ clientSecret, appearance, loader: "never" }}
+            >
+              <StepSummary
+                goBack={goBack}
+                payload={payload}
+                breakdown={breakdown}
+                payMethod={(payMethod || "card") as any}
+                clientSecret={clientSecret!}
+              />
+            </Elements>
           </motion.div>
         )}
       </AnimatePresence>

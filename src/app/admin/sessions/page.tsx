@@ -2,31 +2,32 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import SessionRowItem, { SessionRow } from "./SessionRow";
 import { Pencil, X, Check } from "lucide-react";
 import { colorsByPreset } from "@/lib/sessions/colors";
 
-type SessionRow = {
-  id: string;
-  liveMinutes: number;
-  discordName: string | null;
-  sessionType: string;
-  followups: number;
-  liveBlocks: number | null; // may be null from API
-  notes: string | null;
-  scheduledStart: string; // ISO
-};
-
 type DayGroup = { key: string; label: string; items: SessionRow[] };
 
-// Columns: dot | time | length | live blocks | follow-ups | discordName | notes
-const GRID =
-  "grid grid-cols-[20px_190px_96px_120px_130px_minmax(0,1fr)_minmax(0,1.2fr)] gap-x-4 items-center";
-
+// --- helpers copied from original file ---
+function pad(n: number) { return String(n).padStart(2, "0"); }
+function toLocalInputValue(iso: string) {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mm = pad(d.getMinutes());
+  return `${y}-${m}-${day}T${hh}:${mm}`;
+}
+function fromLocalInputValue(v: string) {
+  // Treat input as local time
+  const d = new Date(v);
+  return d.toISOString();
+}
 function formatTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
-
 function toLocalDayKey(iso: string) {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -67,7 +68,11 @@ function groupByDay(sorted: SessionRow[]) {
   return [...map.values()];
 }
 
-// -------- dot helpers (subtle; no glow) --------
+// layout from original page (for the inline editor)
+const GRID =
+  "grid grid-cols-[20px_190px_96px_120px_130px_minmax(0,1fr)_minmax(0,1.2fr)] gap-x-4 items-center";
+
+// minimal dot (same colors as your presets)
 function presetFromSessionType(t: string): keyof typeof colorsByPreset | "custom" {
   const x = t.toLowerCase();
   if (x.includes("instant")) return "instant";
@@ -95,30 +100,14 @@ const Chip = ({ className = "", children }: { className?: string; children: Reac
   </span>
 );
 
-// datetime-local helpers
-function pad(n: number) { return String(n).padStart(2, "0"); }
-function toLocalInputValue(iso: string) {
-  const d = new Date(iso);
-  const y = d.getFullYear();
-  const m = pad(d.getMonth() + 1);
-  const day = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mm = pad(d.getMinutes());
-  return `${y}-${m}-${day}T${hh}:${mm}`;
-}
-function fromLocalInputValue(v: string) {
-  // Treat input as local time
-  const d = new Date(v);
-  return d.toISOString();
-}
-
+// ---------- Page ----------
 export default function AdminSessionsPage() {
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [log, setLog] = useState("");
   const [showPast, setShowPast] = useState(false);
 
-  // inline reschedule UI state
+  // reschedule state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempWhen, setTempWhen] = useState<string>("");
 
@@ -137,9 +126,7 @@ export default function AdminSessionsPage() {
         if (on) setLoading(false);
       }
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, []);
 
   const prettyTZ = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
@@ -166,59 +153,39 @@ export default function AdminSessionsPage() {
     }
   }
 
-  const Row = ({ r }: { r: SessionRow }) => {
+  // Inline editor row (shown only when a row is being edited)
+  const EditorRow = ({ r }: { r: SessionRow }) => {
     const blocks = r.liveBlocks ?? 0;
-    const isEditing = editingId === r.id;
-
     return (
       <li className="px-4 py-3">
         <div className={GRID}>
           {/* dot */}
           <Dot sessionType={r.sessionType} />
 
-          {/* time (editable) */}
+          {/* time editor */}
           <div className="flex items-center gap-2 text-white/90 tabular-nums min-w-0">
-            {isEditing ? (
-              <>
-                <input
-                  type="datetime-local"
-                  value={tempWhen}
-                  onChange={(e) => setTempWhen(e.target.value)}
-                  className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1 text-sm"
-                />
-                <button
-                  aria-label="Save"
-                  className="p-1 rounded hover:bg-white/10"
-                  onClick={() => saveReschedule(r.id, tempWhen, r.liveMinutes)}
-                  title="Save"
-                >
-                  <Check className="h-4 w-4" />
-                </button>
-                <button
-                  aria-label="Cancel"
-                  className="p-1 rounded hover:bg-white/10"
-                  onClick={() => setEditingId(null)}
-                  title="Cancel"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="truncate">{formatTime(r.scheduledStart)}</span>
-                <button
-                  aria-label="Edit scheduled time"
-                  title="Reschedule"
-                  className="p-1 rounded hover:bg-white/10"
-                  onClick={() => {
-                    setEditingId(r.id);
-                    setTempWhen(toLocalInputValue(r.scheduledStart));
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-              </>
-            )}
+            <input
+              type="datetime-local"
+              value={tempWhen}
+              onChange={(e) => setTempWhen(e.target.value)}
+              className="bg-black/30 ring-1 ring-white/15 rounded px-2 py-1 text-sm"
+            />
+            <button
+              aria-label="Save"
+              className="p-1 rounded hover:bg-white/10"
+              onClick={() => saveReschedule(r.id, tempWhen, r.liveMinutes)}
+              title="Save"
+            >
+              <Check className="h-4 w-4" />
+            </button>
+            <button
+              aria-label="Cancel"
+              className="p-1 rounded hover:bg-white/10"
+              onClick={() => setEditingId(null)}
+              title="Cancel"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
           {/* length */}
@@ -250,6 +217,7 @@ export default function AdminSessionsPage() {
     );
   };
 
+  // Group with edit support: if editingId matches row -> editor, else -> imported component with an Edit button
   const Group = ({ g }: { g: DayGroup }) => (
     <section className="overflow-hidden rounded-2xl ring-1 ring-white/10 bg-zinc-900/70">
       <div className="sticky top-0 z-10 bg-zinc-900/80 backdrop-blur px-4 py-2">
@@ -258,9 +226,26 @@ export default function AdminSessionsPage() {
         </span>
       </div>
       <ul className="divide-y divide-white/10">
-        {g.items.map((r) => (
-          <Row key={r.id} r={r} />
-        ))}
+        {g.items.map((r) =>
+          editingId === r.id ? (
+            <EditorRow key={r.id} r={r} />
+          ) : (
+            // NOTE: SessionRowItem is assumed to accept an optional onEdit prop.
+            // If your current component doesn't, you can add the small edit button inside it,
+            // or replace this with a local wrapper that renders the pencil next to the time.
+            <SessionRowItem
+              key={r.id}
+              r={r}
+              onEdit={() => {
+                setEditingId(r.id);
+                setTempWhen(toLocalInputValue(r.scheduledStart));
+              }}
+              editIcon={<Pencil className="h-4 w-4" />}
+              editAriaLabel="Reschedule"
+              editTitle="Reschedule"
+            />
+          )
+        )}
       </ul>
     </section>
   );
@@ -296,7 +281,10 @@ export default function AdminSessionsPage() {
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-xl font-semibold">Sessions</h1>
             <div className="text-sm text-white/70">
-              Times shown in <span className="text-white/90 font-medium">{prettyTZ}</span>
+              Times shown in{" "}
+              <span className="text-white/90 font-medium">
+                {Intl.DateTimeFormat().resolvedOptions().timeZone}
+              </span>
             </div>
           </div>
 
@@ -305,7 +293,9 @@ export default function AdminSessionsPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold">Upcoming</h2>
               <div className="text-sm text-white/60">
-                {loading ? "Loading…" : `${upcoming.length} session${upcoming.length === 1 ? "" : "s"}`}
+                {loading ? "Loading…" : `${splitUpcomingPast(rows).upcoming.length} session${
+                  splitUpcomingPast(rows).upcoming.length === 1 ? "" : "s"
+                }`}
               </div>
             </div>
 
@@ -313,7 +303,7 @@ export default function AdminSessionsPage() {
               <div className="p-4 text-white/80 bg-zinc-900/70 rounded-2xl ring-1 ring-white/10">
                 Loading…
               </div>
-            ) : upcoming.length === 0 ? (
+            ) : splitUpcomingPast(rows).upcoming.length === 0 ? (
               <div className="p-4 text-white/80 bg-zinc-900/70 rounded-2xl ring-1 ring-white/10">
                 Nothing upcoming.
               </div>
@@ -334,7 +324,10 @@ export default function AdminSessionsPage() {
             >
               <span className="text-base font-semibold">Past</span>
               <span className="text-sm text-white/70">
-                {loading ? "…" : `${past.length} session${past.length === 1 ? "" : "s"}`} {showPast ? "▲" : "▼"}
+                {loading ? "…" : `${splitUpcomingPast(rows).past.length} session${
+                  splitUpcomingPast(rows).past.length === 1 ? "" : "s"
+                }`}{" "}
+                {showPast ? "▲" : "▼"}
               </span>
             </button>
 
@@ -344,7 +337,7 @@ export default function AdminSessionsPage() {
                   <div className="p-4 text-white/80 bg-zinc-900/70 rounded-2xl ring-1 ring-white/10">
                     Loading…
                   </div>
-                ) : past.length === 0 ? (
+                ) : splitUpcomingPast(rows).past.length === 0 ? (
                   <div className="p-4 text-white/80 bg-zinc-900/70 rounded-2xl ring-1 ring-white/10">
                     No past sessions yet.
                   </div>
