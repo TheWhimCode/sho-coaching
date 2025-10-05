@@ -39,20 +39,26 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 const BG_FADE_DURATION = 1;
 const CONTENT_BASE_DELAY = 0.8;
 
-const TITLE_DELAY = CONTENT_BASE_DELAY + 0.15;
+const TITLE_DELAY   = CONTENT_BASE_DELAY + 0.15;
 const TAGLINE_DELAY = CONTENT_BASE_DELAY + 0.35;
-const PANEL_DELAY = {
-  left: CONTENT_BASE_DELAY + 0.2,
-  center: CONTENT_BASE_DELAY + 0.6,
-  right: CONTENT_BASE_DELAY + 1.0,
+const PANEL_DELAY   = {
+  left:   CONTENT_BASE_DELAY + 0.20,
+  center: CONTENT_BASE_DELAY + 0.60,
+  right:  CONTENT_BASE_DELAY + 1.00,
 } as const;
+
+// Parallax safety buffer: the image is always this much taller than the viewport on mobile.
+// This prevents any height changes (and thus skips) after mount.
+const MAX_BG_EXTRA_PX = 320;
+
+// End the intro lock a bit after the last delayed panel.
+const INTRO_LOCK_MS = Math.round((PANEL_DELAY.right + 0.5) * 1000);
 
 const makeTitleVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -24 },
   show: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: firstLoad ? 0.4 : 0.22, ease: EASE, delay: firstLoad ? TITLE_DELAY : 0.25 },
+    opacity: 1, x: 0,
+    transition: { duration: firstLoad ? 0.40 : 0.22, ease: EASE, delay: firstLoad ? TITLE_DELAY : 0.25 },
   },
   exit: { opacity: 0, x: 24, transition: { duration: 0.18, ease: EASE } },
 });
@@ -60,9 +66,8 @@ const makeTitleVariants = (firstLoad: boolean) => ({
 const makeTaglineVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -20 },
   show: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: firstLoad ? 0.38 : 0.2, ease: EASE, delay: firstLoad ? TAGLINE_DELAY : 0.4 },
+    opacity: 1, x: 0,
+    transition: { duration: firstLoad ? 0.38 : 0.20, ease: EASE, delay: firstLoad ? TAGLINE_DELAY : 0.40 },
   },
   exit: { opacity: 0, x: 20, transition: { duration: 0.16, ease: EASE } },
 });
@@ -108,67 +113,35 @@ export default function SessionHero({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Parallax (mobile only) — hardened against prod reflows
+  // Parallax (mobile only) — image height never changes after mount
   const sectionRef = useRef<HTMLElement | null>(null);
-  const [bgExtra, setBgExtra] = useState(0);
-  const [parallaxReady, setParallaxReady] = useState(false);
-  const [parallaxLocked, setParallaxLocked] = useState(true);
-
-  // unlock after intro (prevents early re-measure noise)
+  const [introDone, setIntroDone] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setParallaxLocked(false), 1200);
+    const t = setTimeout(() => setIntroDone(true), INTRO_LOCK_MS);
     return () => clearTimeout(t);
   }, []);
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end start"],
-  });
-  const bgY = useTransform(scrollYProgress, [0, 1], [0, bgExtra]);
-
+  // Measure travel (for mapping) but clamp to the preallocated extra.
+  const [travelPx, setTravelPx] = useState(0);
   useLayoutEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
 
-    let firstMeasured = false;
-    let lastTravel = 0;
-
     const measure = () => {
-      if (isDesktop) {
-        if (bgExtra !== 0) setBgExtra(0);
-        setParallaxReady(false);
-        return;
-      }
-
+      if (isDesktop) { setTravelPx(0); return; }
       const sectionH = el.offsetHeight;
       const vh = window.innerHeight;
       const scrollable = Math.max(0, sectionH - vh);
       const speed = Math.max(0, Math.min(1, parallaxSpeed));
-      const travel = scrollable * (1 - speed);
-
-      if (!firstMeasured) {
-        firstMeasured = true;
-        lastTravel = travel;
-        setBgExtra(travel);
-        setParallaxReady(true);
-        return;
-      }
-
-      // ignore noise while locked
-      if (parallaxLocked) return;
-
-      // ignore tiny jitter (<8px)
-      if (Math.abs(travel - lastTravel) < 8) return;
-
-      lastTravel = travel;
-      setBgExtra(travel);
+      const travel = Math.min(MAX_BG_EXTRA_PX, Math.max(0, scrollable * (1 - speed)));
+      setTravelPx(travel);
     };
 
-    // measure twice across frames to capture stable initial layout
+    // Measure twice across frames for initial stability
     const r1 = requestAnimationFrame(measure);
     const r2 = requestAnimationFrame(measure);
 
-    // IMPORTANT: no ResizeObserver here — only real viewport changes
+    // After intro, allow updates on real viewport changes only
     const onResize = () => measure();
     const onOrient = () => measure();
     window.addEventListener("resize", onResize, { passive: true });
@@ -180,7 +153,15 @@ export default function SessionHero({
       window.removeEventListener("resize", onResize);
       window.removeEventListener("orientationchange", onOrient);
     };
-  }, [parallaxSpeed, isDesktop, parallaxLocked, bgExtra]);
+  }, [parallaxSpeed, isDesktop]);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Map scroll → parallax, but keep y frozen until the intro ends
+  const bgYActive = useTransform(scrollYProgress, [0, 1], [0, travelPx]);
 
   useEffect(() => {
     const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
@@ -274,9 +255,10 @@ export default function SessionHero({
           className="block md:hidden w-full object-cover object-left will-change-transform"
           loading="eager"
           style={{
-            // keep image height stable; parallax only moves it
-            height: parallaxReady && bgExtra ? `calc(100% + ${bgExtra}px)` : "100%",
-            y: !isDesktop && parallaxReady ? bgY : 0,
+            // Fixed extra height from the start — never changes post-mount
+            height: `calc(100% + ${MAX_BG_EXTRA_PX}px)`,
+            // Only move after intro; until then keep y=0
+            y: !isDesktop && introDone ? bgYActive : 0,
           }}
           initial={false}
         />
@@ -292,7 +274,8 @@ export default function SessionHero({
       >
         <div className="mx-auto w-full max-w-7xl px-5 md:px-8">
           <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
-            <header className="md:col-span-3 mb-0 md:mb-4">
+            {/* Reserve header space on mobile */}
+            <header className="md:col-span-3 mb-0 md:mb-4 min-h-[110px] md:min-h-0">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={preset}
@@ -321,12 +304,18 @@ export default function SessionHero({
 
             {/* LEFT — hidden on mobile */}
             <div className="hidden md:block self-start">
-              <LeftSteps steps={leftSteps} title="How it works" animKey={preset} preset={preset} enterDelay={PANEL_DELAY.left} />
+              <LeftSteps
+                steps={leftSteps}
+                title="How it works"
+                animKey={preset}
+                preset={preset}
+                enterDelay={PANEL_DELAY.left}
+              />
             </div>
 
-            {/* CENTER */}
+            {/* CENTER — reserve space on mobile */}
             <motion.div
-              className="self-start"
+              className="self-start min-h-[400px] md:min-h-0"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.center }}
@@ -340,8 +329,9 @@ export default function SessionHero({
               />
             </motion.div>
 
-            {/* RIGHT */}
+            {/* RIGHT — reserve space on mobile */}
             <motion.div
+              className="min-h-[300px] md:min-h-0"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
@@ -358,7 +348,7 @@ export default function SessionHero({
         </div>
       </motion.div>
 
-      {/* Mobile dimmer ONLY when calendar is open */}
+      {/* Mobile dimmer when calendar is open */}
       <AnimatePresence>
         {showCal && (
           <motion.div
