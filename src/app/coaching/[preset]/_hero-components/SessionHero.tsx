@@ -90,9 +90,7 @@ export default function SessionHero({
   const [initialSlotId, setInitialSlotId] = useState<string | null>(null);
   const [drawerW, setDrawerW] = useState(0);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  useEffect(() => {
-    setIsFirstLoad(false);
-  }, []);
+  useEffect(() => { setIsFirstLoad(false); }, []);
 
   const baseOnly = baseMinutes ?? 60;
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
@@ -110,46 +108,79 @@ export default function SessionHero({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Parallax (mobile only) — avoid first-load double jump
+  // Parallax (mobile only) — hardened against prod reflows
   const sectionRef = useRef<HTMLElement | null>(null);
   const [bgExtra, setBgExtra] = useState(0);
   const [parallaxReady, setParallaxReady] = useState(false);
+  const [parallaxLocked, setParallaxLocked] = useState(true);
+
+  // unlock after intro (prevents early re-measure noise)
+  useEffect(() => {
+    const t = setTimeout(() => setParallaxLocked(false), 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
   });
-
   const bgY = useTransform(scrollYProgress, [0, 1], [0, bgExtra]);
 
   useLayoutEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
 
+    let firstMeasured = false;
+    let lastTravel = 0;
+
     const measure = () => {
       if (isDesktop) {
-        setBgExtra(0);
+        if (bgExtra !== 0) setBgExtra(0);
         setParallaxReady(false);
         return;
       }
+
       const sectionH = el.offsetHeight;
       const vh = window.innerHeight;
       const scrollable = Math.max(0, sectionH - vh);
       const speed = Math.max(0, Math.min(1, parallaxSpeed));
       const travel = scrollable * (1 - speed);
+
+      if (!firstMeasured) {
+        firstMeasured = true;
+        lastTravel = travel;
+        setBgExtra(travel);
+        setParallaxReady(true);
+        return;
+      }
+
+      // ignore noise while locked
+      if (parallaxLocked) return;
+
+      // ignore tiny jitter (<8px)
+      if (Math.abs(travel - lastTravel) < 8) return;
+
+      lastTravel = travel;
       setBgExtra(travel);
-      setParallaxReady(true);
     };
 
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    window.addEventListener("resize", measure, { passive: true });
+    // measure twice across frames to capture stable initial layout
+    const r1 = requestAnimationFrame(measure);
+    const r2 = requestAnimationFrame(measure);
+
+    // IMPORTANT: no ResizeObserver here — only real viewport changes
+    const onResize = () => measure();
+    const onOrient = () => measure();
+    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("orientationchange", onOrient);
+
     return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
+      cancelAnimationFrame(r1);
+      cancelAnimationFrame(r2);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onOrient);
     };
-  }, [parallaxSpeed, isDesktop]);
+  }, [parallaxSpeed, isDesktop, parallaxLocked, bgExtra]);
 
   useEffect(() => {
     const calc = () => setDrawerW(Math.min(440, window.innerWidth * 0.92));
@@ -173,9 +204,7 @@ export default function SessionHero({
         setQuickPool(rows.map((r) => ({ id: r.id, startISO: r.startTime ?? (r as any).startISO })));
       } catch {}
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, [liveMinutes]);
 
   useEffect(() => {
@@ -197,9 +226,7 @@ export default function SessionHero({
         if (on) setLoading(false);
       }
     })();
-    return () => {
-      on = false;
-    };
+    return () => { on = false; };
   }, [liveMinutes]);
 
   const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
@@ -247,6 +274,7 @@ export default function SessionHero({
           className="block md:hidden w-full object-cover object-left will-change-transform"
           loading="eager"
           style={{
+            // keep image height stable; parallax only moves it
             height: parallaxReady && bgExtra ? `calc(100% + ${bgExtra}px)` : "100%",
             y: !isDesktop && parallaxReady ? bgY : 0,
           }}
@@ -313,7 +341,11 @@ export default function SessionHero({
             </motion.div>
 
             {/* RIGHT */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: PANEL_DELAY.right }}>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: PANEL_DELAY.right }}
+            >
               <RightBookingPanel
                 liveMinutes={liveMinutes}
                 loading={loading}
@@ -326,7 +358,7 @@ export default function SessionHero({
         </div>
       </motion.div>
 
-      {/* Mobile dimmer when calendar is open */}
+      {/* Mobile dimmer ONLY when calendar is open */}
       <AnimatePresence>
         {showCal && (
           <motion.div
