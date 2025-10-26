@@ -2,7 +2,7 @@
 
 import React from "react";
 
-const EKKO_SRC = "/images/coaching/overview/Ekko.png";
+const EKKO_SRC = "/images/coaching/overview/Ezreal.png";
 
 export default function EkkoSilhouette() {
   const maskBase: React.CSSProperties = {
