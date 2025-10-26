@@ -53,22 +53,12 @@ export default function Experience() {
             </p>
           </motion.div>
 
-          {/* Divider #1 (below text) */}
-          <div aria-hidden className="w-full" style={dividerStyle} />
-
           {/* Cards with a real middle column divider */}
           <div className="grid items-stretch grid-cols-1 gap-6 md:grid-cols-[1fr_1px_1fr]">
             {/* Left card */}
             <div className="md:col-[1]">
               <ExperienceYears2 className="py-8" />
             </div>
-
-            {/* Vertical divider (md+) */}
-            <div
-              aria-hidden
-              className="hidden md:block md:col-[2] w-px h-full"
-              style={{ background: "var(--color-divider)", opacity: 0.6 }}
-            />
 
             {/* Horizontal divider on mobile (between stacked cards) */}
             <div
@@ -102,7 +92,7 @@ export default function Experience() {
   );
 }
 
-/** Decorative, extremely light grid pattern */
+/** Decorative, extremely light dotted pattern */
 function GridPattern() {
   return (
     <svg
@@ -110,11 +100,16 @@ function GridPattern() {
       className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07]"
     >
       <defs>
-        <pattern id="smallGrid" width="24" height="24" patternUnits="userSpaceOnUse">
-          <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="0.5" />
+        <pattern
+          id="dotPattern"
+          width="24"
+          height="24"
+          patternUnits="userSpaceOnUse"
+        >
+          <circle cx="1" cy="1" r="1" fill="currentColor" />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#smallGrid)" />
+      <rect width="100%" height="100%" fill="url(#dotPattern)" />
     </svg>
   );
 }

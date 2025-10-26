@@ -26,10 +26,10 @@ type Item = {
 };
 
 const DEFAULT_ITEMS: Item[] = [
-  { id: "benefit-1", title: "Understand macro", body: "Learn to think like a pro, use the map to your advantage.", icon: <LayoutDashboard className="h-6 w-6" /> },
+  { id: "benefit-1", title: "Understand macro", body: "Think like a pro, use the map to your advantage.", icon: <LayoutDashboard className="h-6 w-6" /> },
   { id: "benefit-2", title: "Turn knowledge into wins", body: "Learn to apply your gameknowledge to close out more games.", icon: <Trophy className="h-6 w-6" /> },
   { id: "benefit-3", title: "Profile review", body: "See how your profile stacks up against the pros.", icon: <BarChart3 className="h-6 w-6" /> },
-  { id: "benefit-4", title: "No sugar-coating", body: "Direct, honest feedback. Enough input for your next 100+ games.", icon: <AlertCircle className="h-6 w-6" /> },
+  { id: "benefit-4", title: "No sugar-coating", body: "Direct, honest advice. Enough input for your next 100+ games.", icon: <AlertCircle className="h-6 w-6" /> },
   { id: "benefit-5", title: "Mechanics upgrade", body: "Get instant feedback on mechanics and how to sharpen them.", icon: <Crosshair className="h-6 w-6" /> },
   { id: "benefit-6", title: "VOD & Notes", body: "Receive my session recording and summary notes afterwards.", icon: <Clapperboard className="h-6 w-6" /> },
 ];
@@ -86,7 +86,7 @@ export default function Overview({
         <div className="block-gap" />
 
         <div>
-          <div className="p-6 md:py-10">
+          <div className="p-6">
             <Experience />
           </div>
         </div>

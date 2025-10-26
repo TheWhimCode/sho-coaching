@@ -93,8 +93,12 @@ export default function RankCard({
         <img
           src={emblem}
           alt={tier}
-          className="absolute inset-0 h-full w-full object-contain"
-          style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }}
+          className="absolute inset-0 h-full w-full object-contain pointer-events-none select-none"
+          style={{
+            transform: `scale(${zoom})`,
+            transformOrigin: 'center',
+            userSelect: 'none',
+          }}
           onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/emblems/placeholder.png'; }}
           loading="lazy"
           decoding="async"
@@ -107,7 +111,7 @@ export default function RankCard({
           {tierLine}
         </p>
         <p className="text-sm text-zinc-300">
-          {wins}W - {losses}L ({Math.round((wins/(wins+losses))*100)}%)
+          {wins}W - {losses}L ({Math.round((wins / (wins + losses)) * 100)}%)
         </p>
       </div>
     </div>

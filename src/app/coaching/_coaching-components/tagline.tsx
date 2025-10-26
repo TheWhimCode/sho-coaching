@@ -65,7 +65,7 @@ export default function Tagline() {
       <motion.h2
         ref={topRef}
         animate={topControls}
-        className="text-4xl md:text-6xl font-bold text-white"
+        className="text-4xl md:text-5xl font-extrabold text-white"
       >
         Everyone wants to rank up.
       </motion.h2>
@@ -73,7 +73,7 @@ export default function Tagline() {
       <motion.h2
         ref={bottomRef}
         animate={bottomControls}
-        className="mt-4 text-4xl md:text-6xl font-bold text-white"
+        className="mt-4 text-4xl md:text-5xl font-extrabold text-white"
       >
         Few actually know how.
       </motion.h2>

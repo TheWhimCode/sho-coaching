@@ -98,16 +98,26 @@ export default function StudentDetails({ student, onChange }: Props) {
       : undefined;
 
   const handleResolveClick = async () => {
-    if (!onChange) return;
     setResolving(true);
     try {
-      // Signal the parent to resolve. Parent can choose to resolve via puuid (if present) or riotTag+server.
-      await Promise.resolve(
-        onChange({
-          riotTag: (riotTag || '').trim(),
-          server: normalizeServer(server),
-        })
-      );
+      // Call backend to refresh Riot#Tag using PUUID (no server needed)
+      const res = await fetch(`/api/admin/students/${student.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: true }),
+      });
+      const json = await res.json().catch(() => ({} as any));
+
+      if (!res.ok) {
+        console.error(json?.error || 'Refresh failed');
+        return;
+      }
+
+      const next = json.student as MinimalStudent | undefined;
+      if (json.changed && next?.riotTag) {
+        setRiotTag(next.riotTag);
+        onChange?.({ riotTag: next.riotTag });
+      }
     } finally {
       setResolving(false);
     }
