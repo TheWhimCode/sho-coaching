@@ -70,7 +70,7 @@ export default function FollowUp({
 
               {/* Moved subheader quote here */}
               <p className="mt-2 text-lg md:text-lg text-white/60 italic">
-                “Honestly, it felt like a second coaching session”
+                — “Honestly, it felt like a second coaching session”
               </p>
 
               {/* CTA row: Add button (orange styled) + example square button */}

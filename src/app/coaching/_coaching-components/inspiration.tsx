@@ -6,7 +6,7 @@ type SectionProps = { title: string; tagline?: string };
 
 function GlowBackdrop({ reveal }: { reveal: boolean }) {
   const bgImage =
-    "url('/images/coaching/Gradient.svg'), linear-gradient(#05060a, #05060a)";
+    "url('/images/coaching/Gradient3.svg'), linear-gradient(#05060a, #05060a)";
 
   return (
     <>

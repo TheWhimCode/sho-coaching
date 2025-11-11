@@ -213,7 +213,7 @@ export default function CenterSessionPanel({
         <li>Quick fixes with big payoff</li>
         <li>Skills you personally value most</li>
       </ul>
-      <p className="mt-4 md:mt-5 text-white/70">Find out where you should start improving.</p>
+      <p className="mt-4 md:mt-5 text-white/70">Find out what you should start improving.</p>
     </div>
   );
 

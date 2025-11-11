@@ -241,7 +241,7 @@ export default function SessionHero({
               ref={headerRef}
               className="md:col-span-3 mb-0 md:mb-4"
             >
-              <AnimatePresence>
+              <AnimatePresence mode="wait">
                 <motion.h1
                   key={preset}
                   variants={makeTitleVariants(isFirstLoad)}
@@ -253,7 +253,7 @@ export default function SessionHero({
                   {titlesByPreset[preset]}
                 </motion.h1>
               </AnimatePresence>
-              <AnimatePresence>
+              <AnimatePresence mode="wait">
                 <motion.p
                   key={preset + "-tag"}
                   variants={makeTaglineVariants(isFirstLoad)}

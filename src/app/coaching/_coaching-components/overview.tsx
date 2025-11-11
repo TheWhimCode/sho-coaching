@@ -61,7 +61,7 @@ export default function Overview({
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 md:mb-8">
           <p className="text-[11px] tracking-[0.22em] text-fg-muted uppercase">{eyebrow}</p>
-          <h2 className="mt-2 text-3xl md:text-[44px] leading-tight font-bold">{heading}</h2>
+          <h2 className="mt-2 text-3xl md:text-[44px] leading-tight font-extrabold">{heading}</h2>
         </div>
 
         <BluePanel>
