@@ -32,14 +32,27 @@ type Props = {
 
 const overlay: Variants = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] } },
+  show: {
+    opacity: 1,
+    transition: { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] },
+  },
   exit: { opacity: 0 },
 };
 
 const shell: Variants = {
   hidden: { opacity: 0, y: 12, scale: 0.98 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] } },
-  exit: { opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] } },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: 12,
+    scale: 0.98,
+    transition: { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] },
+  },
 };
 
 const mobileStepVariants: Variants = {
@@ -127,6 +140,7 @@ export default function Calendar({
   const goingToCheckout = useRef(false);
   const [isOpen, setIsOpen] = useState(true);
 
+  // Apply prefetched slots (if any)
   useEffect(() => {
     if (!prefetchedSlots) return;
     setSlots(prefetchedSlots);
@@ -136,6 +150,7 @@ export default function Calendar({
     }
   }, [prefetchedSlots, selectedSlotId]);
 
+  // Fetch slots for the next 14 days
   useEffect(() => {
     let ignore = false;
     const startBoundary = startBoundaryNowPlusLead();
@@ -165,7 +180,37 @@ export default function Calendar({
     return () => {
       ignore = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalMinutes]);
+
+  // Use initialSlotId to preselect date + time (triggered by AvailableSlots)
+  useEffect(() => {
+    if (!initialSlotId) return;
+    if (!slots.length) return;
+
+    const slot = slots.find(
+      (s) => s.id === initialSlotId && s.status === SlotStatus.free
+    );
+    if (!slot) return;
+
+    // Adjust if your API uses a different field; original code used `startTime`
+    const dt = new Date((slot as any).startTime ?? (slot as any).startISO);
+    if (Number.isNaN(dt.getTime())) return;
+
+    setSelectedSlotId(slot.id);
+    setSelectedDate(dt);
+
+    // Ensure the visible month matches the selected slot
+    setMonth(
+      new Date(dt.getFullYear(), dt.getMonth(), 1, 0, 0, 0, 0)
+    );
+
+    // On mobile, jump directly to time selection
+    if (!isDesktop) {
+      setMobileStep("time");
+      setWheelVisible(true);
+    }
+  }, [initialSlotId, slots, isDesktop]);
 
   const startsByDay = useMemo(() => {
     const map = new Map<string, { id: string; local: Date }[]>();
@@ -175,22 +220,26 @@ export default function Calendar({
 
     for (const s of slots) {
       if (s.status !== SlotStatus.free) continue;
-      const dt = new Date(s.startTime);
+      const dt = new Date((s as any).startTime ?? (s as any).startISO);
       if (dt < startBoundary || dt > end) continue;
       const key = dayKeyLocal(dt);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push({ id: s.id, local: dt });
     }
 
-    for (const arr of map.values())
+    for (const arr of map.values()) {
       arr.sort((a, b) => a.local.getTime() - b.local.getTime());
+    }
+
     return map;
   }, [slots]);
 
   const displayableStartCountByDay = useMemo(() => {
     const out = new Map<string, number>();
     for (const [k, arr] of startsByDay.entries()) {
-      const displayables = arr.filter(({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0);
+      const displayables = arr.filter(
+        ({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0
+      );
       if (displayables.length > 0) out.set(k, displayables.length);
     }
     return out;
@@ -199,7 +248,9 @@ export default function Calendar({
   const displayableStartsForSelected = useMemo(() => {
     if (!selectedDate) return [];
     const all = startsByDay.get(dayKeyLocal(selectedDate)) ?? [];
-    return all.filter(({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0);
+    return all.filter(
+      ({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0
+    );
   }, [selectedDate, startsByDay]);
 
   async function submitBooking() {
@@ -207,9 +258,15 @@ export default function Calendar({
     setDErr(null);
     setPending(true);
     try {
-      const { holdKey: k, slotIds } = await holdSlot(selectedSlotId, totalMinutes, holdKey || undefined);
+      const { holdKey: k, slotIds } = await holdSlot(
+        selectedSlotId,
+        totalMinutes,
+        holdKey || undefined
+      );
       setHoldKey(k);
-      if (typeof window !== "undefined") sessionStorage.setItem(`hold:${selectedSlotId}`, k);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(`hold:${selectedSlotId}`, k);
+      }
 
       const baseOnly = Math.max(30, liveMinutes);
       const preset = getPreset(baseOnly, followups ?? 0, blocks);
@@ -234,10 +291,14 @@ export default function Calendar({
     }
   }
 
+  // Release hold if closed without going to checkout
   useEffect(() => {
     return () => {
       if (goingToCheckout.current) return;
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/checkout")) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/checkout")
+      ) {
         releaseHold(holdKey || undefined);
       }
     };
@@ -247,7 +308,9 @@ export default function Calendar({
     if (!isOpen) onClose?.();
   };
 
-  const selectedDateLabel = selectedDate ? format(selectedDate, "EEEE, MMM d") : "Select a day";
+  const selectedDateLabel = selectedDate
+    ? format(selectedDate, "EEEE, MMM d")
+    : "Select a day";
 
   return (
     <AnimatePresence onExitComplete={handleExitComplete}>
@@ -259,6 +322,7 @@ export default function Calendar({
           animate="show"
           exit="exit"
         >
+          {/* Mobile dim layer */}
           <motion.div
             className="absolute inset-0 bg-black/50 md:hidden"
             initial={{ opacity: 0 }}
@@ -275,13 +339,17 @@ export default function Calendar({
                        supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150"
             variants={shell}
           >
+            {/* Header */}
             <div className="px-6 pt-5 pb-3 flex items-center justify-between">
               <div className="text-white/85">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/60">Schedule</div>
+                <div className="text-[11px] uppercase tracking-[0.18em] text-white/60">
+                  Schedule
+                </div>
                 <div className="text-xl font-semibold">{sessionType}</div>
               </div>
             </div>
 
+            {/* Body */}
             <div className="px-6 pb-4 flex-1 min-h-0">
               <div
                 className="h-full rounded-2xl ring-1 ring-[rgba(146,180,255,.20)]
@@ -292,6 +360,7 @@ export default function Calendar({
                 <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1px_1.4fr] h-full">
                   {/* LEFT COLUMN */}
                   <div className="min-h-0 p-4 h-full">
+                    {/* Desktop calendar */}
                     <div className="hidden md:block">
                       <CalendarGrid
                         month={month}
@@ -307,9 +376,13 @@ export default function Calendar({
                       />
                     </div>
 
-                    {/* MOBILE */}
+                    {/* Mobile flow */}
                     <div className="md:hidden flex flex-col h-full">
-                      <AnimatePresence custom={mobileDir} mode="wait" initial={false}>
+                      <AnimatePresence
+                        custom={mobileDir}
+                        mode="wait"
+                        initial={false}
+                      >
                         {mobileStep === "day" ? (
                           <motion.div
                             key="day"
@@ -356,7 +429,9 @@ export default function Calendar({
                                   <ArrowLeft className="w-4 h-4" />
                                   Back
                                 </button>
-                                <div className="text-sm text-white/80">{selectedDateLabel}</div>
+                                <div className="text-sm text-white/80">
+                                  {selectedDateLabel}
+                                </div>
                               </div>
                               <div className="mt-2 border-t border-white/10" />
                             </div>
@@ -376,10 +451,10 @@ export default function Calendar({
                     </div>
                   </div>
 
-                  {/* divider */}
+                  {/* Divider */}
                   <div className="hidden md:block bg-[rgba(146,180,255,.24)]" />
 
-                  {/* RIGHT COLUMN */}
+                  {/* RIGHT COLUMN (desktop times) */}
                   <div className="min-h-0 p-4 hidden md:block">
                     <TimeSlotsList
                       slots={displayableStartsForSelected}
@@ -392,6 +467,7 @@ export default function Calendar({
               </div>
             </div>
 
+            {/* Footer */}
             <div className="px-6 py-4 border-t border-[rgba(146,180,255,.18)] flex items-center justify-between gap-3">
               {dErr && <div className="text-rose-400 text-sm">{dErr}</div>}
               <div className="ml-auto flex gap-2">
