@@ -42,7 +42,7 @@ export default function Home() {
             Have a cookie <span aria-hidden>🍪</span>
           </h2>
           <Link
-            href="/coaching"
+            href="/coaching/[preset]"
             className="mt-6 inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm sm:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg-[#f8a81a] transition shadow-[0_8px_22px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
           >
             Get Coaching
