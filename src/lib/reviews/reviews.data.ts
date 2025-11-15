@@ -53,12 +53,12 @@ export const REVIEWS: Review[] = [
     champion: "Viktor",
   },
   {
-    name: "Wham",
+    name: "BunnyBeast",
     text:
-      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",
-    rankFrom: "Diamond I",
+      "I have weapons.",
+    rankFrom: "Grandmaster",
     rankTo: "Challenger",
-    champion: "Viktor",
+    champion: "Aphelios",
   },
   {
     name: "Wham",
