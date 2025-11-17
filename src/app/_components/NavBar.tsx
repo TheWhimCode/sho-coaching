@@ -8,7 +8,7 @@ import { Menu, X } from "lucide-react";
 import { FaDiscord, FaTiktok, FaYoutube } from "react-icons/fa";
 
 const NAV = [
-  { label: "Coaching", href: "/coaching" },
+  { label: "Coaching", href: "/coaching/vod" },
   { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
 ];
 
