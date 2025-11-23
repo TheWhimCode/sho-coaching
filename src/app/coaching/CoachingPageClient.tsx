@@ -1,18 +1,14 @@
 "use client";
 
 import React from "react";
-import Survey from "@/app/coaching/_coaching-components/survey";
 import Reviews from "@/app/coaching/_coaching-components/reviews";
 import CoachingExamples from "@/app/coaching/_coaching-components/examples";
 import FollowUp from "@/app/coaching/_coaching-components/follow-up";
 import Overview from "@/app/coaching/_coaching-components/overview";
 import PresetCards from "@/app/coaching/_coaching-components/cards";
 import NeedMoreInfo from "@/app/coaching/_coaching-components/components/NeedMoreInfo";
-import FAQ from "@/app/coaching/_coaching-components/faq";
 import Clips from "@/app/coaching/_coaching-components/clips";
-import PlaceholderSections from "@/app/coaching/_coaching-components/inspiration";
 import Tagline from "@/app/coaching/_coaching-components/tagline";
-import ShowcaseCarousel from "@/app/coaching/_coaching-components/carousel";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 
@@ -80,7 +76,6 @@ export default function CoachingPageClient() {
           </div>
         </section>
 
-        {/* No gap between Reviews and Overview */}
         <section className="relative isolate -mt-px">
           <div
             aria-hidden
@@ -105,6 +100,7 @@ export default function CoachingPageClient() {
           </div>
         </section>
 
+        {/* CLIPS WITH ORIGINAL BACKGROUND */}
         <section id="clips-section" className="relative isolate">
           <div
             aria-hidden
@@ -123,42 +119,41 @@ export default function CoachingPageClient() {
                 border border-b-0 border-[rgba(146,180,255,.18)]
               "
             >
-              <ShowcaseCarousel />
+              {/* ✅ block-gap added above Clips */}
+              <div className="block-gap" />
+
+              <Clips
+                className="py-0 hidden md:block"
+                containerClassName="max-w-none"
+              />
+
+              {/* ✅ Divider stays exactly as-is */}
               <DividerWithLogo className="mx-2 my-16" />
-              <div className="relative">
-                <div className="relative z-10 mb-12 md:mb-0">
-                  <Clips
-                    className="py-0 hidden md:block"
-                    containerClassName="max-w-none"
-                  />
+
+              {/* ✅ Follow-Up moved inside, padding removed */}
+              <section
+                id="followup"
+                className="relative isolate scroll-mt-24"
+              >
+                <div className="relative z-10 mx-auto max-w-7xl">
+                  <div className="max-w-6xl px-6 mx-auto">
+                    <FollowUp className="py-0" />
+                  </div>
                 </div>
-              </div>
+              </section>
+
+              {/* ✅ block-gap added below Follow-Up */}
+              <div className="block-gap" />
             </GlassPanel>
           </div>
         </section>
 
-        <PlaceholderSections />
-
-        <section
-          id="followup"
-          className="relative isolate pt-16 pb-16 md:pt-40 md:pb-40 scroll-mt-24"
-        >
-          <div className="relative z-10 mx-auto max-w-7xl">
-            <div className="max-w-6xl px-6 mx-auto">
-              <FollowUp className="py-0" />
-              <DividerWithLogo className="mx-2 my-16" />
-              <Survey className="w-full" />
-            </div>
-          </div>
-        </section>
-
-        <section className="relative isolate py-20 md:py-84">
+        <section className="relative isolate">
           <div className="relative z-10 mx-auto max-w-6xl px-6 text-center opacity-40" />
         </section>
 
         <div className="hidden md:block">
           <NeedMoreInfo label="Need more info?" accent="#8FB8E6" />
-          <FAQ />
         </div>
       </div>
     </>

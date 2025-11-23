@@ -61,11 +61,11 @@ export const REVIEWS: Review[] = [
     champion: "Aphelios",
   },
   {
-    name: "Wham",
+    name: "Kefla",
     text:
-      "I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom!I am the wham and I WILL EAT YOU. Chocolate bar, Toby, sleepy, doom! Awooooo.",
-    rankFrom: "Diamond I",
-    rankTo: "Challenger",
-    champion: "Viktor",
+      "Gather 'round, fwens!",
+    rankFrom: "Emerald I",
+    rankTo: "Master",
+    champion: "Milio",
   },
 ];

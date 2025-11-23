@@ -12,7 +12,7 @@ function rankToPoints(tier: string, division: string | null | undefined, lp: num
   const d  = (division ?? 'IV').toUpperCase();
   const ti = Math.max(0, TIER_ORDER.indexOf(t as any));
   const di = Math.max(0, DIV_ORDER.indexOf(d as any));
-  return ti * 400 + (DIV_ORDER.length - 1 - di) * 100 + Math.max(0, lp);
+  return ti * 400 + di * 100 + Math.max(0, lp);
 }
 
 export async function GET(req: NextRequest) {

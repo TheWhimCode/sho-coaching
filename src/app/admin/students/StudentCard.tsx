@@ -13,19 +13,29 @@ type Student = {
   updatedAt: string;
 };
 
-type ClimbResp = {
-  overall?: { deltaToLatest: number } | null;
+type ClimbSummaryResp = {
+  overall: {
+    deltaToLatest: number;
+    latestRank: {
+      tier: string;
+      division: string | null;
+      lp: number;
+    };
+    fromSessionStart: string;
+    baselineDateTime: string;
+    latestDateTime: string;
+  } | null;
 };
 
-const climbFetcher = (url: string) =>
-  fetch(url).then((r) => r.json() as Promise<ClimbResp>);
+const climbSummaryFetcher = (url: string) =>
+  fetch(url).then((r) => r.json() as Promise<ClimbSummaryResp>);
 
 function LPBadge({ studentId }: { studentId: string }) {
-  const { data } = useSWR<ClimbResp>(
-    `/api/admin/students/climb-since-session?studentId=${encodeURIComponent(
+  const { data } = useSWR<ClimbSummaryResp>(
+    `/api/admin/students/climb-summary?studentId=${encodeURIComponent(
       studentId
     )}`,
-    climbFetcher
+    climbSummaryFetcher
   );
 
   const delta = data?.overall?.deltaToLatest;
@@ -44,7 +54,7 @@ function LPBadge({ studentId }: { studentId: string }) {
   return (
     <span
       className={`ml-auto shrink-0 text-xs px-2 py-0.5 rounded-md font-medium tabular-nums ${badgeColor}`}
-      title="LP gained since first session"
+      title="Rank points gained since first session"
     >
       {formatted} LP
     </span>
@@ -66,14 +76,22 @@ export default function StudentCard({ student }: { student: Student }) {
 
       <div className="mt-1 text-xs text-zinc-300 flex flex-wrap gap-x-3 gap-y-1">
         <span>
-          Discord: <span className="text-zinc-100">{student.discordName || "—"}</span>
+          Discord:{" "}
+          <span className="text-zinc-100">
+            {student.discordName || "—"}
+          </span>
         </span>
         <span>
-          Riot: <span className="text-zinc-100">{student.riotTag || "—"}</span>
+          Riot:{" "}
+          <span className="text-zinc-100">
+            {student.riotTag || "—"}
+          </span>
         </span>
         <span>
           Server:{" "}
-          <span className="text-zinc-100 uppercase">{student.server || "—"}</span>
+          <span className="text-zinc-100 uppercase">
+            {student.server || "—"}
+          </span>
         </span>
       </div>
 
