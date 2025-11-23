@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 
 type Props = {
@@ -20,11 +19,7 @@ export default function ReviewsCard({
   minHeight = 168,
 }: Props) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.5 }}
-      transition={{ duration: 0.5 }}
+    <div
       className={`flex h-full flex-col items-center justify-center text-center ${className}`}
       style={{ minHeight }}
     >
@@ -38,15 +33,20 @@ export default function ReviewsCard({
           />
           <Star
             className="relative text-[#fc8803]"
-            style={{ height: "1em", width: "1em", filter: "drop-shadow(0 6px 12px rgba(245,158,11,0.35))" }}
+            style={{
+              height: "1em",
+              width: "1em",
+              filter: "drop-shadow(0 6px 12px rgba(245,158,11,0.35))",
+            }}
             strokeWidth={2}
             fill="currentColor"
           />
         </span>
       </div>
+
       <div className="mt-1 text-sm md:text-base text-fg-muted/85">
         {subtitle}
       </div>
-    </motion.div>
+    </div>
   );
 }

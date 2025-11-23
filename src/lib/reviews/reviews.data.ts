@@ -45,9 +45,9 @@ export const REVIEWS: Review[] = [
     champion: "Viktor",
   },
   {
-    name: "Wham",
+    name: "hug",
     text:
-      "I've learned pretty much all of my fundamentals from Sho. He made me realize that my mechanics, macro and especially mental needed work. Took me a while, but I got there.",
+      "I did not realize how much of an impact a terrible mentality had on my games. Sho taught me macro, micro, but most importantly: how to actually try to win every day. I recommend!",
     rankFrom: "Diamond I",
     rankTo: "Challenger",
     champion: "Viktor",
@@ -63,7 +63,7 @@ export const REVIEWS: Review[] = [
   {
     name: "Kefla",
     text:
-      "Gather 'round, fwens!",
+      "u just got to find a duo partner",
     rankFrom: "Emerald I",
     rankTo: "Master",
     champion: "Milio",

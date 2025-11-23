@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import ExperienceYears2 from "./ExperienceYears2";
 import ReviewsCard from "./400-reviews";
 import EkkoSilhouette from "./EkkoSilhouette";
@@ -9,14 +9,11 @@ import EkkoSilhouette from "./EkkoSilhouette";
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
 
-const dividerStyle: React.CSSProperties = {
-  height: 1,
-  background:
-    "linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--color-divider) 12%, var(--color-divider) 88%, rgba(255,255,255,0) 100%)",
-  opacity: 0.6,
-};
-
 export default function Experience() {
+  // ✅ single trigger for the whole section
+  const sectionRef = useRef(null);
+  const inView = useInView(sectionRef, { once: true, amount: 1 });
+
   return (
     <section
       aria-labelledby="no-wasted-games-title"
@@ -24,15 +21,19 @@ export default function Experience() {
     >
       <GridPattern />
 
-      <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-12 md:gap-8">
-        {/* LEFT COLUMN: text + stats */}
+      {/* ✅ all animation timing controlled from this ref */}
+      <div
+        ref={sectionRef}
+        className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-12 md:gap-8"
+      >
+        {/* LEFT COLUMN */}
         <div className="col-span-1 md:col-span-8 flex flex-col gap-8">
-          {/* Text block */}
+
+          {/* Text block (delay 0.8) */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ duration: 0.5 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.8 }}
             className="flex flex-col justify-center mb-4"
           >
             <h2
@@ -53,46 +54,64 @@ export default function Experience() {
             </p>
           </motion.div>
 
-          {/* Cards with a real middle column divider */}
+          {/* Cards */}
           <div className="grid items-stretch grid-cols-1 gap-6 md:grid-cols-[1fr_1px_1fr]">
-            {/* Left card */}
-            <div className="md:col-[1]">
-              <ExperienceYears2 className="py-8" />
-            </div>
 
-            {/* Horizontal divider on mobile (between stacked cards) */}
+            {/* ExperienceYears2 (delay 1.1) */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 1.1 }}
+              className="md:col-[1]"
+            >
+              <ExperienceYears2 className="py-8" />
+            </motion.div>
+
+            {/* Mobile divider */}
             <div
               aria-hidden
               className="md:hidden h-px w-full"
               style={{ background: "var(--color-divider)", opacity: 0.6 }}
             />
 
-            {/* Right card */}
-            <div className="md:col-[3]">
+            {/* ReviewsCard (delay 1.4) */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 1.4 }}
+              className="md:col-[3]"
+            >
               <ReviewsCard
                 rating={4.9}
                 scaleMax={5}
                 subtitle="Based on 500+ reviews"
                 className="py-8"
               />
-            </div>
+            </motion.div>
+
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Ekko silhouette */}
-        <div className="col-span-1 md:col-span-4">
+        {/* RIGHT COLUMN — Ekko (delay 0.0) */}
+        <motion.div
+          className="col-span-1 md:col-span-4"
+          initial={{ opacity: 0, x: 20 }}
+          animate={inView ? { opacity: 1, x: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.0, ease: "easeOut" }}
+        >
           <div className="relative h-full min-h-[22rem] w-full overflow-visible">
             <div className="absolute inset-3 overflow-visible">
               <EkkoSilhouette />
             </div>
           </div>
-        </div>
+        </motion.div>
+
       </div>
     </section>
   );
 }
 
-/** Decorative, extremely light dotted pattern */
+/** Decorative background dots */
 function GridPattern() {
   return (
     <svg
@@ -100,12 +119,7 @@ function GridPattern() {
       className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07]"
     >
       <defs>
-        <pattern
-          id="dotPattern"
-          width="24"
-          height="24"
-          patternUnits="userSpaceOnUse"
-        >
+        <pattern id="dotPattern" width="24" height="24" patternUnits="userSpaceOnUse">
           <circle cx="1" cy="1" r="1" fill="currentColor" />
         </pattern>
       </defs>
