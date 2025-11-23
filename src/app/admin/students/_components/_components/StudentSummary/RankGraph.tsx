@@ -15,26 +15,42 @@ import { rankMiniCrestSvg } from '@/lib/league/datadragon';
 
 // --- shared rank math (keep identical to server) ---
 const TIER_ORDER = [
-  'IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'
+  'IRON',
+  'BRONZE',
+  'SILVER',
+  'GOLD',
+  'PLATINUM',
+  'EMERALD',
+  'DIAMOND',
+  'MASTER',
+  'GRANDMASTER',
+  'CHALLENGER',
 ] as const;
-const DIV_ORDER  = ['IV','III','II','I'] as const;
+const DIV_ORDER = ['IV', 'III', 'II', 'I'] as const;
 const MASTER_BASE = TIER_ORDER.indexOf('MASTER') * 400; // 2800
-const MASTER_IDX  = TIER_ORDER.indexOf('MASTER');
 
-function rankToPoints(tier: string, division: string | null | undefined, lp: number): number {
+function rankToPoints(
+  tier: string,
+  division: string | null | undefined,
+  lp: number
+): number {
   const t = (tier ?? '').toUpperCase();
   if (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER') {
+    // Master+: treat MASTER as base tier + LP
     return MASTER_BASE + Math.max(0, lp);
   }
-  const d  = (division ?? 'IV').toUpperCase();
-  const ti = Math.max(0, TIER_ORDER.indexOf(t as any));
-  const di = Math.max(0, DIV_ORDER.indexOf(d as any));
-  return ti * 400 + (DIV_ORDER.length - 1 - di) * 100 + Math.max(0, lp);
+
+  const d = (division ?? 'IV').toUpperCase();
+  const ti = Math.max(0, TIER_ORDER.indexOf(t as any)); // tier index
+  const di = Math.max(0, DIV_ORDER.indexOf(d as any)); // 0=IV, 3=I
+
+  // Higher division = higher points (IV < III < II < I)
+  return ti * 400 + di * 100 + Math.max(0, lp);
 }
 
 const rankText = (tier: string, division: string | null | undefined, lp: number) => {
   const t = (tier ?? '').toUpperCase();
-  return (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER')
+  return t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER'
     ? `${t} · ${lp} LP`
     : `${t} ${division ?? 'IV'} · ${lp} LP`;
 };
@@ -53,7 +69,7 @@ type ApiResp = {
 };
 
 // --- helpers ---
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 function formatDayLabel(yyyyMmDd: string) {
   const [y, m, d] = yyyyMmDd.split('-').map(Number);
@@ -65,7 +81,9 @@ function formatDayLabel(yyyyMmDd: string) {
 
 export default function RankGraph({ studentId }: { studentId: string }) {
   const { data } = useSWR<ApiResp>(
-    `/api/admin/students/climb-since-session?studentId=${encodeURIComponent(studentId)}`,
+    `/api/admin/students/climb-since-session?studentId=${encodeURIComponent(
+      studentId
+    )}`,
     fetcher
   );
 
@@ -73,21 +91,23 @@ export default function RankGraph({ studentId }: { studentId: string }) {
     const rows: ApiSeries[] = Array.isArray(data?.series) ? [...data!.series] : [];
     rows.sort((a, b) => a.date.localeCompare(b.date));
 
-    const pts = rows.map(d => ({
-      date: d.date,
-      points: Number.isFinite(Number(d.points))
-        ? Number(d.points)
-        : rankToPoints(d.tier, d.division ?? 'IV', d.lp ?? 0),
-      tier: (d.tier ?? '').toUpperCase(),
-      division: (d.division ?? 'IV') as string | null,
-      lp: d.lp ?? 0,
-    })).filter(p => Number.isFinite(p.points));
+    const pts = rows
+      .map((d) => ({
+        date: d.date,
+        points: Number.isFinite(Number(d.points))
+          ? Number(d.points)
+          : rankToPoints(d.tier, d.division ?? 'IV', d.lp ?? 0),
+        tier: (d.tier ?? '').toUpperCase(),
+        division: (d.division ?? 'IV') as string | null,
+        lp: d.lp ?? 0,
+      }))
+      .filter((p) => Number.isFinite(p.points));
 
     // --- determine seen tier range ---
     let minSeen = Infinity;
     let maxSeen = -Infinity;
     for (const p of pts) {
-      const ti = Math.floor(p.points / 400);
+      const ti = Math.floor(p.points / 400); // tier index
       if (ti < minSeen) minSeen = ti;
       if (ti > maxSeen) maxSeen = ti;
     }
@@ -98,20 +118,28 @@ export default function RankGraph({ studentId }: { studentId: string }) {
       maxSeen = TIER_ORDER.indexOf('PLATINUM');
     }
 
-    // bottom = lowest seen tier, top = MASTER (0 LP)
-    const bottomTier = Math.max(0, Math.floor(minSeen));
-    const topTier = MASTER_IDX; // Always show up to Master 0 LP
+    const maxTierIndex = TIER_ORDER.length - 1;
 
-    // domain spans exactly from bottom tier start → Master 0 LP
+    // bottom = lowest tier they've ever been in
+    const bottomTier = Math.max(0, Math.floor(minSeen));
+
+    // top = one tier above highest they've reached (Gold -> Plat, Plat -> Emerald, etc.)
+    let topTier = Math.floor(maxSeen) + 1;
+    // ensure at least one tier band
+    if (topTier <= bottomTier) topTier = bottomTier + 1;
+    // clamp to highest valid tier index
+    topTier = Math.min(maxTierIndex, topTier);
+
+    // domain from bottom tier 0 LP → top tier 0 LP
     const yDomain: [number, number] = [bottomTier * 400, topTier * 400];
 
-    // crests: include all tiers from bottom → top (Master included)
+    // crests from bottom → top (inclusive)
     const crestTiers = [];
     for (let ti = bottomTier; ti <= topTier; ti++) {
       crestTiers.push({ ti, tier: TIER_ORDER[ti] as string, value: ti * 400 });
     }
 
-    const sessionXs = (data?.sessions ?? []).map(s => s.day);
+    const sessionXs = (data?.sessions ?? []).map((s) => s.day);
     return { chartData: pts, yDomain, crestTiers, sessionXs };
   }, [data]);
 
@@ -187,9 +215,14 @@ export default function RankGraph({ studentId }: { studentId: string }) {
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
                 const d = payload[0].payload as {
-                  date: string; tier: string; division: string | null; lp: number;
+                  date: string;
+                  tier: string;
+                  division: string | null;
+                  lp: number;
                 };
-                const isSessionDay = !!(data?.sessions ?? []).some(s => s.day === d.date);
+                const isSessionDay = !!(data?.sessions ?? []).some(
+                  (s) => s.day === d.date
+                );
                 return (
                   <div className="bg-zinc-900/90 text-white text-xs px-2 py-1 rounded">
                     <div>{rankText(d.tier, d.division, d.lp)}</div>

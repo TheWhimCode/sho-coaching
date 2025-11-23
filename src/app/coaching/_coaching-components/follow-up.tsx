@@ -77,7 +77,7 @@ export default function FollowUp({
               <div className="mt-4 flex items-center justify-between gap-6 border-l-2 border-white/20 px-5 py-1.5 rounded-xl bg-white/[.02]">
                 {/* Left: helper line on top + button */}
                 <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
-                  <p className="text-sm md:text-base text-white mb-2">
+                  <p className="text-sm md:text-sm text-white/70 mb-2">
                     You can add follow-ups through customization.
                   </p>
                   <div className="relative inline-block">
