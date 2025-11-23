@@ -59,7 +59,7 @@ export default function Clips({
         }
 
         // Uniform stagger
-        const BASE_S = 1.0;
+        const BASE_S = 0.4;
         const STEP_S = 0.12;
 
         shuffled.forEach((el, idx) => {
@@ -92,7 +92,7 @@ export default function Clips({
         <div className="text-center mb-8 md:mb-12">
           <h2
             id="clips-heading"
-            className="mt-0 text-[40px] md:text-[52px] leading-tight font-bold"
+            className="mt-0 text-[40px] md:text-[44px] leading-tight font-extrabold"
           >
             {heading}
           </h2>

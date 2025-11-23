@@ -16,7 +16,6 @@ export default function EkkoSilhouette() {
     maskPosition: "center",
   };
 
-  // tweak how big/where he sits
   const transform = "scale(1.25) translateX(8%)";
 
   return (

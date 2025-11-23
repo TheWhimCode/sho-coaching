@@ -24,7 +24,7 @@ export default function CoachingPageClient() {
     <>
       <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
 
-      <div className="relative z-10 min-h-screen text-white overflow-x-clip">
+      <div className="relative z-10 text-white overflow-x-clip">
         <section className="relative isolate overflow-x-clip">
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="block-gap" />
@@ -116,7 +116,7 @@ export default function CoachingPageClient() {
               className="
                 p-0 md:p-8
                 !ring-0
-                border border-b-0 border-[rgba(146,180,255,.18)]
+                border border-[rgba(146,180,255,.18)]
               "
             >
               {/* ✅ block-gap added above Clips */}
