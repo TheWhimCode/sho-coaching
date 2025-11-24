@@ -46,7 +46,7 @@ export default function Footer() {
             aria-label="Discord"
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
           >
-            <FaDiscord className="h-5 w-5" />
+            <FaDiscord className="h-6 w-6" />
           </a>
 
           <a
@@ -55,7 +55,7 @@ export default function Footer() {
             aria-label="YouTube"
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
           >
-            <FaYoutube className="h-5 w-5" />
+            <FaYoutube className="h-6 w-6" />
           </a>
 
           <a
@@ -64,7 +64,7 @@ export default function Footer() {
             aria-label="TikTok"
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
           >
-            <FaTiktok className="h-5 w-5" />
+            <FaTiktok className="h-6 w-6" />
           </a>
 
           <a
@@ -73,7 +73,7 @@ export default function Footer() {
             aria-label="X"
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
           >
-            <FaXTwitter className="h-5 w-5" />
+            <FaXTwitter className="h-6 w-6" />
           </a>
         </div>
 

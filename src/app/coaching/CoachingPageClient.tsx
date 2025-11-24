@@ -11,17 +11,38 @@ import Clips from "@/app/coaching/_coaching-components/clips";
 import Tagline from "@/app/coaching/_coaching-components/tagline";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
+import SmoothScroll from "@/app/_components/extensions/SmoothScroll";
+import Lenis from "@studio-freight/lenis";
 
 export default function CoachingPageClient() {
+  const lenisRef = React.useRef<Lenis | null>(null);
+
+  React.useEffect(() => {
+    // store lenis instance created in SmoothScroll
+    document.addEventListener("lenis", (e: any) => {
+      lenisRef.current = e.detail;
+    });
+  }, []);
+
   const handleScrollToFollowup = React.useCallback(() => {
     const el = document.getElementById("followup");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (el && lenisRef.current) {
+      lenisRef.current.scrollTo(el, {
+        offset: -80,
+        duration: 1.2,
+      });
+    } else if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }, []);
 
   const pageBG = "var(--color-bg)";
 
   return (
     <>
+      {/* ✅ Smooth inertial scrolling enabled */}
+      <SmoothScroll />
+
       <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
 
       <div className="relative z-10 text-white overflow-x-clip">
@@ -100,14 +121,13 @@ export default function CoachingPageClient() {
           </div>
         </section>
 
-        {/* CLIPS WITH EXTENDED BACKGROUND GRADIENT */}
         <section id="clips-section" className="relative isolate">
           <div
             aria-hidden
             className="absolute -top-[120%] left-0 right-0 -bottom-[40%] -z-10 pointer-events-none"
             style={{
               background:
-                "radial-gradient(circle at 22% 60%, rgba(0,130,255,0.22), transparent 58%), radial-gradient(circle at 78% 70%, rgba(255,100,0,0.18), transparent 58%)",
+                "radial-gradient(circle at 22% 70%, rgba(255,100,0,0.18), transparent 58%), radial-gradient(circle at 78% 80%, rgba(0,130,255,0.22), transparent 58%)",
             }}
           />
 
@@ -121,11 +141,10 @@ export default function CoachingPageClient() {
             >
               <div className="block-gap" />
 
-<Clips
-  className="py-0 hidden md:block"
-  containerClassName="max-w-5xl mx-auto px-4 md:px-0"
-/>
-
+              <Clips
+                className="py-0 hidden md:block"
+                containerClassName="max-w-5xl mx-auto px-4 md:px-0"
+              />
 
               <DividerWithLogo className="mx-2 my-16" />
 

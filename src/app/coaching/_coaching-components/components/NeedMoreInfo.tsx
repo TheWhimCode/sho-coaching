@@ -13,7 +13,7 @@ type Props = {
 
 export default function NeedMoreInfo({
   label = "Need more info?",
-  accent = "#8FB8E6",
+  accent = "var(--color-lightblue)", // updated to use global lightblue (#60A5FA)
   delayMs = 2000,
   fadeMaxScroll = 100,
   className = "",
