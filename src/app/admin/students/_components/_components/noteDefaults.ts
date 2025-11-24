@@ -5,11 +5,14 @@ export const buildDefaultMd = () => `## General
 - 
 
 ## Earlygame
+
 - 
 
 ## Midgame
+
 - 
 
 ## Lategame
+
 - 
 `;

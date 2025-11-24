@@ -13,6 +13,9 @@ type Props = {
   clips?: ClipData[];
 };
 
+const HEAVY_TEXT_SHADOW =
+  "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
+
 export default function Clips({
   className = "",
   containerClassName = "max-w-7xl",
@@ -93,17 +96,21 @@ export default function Clips({
           <h2
             id="clips-heading"
             className="mt-0 text-[40px] md:text-[44px] leading-tight font-extrabold"
+            style={{ textShadow: HEAVY_TEXT_SHADOW }}
           >
             {heading}
           </h2>
-          <p className="mt-3 text-base md:text-xl text-white/70 max-w-3xl mx-auto">
+          <p
+            className="mt-3 text-base md:text-xl text-white/70 max-w-3xl mx-auto"
+            style={{ textShadow: HEAVY_TEXT_SHADOW }}
+          >
             {subheading}
           </p>
           <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
 
         {/* One GlassPanel wrapping BOTH sides */}
-        <GlassPanel className="relative p-5 md:p-8">
+        <GlassPanel className="relative p-5 md:p-8 !backdrop-blur-none !backdrop-filter-none !bg-transparent">
           {/* inner border glow */}
           <div
             aria-hidden

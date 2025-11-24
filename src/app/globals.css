@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+
 @theme inline {
   --color-bg:        #050B18;
   --color-panel:     linear-gradient(180deg, #0C162C 0%, #081126 100%);
@@ -145,4 +146,118 @@ html, body {
 .scrollbar-none {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none;    /* Firefox */
+}
+.prose-normalized :where(p) {
+  margin: 0 0 0.35rem 0;
+  line-height: 1.5;
+}
+
+.prose-normalized :where(h1, h2, h3, h4) {
+  margin: 0.75rem 0 0.35rem 0;
+  line-height: 1.25;
+}
+
+.prose-normalized :where(ul, ol) {
+  margin: 0.35rem 0 0.35rem 1.25rem;
+  line-height: 1.45;
+}
+
+.prose-normalized :where(li > p) {
+  margin: 0;
+}
+
+.prose-normalized :where(hr) {
+  margin: 0.75rem 0;
+}
+/* Shift bullets slightly right */
+.tiptap.ProseMirror ul,
+.tiptap.ProseMirror ol {
+  margin-left: 2rem !important;  /* moves bullet right */
+  padding-left: 0 !important;
+}
+
+/* Reduce gap between bullet and text */
+.tiptap.ProseMirror li {
+  padding-left: 0.25rem !important;
+}
+
+/* Blue markers */
+.tiptap.ProseMirror ul li::marker,
+.tiptap.ProseMirror ol li::marker {
+  color: #60A5FA !important;
+}
+/* Shift bullets slightly right */
+.tiptap.ProseMirror ul,
+.tiptap.ProseMirror ol {
+  margin-left: 2rem !important;  /* moves bullet right */
+  padding-left: 0 !important;
+}
+
+/* Reduce gap between bullet and text */
+.tiptap.ProseMirror li {
+  padding-left: 0.25rem !important;
+}
+
+/* Blue markers */
+.tiptap.ProseMirror ul li::marker,
+.tiptap.ProseMirror ol li::marker {
+  color: #60A5FA !important;
+}
+/* Reduce space before a numbered list when preceded by a paragraph */
+.tiptap.ProseMirror p + ol {
+  margin-top: 0.25rem !important;
+}
+
+/* Tighter spacing inside numbered lists */
+.tiptap.ProseMirror ol {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Tighter spacing between numbered list items */
+.tiptap.ProseMirror ol li {
+  margin-top: 0.15rem !important;
+  margin-bottom: 0.15rem !important;
+}
+/* Style lead sentence that precedes a numbered list */
+.tiptap.ProseMirror p + ol,
+.tiptap.ProseMirror p:has(+ ol) {
+  margin-top: 0.15rem !important;
+}
+
+.tiptap.ProseMirror p:has(+ ol) {
+  position: relative;
+  padding-left: 1rem;              /* makes room for arrow */
+}
+
+/* Triangle arrow */
+.tiptap.ProseMirror p:has(+ ol)::before {
+  content: "▶";
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  color: #60A5FA;                  /* blue-400 */
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+/* slightly more space after section headings */
+.tiptap.ProseMirror h2 {
+  margin-top: 1rem !important;
+}
+.tiptap.ProseMirror.prose-normalized p + ol {
+  margin-top: -0.25rem !important;
+}
+[data-focus-block] {
+  border: 1px solid #60A5FA;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  margin: 0.35rem 0;
+  position: relative;
+  animation: focusblock-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes focusblock-reveal {
+  0% { clip-path: inset(0 100% 100% 0); }
+  50% { clip-path: inset(0 0 100% 0); }
+  100% { clip-path: inset(0 0 0 0); }
 }

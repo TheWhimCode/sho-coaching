@@ -12,49 +12,49 @@ export type ClipData = {
 export const CLIPS: ClipData[] = [
   {
     id: "clip-1",
-    title: "Clean Engage",
+    title: "Akshan E reset",
     subtitle: "Nautilus Example",
     tag: "Mechanics",
-    videoSrc: "/videos/coaching/clips/Placeholder_Pyke.mp4",
+    videoSrc: "/videos/coaching/clips/Akshan.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
       "linear-gradient(180deg, rgba(60,120,140,.42) 0%, rgba(40,90,110,.42) 100%)",
   },
   {
     id: "clip-2",
-    title: "Perfect Spacing",
+    title: "Aggro juggling",
     subtitle: "Ezreal Kiting",
-    tag: "Positioning",
-    videoSrc: "/videos/coaching/clips/Placeholder_Pyke.mp4",
+    tag: "ADC Laning",
+    videoSrc: "/videos/coaching/clips/Kaisa.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
       "linear-gradient(180deg, rgba(55,95,150,.42) 0%, rgba(40,75,120,.42) 100%)",
   },
   {
     id: "clip-3",
-    title: "Wave Control",
+    title: "Maximizing CC",
     subtitle: "Orianna Setup",
-    tag: "Macro",
-    videoSrc: "/videos/coaching/clips/Placeholder_Pyke.mp4",
+    tag: "Teamfighting",
+    videoSrc: "/videos/coaching/clips/Leona.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
       "linear-gradient(180deg, rgba(80,70,150,.42) 0%, rgba(65,55,120,.42) 100%)",
   },
   {
     id: "clip-4",
-    title: "Flawless Combo",
+    title: "Yone R pull tech",
     subtitle: "Lee Sin Insec",
     tag: "Mechanics",
-    videoSrc: "/videos/coaching/clips/Placeholder_Pyke.mp4",
+    videoSrc: "/videos/coaching/clips/Yone.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
       "linear-gradient(180deg, rgba(60,120,140,.42) 0%, rgba(40,90,110,.42) 100%)",
   },
   {
     id: "clip-5",
-    title: "Objective Setup",
+    title: "Lanegank setup",
     subtitle: "Baron Control",
-    tag: "Macro",
+    tag: "Ganking",
     videoSrc: "/videos/coaching/clips/Placeholder_Pyke.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
@@ -62,10 +62,10 @@ export const CLIPS: ClipData[] = [
   },
   {
     id: "clip-6",
-    title: "Teamfight Clutch",
+    title: "Using CC setup",
     subtitle: "Kai'Sa Carry",
     tag: "Execution",
-    videoSrc: "/videos/coaching/clips/Placeholder_Pyke.mp4",
+    videoSrc: "/videos/coaching/clips/Nida.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
       "linear-gradient(180deg, rgba(80,70,150,.42) 0%, rgba(65,55,120,.42) 100%)",

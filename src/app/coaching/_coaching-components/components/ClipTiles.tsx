@@ -258,18 +258,23 @@ function ClipTile({
 
       {/* Video */}
       {interactive && clip && (
-        <motion.video
-          ref={videoRef}
-          src={clip.videoSrc}
-          poster={clip.posterSrc}
-          muted
-          loop
-          playsInline
-          controls={false}
-          className="absolute inset-0 w-full h-full object-cover z-20 pointer-events-none rounded-2xl"
-          animate={{ opacity: hovered ? 1 : 0 }}
-          transition={{ duration: hovered ? 0.2 : 0.3, ease: "easeInOut" }}
-        />
+<motion.video
+  ref={videoRef}
+  src={clip.videoSrc}
+  poster={clip.posterSrc}
+  muted
+  loop
+  playsInline
+  controls={false}
+  className="absolute inset-0 w-full h-full object-cover z-20 pointer-events-none rounded-2xl"
+  style={{
+    transform: "scale(1.2)",
+    transformOrigin: "center center",
+  }}
+  animate={{ opacity: hovered ? 1 : 0 }}
+  transition={{ duration: hovered ? 0.2 : 0.3, ease: "easeInOut" }}
+/>
+
       )}
 
       {/* Labels */}

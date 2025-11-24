@@ -24,7 +24,7 @@ export default function CoachingPageClient() {
     <>
       <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
 
-<div className="relative z-10 text-white overflow-x-clip">
+      <div className="relative z-10 text-white overflow-x-clip">
         <section className="relative isolate overflow-x-clip">
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="block-gap" />
@@ -76,7 +76,7 @@ export default function CoachingPageClient() {
           </div>
         </section>
 
-        <section className="relative isolate -mt-px">
+        <section className="relative -mt-px">
           <div
             aria-hidden
             className="absolute top-0 left-0 right-0 -bottom-[50%] -z-10 pointer-events-none"
@@ -100,14 +100,14 @@ export default function CoachingPageClient() {
           </div>
         </section>
 
-        {/* CLIPS WITH ORIGINAL BACKGROUND */}
-        <section id="clips-section" className="relative isolate ">
+        {/* CLIPS WITH EXTENDED BACKGROUND GRADIENT */}
+        <section id="clips-section" className="relative isolate">
           <div
             aria-hidden
-            className="absolute -top-[50%] left-0 right-0 -bottom-[30%] -z-10 pointer-events-none"
+            className="absolute -top-[120%] left-0 right-0 -bottom-[40%] -z-10 pointer-events-none"
             style={{
               background:
-                "radial-gradient(circle at 22% 40%, rgba(0,130,255,0.22), transparent 58%), radial-gradient(circle at 78% 55%, rgba(255,100,0,0.18), transparent 58%)",
+                "radial-gradient(circle at 22% 60%, rgba(0,130,255,0.22), transparent 58%), radial-gradient(circle at 78% 70%, rgba(255,100,0,0.18), transparent 58%)",
             }}
           />
 
@@ -119,18 +119,16 @@ export default function CoachingPageClient() {
                 border border-[rgba(146,180,255,.18)]
               "
             >
-              {/* ✅ block-gap added above Clips */}
               <div className="block-gap" />
 
-              <Clips
-                className="py-0 hidden md:block"
-                containerClassName="max-w-none"
-              />
+<Clips
+  className="py-0 hidden md:block"
+  containerClassName="max-w-5xl mx-auto px-4 md:px-0"
+/>
 
-              {/* ✅ Divider stays exactly as-is */}
+
               <DividerWithLogo className="mx-2 my-16" />
 
-              {/* ✅ Follow-Up moved inside, padding removed */}
               <section
                 id="followup"
                 className="relative isolate scroll-mt-24"
@@ -142,13 +140,10 @@ export default function CoachingPageClient() {
                 </div>
               </section>
 
-              {/* ✅ block-gap added below Follow-Up */}
               <div className="block-gap" />
             </GlassPanel>
           </div>
         </section>
-
-
 
         <div className="hidden md:block">
           <NeedMoreInfo label="Need more info?" accent="#8FB8E6" />

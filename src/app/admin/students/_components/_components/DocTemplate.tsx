@@ -5,11 +5,10 @@ import type { NoteSession as Session } from '@/app/admin/students/_components/Se
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import FocusBlock from '@/app/_components/extensions/FocusBlock'
 
 type Props = { session: Session; onChange?: (patch: Partial<Session>) => void }
 
-// Switched from Markdown to HTML content.
-// This default is rendered with headings + lists via StarterKit.
 const DEFAULT_HTML = `
   <h2>General</h2>
   <ul><li></li></ul>
@@ -28,13 +27,11 @@ export default function DocTemplate({ session, onChange }: Props) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  // Read-only title comes from parent
   const [title, setTitle] = useState(session.title)
   useEffect(() => {
     setTitle(session.title)
   }, [session.id, session.title])
 
-  // Prefer existing HTML content; if it's not HTML, fall back to DEFAULT_HTML
   const initialHTML = useMemo(() => {
     const raw = (session.content ?? '').trim()
     if (!raw) return DEFAULT_HTML
@@ -44,6 +41,7 @@ export default function DocTemplate({ session, onChange }: Props) {
 
   const editor = useEditor({
     extensions: [
+      FocusBlock.configure({}), // must load before StarterKit
       StarterKit.configure({
         heading: { levels: [1, 2, 3, 4] },
         bulletList: { keepMarks: true, keepAttributes: true },
@@ -51,18 +49,18 @@ export default function DocTemplate({ session, onChange }: Props) {
       }),
       Placeholder.configure({ placeholder: 'Start writing the session notes…' }),
     ],
-    content: '',
     editorProps: {
       attributes: {
         class:
-          'prose prose-invert max-w-none ' +
-          'w-full min-h-[360px] block ' +
+          'tiptap prose prose-invert prose-normalized ' +
+          'max-w-[62ch] w-full min-h-[360px] block ' +
           'rounded-xl bg-transparent text-zinc-100 ' +
-          'outline-none focus:ring-2 focus:ring-zinc-500/40 p-6 leading-2',
+          'text-[17px] leading-[1.55] ' +
+          'outline-none focus:ring-2 focus:ring-zinc-500/40 p-6',
         spellcheck: 'false',
       },
     },
-    // Keep this to avoid immediate SSR render issues
+    content: '',
     immediatelyRender: false,
     onUpdate({ editor }) {
       const html = editor.getHTML()
@@ -70,22 +68,19 @@ export default function DocTemplate({ session, onChange }: Props) {
     },
   })
 
-// Seed once on mount
-useEffect(() => {
-  if (!editor) return
-  editor.commands.setContent(initialHTML, { emitUpdate: false })
-  if (!session.content?.trim()) onChange?.({ content: initialHTML })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [editor])
+  // Seed once on mount
+  useEffect(() => {
+    if (!editor) return
+    editor.commands.setContent(initialHTML, { emitUpdate: false })
+    if (!session.content?.trim()) onChange?.({ content: initialHTML })
+  }, [editor])
 
-// Reseed when switching sessions
-useEffect(() => {
-  if (!editor) return
-  editor.commands.setContent(initialHTML, { emitUpdate: false })
-  if (!session.content?.trim()) onChange?.({ content: initialHTML })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [session.id, editor])
-
+  // Reseed when switching sessions
+  useEffect(() => {
+    if (!editor) return
+    editor.commands.setContent(initialHTML, { emitUpdate: false })
+    if (!session.content?.trim()) onChange?.({ content: initialHTML })
+  }, [session.id, editor])
 
   // Save on blur
   useEffect(() => {
@@ -95,14 +90,16 @@ useEffect(() => {
       onChange?.({ content: html })
     }
     editor.on('blur', handler)
-    return () => {
-      editor.off('blur', handler)
-    }
+    return () => editor.off('blur', handler)
   }, [editor, onChange])
+
+  // ✅ FIXED — does NOT return editor
+  useEffect(() => {
+    if (!editor) return
+  }, [editor])
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* Read-only title */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 text-white text-xl font-semibold px-2 py-1">
           {title}
