@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { FaDiscord, FaTiktok, FaYoutube } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6"; // ✅ added
 
 const NAV = [
   { label: "Coaching", href: "/coaching/vod" },
@@ -16,7 +17,7 @@ const COURSE_LINKS = [
   { label: "Top", href: "/courses/top" },
   { label: "Jungle", href: "/courses/jungle" },
   { label: "Mid", href: "/courses/mid" },
-  { label: "Top", href: "/courses/top" }, // kept duplicate as you had it
+  { label: "Top", href: "/courses/top" },
   { label: "Support", href: "/courses/support" },
 ];
 
@@ -88,7 +89,6 @@ export default function NavBar({ className = "" }: { className?: string }) {
                   )
                 )}
 
-                {/* COURSES (disabled for now) */}
                 <button
                   type="button"
                   disabled
@@ -99,7 +99,6 @@ export default function NavBar({ className = "" }: { className?: string }) {
                   Courses
                 </button>
 
-                {/* CONTACT (last) */}
                 <Link
                   href="/contact"
                   className="text-base md:text-lg text-white/80 hover:text-orange-400 transition"
@@ -135,6 +134,15 @@ export default function NavBar({ className = "" }: { className?: string }) {
                   className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                 >
                   <FaTiktok className="h-5 w-5" />
+                </Link>
+                {/* ✅ Added Twitter */}
+                <Link
+                  href="https://x.com/Shoaching"
+                  target="_blank"
+                  aria-label="X"
+                  className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
+                >
+                  <FaXTwitter className="h-5 w-5" />
                 </Link>
               </div>
 
@@ -179,13 +187,12 @@ export default function NavBar({ className = "" }: { className?: string }) {
                   )
                 )}
 
-                {/* COURSES (disabled) */}
+                {/* disabled courses */}
                 <div className="py-2 text-base text-white/50 flex items-center justify-between">
                   <span>Courses</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-white/10">Soon</span>
                 </div>
 
-                {/* CONTACT */}
                 <Link
                   href="/contact"
                   className="py-2 text-base text-white/80 hover:text-orange-400"
@@ -216,6 +223,14 @@ export default function NavBar({ className = "" }: { className?: string }) {
                     className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                   >
                     <FaDiscord className="h-5 w-5" />
+                  </Link>
+                  {/* ✅ Added Twitter mobile */}
+                  <Link
+                    href="https://x.com/Shoaching"
+                    target="_blank"
+                    className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
+                  >
+                    <FaXTwitter className="h-5 w-5" />
                   </Link>
                 </div>
               </div>

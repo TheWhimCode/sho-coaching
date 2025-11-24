@@ -26,7 +26,7 @@ export default function CoachingExamples() {
           <div className="min-w-0">
             <h2 className="text-2xl md:text-3xl font-semibold">Need an example?</h2>
             <p className="mt-2 text-white/70 text-sm md:text-base">
-              Watch some of Shos coaching sessions for free on Patreon.
+              Watch some of my coaching sessions for free on Patreon.
             </p>
             <p className="mt-2 text-xs text-white/50">
               Get a feeling for my coaching style in real sessions.

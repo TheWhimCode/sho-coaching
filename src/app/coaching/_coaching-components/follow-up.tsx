@@ -65,7 +65,7 @@ export default function FollowUp({
               <p className="text-[10px] tracking-[0.22em] text-white/50 uppercase">Add-on service</p>
               <h3 className="mt-2 text-2xl md:text-3xl font-semibold">What is a Follow-up?</h3>
               <p className="mt-3 text-white/70 text-base md:text-lg max-w-[50ch]">
-                After you’ve practiced what you learned in our session, request your follow-up. Whether it’s been 3 days or 3 months, just send me a game and I’ll record a 15-minute video with new insights, a progress review, and your next steps to keep improving.
+                After you’ve practiced what you learned in our session, request your follow-up. Whether it’s been 3 days or 3 months, just choose a game and I’ll record a 15-minute video with new insights, a progress review, and your next steps to keep improving.
               </p>
 
               {/* Moved subheader quote here */}

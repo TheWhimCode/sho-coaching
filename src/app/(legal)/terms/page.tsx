@@ -165,12 +165,12 @@ export default function TermsPage() {
               German law applies. If you are a consumer, mandatory protections of your habitual residence remain unaffected.
               The European Commission provides an Online Dispute Resolution (ODR) platform:{" "}
               <a
-                href="https://ec.europa.eu/consumers/odr/"
+                href="https://consumer-redress.ec.europa.eu/index_en"
                 target="_blank"
                 rel="noreferrer"
                 className="underline decoration-white/40 hover:decoration-white"
               >
-                https://ec.europa.eu/consumers/odr/
+                https://consumer-redress.ec.europa.eu/index_en
               </a>.
             </p>
 

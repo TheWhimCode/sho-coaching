@@ -24,7 +24,7 @@ export default function CoachingPageClient() {
     <>
       <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
 
-      <div className="relative z-10 text-white overflow-x-clip">
+<div className="relative z-10 text-white overflow-x-clip">
         <section className="relative isolate overflow-x-clip">
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="block-gap" />
@@ -101,10 +101,10 @@ export default function CoachingPageClient() {
         </section>
 
         {/* CLIPS WITH ORIGINAL BACKGROUND */}
-        <section id="clips-section" className="relative isolate">
+        <section id="clips-section" className="relative isolate ">
           <div
             aria-hidden
-            className="absolute -top-[50%] left-0 right-0 -bottom-[50%] -z-10 pointer-events-none"
+            className="absolute -top-[50%] left-0 right-0 -bottom-[30%] -z-10 pointer-events-none"
             style={{
               background:
                 "radial-gradient(circle at 22% 40%, rgba(0,130,255,0.22), transparent 58%), radial-gradient(circle at 78% 55%, rgba(255,100,0,0.18), transparent 58%)",
@@ -148,9 +148,7 @@ export default function CoachingPageClient() {
           </div>
         </section>
 
-        <section className="relative isolate">
-          <div className="relative z-10 mx-auto max-w-6xl px-6 text-center opacity-40" />
-        </section>
+
 
         <div className="hidden md:block">
           <NeedMoreInfo label="Need more info?" accent="#8FB8E6" />

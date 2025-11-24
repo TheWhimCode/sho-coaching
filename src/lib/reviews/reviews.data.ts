@@ -20,6 +20,14 @@ export const REVIEWS: Review[] = [
     rankTo: "Grandmaster",
     champion: "Akali",
   },
+    {
+    name: "Kefla",
+    text:
+      "u just got to find a duo partner",
+    rankFrom: "Emerald I",
+    rankTo: "Master",
+    champion: "Milio",
+  },
   {
     name: "Redemption",
     text:
@@ -29,12 +37,12 @@ export const REVIEWS: Review[] = [
     champion: "Lux",
   },
   {
-    name: "Ari",
+    name: "L9 Kingslayer",
     text:
-      "Exactly what I needed: targeted fixes and a calm, professional vibe. Hearing my thought process challenged in real time helped me break autopilot and play with intention again.",
-    rankFrom: "Platinum IV",
-    rankTo: "Diamond III",
-    champion: "Viktor",
+      "I did not realize how much of an impact a terrible mentality had on my games. Sho taught me macro, micro, but most importantly: how to actually try to win every day. I recommend!",
+    rankFrom: "Diamond I",
+    rankTo: "Challenger",
+    champion: "Draven",
   },
   {
     name: "EricIsOnFire",
@@ -44,14 +52,7 @@ export const REVIEWS: Review[] = [
     rankTo: "Silver IV",
     champion: "Viktor",
   },
-  {
-    name: "hug",
-    text:
-      "I did not realize how much of an impact a terrible mentality had on my games. Sho taught me macro, micro, but most importantly: how to actually try to win every day. I recommend!",
-    rankFrom: "Diamond I",
-    rankTo: "Challenger",
-    champion: "Viktor",
-  },
+
   {
     name: "BunnyBeast",
     text:
@@ -60,12 +61,5 @@ export const REVIEWS: Review[] = [
     rankTo: "Challenger",
     champion: "Aphelios",
   },
-  {
-    name: "Kefla",
-    text:
-      "u just got to find a duo partner",
-    rankFrom: "Emerald I",
-    rankTo: "Master",
-    champion: "Milio",
-  },
+
 ];
