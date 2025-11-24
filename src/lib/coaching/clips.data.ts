@@ -55,7 +55,7 @@ export const CLIPS: ClipData[] = [
     title: "Lanegank setup",
     subtitle: "Baron Control",
     tag: "Ganking",
-    videoSrc: "/videos/coaching/clips/Placeholder_Pyke.mp4",
+    videoSrc: "/videos/coaching/clips/Nida.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
       "linear-gradient(180deg, rgba(55,95,150,.42) 0%, rgba(40,75,120,.42) 100%)",
@@ -65,7 +65,7 @@ export const CLIPS: ClipData[] = [
     title: "Using CC setup",
     subtitle: "Kai'Sa Carry",
     tag: "Execution",
-    videoSrc: "/videos/coaching/clips/Nida.mp4",
+    videoSrc: "/videos/coaching/clips/Ahri.mp4",
     posterSrc: "/clips/posters/akali.jpg",
     gradient:
       "linear-gradient(180deg, rgba(80,70,150,.42) 0%, rgba(65,55,120,.42) 100%)",

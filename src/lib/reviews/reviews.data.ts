@@ -23,7 +23,7 @@ export const REVIEWS: Review[] = [
     {
     name: "Kefla",
     text:
-      "u just got to find a duo partner",
+      "After our session, I really started to focus on my macro and what my role is supposed to do as an enchanter support. After practising, the game started to play itself. Like a checklist.",
     rankFrom: "Emerald I",
     rankTo: "Master",
     champion: "Milio",
@@ -37,7 +37,7 @@ export const REVIEWS: Review[] = [
     champion: "Lux",
   },
   {
-    name: "L9 Kingslayer",
+    name: "L9 Toby",
     text:
       "I did not realize how much of an impact a terrible mentality had on my games. Sho taught me macro, micro, but most importantly: how to actually try to win every day. I recommend!",
     rankFrom: "Diamond I",

@@ -30,11 +30,11 @@ export default function ClipTiles({
   });
 
   // timings
-  const START_DELAY_MS = 4000;
+  const START_DELAY_MS = 2000;
   const FADE_IN_MS = 600;
-  const HOLD_MS = 4000;
+  const HOLD_MS = 2500;
   const FADE_OUT_MS = 1200;
-  const GAP_MS = 2000;
+  const GAP_MS = 1000;
 
   const sequence = useMemo(() => {
     const centerBottom = (rows - 1) * cols + Math.floor(cols / 2);
