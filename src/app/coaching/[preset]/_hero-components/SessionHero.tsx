@@ -33,7 +33,7 @@ type Props = {
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const BG_FADE_DURATION = 1;
+const BG_FADE_DURATION = 3;
 const CONTENT_BASE_DELAY = 0.8;
 
 const TITLE_DELAY = CONTENT_BASE_DELAY + 0.15;

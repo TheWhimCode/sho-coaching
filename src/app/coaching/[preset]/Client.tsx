@@ -132,7 +132,8 @@ export default function Client({ preset }: { preset: string }) {
 
   return (
     <LayoutGroup id="booking-flow">
-      <main className="relative min-h-[100svh] text-white overflow-x-hidden">
+      <main className="relative min-h-[100svh] text-white overflow-x-hidden bg-[#000000]">
+        
         <SessionHero
           presetOverride={activePreset}
           title={init.title}
