@@ -41,7 +41,7 @@ export default function DocTemplate({ session, onChange }: Props) {
 
   const editor = useEditor({
     extensions: [
-      FocusBlock.configure({}), // must load before StarterKit
+      FocusBlock.configure({}),
       StarterKit.configure({
         heading: { levels: [1, 2, 3, 4] },
         bulletList: { keepMarks: true, keepAttributes: true },
@@ -83,20 +83,17 @@ export default function DocTemplate({ session, onChange }: Props) {
   }, [session.id, editor])
 
   // Save on blur
-  useEffect(() => {
-    if (!editor) return
-    const handler = () => {
-      const html = editor.getHTML()
-      onChange?.({ content: html })
-    }
-    editor.on('blur', handler)
-    return () => editor.off('blur', handler)
-  }, [editor, onChange])
+// Save on blur
+useEffect((): void | (() => void) => {
+  if (!editor) return
+  const handler = () => {
+    const html = editor.getHTML()
+    onChange?.({ content: html })
+  }
+  editor.on('blur', handler)
+  return () => editor.off('blur', handler)
+}, [editor, onChange])
 
-  // ✅ FIXED — does NOT return editor
-  useEffect(() => {
-    if (!editor) return
-  }, [editor])
 
   return (
     <div className="flex flex-col gap-4 h-full">
