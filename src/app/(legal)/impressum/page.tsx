@@ -34,15 +34,16 @@ export default function ImpressumPage() {
             </p>
 
             <p>
-              <span className="font-medium">[Your Full Name]</span> <br />
-              [Your Business / Channel Name, if applicable] <br />
-              [Your rented business address / virtual office address] <br />
+              <span className="font-medium">Tim Bäumler </span> 
+              Sho Coaching <br />
+              Emsdettener Straße 18<br />
+              48268 Greven<br />
               Germany
             </p>
 
             <p>
               <span className="font-medium">Contact</span> <br />
-              E-Mail: [your@email.com] <br />
+              E-Mail: im.sho@yahoo.com <br />
               Contact form: [link to contact page] (optional)
             </p>
 
@@ -60,12 +61,12 @@ export default function ImpressumPage() {
               Online dispute resolution in accordance with Art. 14(1) ODR-VO: <br />
               The European Commission provides a platform for online dispute resolution (OS):{" "}
               <a
-                href="https://ec.europa.eu/consumers/odr/"
+                href="https://consumer-redress.ec.europa.eu/index_en"
                 target="_blank"
                 rel="noreferrer"
                 className="underline hover:text-white"
               >
-                https://ec.europa.eu/consumers/odr/
+                https://consumer-redress.ec.europa.eu/index_en
               </a>
             </p>
           </div>

@@ -32,6 +32,7 @@ const ALIAS: Record<string, string> = {
   "ksante": 'KSante',
   "leesin": 'LeeSin',
   "aurelionsol": 'AurelionSol',
+  "masteryi": 'MasterYi',
 
 };
 

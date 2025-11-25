@@ -47,8 +47,9 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">1. Controller</h2>
             <p>
               The controller responsible for processing your personal data is:<br />
-              <span className="font-medium">[Your Full Name]</span><br />
-              [Your Address]<br />
+              <span className="font-medium">Tim Bäumler</span><br />
+              Emsdettener Straße 18<br />
+              48268 Greven<br /><br />
               E-mail: <span className="font-medium font-semibold">im.sho@yahoo.com</span>
             </p>
 

@@ -46,7 +46,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold">1. Scope &amp; Parties</h2>
             <p>
               These Terms &amp; Conditions apply to all contracts for coaching services offered on this website between{" "}
-              <span className="font-medium">[Your Full Name] / Sho Coaching</span> (“I”, “me”) and you as the customer.
+              <span className="font-medium">Tim Bäumler / Sho Coaching</span> (“I”, “me”) and you as the customer.
               Any deviating terms require my written agreement.
             </p>
 
@@ -176,8 +176,9 @@ export default function TermsPage() {
 
             <h2 className="text-xl font-semibold">15. Contact</h2>
             <p>
-              Sho Coaching – [Your Full Name]<br />
-              [Your Address] • im.sho@yahoo.com
+              Sho Coaching – Tim Bäumler<br />
+              Emsdettener Straße 18
+              48268 Greven • im.sho@yahoo.com
             </p>
           </div>
 
