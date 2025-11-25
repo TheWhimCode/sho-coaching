@@ -30,7 +30,40 @@ type ClimbSummaryResp = {
 const climbSummaryFetcher = (url: string) =>
   fetch(url).then((r) => r.json() as Promise<ClimbSummaryResp>);
 
-function LPBadge({ studentId }: { studentId: string }) {
+// ------------------------------------------
+// LP badge that can show:
+//   - delta passed from Hub (7-day delta)
+//   - OR climb-summary fallback
+// ------------------------------------------
+
+function LPBadge({
+  studentId,
+  overrideDelta,
+}: {
+  studentId: string;
+  overrideDelta?: number;
+}) {
+  // If the Hub passes a 7-day delta, use it immediately
+  if (typeof overrideDelta === "number") {
+    const delta = overrideDelta;
+    const color =
+      delta > 0
+        ? "text-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30"
+        : delta < 0
+        ? "text-red-500 bg-red-500/10 ring-1 ring-red-500/30"
+        : "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30";
+
+    return (
+      <span
+        className={`ml-auto shrink-0 text-xs px-2 py-0.5 rounded-md font-medium tabular-nums ${color}`}
+        title="LP gained in the last 7 days"
+      >
+        {delta > 0 ? `+${delta}` : delta} LP
+      </span>
+    );
+  }
+
+  // Otherwise, fallback to climb-summary (LP since first session)
   const { data } = useSWR<ClimbSummaryResp>(
     `/api/admin/students/climb-summary?studentId=${encodeURIComponent(
       studentId
@@ -43,13 +76,13 @@ function LPBadge({ studentId }: { studentId: string }) {
 
   const badgeColor = !hasData
     ? "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30"
-    : delta > 0
+    : delta! > 0
     ? "text-blue-500 bg-blue-500/10 ring-1 ring-blue-500/30"
-    : delta < 0
+    : delta! < 0
     ? "text-red-500 bg-red-500/10 ring-1 ring-red-500/30"
     : "text-zinc-400 bg-zinc-700/20 ring-1 ring-zinc-600/30";
 
-  const formatted = !hasData ? "—" : delta > 0 ? `+${delta}` : `${delta}`;
+  const formatted = !hasData ? "—" : delta! > 0 ? `+${delta}` : `${delta}`;
 
   return (
     <span
@@ -61,7 +94,17 @@ function LPBadge({ studentId }: { studentId: string }) {
   );
 }
 
-export default function StudentCard({ student }: { student: Student }) {
+// ------------------------------------------
+// Main Component
+// ------------------------------------------
+
+export default function StudentCard({
+  student,
+  lpDelta,
+}: {
+  student: Student;
+  lpDelta?: number; // new optional prop
+}) {
   return (
     <Link
       href={`/admin/students/${student.id}`}
@@ -71,7 +114,7 @@ export default function StudentCard({ student }: { student: Student }) {
         <div className="text-lg font-semibold tracking-tight">
           {student.name}
         </div>
-        <LPBadge studentId={student.id} />
+        <LPBadge studentId={student.id} overrideDelta={lpDelta} />
       </div>
 
       <div className="mt-1 text-xs text-zinc-300 flex flex-wrap gap-x-3 gap-y-1">

@@ -21,20 +21,35 @@ export async function GET(req: Request) {
     ...(range === "upcoming" ? { scheduledStart: { gte: now } } : {}),
   };
 
-  const rows = await prisma.session.findMany({
-    where,
-    select: {
-      id: true,
-      liveMinutes: true,
-      discordId: true,
-      sessionType: true,
-      followups: true,
-      notes: true,
-      scheduledStart: true,
+const rows = await prisma.session.findMany({
+  where,
+  select: {
+    id: true,
+    liveMinutes: true,
+    discordId: true,
+    sessionType: true,
+    followups: true,
+    liveBlocks: true,
+    notes: true,
+    scheduledStart: true,
+
+    studentId: true,                // ⬅ NEW
+    student: {                      // ⬅ NEW
+      select: {
+        name: true,
+        discordName: true,
+        riotTag: true,
+        server: true,
+      },
     },
-    orderBy: [{ scheduledStart: "asc" }, { createdAt: "desc" }],
-    take: limit,
-  });
+  },
+  orderBy: [
+    { scheduledStart: "asc" },
+    { createdAt: "desc" },
+  ],
+  take: limit,
+});
+
 
   return NextResponse.json(rows);
 }

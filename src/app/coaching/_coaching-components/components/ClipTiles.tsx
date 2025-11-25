@@ -103,7 +103,10 @@ export default function ClipTiles({
       ref={containerRef}
       className={`relative w-full aspect-video overflow-visible ${className}`}
       style={
-        { ["--gap" as any]: gap, ["--bleed" as any]: bleed } as React.CSSProperties
+        {
+          ["--gap" as any]: gap,
+          ["--bleed" as any]: bleed,
+        } as React.CSSProperties
       }
     >
       <div className="absolute inset-0 z-10">
@@ -178,21 +181,19 @@ function ClipTile({
   const l = interactive && hovered ? "0%" : left;
   const t = interactive && hovered ? "0%" : top;
 
-  // Light blue gradient (was purple)
   const blueBorder = `
     linear-gradient(
       135deg,
       rgba(96,165,250,1) 0%,
-      rgba(96,165,250,0.4) 30%,
+      rgba(96,165,250,0.35) 30%,
       rgba(96,165,250,0.1) 65%,
       transparent 95%
     )
   `;
 
-  // Full-tile glow overlay in matching light blue
   const glowStyle: React.CSSProperties = {
     background:
-      "linear-gradient(135deg, rgba(96,165,250,0.75), rgba(96,165,250,0.55))",
+      "linear-gradient(135deg, rgba(96,165,250,0.65), rgba(96,165,250,0.45))",
   };
 
   const overlayTarget =
@@ -207,7 +208,7 @@ function ClipTile({
   return (
     <motion.button
       type="button"
-      className="group absolute overflow-hidden rounded-2xl focus:outline-none"
+      className="group absolute overflow-hidden rounded-lg md:rounded-2xl focus:outline-none"
       animate={{ width, height, left: l, top: t }}
       transition={{ duration: 0.35, ease: "easeInOut" }}
       onHoverStart={onHoverStart}
@@ -224,28 +225,24 @@ function ClipTile({
         pointerEvents: interactive ? "auto" : "none",
         background: "transparent",
       }}
-      aria-hidden={!interactive}
     >
-      {/* Full-tile glow overlay (matches border color) */}
+      {/* Glow */}
       <motion.div
-        className="absolute inset-0 rounded-2xl z-[25] mix-blend-screen pointer-events-none"
+        className="absolute inset-0 rounded-lg md:rounded-2xl z-[25] mix-blend-screen pointer-events-none"
         style={glowStyle}
         initial={{ opacity: 0 }}
         animate={{ opacity: overlayTarget }}
-        transition={{
-          duration: overlayTarget > 0 ? fadeInMs / 1000 : fadeOutMs / 1000,
-          ease: "easeInOut",
-        }}
       />
 
-      {/* New 4px light blue border */}
+      {/* Border */}
       <div
-        className="absolute inset-0 rounded-2xl"
+        className="
+          absolute inset-0 rounded-lg md:rounded-2xl
+          [--border-size:1.5px]
+          md:[--border-size:2px]
+        "
         style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "1rem",
-          padding: "2px",
+          padding: "var(--border-size)",
           background: blueBorder,
           WebkitMask:
             "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
@@ -258,39 +255,49 @@ function ClipTile({
 
       {/* Video */}
       {interactive && clip && (
-<motion.video
-  ref={videoRef}
-  src={clip.videoSrc}
-  poster={clip.posterSrc}
-  muted
-  loop
-  playsInline
-  controls={false}
-  className="absolute inset-0 w-full h-full object-cover z-20 pointer-events-none rounded-2xl"
-  style={{
-    transform: "scale(1.2)",
-    transformOrigin: "center center",
-  }}
-  animate={{ opacity: hovered ? 1 : 0 }}
-  transition={{ duration: hovered ? 0.2 : 0.3, ease: "easeInOut" }}
-/>
-
+        <motion.video
+          ref={videoRef}
+          src={clip.videoSrc}
+          poster={clip.posterSrc}
+          muted
+          loop
+          playsInline
+          controls={false}
+          className="absolute inset-0 w-full h-full object-cover z-20 pointer-events-none rounded-lg md:rounded-2xl"
+          style={{
+            transform: "scale(1.22)",
+          }}
+          animate={{ opacity: hovered ? 1 : 0 }}
+        />
       )}
+
+      {/* Dark blue tint */}
+      <div
+        className="absolute inset-0 rounded-lg md:rounded-2xl pointer-events-none"
+        style={{
+          background: "rgba(10, 30, 60, 0.10)",
+          zIndex: 15,
+        }}
+      />
 
       {/* Labels */}
       {interactive && clip && (
         <motion.div
           className="absolute inset-0 z-30 grid place-items-center text-center pointer-events-none"
           animate={{ opacity: hovered ? 0 : 1 }}
-          transition={{ duration: hovered ? 0.2 : 0.3, ease: "easeInOut" }}
         >
-          <div className="px-3">
-            <div className="text-[11px] tracking-[0.18em] text-white/70 uppercase mb-1">
+          <div className="px-2">
+
+            {/* SMALLER GREY HEADER (mobile only) */}
+            <div className="text-[6px] md:text-[11px] tracking-[0.18em] text-white/70 uppercase mb-1">
               {clip.tag ?? "Example"}
             </div>
-            <div className="text-base md:text-[17px] font-semibold text-white/90">
+
+            {/* MAIN TITLE — smaller + not bold on mobile */}
+            <div className="text-[12px] md:text-[17px] font-normal md:font-semibold text-white/90 leading-tight">
               {clip.title}
             </div>
+
           </div>
         </motion.div>
       )}

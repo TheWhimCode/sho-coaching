@@ -27,7 +27,7 @@ type Item = {
 
 const DEFAULT_ITEMS: Item[] = [
   { id: "benefit-1", title: "Understand macro", body: "Think like a pro, use the map to your advantage.", icon: <LayoutDashboard className="h-6 w-6" /> },
-  { id: "benefit-2", title: "Turn knowledge into wins", body: "Learn to apply your gameknowledge to close out more games.", icon: <Trophy className="h-6 w-6" /> },
+  { id: "benefit-2", title: "Turn knowledge into wins", body: "Learn to apply your knowledge to close out more games.", icon: <Trophy className="h-6 w-6" /> },
   { id: "benefit-3", title: "Profile review", body: "See how your profile stacks up against the pros.", icon: <BarChart3 className="h-6 w-6" /> },
   { id: "benefit-4", title: "No sugar-coating", body: "Direct, honest advice. Enough input for your next 100+ games.", icon: <AlertCircle className="h-6 w-6" /> },
   { id: "benefit-5", title: "Mechanics upgrade", body: "Get instant feedback on mechanics and how to sharpen them.", icon: <Crosshair className="h-6 w-6" /> },
@@ -47,53 +47,112 @@ export default function Overview({
   items?: Item[];
   className?: string;
 }) {
+  // Hide these IDs on mobile
+  const MOBILE_HIDDEN_IDS = ["benefit-3", "benefit-6"];
+
+  const mobileItems = items.filter((i) => !MOBILE_HIDDEN_IDS.includes(i.id));
+
   return (
     <section
       className={`w-full ${className}`}
       style={{
         ["--color-divider" as any]: "rgb(255 255 255 / .10)",
-        ["--color-orange-soft" as any]:
-          "color-mix(in srgb, var(--color-orange) 78%, white 22%)",
+        ["--color-orange-soft" as any]: "color-mix(in srgb, var(--color-orange) 78%, white 22%)",
       }}
     >
       <div className="block-gap" />
 
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 md:mb-8">
+
+        {/* HEADER */}
+        <div className="mb-4 md:mb-8"> {/* reduced from mb-6 */}
           <p className="text-[11px] tracking-[0.22em] text-fg-muted uppercase">{eyebrow}</p>
-          <h2 className="mt-2 text-3xl md:text-[44px] leading-tight font-extrabold">{heading}</h2>
+          <h2
+            className="mt-2 text-3xl md:text-[44px] leading-tight font-extrabold"
+            style={{
+              textShadow:
+                "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)",
+            }}
+          >
+            {heading}
+          </h2>
         </div>
 
-        <BluePanel>
-          <div className="relative grid grid-cols-1 md:grid-cols-3 md:grid-rows-2">
-            {items.map((item, i) => {
-              const isFirstItem = i === 0;
-              const isFirstRow = i < 3;
-              const isFirstCol = i % 3 === 0;
-              return (
-                <Cell
-                  key={item.id}
-                  item={item}
-                  isFirstItem={isFirstItem}
-                  isFirstRow={isFirstRow}
-                  isFirstCol={isFirstCol}
-                />
-              );
-            })}
-          </div>
-        </BluePanel>
+        {/* MOBILE FULL BLEED LIST */}
+        <div className="md:hidden">
+
+          {/* Divider at top (as requested) */}
+          <div className="h-px w-full bg-white/10" />
+
+          {mobileItems.map((item, index) => (
+            <div key={item.id}>
+              <MobileRow item={item} />
+
+              {/* Divider after each row except last visible */}
+              {index < mobileItems.length - 1 && (
+                <div className="h-px w-full bg-white/10" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* DESKTOP (unchanged) */}
+        <div className="hidden md:block">
+          <BluePanel>
+            <div className="relative grid grid-cols-3 grid-rows-2">
+              {items.map((item, i) => {
+                const isFirstItem = i === 0;
+                const isFirstRow = i < 3;
+                const isFirstCol = i % 3 === 0;
+                return (
+                  <Cell
+                    key={item.id}
+                    item={item}
+                    isFirstItem={isFirstItem}
+                    isFirstRow={isFirstRow}
+                    isFirstCol={isFirstCol}
+                  />
+                );
+              })}
+            </div>
+          </BluePanel>
+        </div>
 
         <div className="block-gap" />
 
         <div>
-          <div className="p-6">
+          <div className="p-0 md:p-6">
             <Experience />
           </div>
         </div>
+
       </div>
     </section>
   );
 }
+
+/* --------------------------- */
+/* MOBILE ROW (full bleed)     */
+/* --------------------------- */
+
+function MobileRow({ item }: { item: Item }) {
+  return (
+    <div className="flex gap-4 py-4">
+      <div className="shrink-0 opacity-90 text-white pt-[2px]">
+        {item.icon}
+      </div>
+
+      <div className="flex-1">
+        <h3 className="text-base font-semibold">{item.title}</h3>
+        <p className="mt-1 text-sm text-fg-muted leading-snug">{item.body}</p>
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------- */
+/* DESKTOP (unchanged)         */
+/* --------------------------- */
 
 function MotionIcon({ hovered, children }: { hovered: boolean; children: React.ReactNode }) {
   return (
@@ -102,7 +161,11 @@ function MotionIcon({ hovered, children }: { hovered: boolean; children: React.R
       animate={{ scale: hovered ? 1.08 : 1, y: hovered ? -2 : 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
       className="inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-[rgba(146,180,255,.18)]"
-      style={{ background: "rgba(11,18,32,0.6)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+      style={{
+        background: "rgba(11,18,32,0.6)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+      }}
     >
       <motion.div animate={{ rotate: hovered ? 0.0001 : 0 }} transition={{ duration: 0.2 }} className="opacity-90">
         {children}
@@ -123,14 +186,8 @@ function Cell({
   isFirstCol: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const [preview, setPreview] = useState<{ show: boolean; x: number; y: number; w: number }>({
-    show: false,
-    x: 0,
-    y: 0,
-    w: 560,
-  });
+  const [preview, setPreview] = useState({ show: false, x: 0, y: 0, w: 560 });
   const highlightRef = useRef<HTMLSpanElement | null>(null);
-  const FADE_MS = 1000;
 
   const initParticles = useCallback(async (engine: Engine) => {
     await loadSlim(engine);
@@ -148,11 +205,9 @@ function Cell({
       color: { value: "#FFFFFF" },
       opacity: {
         value: { min: 0.03, max: 0.22 },
-        animation: { enable: true, speed: 0.5, minimumValue: 0.03, startValue: "random", destroy: "none", sync: false },
+        animation: { enable: true, speed: 0.5, minimumValue: 0.03 },
       },
-      shadow: { enable: false },
     },
-    interactivity: { events: { resize: true } },
   };
 
   const borders = [
@@ -175,29 +230,28 @@ function Cell({
       if (!isNotes) return <React.Fragment key={idx}>{part}</React.Fragment>;
 
       const onEnter = () => {
+        if (window.innerWidth < 768) return;
         const el = highlightRef.current;
-        if (!el || typeof window === "undefined") return;
-        const rect = el.getBoundingClientRect();
+        if (!el) return;
 
+        const rect = el.getBoundingClientRect();
         const w = Math.min(640, Math.max(480, Math.floor(window.innerWidth * 0.4)));
         let x = rect.right + 20;
         if (x + w > window.innerWidth - 20) x = rect.left - 20 - w;
 
         const estimatedH = Math.floor(w * 0.66);
-        let y = Math.round((window.innerHeight - estimatedH) / 2);
-        y = Math.max(20, Math.min(y, window.innerHeight - estimatedH - 20));
+        let y = Math.max(20, Math.round((window.innerHeight - estimatedH) / 2));
+        y = Math.min(y, window.innerHeight - estimatedH - 20);
 
         setPreview({ show: true, x, y, w });
       };
-
-      const onLeave = () => setPreview((p) => ({ ...p, show: false }));
 
       return (
         <span
           key={idx}
           ref={highlightRef}
           onMouseEnter={onEnter}
-          onMouseLeave={onLeave}
+          onMouseLeave={() => setPreview((p) => ({ ...p, show: false }))}
           className="relative underline decoration-current underline-offset-2"
           style={{ color: "var(--color-orange-soft)" }}
         >
@@ -213,19 +267,28 @@ function Cell({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className={`relative p-6 md:p-7 group transition-colors duration-300 ${borders} flex flex-col justify-between`}
-        style={{ minHeight: 260, background: "var(--color-panel)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+        style={{
+          minHeight: 260,
+          background: "var(--color-panel)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+        }}
       >
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: hovered ? 1 : 0 }}
-          transition={{ duration: FADE_MS / 2000, ease: "easeInOut" }}
+          transition={{ duration: 0.5 }}
           className="absolute inset-0 pointer-events-none z-0"
-          style={{ background: "linear-gradient(180deg, rgba(139,92,246,0.18), rgba(32,14,64,0.38))" }}
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(139,92,246,0.18), rgba(32,14,64,0.38))",
+          }}
         />
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: hovered ? 1 : 0 }}
-          transition={{ duration: FADE_MS / 2000, ease: "easeInOut" }}
+          transition={{ duration: 0.5 }}
           className="absolute inset-0 pointer-events-none z-0"
         >
           <Particles id={`particles-${item.id}`} init={initParticles} options={particleOptions} className="w-full h-full" />
@@ -241,6 +304,7 @@ function Cell({
 
       {typeof window !== "undefined" &&
         preview.show &&
+        window.innerWidth >= 768 &&
         createPortal(
           <motion.div
             initial={{ opacity: 0, scale: 0.98, y: 6 }}
@@ -256,16 +320,15 @@ function Cell({
               background: "rgba(8,10,16,0.9)",
               backdropFilter: "blur(6px)",
               WebkitBackdropFilter: "blur(6px)",
-              pointerEvents: "none",
               borderRadius: "1rem",
-              boxShadow: "0 12px 48px rgba(0,0,0,.5)",
               overflow: "hidden",
+              pointerEvents: "none",
             }}
           >
             <img
               src={NOTES_IMG_SRC}
               alt="Example session notes"
-              style={{ display: "block", width: "100%", height: "auto", borderRadius: "1rem" }}
+              style={{ width: "100%", height: "auto", borderRadius: "1rem" }}
             />
           </motion.div>,
           document.body

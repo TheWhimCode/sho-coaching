@@ -20,10 +20,15 @@ export default function ReviewsCard({
 }: Props) {
   return (
     <div
-      className={`flex h-full flex-col items-center justify-center text-center ${className}`}
+      className={`
+        flex h-full flex-col items-center justify-center text-center 
+        ${className}
+        scale-[0.85] md:scale-100      /* smaller on mobile */
+        -translate-y-1 md:translate-y-0 /* slight upward correction for scale */
+      `}
       style={{ minHeight }}
     >
-      <div className="flex items-center gap-2 font-extrabold tracking-tight text-white text-3xl md:text-4xl">
+      <div className="flex items-center gap-2 font-extrabold tracking-tight text-white text-2xl md:text-4xl">
         {rating.toFixed(1)} / {scaleMax}
         <span className="relative inline-flex translate-y-[2px] translate-x-[2px]">
           <span
@@ -44,7 +49,7 @@ export default function ReviewsCard({
         </span>
       </div>
 
-      <div className="mt-1 text-sm md:text-base text-fg-muted/85">
+      <div className="mt-1 text-xs md:text-base text-fg-muted/85">
         {subtitle}
       </div>
     </div>

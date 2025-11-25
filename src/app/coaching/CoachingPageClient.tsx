@@ -8,6 +8,7 @@ import Overview from "@/app/coaching/_coaching-components/overview";
 import PresetCards from "@/app/coaching/_coaching-components/cards";
 import NeedMoreInfo from "@/app/coaching/_coaching-components/components/NeedMoreInfo";
 import Clips from "@/app/coaching/_coaching-components/clips";
+import ClipsMobile from "@/app/coaching/_coaching-components/clipsmobile";
 import Tagline from "@/app/coaching/_coaching-components/tagline";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
@@ -18,7 +19,6 @@ export default function CoachingPageClient() {
   const lenisRef = React.useRef<Lenis | null>(null);
 
   React.useEffect(() => {
-    // store lenis instance created in SmoothScroll
     document.addEventListener("lenis", (e: any) => {
       lenisRef.current = e.detail;
     });
@@ -40,7 +40,6 @@ export default function CoachingPageClient() {
 
   return (
     <>
-      {/* ✅ Smooth inertial scrolling enabled */}
       <SmoothScroll />
 
       <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
@@ -107,7 +106,7 @@ export default function CoachingPageClient() {
             }}
           />
           <div className="relative z-10 mx-auto max-w-6xl px-6 pb-0">
-            <GlassPanel className="!ring-0 border border-t-0 border-[rgba(146,180,255,.18)] !rounded-t-none p-0 md:p-10">
+            <GlassPanel className="!ring-0 border border-t-0 border-[rgba(146,180,255,.18)] !rounded-t-none p-4 md:p-10">
               <div className="max-w-6xl mx-auto">
                 <Overview />
               </div>
@@ -141,10 +140,21 @@ export default function CoachingPageClient() {
             >
               <div className="block-gap" />
 
-              <Clips
-                className="py-0 hidden md:block"
-                containerClassName="max-w-5xl mx-auto px-4 md:px-0"
-              />
+              {/* MOBILE VERSION */}
+              <div className="block md:hidden">
+                <ClipsMobile
+                  className="py-0"
+                  containerClassName="max-w-5xl mx-auto px-4"
+                />
+              </div>
+
+              {/* DESKTOP VERSION */}
+              <div className="hidden md:block">
+                <Clips
+                  className="py-0"
+                  containerClassName="max-w-5xl mx-auto px-4 md:px-0"
+                />
+              </div>
 
               <DividerWithLogo className="mx-2 my-16" />
 

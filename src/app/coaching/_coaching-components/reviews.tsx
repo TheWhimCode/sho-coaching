@@ -128,8 +128,8 @@ const RankChip = ({ from, to }: { from?: string; to?: string }) => {
   const pf = parseRank(from);
   const pt = parseRank(to);
   return (
-    <div className="absolute right-2.5 top-2.5 hidden sm:block">
-      <div className="flex items-center gap-1 text-[11px] leading-4">
+    <div className="absolute right-2.5 top-1 lg:top-2.5">
+      <div className="flex items-center gap-[2px] md:gap-1 text-[11px] leading-4">
         <Emblem tier={pf.tier} div={pf.div} />
         <CaretRight size={18} weight="bold" className="opacity-85" aria-hidden />
         <Emblem tier={pt.tier} div={pt.div} />
@@ -148,17 +148,16 @@ const ReviewItem = ({ r }: { r: Review }) => {
     (r as any)?.avatar ?? "/images/coaching/reviews/placeholder-avatar.png";
 
   return (
-    <div className="relative w=[240px] sm:w-[280px] shrink-0 h-[190px] rounded-md px-4 py-4">
+    <div className="relative w-[240px] sm:w-[280px] shrink-0 h-[190px] rounded-md px-2 md:px-4 py-2 md:py-4">
       <RankChip from={r.rankFrom} to={r.rankTo} />
 
-      {/* header row: name + avatar (vertically centered); emblem chip is separate (absolute) */}
-      <div className="flex items-center gap-2 pb-1.5 mb-2.5 border-b border-white/10 shrink-0">
-        <span className="font-semibold text-white/90 truncate text-[16px] sm:text-[17px]">
+      {/* header row */}
+      <div className="flex items-center gap-1 lg:gap-2 pb-1.5 mb-2.5 border-b border-white/10 shrink-0">
+        <span className="font-semibold text-white/90 truncate md:text-[16px] sm:text-[17px]">
           {r.name}
         </span>
 
-        {/* Avatar container with overflow-hidden + slight zoom on the image */}
-        <span className="ml-1 inline-block h-7 w-7 rounded-full overflow-hidden ring-1 ring-white/15 align-middle">
+        <span className="ml-0 inline-block h-7 w-7 rounded-full overflow-hidden ring-1 ring-white/15 align-middle">
           <Image
             src={avatarSrc}
             alt={`${r.name} avatar`}
@@ -177,7 +176,7 @@ const ReviewItem = ({ r }: { r: Review }) => {
         ) : null}
       </div>
 
-      <p className="text-white/80 text-[14px] leading-[22px] overflow-hidden">
+      <p className="text-white/80 text-[14px] md:text-[14px] leading-[22px] overflow-hidden">
         {r.text}
       </p>
     </div>

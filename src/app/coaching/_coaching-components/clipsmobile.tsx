@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { CLIPS, ClipData } from "@/lib/coaching/clips.data";
 import ClipTiles from "@/app/coaching/_coaching-components/components/ClipTiles";
-import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 type Props = {
   className?: string;
@@ -16,9 +15,9 @@ type Props = {
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
 
-export default function Clips({
+export default function ClipsMobile({
   className = "",
-  containerClassName = "max-w-7xl",
+  containerClassName = "px-4",
   heading = "See what good looks like",
   subheading = "Understand what the game looks like when played right, not just what you're doing wrong.",
   clips,
@@ -34,6 +33,7 @@ export default function Clips({
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
+  // Same blink animation logic
   useEffect(() => {
     const wrap = wrapRef.current;
     if (!wrap) return;
@@ -69,11 +69,7 @@ export default function Clips({
         done = true;
         io.disconnect();
       },
-      {
-        root: null,
-        rootMargin: "-50% 0px -50% 0px",
-        threshold: 0,
-      }
+      { root: null, rootMargin: "-50% 0px -50% 0px", threshold: 0 }
     );
 
     io.observe(wrap);
@@ -83,80 +79,61 @@ export default function Clips({
   return (
     <section
       className={`w-full ${className}`}
-      aria-labelledby="clips-heading"
+      aria-labelledby="clips-heading-mobile"
       ref={wrapRef}
     >
       <div className={`mx-auto w-full ${containerClassName}`}>
         {/* Header */}
-        <div className="text-center mb-8 md:mb-12">
+        <div className="text-center mb-8">
           <h2
-            id="clips-heading"
-            className="mt-0 text-[40px] md:text-[44px] leading-tight font-extrabold"
+            id="clips-heading-mobile"
+            className="mt-0 text-[34px] leading-tight font-extrabold"
             style={{ textShadow: HEAVY_TEXT_SHADOW }}
           >
             {heading}
           </h2>
+
           <p
-            className="mt-3 text-base md:text-xl text-white/70 max-w-3xl mx-auto"
+            className="mt-3 text-base text-white/70"
             style={{ textShadow: HEAVY_TEXT_SHADOW }}
           >
             {subheading}
           </p>
+
           <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
 
-        {/* FULL DESKTOP GLASSPANEl (unchanged) */}
-        <GlassPanel className="relative p-5 md:p-8">
-          {/* inner glow */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-2xl"
-            style={{
-              boxShadow:
-                "inset 0 1px 0 rgba(255,255,255,.05), inset 0 0 20px rgba(0,0,0,.25)",
-            }}
-          />
+        {/* Tiles full width */}
+        <ClipTiles
+          data={data}
+          cols={3}
+          rows={2}
+          gap="6px"
+          className="rounded-xl overflow-hidden clip-tiles"
+        />
 
-          {/* desktop divider */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-[58.333333%] w-px bg-white/10 hidden md:block"
-          />
+        {/* Text below */}
+        <div className="mt-10">
+          <p className="text-[10px] tracking-[0.22em] text-white/55 uppercase">
+            Teaching tool
+          </p>
 
-          {/* content grid */}
-          <div className="relative grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-start">
-            {/* LEFT: tiles */}
-            <ClipTiles
-              data={data}
-              cols={3}
-              rows={2}
-              gap="12px"
-              className="md:col-span-7 rounded-xl overflow-hidden clip-tiles"
-            />
+          <h3 className="mt-2 text-2xl font-semibold">Library of clips</h3>
 
-            {/* RIGHT: text */}
-            <div className="md:col-span-5">
-              <p className="text-[10px] tracking-[0.22em] text-white/55 uppercase">
-                Teaching tool
-              </p>
-              <h3 className="mt-2 text-2xl md:text-3xl font-semibold">
-                Library of clips
-              </h3>
-              <p className="mt-3 text-white/75 text-base md:text-lg leading-relaxed max-w-[58ch]">
-                League is a game of visualization. But imagining a play that
-                you've never consciously seen before is extremely difficult.
-                Even more challenging to adjust your play around it.
-              </p>
-              <p className="mt-3 text-white/75 text-base md:text-lg leading-relaxed max-w-[58ch]">
-                That is why I've created a library of over 300 clips, to show
-                you how a Challenger player would behave in your shoes.
-              </p>
-            </div>
-          </div>
-        </GlassPanel>
+          <p className="mt-3 text-white/75 text-base leading-relaxed">
+            League is a game of visualization. But imagining a play that
+            you've never consciously seen before is extremely difficult.
+            Even more challenging to adjust your play around it.
+          </p>
+
+          <p className="mt-3 text-white/75 text-base leading-relaxed">
+            That is why I've created a library of over 300 clips, to show
+            you how a Challenger player would behave in your shoes.
+          </p>
+        </div>
       </div>
 
-      {/* Blink animation */}
+      {/* Blink-in CSS */}
       <style jsx>{`
         :global(.clip-tiles .group) {
           opacity: 0;

@@ -21,16 +21,17 @@
 }
 
 .block-gap {
-  @apply my-16;
+  @apply my-8 md:my-16;
 }
 
 .gap {
-  @apply my-8;
+  @apply my-4 md:my-8;
 }
 
 .tiny-gap {
-  @apply my-4;
+  @apply my-2 md:my-4;
 }
+
 :root {
   --color-bg:        #050B18;
   --color-panel:     linear-gradient(180deg, #0C162C 0%, #081126 100%);

@@ -10,26 +10,31 @@ const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
 
 export default function Experience() {
-  // ✅ single trigger for the whole section
   const sectionRef = useRef(null);
   const inView = useInView(sectionRef, { once: true, amount: 1 });
 
   return (
     <section
       aria-labelledby="no-wasted-games-title"
-      className="relative w-full overflow-visible"
+      className="relative w-full overflow-visible pt-24 md:pt-0"
     >
       <GridPattern />
 
-      {/* ✅ all animation timing controlled from this ref */}
+      {/* MOBILE: TOP-ALIGNED EKKO */}
+      <div className="md:hidden absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute inset-0">
+          <EkkoSilhouette />
+        </div>
+      </div>
+
+      {/* CONTENT */}
       <div
         ref={sectionRef}
-        className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 md:grid-cols-12 md:gap-8"
+        className="relative z-20 w-full md:max-w-6xl md:mx-auto grid grid-cols-1 md:grid-cols-12 md:gap-8"
       >
         {/* LEFT COLUMN */}
         <div className="col-span-1 md:col-span-8 flex flex-col gap-8">
-
-          {/* Text block (delay 0.8) */}
+          {/* Text block */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -38,26 +43,37 @@ export default function Experience() {
           >
             <h2
               id="no-wasted-games-title"
-              className="relative z-50 font-extrabold leading-tight tracking-tight text-white
-                         text-3xl md:text-3xl lg:text-4xl"
+              className="
+                relative z-50 font-extrabold leading-tight tracking-tight text-white
+                text-2xl sm:text-3xl md:text-3xl lg:text-4xl
+              "
               style={{ textShadow: HEAVY_TEXT_SHADOW }}
             >
               No more wasted games.
             </h2>
+
             <p
-              className="relative z-50 mt-4 max-w-[68ch] text-base sm:text-lg md:text-xl leading-relaxed text-fg-muted/90"
+              className="
+                relative z-50 mt-4 max-w-[68ch]
+                text-sm md:text-xl leading-relaxed text-fg-muted/90
+              "
               style={{ textShadow: HEAVY_TEXT_SHADOW }}
             >
-              Many players drown in tips, guides, and random advice from Twitch or Youtube.
-              I cut through the noise and set focus on the skills that actually
-              make you climb.
+              Many players drown in tips, guides, and random advice from Twitch or YouTube.
+              I cut through the noise and set focus on the skills that actually make you climb.
             </p>
           </motion.div>
 
           {/* Cards */}
-          <div className="grid items-stretch grid-cols-1 gap-6 md:grid-cols-[1fr_1px_1fr]">
-
-            {/* ExperienceYears2 (delay 1.1) */}
+          <div
+            className="
+              grid items-stretch 
+              grid-cols-[1fr_1px_1fr] 
+              gap-6 
+              md:grid-cols-[1fr_1px_1fr]
+            "
+          >
+            {/* ExperienceYears2 */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -67,14 +83,14 @@ export default function Experience() {
               <ExperienceYears2 className="py-8" />
             </motion.div>
 
-            {/* Mobile divider */}
+            {/* Divider mobile */}
             <div
               aria-hidden
-              className="md:hidden h-px w-full"
+              className="md:hidden w-px h-full"
               style={{ background: "var(--color-divider)", opacity: 0.6 }}
             />
 
-            {/* ReviewsCard (delay 1.4) */}
+            {/* ReviewsCard */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -88,13 +104,12 @@ export default function Experience() {
                 className="py-8"
               />
             </motion.div>
-
           </div>
         </div>
 
-        {/* RIGHT COLUMN — Ekko (delay 0.0) */}
+        {/* RIGHT COLUMN — DESKTOP ONLY */}
         <motion.div
-          className="col-span-1 md:col-span-4"
+          className="hidden md:block col-span-1 md:col-span-4"
           initial={{ opacity: 0, x: 20 }}
           animate={inView ? { opacity: 1, x: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.0, ease: "easeOut" }}
@@ -105,7 +120,6 @@ export default function Experience() {
             </div>
           </div>
         </motion.div>
-
       </div>
     </section>
   );
