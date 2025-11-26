@@ -238,7 +238,7 @@ function ClipTile({
       <div
         className="
           absolute inset-0 rounded-lg md:rounded-2xl
-          [--border-size:1.5px]
+          [--border-size:2px]
           md:[--border-size:2px]
         "
         style={{
@@ -289,12 +289,12 @@ function ClipTile({
           <div className="px-2">
 
             {/* SMALLER GREY HEADER (mobile only) */}
-            <div className="text-[6px] md:text-[11px] tracking-[0.18em] text-white/70 uppercase mb-1">
+            <div className="text-[0px] md:text-[11px] tracking-[0.18em] text-white/70 uppercase mb-1">
               {clip.tag ?? "Example"}
             </div>
 
             {/* MAIN TITLE — smaller + not bold on mobile */}
-            <div className="text-[12px] md:text-[17px] font-normal md:font-semibold text-white/90 leading-tight">
+            <div className="text-[13px] md:text-[17px] font-normal md:font-semibold text-white/90 leading-tight">
               {clip.title}
             </div>
 

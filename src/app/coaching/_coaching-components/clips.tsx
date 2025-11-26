@@ -106,7 +106,7 @@ export default function Clips({
         </div>
 
         {/* FULL DESKTOP GLASSPANEl (unchanged) */}
-        <GlassPanel className="relative p-5 md:p-8">
+<GlassPanel className="relative p-5 md:p-8 !bg-transparent">
           {/* inner glow */}
           <div
             aria-hidden

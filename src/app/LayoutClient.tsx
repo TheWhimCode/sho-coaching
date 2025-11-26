@@ -21,7 +21,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
       <main>{children}</main>
 
-      {showChrome && <Footer />} {/* ✅ footer added */}
+      {showChrome && <Footer />} {/* footer added */}
     </>
   );
 }
