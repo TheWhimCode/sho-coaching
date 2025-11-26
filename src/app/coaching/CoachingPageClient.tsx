@@ -41,22 +41,6 @@ export default function CoachingPageClient() {
   return (
     <>
       <SmoothScroll />
-{/* ★ Global glowing background for mask-word reveal ★ */}
-<div
-  className="global-glow-bg fixed inset-0 -z-10 pointer-events-none"
-></div>
-
-<style jsx>{`
-  .global-glow-bg {
-    background-image: url('/textures/good-glow.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed; /* gives movement relative to scroll */
-    opacity: 0.7;
-    filter: brightness(1.3) saturate(1.25);
-    mix-blend-mode: screen;
-  }
-`}</style>
 
       <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
 
