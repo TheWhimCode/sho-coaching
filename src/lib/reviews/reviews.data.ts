@@ -37,7 +37,7 @@ export const REVIEWS: Review[] = [
     champion: "Lux",
   },
   {
-    name: "L9 Toby",
+    name: "Toby",
     text:
       "I did not realize how much of an impact a terrible mentality had on my games. Sho taught me macro, micro, but most importantly: how to actually try to win every day. I recommend!",
     rankFrom: "Diamond I",
