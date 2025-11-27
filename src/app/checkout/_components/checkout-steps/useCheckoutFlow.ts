@@ -69,7 +69,13 @@ export function useCheckoutFlow({
 
   const sessionBlockTitle = useMemo(() => {
     const p = getPreset(safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks);
-    return p === "vod" ? "VOD Review" : p === "instant" ? "Instant Insight" : p === "signature" ? "Signature Session" : "Custom Session";
+    return p === "vod"
+      ? "VOD Review"
+      : p === "instant"
+      ? "Instant Insight"
+      : p === "signature"
+      ? "Signature Session"
+      : "Custom Session";
   }, [safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks]);
 
   const totalLiveMinutes = useMemo(
@@ -79,8 +85,14 @@ export function useCheckoutFlow({
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
-  const goNext = () => { setDir(1); setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3))); };
-  const goBack = () => { setDir(-1); setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3))); };
+  const goNext = () => {
+    setDir(1);
+    setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3)));
+  };
+  const goBack = () => {
+    setDir(-1);
+    setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
+  };
 
   const [payMethod, setPayMethod] = useState<PayMethod>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -105,14 +117,26 @@ export function useCheckoutFlow({
     function coerceToDate(v: unknown): Date | null {
       if (v == null) return null;
       if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-      if (typeof v === "number") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
-      if (typeof v === "string") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+      if (typeof v === "number") {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      if (typeof v === "string") {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      }
       return null;
     }
     const fromBackend = coerceToDate(payloadForBackend?.startTime);
     const fromPayload = coerceToDate(safePayload.startTime);
-    if (fromBackend) { setSelectedStart(fromBackend); return; }
-    if (fromPayload) { setSelectedStart(fromPayload); return; }
+    if (fromBackend) {
+      setSelectedStart(fromBackend);
+      return;
+    }
+    if (fromPayload) {
+      setSelectedStart(fromPayload);
+      return;
+    }
     if (typeof window !== "undefined") {
       const s = new URLSearchParams(window.location.search).get("startTime");
       const fromQuery = coerceToDate(s || undefined);
@@ -120,8 +144,35 @@ export function useCheckoutFlow({
     }
   }, [payloadForBackend, safePayload]);
 
-  const handleRiotVerified = async ({ riotTag: verifiedTag, puuid }: { riotTag: string; puuid: string }) => {
+  const handleRiotVerified = async ({
+    riotTag: verifiedTag,
+    puuid,
+    region,
+  }: {
+    riotTag: string;
+    puuid: string;
+    region: string;
+  }) => {
     setRiotTag(verifiedTag);
+
+    const puuidChanged = lastPuuidRef.current && lastPuuidRef.current !== puuid;
+    if (puuidChanged) setDiscordIdentity(null);
+
+    try {
+      const resp = await fetch(
+        `/api/checkout/student/by-puuid?puuid=${encodeURIComponent(puuid)}`,
+        { cache: "no-store" }
+      );
+      if (resp.ok) {
+        const data = await resp.json().catch(() => null);
+        if (data?.discordId) {
+          setDiscordIdentity({
+            id: String(data.discordId),
+            username: data.discordName ?? null,
+          });
+        }
+      }
+    } catch {}
     lastPuuidRef.current = puuid;
   };
 
@@ -162,6 +213,7 @@ export function useCheckoutFlow({
 
       if (!make.ok) {
         if (make.status === 409) {
+          console.warn("Selected start time can’t fit this duration. Choose another start or shorten.");
           setStep(0);
         }
         setLoadingIntent(false);
@@ -172,7 +224,7 @@ export function useCheckoutFlow({
       const bid = j.bookingId as string;
       setBookingId(bid);
 
-      // <-- THIS IS THE IMPORTANT FIX -->
+      // *** WAIVER FIX ADDED SAFELY ***
       try {
         await fetch("/api/booking/update-waiver", {
           method: "POST",
@@ -189,6 +241,13 @@ export function useCheckoutFlow({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: bid, payMethod: m }),
       });
+
+      if (res.status === 409) {
+        console.warn("Selected start time can’t fit this duration.");
+        setStep(0);
+        setLoadingIntent(false);
+        return;
+      }
 
       const data = await res.json().catch(() => ({} as any));
       if (currentMethodRef.current !== m) return;
@@ -210,8 +269,8 @@ export function useCheckoutFlow({
     breakdown,
     stripePromise,
     appearance: appearanceToUse,
-    sessionBlockTitle,
 
+    sessionBlockTitle,
     selectedStart,
 
     step,
@@ -224,19 +283,15 @@ export function useCheckoutFlow({
     piId,
     loadingIntent,
     bookingId,
-
     setCardPmId,
     setSavedCard,
     savedCard,
 
     riotTag,
     setRiotTag,
-
     notes,
     setNotes,
-
     discordIdentity,
-
     waiver,
     setWaiver,
 
