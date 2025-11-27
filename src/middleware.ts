@@ -17,8 +17,9 @@ export function middleware(req: NextRequest) {
 
   const isAdmin = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
-  const isCoachingRoot = pathname === "/coaching";
-  if (!(isAdmin || isAdminApi || isCoachingRoot)) return NextResponse.next();
+
+  // if not admin stuff → skip middleware
+  if (!(isAdmin || isAdminApi)) return NextResponse.next();
 
   if (IS_PROD) {
     const proto = req.headers.get("x-forwarded-proto");
@@ -51,6 +52,7 @@ export function middleware(req: NextRequest) {
   if (pathname.startsWith("/api")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
   const url = req.nextUrl.clone();
   url.pathname = "/admin/login";
   url.searchParams.set("next", pathname);
@@ -58,5 +60,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*", "/coaching"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

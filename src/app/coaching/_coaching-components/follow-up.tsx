@@ -55,7 +55,7 @@ export default function FollowUp({
                   style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,.06)" }}
                 />
                 <div className="absolute inset-0 grid place-items-center text-white/40 text-sm">
-                  Video placeholder: Follow-up animation
+                  Video placeholder
                 </div>
               </div>
             </div>
