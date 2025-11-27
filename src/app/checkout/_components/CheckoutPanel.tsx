@@ -20,14 +20,12 @@ function BottomBar({
   const [footer] = useFooter();
   const show = !footer.hidden;
 
-  // Match step animation exactly
   const variants = {
     enter: (d: 1 | -1) => ({ x: d * 40, opacity: 0 }),
     center: { x: 0, opacity: 1 },
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
 
-  // ✅ Block the CTA on step 3 unless waiver is accepted
   const blockedByWaiver = flow.step === 3 && !flow.waiver;
   const disabled = footer.disabled || footer.loading || blockedByWaiver;
 
@@ -45,7 +43,6 @@ function BottomBar({
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="w-full"
           >
-            {/* Summary block only on Step 3; animates together with CTA */}
             {flow.step === 3 && (
               <div className="shrink-0 pt-4 pb-1 border-t border-white/10 space-y-4">
                 <div className="flex items-center justify-between font-semibold">
@@ -57,7 +54,10 @@ function BottomBar({
                   <input
                     type="checkbox"
                     checked={flow.waiver}
-                    onChange={(e) => flow.setWaiver(e.target.checked)}
+                    onChange={(e) => {
+                      const accepted = e.target.checked;
+                      flow.setWaiver(accepted);
+                    }}
                     className="mt-0.5 h-4 w-4 accent-[#fc8803]"
                   />
                   <span>
@@ -87,7 +87,6 @@ function BottomBar({
               </div>
             )}
 
-            {/* Primary CTA (in same animation group) */}
             <div className="h-12 flex items-center">
               <PrimaryCTA
                 type="button"
@@ -155,15 +154,12 @@ export default function CheckoutPanel(props: Parameters<typeof useCheckoutFlow>[
 
             <div className="-mx-6 md:-mx-6 h-px bg-[rgba(146,180,255,0.16)]" />
 
-            {/* Steps fill remaining height on all viewports */}
             <div className="flex-1 min-h-0 flex flex-col">
               <CheckoutSteps flow={flow} />
             </div>
 
-            {/* Animated bottom summary + CTA */}
             <BottomBar step={flow.step} dir={flow.dir} flow={flow} />
 
-            {/* Static desktop-only chips (not animated) */}
             <div className="hidden md:flex items-center gap-3 text-white/75">
               <span className="inline-flex items-center gap-1 text-xs">
                 <svg width="14" height="14" viewBox="0 0 24 24" className="text-violet-400">

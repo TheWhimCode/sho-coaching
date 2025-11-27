@@ -50,8 +50,11 @@ export async function POST(req: Request) {
     let sessionType: string;
     let riotTag: string | null = null;
 
+    // NEW: load booking so we can get waiverAccepted from DB
+    let booking = null;
+
     if (bookingId) {
-      const booking = await prisma.session.findUnique({
+      booking = await prisma.session.findUnique({
         where: { id: bookingId },
         select: {
           slotId: true,
@@ -59,6 +62,7 @@ export async function POST(req: Request) {
           followups: true,
           sessionType: true,
           riotTag: true,
+          waiverAccepted: true,
         },
       });
       if (!booking || !booking.slotId) {
@@ -79,7 +83,6 @@ export async function POST(req: Request) {
       liveMinutes = d.liveMinutes;
       followups = d.followups ?? 0;
       sessionType = ((body as { sessionType?: string }).sessionType ?? "").trim();
-      // Allow riotTag to be passed in fallback flows to satisfy finalizeBooking
       riotTag = ((body as { riotTag?: string }).riotTag ?? "").trim() || null;
     }
 
@@ -102,7 +105,7 @@ export async function POST(req: Request) {
     // 2) Contiguous block check
     let slotIds = await getBlockIdsByTime(anchor.startTime, liveMinutes, prisma);
 
-    // 3) Fallback window check (no pre-buffer)
+    // 3) Fallback window check
     if (!slotIds) {
       const BUFFER_BEFORE_MIN = 0;
       const { BUFFER_AFTER_MIN } = CFG_SERVER.booking;
@@ -157,8 +160,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // 5) Limit payment methods
-    const pmTypes: Array<"card" | "paypal" | "revolut_pay" | "klarna"> =
+    // 5) Payment types
+    const pmTypes =
       payMethod === "paypal"
         ? ["paypal"]
         : payMethod === "revolut_pay"
@@ -167,35 +170,34 @@ export async function POST(req: Request) {
         ? ["klarna"]
         : ["card"];
 
-    // 6) Create or update PaymentIntent (ensure metadata is attached even under idempotency reuse)
-    const idemKey = makeIdempotencyKey(slotIds, amountCents, anchor.holdKey ?? effKey, payMethod);
-
+    // 6) Metadata WITH WAIVER
     const metadata: Record<string, string> = {
       bookingId: bookingId ?? "",
       slotId,
       slotIds: slotIds.join(","),
       ...(sessionType ? { sessionType } : {}),
       ...(riotTag ? { riotTag } : {}),
+      ...(booking?.waiverAccepted ? { waiverAccepted: "true" } : {}),
     };
+
+    const idemKey = makeIdempotencyKey(slotIds, amountCents, anchor.holdKey ?? effKey, payMethod);
 
     const pi = await getStripe().paymentIntents.create(
       {
         amount: amountCents,
         currency: "eur",
         payment_method_types: pmTypes,
-        metadata, // may be ignored if an older PI is returned due to idempotency
+        metadata,
       },
       { idempotencyKey: idemKey }
     );
 
-    // Force-attach metadata to cover idempotent reuse cases that return an older PI
     try {
       await getStripe().paymentIntents.update(pi.id, { metadata });
     } catch (e) {
       console.warn("[intent] failed to update PI metadata (non-fatal)", pi.id, e);
     }
 
-    // Persist PI id for lookups (/booking/from-ref) and ensure amount stored
     if (bookingId) {
       await prisma.session.update({
         where: { id: bookingId },
@@ -203,7 +205,6 @@ export async function POST(req: Request) {
           paymentRef: pi.id,
           amountCents,
           currency: "eur",
-          // Hint for observability (finalizeBooking will still set provider + paid):
           paymentProvider: "stripe",
         },
       });

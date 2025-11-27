@@ -189,7 +189,10 @@ export async function finalizeBooking(
   const discordId = sessionRow.discordId ?? null;
   const discordName = sessionRow.discordName ?? null;
 
-  const waiverAccepted = sessionRow.waiverAccepted || meta.waiverAccepted === "true" ? true : false;
+const incomingWaiver = meta.waiverAccepted === "true";
+
+const waiverAccepted =
+  sessionRow.waiverAccepted || incomingWaiver;
   const waiverAcceptedAt =
     waiverAccepted && !sessionRow.waiverAccepted ? new Date() : sessionRow.waiverAcceptedAt || undefined;
   const waiverIp = sessionRow.waiverIp || (meta.waiverIp || undefined);
