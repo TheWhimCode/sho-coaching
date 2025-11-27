@@ -77,13 +77,11 @@ export function useCheckoutFlow({
     [safePayload.baseMinutes, safePayload.liveBlocks]
   );
 
-  // Steps
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
   const goNext = () => { setDir(1); setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3))); };
   const goBack = () => { setDir(-1); setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3))); };
 
-  // Payment / intent state
   const [payMethod, setPayMethod] = useState<PayMethod>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [piId, setPiId] = useState<string | null>(null);
@@ -93,7 +91,6 @@ export function useCheckoutFlow({
   const [cardPmId, setCardPmId] = useState<string | null>(null);
   const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
 
-  // Contact state
   const [riotTag, setRiotTag] = useState("");
   const [notes, setNotes] = useState("");
   const [discordIdentity, setDiscordIdentity] = useState<DiscordIdentity | null>(null);
@@ -101,10 +98,8 @@ export function useCheckoutFlow({
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
 
-  // Track last verified PUUID to clear stale Discord if identity changes
   const lastPuuidRef = useRef<string | null>(null);
 
-  // Selected start time (if any)
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
   useEffect(() => {
     function coerceToDate(v: unknown): Date | null {
@@ -125,39 +120,15 @@ export function useCheckoutFlow({
     }
   }, [payloadForBackend, safePayload]);
 
-  /** When RiotTag verifies: ONLY local changes; optional Discord autofill (read-only) */
-  const handleRiotVerified = async ({
-    riotTag: verifiedTag,
-    puuid,
-    region,
-  }: { riotTag: string; puuid: string; region: string }) => {
+  const handleRiotVerified = async ({ riotTag: verifiedTag, puuid }: { riotTag: string; puuid: string }) => {
     setRiotTag(verifiedTag);
-
-    const puuidChanged = lastPuuidRef.current && lastPuuidRef.current !== puuid;
-    if (puuidChanged) setDiscordIdentity(null);
-
-    // Autofill by PUUID (read-only)
-    try {
-      const resp = await fetch(`/api/checkout/student/by-puuid?puuid=${encodeURIComponent(puuid)}`, { cache: "no-store" });
-      if (resp.ok) {
-        const data = await resp.json().catch(() => null);
-        if (data?.discordId) {
-          setDiscordIdentity({
-            id: String(data.discordId),
-            username: data.discordName ?? null, // treat stored name as username
-          });
-        }
-      }
-    } catch {}
     lastPuuidRef.current = puuid;
   };
 
-  /** Discord OAuth success: local state only; persist on Continue */
   const handleDiscordLinked = async (u: DiscordIdentity) => {
     setDiscordIdentity({ id: u.id, username: u.username ?? null });
   };
 
-  /** Continue flow: (up)create booking with latest Riot+Discord, then create PI */
   async function chooseAndGo(m: PayMethod) {
     if (!m) return;
     setDir(1);
@@ -173,7 +144,6 @@ export function useCheckoutFlow({
     setLoadingIntent(true);
 
     try {
-      // Upsert unpaid booking by slotId
       const make = await fetch("/api/booking/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -182,9 +152,9 @@ export function useCheckoutFlow({
           slotId: safePayload.slotId,
           liveMinutes: totalLiveMinutes,
           followups: safePayload.followups,
-          riotTag,                                      // latest
-          discordId: discordIdentity?.id ?? null,       // id
-          discordName: discordIdentity?.username ?? null, // username only
+          riotTag,
+          discordId: discordIdentity?.id ?? null,
+          discordName: discordIdentity?.username ?? null,
           notes,
           waiverAccepted: waiver,
         }),
@@ -192,10 +162,7 @@ export function useCheckoutFlow({
 
       if (!make.ok) {
         if (make.status === 409) {
-          console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
           setStep(0);
-        } else {
-          console.error("CREATE/UPDATE_BOOKING_FAILED", await make.text().catch(() => ""));
         }
         setLoadingIntent(false);
         return;
@@ -205,19 +172,23 @@ export function useCheckoutFlow({
       const bid = j.bookingId as string;
       setBookingId(bid);
 
-      // Create PaymentIntent for this booking & method
+      // <-- THIS IS THE IMPORTANT FIX -->
+      try {
+        await fetch("/api/booking/update-waiver", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bookingId: bid,
+            waiverAccepted: waiver,
+          }),
+        });
+      } catch {}
+
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: bid, payMethod: m }),
       });
-
-      if (res.status === 409) {
-        console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
-        setStep(0);
-        setLoadingIntent(false);
-        return;
-      }
 
       const data = await res.json().catch(() => ({} as any));
       if (currentMethodRef.current !== m) return;
@@ -226,7 +197,6 @@ export function useCheckoutFlow({
         setClientSecret(data.clientSecret);
         setPiId(String(data.clientSecret).split("_secret")[0] || null);
       } else {
-        console.error("INTENT_FAIL", data);
         setClientSecret(null);
         setPiId(null);
       }
@@ -240,8 +210,8 @@ export function useCheckoutFlow({
     breakdown,
     stripePromise,
     appearance: appearanceToUse,
-
     sessionBlockTitle,
+
     selectedStart,
 
     step,
@@ -254,20 +224,24 @@ export function useCheckoutFlow({
     piId,
     loadingIntent,
     bookingId,
+
     setCardPmId,
     setSavedCard,
     savedCard,
 
     riotTag,
     setRiotTag,
+
     notes,
     setNotes,
+
     discordIdentity,
+
     waiver,
     setWaiver,
 
-    handleRiotVerified,   // read-only
-    handleDiscordLinked,  // local only; persist on Continue
-    chooseAndGo,          // upsert booking with id+username
+    handleRiotVerified,
+    handleDiscordLinked,
+    chooseAndGo,
   };
 }
