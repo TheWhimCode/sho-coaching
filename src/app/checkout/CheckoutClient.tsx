@@ -89,6 +89,7 @@ export default function CheckoutClient() {
 
     return {
       slotId: getStr("slotId"),
+      slotIds: getStr("slotIds"), // <-- added
       sessionType: getStr("sessionType", "Session"),
       baseMinutes,
       liveMinutes: totalMins,
@@ -109,6 +110,7 @@ export default function CheckoutClient() {
   const payloadForBackend = useMemo(
     () => ({
       slotId: payload.slotId,
+      slotIds: payload.slotIds, // <-- added
       sessionType: payload.sessionType,
       liveMinutes: payload.liveMinutes,
       followups: payload.followups,
@@ -170,5 +172,4 @@ export default function CheckoutClient() {
         </div>
       </div>
     </section>
-  );
-}
+  );}
