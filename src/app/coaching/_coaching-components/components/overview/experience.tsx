@@ -59,7 +59,7 @@ export default function Experience() {
               "
               style={{ textShadow: HEAVY_TEXT_SHADOW }}
             >
-              Many players drown in tips, guides, and random advice from Twitch or YouTube.
+              Many AAAAAAAAAplayers drown in tips, guides, and random advice from Twitch or YouTube.
               I cut through the noise and set focus on the skills that actually make you climb.
             </p>
           </motion.div>
