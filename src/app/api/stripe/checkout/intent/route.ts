@@ -43,14 +43,12 @@ export async function POST(req: Request) {
       payMethod?: "card" | "paypal" | "revolut_pay" | "klarna";
     };
 
-    // ---- Load inputs (prefer bookingId)
     let slotId: string;
     let liveMinutes: number;
     let followups: number;
     let sessionType: string;
     let riotTag: string | null = null;
 
-    // NEW: load booking so we can get waiverAccepted from DB
     let booking = null;
 
     if (bookingId) {
@@ -90,22 +88,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
     }
 
-const base = computePriceEUR(liveMinutes, followups);
+    const base = computePriceEUR(liveMinutes, followups);
 
-// read coupon from booking
-let discount = 0;
-if (bookingId) {
-  const couponData = await prisma.session.findUnique({
-    where: { id: bookingId },
-    select: { couponDiscount: true },
-  });
-  discount = couponData?.couponDiscount ?? 0;
-}
+    let discount = 0;
+    if (bookingId) {
+      const couponData = await prisma.session.findUnique({
+        where: { id: bookingId },
+        select: { couponDiscount: true },
+      });
+      discount = couponData?.couponDiscount ?? 0;
+    }
 
-// compute final
-const amountCents = Math.max(base.amountCents - discount * 100, 0);
+    const amountCents = Math.max(base.amountCents - discount * 100, 0);
 
-    // 1) Anchor slot
     const anchor = await prisma.slot.findUnique({
       where: { id: slotId },
       select: { id: true, startTime: true, status: true, holdKey: true },
@@ -115,10 +110,8 @@ const amountCents = Math.max(base.amountCents - discount * 100, 0);
 
     const effKey = anchor.holdKey || crypto.randomUUID();
 
-    // 2) Contiguous block check
     let slotIds = await getBlockIdsByTime(anchor.startTime, liveMinutes, prisma);
 
-    // 3) Fallback window check
     if (!slotIds) {
       const BUFFER_BEFORE_MIN = 0;
       const { BUFFER_AFTER_MIN } = CFG_SERVER.booking;
@@ -156,7 +149,6 @@ const amountCents = Math.max(base.amountCents - discount * 100, 0);
 
     if (!slotIds?.length) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
-    // 4) Claim/extend hold
     const now = new Date();
     const holdUntil = new Date(now.getTime() + HOLD_TTL_MIN * 60_000);
     await prisma.slot.updateMany({
@@ -173,7 +165,6 @@ const amountCents = Math.max(base.amountCents - discount * 100, 0);
       },
     });
 
-    // 5) Payment types
     const pmTypes =
       payMethod === "paypal"
         ? ["paypal"]
@@ -183,7 +174,6 @@ const amountCents = Math.max(base.amountCents - discount * 100, 0);
         ? ["klarna"]
         : ["card"];
 
-    // 6) Metadata WITH WAIVER
     const metadata: Record<string, string> = {
       bookingId: bookingId ?? "",
       slotId,
@@ -201,6 +191,7 @@ const amountCents = Math.max(base.amountCents - discount * 100, 0);
         currency: "eur",
         payment_method_types: pmTypes,
         metadata,
+        setup_future_usage: "off_session",
       },
       { idempotencyKey: idemKey }
     );
@@ -211,6 +202,7 @@ const amountCents = Math.max(base.amountCents - discount * 100, 0);
       console.warn("[intent] failed to update PI metadata (non-fatal)", pi.id, e);
     }
 
+    // 🔴 IMPORTANT: persist blockCsv so finalizeBooking + webhook can rely on DB too
     if (bookingId) {
       await prisma.session.update({
         where: { id: bookingId },
@@ -219,18 +211,36 @@ const amountCents = Math.max(base.amountCents - discount * 100, 0);
           amountCents,
           currency: "eur",
           paymentProvider: "stripe",
+          blockCsv: slotIds.join(","),          // <<< added
         },
       });
     }
 
-    console.log("[intent] created PI", { piId: pi.id, bookingId, slotId, slotIds: slotIds.length });
+    console.log("[intent] created PI", { piId: pi.id, bookingId, slotId, slotCount: slotIds.length });
 
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });
     res.headers.set("Cache-Control", "no-store");
     return res;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("INTENT_POST_ERROR", msg, err);
-    return NextResponse.json({ error: "internal_error", detail: msg }, { status: 500 });
-  }
+} catch (err: any) {
+  console.error("INTENT_ERROR", {
+    message: err?.message,
+    type: err?.type,
+    code: err?.code,
+    param: err?.param,
+    raw: err?.raw,
+    full: err
+  });
+
+  return NextResponse.json(
+    {
+      error: "internal_error",
+      detail: err?.message,
+      code: err?.code,
+      type: err?.type,
+      param: err?.param,
+    },
+    { status: 500 }
+  );
+}
+
 }

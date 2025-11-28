@@ -1,12 +1,8 @@
-// src/app/checkout/_components/checkout-steps/CheckoutSteps.tsx
 "use client";
 
-import dynamic from "next/dynamic";
-import { Elements } from "@stripe/react-stripe-js";
 import { AnimatePresence, motion } from "framer-motion";
 import StepContact from "./StepContact";
 import StepChoose from "./StepChoose";
-const StepPayDetails = dynamic(() => import("./StepPayDetails"), { ssr: false });
 import StepSummary from "./StepSummary";
 
 export default function CheckoutSteps({
@@ -27,18 +23,10 @@ export default function CheckoutSteps({
     notes,
     setNotes,
     discordIdentity,
-    clientSecret,
-    piId,
     payMethod,
-    stripePromise,
-    appearance,
     payload,
     breakdown,
     sessionBlockTitle,
-    setCardPmId,
-    setSavedCard,
-    savedCard,
-    loadingIntent,
   } = flow;
 
   const variants = {
@@ -50,6 +38,7 @@ export default function CheckoutSteps({
   return (
     <div className="flex flex-col flex-1 min-h-0 touch-pan-y">
       <AnimatePresence custom={dir} mode="wait" initial={false}>
+        {/* Step 0: Contact */}
         {step === 0 && (
           <motion.div
             key="step-contact"
@@ -76,6 +65,7 @@ export default function CheckoutSteps({
           </motion.div>
         )}
 
+        {/* Step 1: Choose payment method */}
         {step === 1 && (
           <motion.div
             key="step-choose"
@@ -87,52 +77,12 @@ export default function CheckoutSteps({
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="flex flex-col"
           >
-            <Elements stripe={stripePromise} options={{ appearance, loader: "never" }}>
-              <StepChoose goBack={goBack} onChoose={chooseAndGo as any} />
-            </Elements>
+            <StepChoose goBack={goBack} onChoose={chooseAndGo as any} />
           </motion.div>
         )}
 
+        {/* Step 2: Order summary / confirm */}
         {step === 2 && (
-          <motion.div
-            key="step-2"
-            custom={dir}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="flex flex-col"
-          >
-            {clientSecret ? (
-              <Elements
-                key={clientSecret || "loading-step2"}
-                stripe={stripePromise}
-                options={{ clientSecret, appearance, loader: "never" }}
-              >
-                <StepPayDetails
-                  mode="form"
-                  goBack={goBack}
-                  payMethod={(payMethod || "card") as any}
-                  onContinue={goNext}
-                  piId={piId}
-                  setCardPmId={setCardPmId}
-                  setSavedCard={setSavedCard}
-                  savedCard={savedCard}
-                />
-              </Elements>
-            ) : (
-              <StepPayDetails
-                mode="loading"
-                goBack={goBack}
-                payMethod={(payMethod || "card") as any}
-                loadingIntent={loadingIntent}
-              />
-            )}
-          </motion.div>
-        )}
-
-        {step === 3 && clientSecret && (
           <motion.div
             key="step-summary"
             custom={dir}
@@ -143,19 +93,17 @@ export default function CheckoutSteps({
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="flex flex-col"
           >
-            <Elements
-              key={clientSecret || "loading-step3"}
-              stripe={stripePromise}
-              options={{ clientSecret, appearance, loader: "never" }}
-            >
-              <StepSummary
-                goBack={goBack}
-                payload={payload}
-                breakdown={breakdown}
-                payMethod={(payMethod || "card") as any}
-                clientSecret={clientSecret!}
-              />
-            </Elements>
+            <StepSummary
+              goBack={goBack}
+              payload={{
+                baseMinutes: payload.baseMinutes,
+                liveBlocks: payload.liveBlocks,
+                followups: payload.followups,
+              }}
+              breakdown={breakdown}
+              payMethod={(payMethod || "card") as any}
+              sessionBlockTitle={sessionBlockTitle}
+            />
           </motion.div>
         )}
       </AnimatePresence>

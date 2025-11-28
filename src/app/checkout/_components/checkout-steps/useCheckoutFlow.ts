@@ -123,70 +123,51 @@ export function useCheckoutFlow({
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
 
-  // coupon
   const [couponCode, setCouponCode] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
 
   const applyCoupon = (amount: number, code: string) => {
     setCouponDiscount(amount);
     setCouponCode(code);
-
-    // ⬇ THIS is the key fix
-    breakdown.total = breakdown.total - amount;
   };
 
   useEffect(() => {
-    if (!bookingId) return;
-    if (!waiver) return;
-
+    if (!bookingId || !waiver) return;
     fetch("/api/booking/update-waiver", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bookingId,
-        waiverAccepted: true,
-      }),
+      body: JSON.stringify({ bookingId, waiverAccepted: true }),
     }).catch(() => {});
   }, [bookingId, waiver]);
 
   const lastPuuidRef = useRef<string | null>(null);
-
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
+
   useEffect(() => {
     function coerceToDate(v: unknown): Date | null {
       if (v == null) return null;
       if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-      if (typeof v === "number") {
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? null : d;
-      }
-      if (typeof v === "string") {
-        const d = new Date(v);
-        return isNaN(d.getTime()) ? null : d;
-      }
+      if (typeof v === "number")
+        return isNaN(new Date(v).getTime()) ? null : new Date(v);
+      if (typeof v === "string")
+        return isNaN(new Date(v).getTime()) ? null : new Date(v);
       return null;
     }
-
     const fromBackend = coerceToDate(payloadForBackend?.startTime);
     const fromPayload = coerceToDate(safePayload.startTime);
-    if (fromBackend) {
-      setSelectedStart(fromBackend);
-      return;
-    }
-    if (fromPayload) {
-      setSelectedStart(fromPayload);
-      return;
-    }
-    if (typeof window !== "undefined") {
-      const s = new URLSearchParams(window.location.search).get("startTime");
-      const fromQuery = coerceToDate(s || undefined);
+    if (fromBackend) setSelectedStart(fromBackend);
+    else if (fromPayload) setSelectedStart(fromPayload);
+    else if (typeof window !== "undefined") {
+      const fromQuery = coerceToDate(
+        new URLSearchParams(window.location.search).get("startTime") ||
+          undefined
+      );
       if (fromQuery) setSelectedStart(fromQuery);
     }
   }, [payloadForBackend, safePayload]);
 
   const handleRiotVerified = async ({ riotTag: verifiedTag, puuid }: any) => {
     setRiotTag(verifiedTag);
-
     try {
       const resp = await fetch(
         `/api/checkout/student/by-DBmatch?puuid=${encodeURIComponent(puuid)}`,
@@ -194,24 +175,19 @@ export function useCheckoutFlow({
       );
       if (resp.ok) {
         const data = await resp.json().catch(() => null);
-
         if (data?.studentId) setStudentId(String(data.studentId));
-
-        if (data?.discordId) {
+        if (data?.discordId)
           setDiscordIdentity({
             id: String(data.discordId),
             username: data.discordName ?? null,
           });
-        }
       }
     } catch {}
-
     lastPuuidRef.current = puuid;
   };
 
   const handleDiscordLinked = async (u: DiscordIdentity) => {
     setDiscordIdentity({ id: u.id, username: u.username ?? null });
-
     try {
       const resp = await fetch(
         `/api/checkout/student/by-DBmatch?discordId=${encodeURIComponent(
@@ -219,7 +195,6 @@ export function useCheckoutFlow({
         )}`,
         { cache: "no-store" }
       );
-
       if (resp.ok) {
         const data = await resp.json().catch(() => null);
         if (data?.studentId) setStudentId(String(data.studentId));
@@ -256,53 +231,65 @@ export function useCheckoutFlow({
           discordName: discordIdentity?.username ?? null,
           notes,
           waiverAccepted: waiver,
-
           couponCode,
           couponDiscount,
         }),
       });
 
       if (!make.ok) {
-        if (make.status === 409) {
-          console.warn("Selected start time can’t fit this duration.");
-          setStep(0);
-        }
+        if (make.status === 409) setStep(0);
         setLoadingIntent(false);
         return;
       }
 
       const j = await make.json();
-      const bid = j.bookingId as string;
-      setBookingId(bid);
+      setBookingId(j.bookingId as string);
+    } finally {
+      setLoadingIntent(false);
+    }
+  }
 
+  // Only create PaymentIntent on final Pay now click
+  const createPaymentIntent = async (): Promise<string | null> => {
+    if (!bookingId || !payMethod) return null;
+    setLoadingIntent(true);
+    try {
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: bid, payMethod: m }),
+        body: JSON.stringify({ bookingId, payMethod }),
       });
 
       if (res.status === 409) {
         console.warn("Selected start time can’t fit this duration.");
         setStep(0);
-        setLoadingIntent(false);
-        return;
+        return null;
       }
 
       const data = await res.json().catch(() => ({} as any));
-      if (currentMethodRef.current !== m) return;
 
-      if (res.ok && data?.clientSecret) {
-        setClientSecret(data.clientSecret);
-        setPiId(String(data.clientSecret).split("_secret")[0] || null);
+      let sec: string | null = null;
+
+      if (data?.clientSecret) {
+        sec = data.clientSecret as string;
+      } else if (data?.client_secret) {
+        sec = data.client_secret as string;
+      }
+
+      if (sec) {
+        setClientSecret(sec);
+        setPiId(String(sec).split("_secret")[0] || null);
+        return sec; // IMPORTANT FIX
       } else {
         console.error("INTENT_FAIL", data);
         setClientSecret(null);
         setPiId(null);
+        return null;
       }
     } finally {
-      if (currentMethodRef.current === m) setLoadingIntent(false);
+      setLoadingIntent(false);
     }
-  }
+  };
 
   return {
     payload: safePayload,
@@ -340,6 +327,7 @@ export function useCheckoutFlow({
     setWaiver,
 
     chooseAndGo,
+    createPaymentIntent,
     handleRiotVerified,
     handleDiscordLinked,
 

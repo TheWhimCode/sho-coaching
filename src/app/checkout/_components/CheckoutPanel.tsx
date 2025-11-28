@@ -1,4 +1,3 @@
-// src/app/checkout/_components/CheckoutPanel.tsx
 "use client";
 
 import { useState } from "react";
@@ -18,7 +17,7 @@ function BottomBar({
   dir: 1 | -1;
   flow: ReturnType<typeof useCheckoutFlow>;
 }) {
-  const [footer] = useFooter();
+  const [footer, setFooter] = useFooter();
   const show = !footer.hidden;
 
   const [coupon, setCoupon] = useState("");
@@ -27,39 +26,45 @@ function BottomBar({
   const baseTotal = flow.breakdown?.total ?? 0;
   const discountedTotal = baseTotal - (flow.couponDiscount ?? 0);
 
-  const blockedByWaiver = flow.step === 3 && !flow.waiver;
+  const blockedByWaiver = flow.step === 2 && !flow.waiver;
   const disabled = footer.disabled || footer.loading || blockedByWaiver;
 
-const handleApplyCoupon = async () => {
-  const res = await fetch("/api/checkout/coupon/check", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      code: coupon,
-      studentId: flow.studentId,
-    }),
-  });
-
-  const data = await res.json();
-
-  if (!data?.valid) {
-    setCouponMsg({
-      type: "error",
-      msg:
-        data.reason === "wrong-student"
-          ? "Please use your own coupon"
-          : "Invalid code — check spelling",
+  const handleApplyCoupon = async () => {
+    const res = await fetch("/api/checkout/coupon/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: coupon, studentId: flow.studentId }),
     });
-    return;
-  }
 
-  setCouponMsg({ type: "success", msg: `${coupon} applied!` });
+    const data = await res.json();
 
-  // updates UI + flow state
-  flow.applyCoupon(data.discount, coupon);
-  flow.setCouponCode(coupon);
-};
+    if (!data?.valid) {
+      setCouponMsg({
+        type: "error",
+        msg:
+          data.reason === "wrong-student"
+            ? "Please use your own coupon"
+            : "Invalid code — check spelling",
+      });
+      return;
+    }
 
+    if (flow.bookingId) {
+      await fetch("/api/checkout/coupon/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: flow.bookingId,
+          code: coupon,
+          discount: data.discount,
+        }),
+      });
+    }
+
+    setCouponMsg({ type: "success", msg: `${coupon} applied!` });
+    flow.applyCoupon(data.discount, coupon);
+    flow.setCouponCode(coupon);
+  };
 
   const variants = {
     enter: (d: 1 | -1) => ({ x: d * 40, opacity: 0 }),
@@ -69,6 +74,8 @@ const handleApplyCoupon = async () => {
 
   return (
     <div className="pt-0 px-1 pb-[max(env(safe-area-inset-bottom),1rem)] md:pb-0">
+      <div id="hidden-payment-element" style={{ display: "none" }} />
+
       <AnimatePresence custom={dir} mode="wait" initial={false}>
         {show && (
           <motion.div
@@ -81,9 +88,8 @@ const handleApplyCoupon = async () => {
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="w-full"
           >
-            {flow.step === 3 && (
+            {flow.step === 2 && (
               <>
-                {/* message above input row WITHOUT layout shift */}
                 <div className="relative h-[38px] mb-2">
                   {couponMsg && (
                     <div
@@ -96,7 +102,6 @@ const handleApplyCoupon = async () => {
                       {couponMsg.msg}
                     </div>
                   )}
-
                   <div className="flex items-center gap-2 h-full">
                     <input
                       type="text"
@@ -106,7 +111,6 @@ const handleApplyCoupon = async () => {
                       className="bg-white/[0.06] text-sm text-white/80 rounded-md px-3 py-2 w-full
                         placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
-
                     <button
                       type="button"
                       className="text-sm px-3 py-2 bg-white/[0.07] rounded-md text-white/80
@@ -121,7 +125,6 @@ const handleApplyCoupon = async () => {
                 <div className="shrink-0 pt-4 pb-1 border-t border-white/10 space-y-4">
                   <div className="flex items-center justify-between font-semibold">
                     <span className="text-white">Total</span>
-
                     <div className="flex items-center gap-2">
                       {flow.couponDiscount > 0 ? (
                         <>
@@ -132,7 +135,6 @@ const handleApplyCoupon = async () => {
                           >
                             €{discountedTotal.toFixed(0)}
                           </motion.span>
-
                           <motion.span
                             initial={{ opacity: 0, x: 4 }}
                             animate={{ opacity: 0.8, x: 0 }}
@@ -156,7 +158,12 @@ const handleApplyCoupon = async () => {
                     />
                     <span>
                       I request immediate service and accept that my{" "}
-                      <a href="/withdrawal" target="_blank" rel="noreferrer" className="underline hover:text-white">
+                      <a
+                        href="/withdrawal"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline hover:text-white"
+                      >
                         14-day withdrawal right
                       </a>{" "}
                       ends with full performance.
@@ -164,12 +171,24 @@ const handleApplyCoupon = async () => {
                   </label>
 
                   <p className="text-[11px] leading-snug text-white/60">
-                    By clicking <span className="text-white/80 font-medium">Pay now</span>, you agree to our{" "}
-                    <a href="/terms" target="_blank" rel="noreferrer" className="underline hover:text-white">
+                    By clicking{" "}
+                    <span className="text-white/80 font-medium">Pay now</span>,
+                    you agree to our{" "}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline hover:text-white"
+                    >
                       Terms
                     </a>{" "}
                     and{" "}
-                    <a href="/privacy" target="_blank" rel="noreferrer" className="underline hover:text-white">
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline hover:text-white"
+                    >
                       Privacy Policy
                     </a>.
                   </p>
@@ -182,8 +201,62 @@ const handleApplyCoupon = async () => {
                 type="button"
                 disabled={disabled}
                 className="px-5 py-3 text-base w-full"
-                onClick={() => {
+                onClick={async () => {
                   if (disabled) return;
+
+                  // <<< THE ONLY CHANGE
+                  setFooter((f: any) => ({ ...f, loading: true }));
+
+                  try {
+                    const stripe = await flow.stripePromise;
+                    if (!stripe) return;
+
+                    if (flow.payMethod === "card") {
+                      const resp = await fetch("/api/stripe/checkout/session", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          method: "card",
+                          amountCents: flow.breakdown.total * 100,
+                        }),
+                      });
+
+                      const data = await resp.json().catch(() => null);
+                      if (!data?.url) {
+                        console.error("Failed to create Checkout Session", data);
+                        return;
+                      }
+
+                      window.location.href = data.url;
+                      return;
+                    }
+
+                    if (["paypal", "klarna", "revolut_pay"].includes(flow.payMethod)) {
+                      let secret = flow.clientSecret ?? (await flow.createPaymentIntent?.());
+                      if (!secret) {
+                        console.error("No PaymentIntent client secret.");
+                        return;
+                      }
+
+                      const elements = stripe.elements({ clientSecret: secret });
+                      const paymentElement = elements.create("payment");
+                      paymentElement.mount("#hidden-payment-element");
+
+                      const { error } = await stripe.confirmPayment({
+                        elements,
+                        confirmParams: {
+                          return_url: window.location.origin + "/checkout/success",
+                        },
+                      });
+
+                      if (error) console.error("Redirect failed:", error.message);
+                    }
+                  } catch (err) {
+                    console.error("Payment handling failed:", err);
+                  } finally {
+                    setFooter((f: any) => ({ ...f, loading: false }));
+                  }
+
                   footer.onClick?.();
                 }}
                 aria-disabled={disabled}

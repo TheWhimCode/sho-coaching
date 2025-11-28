@@ -38,13 +38,12 @@ export default function StepChoose({ goBack, onChoose }: Props) {
   };
 
   return (
-    // Match File 1: flex h-full flex-col md:pt-2
     <div
       className="flex h-full flex-col"
       onClickCapture={preventSubmitDefaults}
       onKeyDownCapture={preventEnterSubmit}
     >
-      {/* Header (same structure as File 1) */}
+      {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
@@ -59,11 +58,10 @@ export default function StepChoose({ goBack, onChoose }: Props) {
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      {/* Body: mirror File 1 grow/scroll container */}
+      {/* Body */}
       <div className="flex-1 min-h-0 px-1">
         <PaymentChooser mode="choose" onChoose={onChoose} />
 
-        {/* Keep this spacing as-is */}
         <motion.div
           className="mt-4 text-center text-sm text-white/70"
           initial={playReveal ? { opacity: 0, y: 12 } : false}
@@ -93,8 +91,6 @@ export default function StepChoose({ goBack, onChoose }: Props) {
           </motion.span>
         </motion.div>
       </div>
-
-      {/* IMPORTANT: removed the extra <div className="flex-1" /> spacer */}
     </div>
   );
 }
