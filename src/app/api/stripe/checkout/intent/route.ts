@@ -90,7 +90,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
     }
 
-    const { amountCents } = computePriceEUR(liveMinutes, followups);
+const base = computePriceEUR(liveMinutes, followups);
+
+// read coupon from booking
+let discount = 0;
+if (bookingId) {
+  const couponData = await prisma.session.findUnique({
+    where: { id: bookingId },
+    select: { couponDiscount: true },
+  });
+  discount = couponData?.couponDiscount ?? 0;
+}
+
+// compute final
+const amountCents = Math.max(base.amountCents - discount * 100, 0);
 
     // 1) Anchor slot
     const anchor = await prisma.slot.findUnique({

@@ -25,6 +25,7 @@ function isValidRiotTagFormat(v: string) {
   const s = normalizeRiotTag(v);
   return /^[A-Za-z0-9 .'_\-]{3,16}#[A-Za-z0-9]{3,5}$/.test(s);
 }
+
 type CheckStatus = "idle" | "checking" | "ok" | "bad";
 
 export default function StepContact({
@@ -56,20 +57,17 @@ export default function StepContact({
   const okRing = "ring-inset ring-white/12 focus:ring-inset focus:ring-white/25";
   const badRing = "ring-inset ring-red-500/70 focus:ring-inset ring-red-500";
 
-  // normalize prop when it changes (keeps UI + DB clean)
-  React.useEffect(() => {
-    if (!riotTag) return;
-    const n = normalizeRiotTag(riotTag);
-    if (n !== riotTag) setRiotTag(n);
-  }, [riotTag, setRiotTag]);
+  // 🔥 removed normalization effect
 
   React.useEffect(() => {
-    const val = riotVal.trim();
+    const val = normalizeRiotTag(riotVal);
+
     if (!val || !isValidRiotTagFormat(val)) {
       setCheckStatus(val ? "bad" : "idle");
       abortRef.current?.abort();
       return;
     }
+
     setCheckStatus("checking");
     const t = setTimeout(async () => {
       try {
@@ -99,9 +97,17 @@ export default function StepContact({
         if (e?.name !== "AbortError") setCheckStatus("bad");
       }
     }, 500);
+
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [riotVal]);
+
+  const onRiotInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRiotTag(e.target.value);
+  };
+
+  const onRiotInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setRiotTag(e.target.value);
+  };
 
   const openDiscordOAuth = React.useCallback(() => {
     window.open("/api/checkout/discord/oauth-start", "discord_oauth", "width=520,height=700");
@@ -118,21 +124,32 @@ export default function StepContact({
         }
       }
       if (!data || typeof data !== "object") return;
+
       if (data.type === "discord-auth-success" && data.user) {
         onDiscordLinked(data.user as DiscordIdentity);
+
+        if (onRiotVerified) {
+          onRiotVerified({
+            riotTag: normalizeRiotTag(riotVal),
+            puuid: "",
+            region: "",
+          });
+        }
       }
     },
-    [onDiscordLinked]
+    [onDiscordLinked, onRiotVerified, riotVal]
   );
 
   React.useEffect(() => {
     const onMsg = (ev: MessageEvent) => handleIncoming(ev.data);
     window.addEventListener("message", onMsg);
+
     let bc: BroadcastChannel | null = null;
     try {
       bc = new BroadcastChannel("dc_oauth");
       bc.onmessage = (ev) => handleIncoming((ev as MessageEvent).data);
     } catch {}
+
     const onFocus = () => {
       try {
         const raw = localStorage.getItem("dc_oauth_payload");
@@ -143,6 +160,7 @@ export default function StepContact({
       } catch {}
     };
     window.addEventListener("focus", onFocus);
+
     return () => {
       window.removeEventListener("message", onMsg);
       window.removeEventListener("focus", onFocus);
@@ -152,72 +170,9 @@ export default function StepContact({
     };
   }, [handleIncoming]);
 
-  const onRiotInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRiotTag(normalizeRiotTag(e.target.value));
-  };
-  const onRiotInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    setRiotTag(normalizeRiotTag(e.target.value));
-  };
-
-  const formatValid = isValidRiotTagFormat(riotVal);
+  const formatValid = isValidRiotTagFormat(normalizeRiotTag(riotVal));
   const riotShowError = checkStatus === "bad" || (submitted && !formatValid);
   const canSubmit = checkStatus === "ok" && !!discordIdentity?.id;
-
-  const Spinner = () => (
-    <svg
-      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-        fill="none"
-      />
-      <path
-        className="opacity-90"
-        fill="currentColor"
-        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
-      />
-    </svg>
-  );
-  const OkIcon = () => (
-    <svg
-      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
-      viewBox="0 0 20 20"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="10" r="9" fill="#60a5fa" />
-      <path
-        d="M5 10.5l3 3 7-7"
-        fill="none"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-  const BadIcon = () => (
-    <svg
-      className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
-      viewBox="0 0 20 20"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="10" r="9" fill="#ef4444" />
-      <path
-        d="M6 6l8 8M14 6l-8 8"
-        fill="none"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
 
   const hint =
     !formatValid && riotVal.trim()
@@ -226,7 +181,6 @@ export default function StepContact({
       ? "Invalid Riot#tag — check spelling"
       : "";
 
-  // Publish CTA to parent
   React.useEffect(() => {
     setFooter({
       label: "Continue",
@@ -239,7 +193,6 @@ export default function StepContact({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <div className="text-sm text-white/80">Contact details</div>
@@ -247,7 +200,6 @@ export default function StepContact({
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      {/* Form */}
       <form
         ref={formRef}
         noValidate
@@ -259,7 +211,7 @@ export default function StepContact({
         className="flex flex-col flex-1"
       >
         <div className="flex-1 min-h-0 space-y-3 px-1">
-          {/* RiotTag */}
+
           <label className="block">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -282,9 +234,61 @@ export default function StepContact({
                 spellCheck={false}
                 className={`${baseInput} ${riotShowError ? badRing : okRing} pr-9`}
               />
-              {checkStatus === "checking" && <Spinner />}
-              {checkStatus === "ok" && <OkIcon />}
-              {checkStatus === "bad" && riotVal.trim() && <BadIcon />}
+              {checkStatus === "checking" && (
+                <svg
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-white/70"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-90"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
+                  />
+                </svg>
+              )}
+              {checkStatus === "ok" && (
+                <svg
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                >
+                  <circle cx="10" cy="10" r="9" fill="#60a5fa" />
+                  <path
+                    d="M5 10.5l3 3 7-7"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+              {checkStatus === "bad" && riotVal.trim() && (
+                <svg
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                >
+                  <circle cx="10" cy="10" r="9" fill="#ef4444" />
+                  <path
+                    d="M6 6l8 8M14 6l-8 8"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
             </div>
           </label>
 
@@ -302,10 +306,10 @@ export default function StepContact({
             <div
               className={`mt-1 flex items-center justify-between rounded-lg h-12 px-4
                           bg-white/[.05] ring-1 ring-inset ${
-                            !discordIdentity?.id && submitted
-                              ? "ring-red-500/70"
-                              : "ring-white/12"
-                          }`}
+                !discordIdentity?.id && submitted
+                  ? "ring-red-500/70"
+                  : "ring-white/12"
+              }`}
             >
               <div className="truncate text-[13px] font-semibold">
                 {discordIdentity?.id ? (

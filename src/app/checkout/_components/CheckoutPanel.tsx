@@ -1,6 +1,7 @@
 // src/app/checkout/_components/CheckoutPanel.tsx
 "use client";
 
+import { useState } from "react";
 import { useCheckoutFlow } from "@/app/checkout/_components/checkout-steps/useCheckoutFlow";
 import CheckoutSteps from "@/app/checkout/_components/checkout-steps/CheckoutSteps";
 import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock";
@@ -20,14 +21,51 @@ function BottomBar({
   const [footer] = useFooter();
   const show = !footer.hidden;
 
+  const [coupon, setCoupon] = useState("");
+  const [couponMsg, setCouponMsg] = useState<{ type: "error" | "success"; msg: string } | null>(null);
+
+  const baseTotal = flow.breakdown?.total ?? 0;
+  const discountedTotal = baseTotal - (flow.couponDiscount ?? 0);
+
+  const blockedByWaiver = flow.step === 3 && !flow.waiver;
+  const disabled = footer.disabled || footer.loading || blockedByWaiver;
+
+const handleApplyCoupon = async () => {
+  const res = await fetch("/api/checkout/coupon/check", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      code: coupon,
+      studentId: flow.studentId,
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!data?.valid) {
+    setCouponMsg({
+      type: "error",
+      msg:
+        data.reason === "wrong-student"
+          ? "Please use your own coupon"
+          : "Invalid code — check spelling",
+    });
+    return;
+  }
+
+  setCouponMsg({ type: "success", msg: `${coupon} applied!` });
+
+  // updates UI + flow state
+  flow.applyCoupon(data.discount, coupon);
+  flow.setCouponCode(coupon);
+};
+
+
   const variants = {
     enter: (d: 1 | -1) => ({ x: d * 40, opacity: 0 }),
     center: { x: 0, opacity: 1 },
     exit: (d: 1 | -1) => ({ x: d * -40, opacity: 0 }),
   };
-
-  const blockedByWaiver = flow.step === 3 && !flow.waiver;
-  const disabled = footer.disabled || footer.loading || blockedByWaiver;
 
   return (
     <div className="pt-0 px-1 pb-[max(env(safe-area-inset-bottom),1rem)] md:pb-0">
@@ -44,47 +82,99 @@ function BottomBar({
             className="w-full"
           >
             {flow.step === 3 && (
-              <div className="shrink-0 pt-4 pb-1 border-t border-white/10 space-y-4">
-                <div className="flex items-center justify-between font-semibold">
-                  <span className="text-white">Total</span>
-                  <span className="text-white">€{(flow.breakdown?.total ?? 0).toFixed(0)}</span>
+              <>
+                {/* message above input row WITHOUT layout shift */}
+                <div className="relative h-[38px] mb-2">
+                  {couponMsg && (
+                    <div
+                      className={`absolute -top-5 right-0 text-xs font-semibold whitespace-nowrap ${
+                        couponMsg.type === "error"
+                          ? "text-red-400"
+                          : "text-[var(--color-lightblue)]"
+                      }`}
+                    >
+                      {couponMsg.msg}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 h-full">
+                    <input
+                      type="text"
+                      value={coupon}
+                      onChange={(e) => setCoupon(e.target.value)}
+                      placeholder="Coupon"
+                      className="bg-white/[0.06] text-sm text-white/80 rounded-md px-3 py-2 w-full
+                        placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
+                    />
+
+                    <button
+                      type="button"
+                      className="text-sm px-3 py-2 bg-white/[0.07] rounded-md text-white/80
+                        hover:bg-white/[0.12] transition"
+                      onClick={handleApplyCoupon}
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
 
-                <label className="flex items-start gap-2 text-[13px] text-white/80">
-                  <input
-                    type="checkbox"
-                    checked={flow.waiver}
-                    onChange={(e) => {
-                      const accepted = e.target.checked;
-                      flow.setWaiver(accepted);
-                    }}
-                    className="mt-0.5 h-4 w-4 accent-[#fc8803]"
-                  />
-                  <span>
-                    I request immediate service and accept that my{" "}
-                    <a
-                      href="/withdrawal"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline hover:text-white"
-                    >
-                      14-day withdrawal right
-                    </a>{" "}
-                    ends with full performance.
-                  </span>
-                </label>
+                <div className="shrink-0 pt-4 pb-1 border-t border-white/10 space-y-4">
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="text-white">Total</span>
 
-                <p className="text-[11px] leading-snug text-white/60">
-                  By clicking <span className="text-white/80 font-medium">Pay now</span>, you agree to our{" "}
-                  <a href="/terms" target="_blank" rel="noreferrer" className="underline hover:text-white">
-                    Terms
-                  </a>{" "}
-                  and{" "}
-                  <a href="/privacy" target="_blank" rel="noreferrer" className="underline hover:text-white">
-                    Privacy Policy
-                  </a>.
-                </p>
-              </div>
+                    <div className="flex items-center gap-2">
+                      {flow.couponDiscount > 0 ? (
+                        <>
+                          <motion.span
+                            initial={{ opacity: 0, x: -4 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="text-[var(--color-lightblue)] text-sm font-semibold"
+                          >
+                            €{discountedTotal.toFixed(0)}
+                          </motion.span>
+
+                          <motion.span
+                            initial={{ opacity: 0, x: 4 }}
+                            animate={{ opacity: 0.8, x: 0 }}
+                            className="line-through text-white/80 text-sm"
+                          >
+                            €{baseTotal.toFixed(0)}
+                          </motion.span>
+                        </>
+                      ) : (
+                        <span className="text-white">€{baseTotal.toFixed(0)}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <label className="flex items-start gap-2 text-[13px] text-white/80">
+                    <input
+                      type="checkbox"
+                      checked={flow.waiver}
+                      onChange={(e) => flow.setWaiver(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 accent-[#fc8803]"
+                    />
+                    <span>
+                      I request immediate service and accept that my{" "}
+                      <a href="/withdrawal" target="_blank" rel="noreferrer" className="underline hover:text-white">
+                        14-day withdrawal right
+                      </a>{" "}
+                      ends with full performance.
+                    </span>
+                  </label>
+
+                  <p className="text-[11px] leading-snug text-white/60">
+                    By clicking <span className="text-white/80 font-medium">Pay now</span>, you agree to our{" "}
+                    <a href="/terms" target="_blank" rel="noreferrer" className="underline hover:text-white">
+                      Terms
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" target="_blank" rel="noreferrer" className="underline hover:text-white">
+                      Privacy Policy
+                    </a>.
+                  </p>
+                </div>
+              </>
             )}
 
             <div className="h-12 flex items-center">

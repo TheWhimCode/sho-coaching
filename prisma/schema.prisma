@@ -70,6 +70,9 @@ model Session {
   slot             Slot?       @relation("SlotSession", fields: [slotId], references: [id])
   student          Student?    @relation(fields: [studentId], references: [id])
   sessionDoc       SessionDoc? @relation("SessionToDoc")
+  couponCode      String?
+  couponDiscount  Int         @default(0)
+
 
   @@index([createdAt])
   @@index([scheduledStart])
@@ -108,6 +111,8 @@ model Student {
   sessions      Session[]
   sessionDocs   SessionDoc[]
   assets        StudentAsset[]
+    coupons       Coupon[]        
+
 
   @@index([puuid])
 }
@@ -171,4 +176,17 @@ enum SlotStatus {
   free
   taken
   blocked
+}
+
+model Coupon {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  studentId  String
+  value      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  student    Student  @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
 }

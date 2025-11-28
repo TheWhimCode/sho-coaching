@@ -1,4 +1,3 @@
-// src/app/(wherever)/useCheckoutFlow.ts
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -23,13 +22,18 @@ export type Payload = {
 
 export type PayloadForBackend = Pick<
   Payload,
-  "slotId" | "sessionType" | "liveMinutes" | "followups" | "liveBlocks" | "preset" | "holdKey"
+  | "slotId"
+  | "sessionType"
+  | "liveMinutes"
+  | "followups"
+  | "liveBlocks"
+  | "preset"
+  | "holdKey"
 > & {
   startTime?: string | number | Date;
 };
 
 export type DiscordIdentity = { id: string; username?: string | null };
-
 export type SavedCard = {
   id: string;
   brand: string | null;
@@ -65,11 +69,24 @@ export function useCheckoutFlow({
   payloadForBackend,
 }: Args) {
   const appearanceToUse = appearance ?? appearanceDarkBrand;
-  const safePayload: Payload = useMemo(() => ({ ...DEFAULT_PAYLOAD, ...payload }), [payload]);
+  const safePayload: Payload = useMemo(
+    () => ({ ...DEFAULT_PAYLOAD, ...payload }),
+    [payload]
+  );
 
   const sessionBlockTitle = useMemo(() => {
-    const p = getPreset(safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks);
-    return p === "vod" ? "VOD Review" : p === "instant" ? "Instant Insight" : p === "signature" ? "Signature Session" : "Custom Session";
+    const p = getPreset(
+      safePayload.baseMinutes,
+      safePayload.followups,
+      safePayload.liveBlocks
+    );
+    return p === "vod"
+      ? "VOD Review"
+      : p === "instant"
+      ? "Instant Insight"
+      : p === "signature"
+      ? "Signature Session"
+      : "Custom Session";
   }, [safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks]);
 
   const totalLiveMinutes = useMemo(
@@ -77,13 +94,17 @@ export function useCheckoutFlow({
     [safePayload.baseMinutes, safePayload.liveBlocks]
   );
 
-  // Steps
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [dir, setDir] = useState<1 | -1>(1);
-  const goNext = () => { setDir(1); setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3))); };
-  const goBack = () => { setDir(-1); setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3))); };
+  const goNext = () => {
+    setDir(1);
+    setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3)));
+  };
+  const goBack = () => {
+    setDir(-1);
+    setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
+  };
 
-  // Payment / intent state
   const [payMethod, setPayMethod] = useState<PayMethod>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [piId, setPiId] = useState<string | null>(null);
@@ -93,46 +114,69 @@ export function useCheckoutFlow({
   const [cardPmId, setCardPmId] = useState<string | null>(null);
   const [savedCard, setSavedCard] = useState<SavedCard | null>(null);
 
-  // Contact state
   const [riotTag, setRiotTag] = useState("");
   const [notes, setNotes] = useState("");
-  const [discordIdentity, setDiscordIdentity] = useState<DiscordIdentity | null>(null);
+  const [discordIdentity, setDiscordIdentity] =
+    useState<DiscordIdentity | null>(null);
 
+  const [studentId, setStudentId] = useState<string | null>(null);
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
-  // persist waiver AFTER booking exists
-useEffect(() => {
-  if (!bookingId) return;
-  if (!waiver) return;
 
-  fetch("/api/booking/update-waiver", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bookingId,
-      waiverAccepted: true,
-    }),
-  }).catch(() => {});
-}, [bookingId, waiver]);
+  // coupon
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
 
+  const applyCoupon = (amount: number, code: string) => {
+    setCouponDiscount(amount);
+    setCouponCode(code);
 
-  // Track last verified PUUID to clear stale Discord if identity changes
+    // ⬇ THIS is the key fix
+    breakdown.total = breakdown.total - amount;
+  };
+
+  useEffect(() => {
+    if (!bookingId) return;
+    if (!waiver) return;
+
+    fetch("/api/booking/update-waiver", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingId,
+        waiverAccepted: true,
+      }),
+    }).catch(() => {});
+  }, [bookingId, waiver]);
+
   const lastPuuidRef = useRef<string | null>(null);
 
-  // Selected start time (if any)
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
   useEffect(() => {
     function coerceToDate(v: unknown): Date | null {
       if (v == null) return null;
       if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-      if (typeof v === "number") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
-      if (typeof v === "string") { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+      if (typeof v === "number") {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      if (typeof v === "string") {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d;
+      }
       return null;
     }
+
     const fromBackend = coerceToDate(payloadForBackend?.startTime);
     const fromPayload = coerceToDate(safePayload.startTime);
-    if (fromBackend) { setSelectedStart(fromBackend); return; }
-    if (fromPayload) { setSelectedStart(fromPayload); return; }
+    if (fromBackend) {
+      setSelectedStart(fromBackend);
+      return;
+    }
+    if (fromPayload) {
+      setSelectedStart(fromPayload);
+      return;
+    }
     if (typeof window !== "undefined") {
       const s = new URLSearchParams(window.location.search).get("startTime");
       const fromQuery = coerceToDate(s || undefined);
@@ -140,39 +184,49 @@ useEffect(() => {
     }
   }, [payloadForBackend, safePayload]);
 
-  /** When RiotTag verifies: ONLY local changes; optional Discord autofill (read-only) */
-  const handleRiotVerified = async ({
-    riotTag: verifiedTag,
-    puuid,
-    region,
-  }: { riotTag: string; puuid: string; region: string }) => {
+  const handleRiotVerified = async ({ riotTag: verifiedTag, puuid }: any) => {
     setRiotTag(verifiedTag);
 
-    const puuidChanged = lastPuuidRef.current && lastPuuidRef.current !== puuid;
-    if (puuidChanged) setDiscordIdentity(null);
-
-    // Autofill by PUUID (read-only)
     try {
-      const resp = await fetch(`/api/checkout/student/by-puuid?puuid=${encodeURIComponent(puuid)}`, { cache: "no-store" });
+      const resp = await fetch(
+        `/api/checkout/student/by-DBmatch?puuid=${encodeURIComponent(puuid)}`,
+        { cache: "no-store" }
+      );
       if (resp.ok) {
         const data = await resp.json().catch(() => null);
+
+        if (data?.studentId) setStudentId(String(data.studentId));
+
         if (data?.discordId) {
           setDiscordIdentity({
             id: String(data.discordId),
-            username: data.discordName ?? null, // treat stored name as username
+            username: data.discordName ?? null,
           });
         }
       }
     } catch {}
+
     lastPuuidRef.current = puuid;
   };
 
-  /** Discord OAuth success: local state only; persist on Continue */
   const handleDiscordLinked = async (u: DiscordIdentity) => {
     setDiscordIdentity({ id: u.id, username: u.username ?? null });
+
+    try {
+      const resp = await fetch(
+        `/api/checkout/student/by-DBmatch?discordId=${encodeURIComponent(
+          u.id
+        )}`,
+        { cache: "no-store" }
+      );
+
+      if (resp.ok) {
+        const data = await resp.json().catch(() => null);
+        if (data?.studentId) setStudentId(String(data.studentId));
+      }
+    } catch {}
   };
 
-  /** Continue flow: (up)create booking with latest Riot+Discord, then create PI */
   async function chooseAndGo(m: PayMethod) {
     if (!m) return;
     setDir(1);
@@ -188,29 +242,30 @@ useEffect(() => {
     setLoadingIntent(true);
 
     try {
-      // Upsert unpaid booking by slotId
       const make = await fetch("/api/booking/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          studentId: studentId ?? null,
           sessionType: sessionBlockTitle,
           slotId: safePayload.slotId,
           liveMinutes: totalLiveMinutes,
           followups: safePayload.followups,
-          riotTag,                                      // latest
-          discordId: discordIdentity?.id ?? null,       // id
-          discordName: discordIdentity?.username ?? null, // username only
+          riotTag,
+          discordId: discordIdentity?.id ?? null,
+          discordName: discordIdentity?.username ?? null,
           notes,
           waiverAccepted: waiver,
+
+          couponCode,
+          couponDiscount,
         }),
       });
 
       if (!make.ok) {
         if (make.status === 409) {
-          console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
+          console.warn("Selected start time can’t fit this duration.");
           setStep(0);
-        } else {
-          console.error("CREATE/UPDATE_BOOKING_FAILED", await make.text().catch(() => ""));
         }
         setLoadingIntent(false);
         return;
@@ -220,7 +275,6 @@ useEffect(() => {
       const bid = j.bookingId as string;
       setBookingId(bid);
 
-      // Create PaymentIntent for this booking & method
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,7 +282,7 @@ useEffect(() => {
       });
 
       if (res.status === 409) {
-        console.warn("Selected start time can’t fit this duration. Choose another start or shorten the session.");
+        console.warn("Selected start time can’t fit this duration.");
         setStep(0);
         setLoadingIntent(false);
         return;
@@ -278,11 +332,20 @@ useEffect(() => {
     notes,
     setNotes,
     discordIdentity,
+
+    studentId,
+    setStudentId,
+
     waiver,
     setWaiver,
 
-    handleRiotVerified,   // read-only
-    handleDiscordLinked,  // local only; persist on Continue
-    chooseAndGo,          // upsert booking with id+username
+    chooseAndGo,
+    handleRiotVerified,
+    handleDiscordLinked,
+
+    couponCode,
+    setCouponCode,
+    couponDiscount,
+    applyCoupon,
   };
 }

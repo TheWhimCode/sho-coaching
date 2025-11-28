@@ -1,10 +1,6 @@
-// src/lib/booking/finalizeBooking.ts
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { Prisma as PrismaNS } from "@prisma/client";
-import { SlotStatus } from "@prisma/client";
 import { getPreset } from "@/lib/sessions/preset";
-import { Prisma as P } from '@prisma/client';
 
 export type FinalizeMeta = {
   bookingId?: string;
@@ -16,25 +12,18 @@ export type FinalizeMeta = {
   followups?: string;
   liveBlocks?: string;
 
-  // optional passthrough (usually the session already has it)
   riotTag?: string;
-
-  // echoes (normally already stored on Session via /booking/update-waiver)
-  waiverAccepted?: string; // "true" | "false"
+  waiverAccepted?: string;
   waiverIp?: string;
 };
 
 function titleFromPreset(baseMinutes: number, followups: number, liveBlocks: number): string {
   const preset = getPreset(baseMinutes, followups, liveBlocks);
   switch (preset) {
-    case "vod":
-      return "VOD Review";
-    case "instant":
-      return "Instant Insight";
-    case "signature":
-      return "Signature Session";
-    default:
-      return "Custom Session";
+    case "vod": return "VOD Review";
+    case "instant": return "Instant Insight";
+    case "signature": return "Signature Session";
+    default: return "Custom Session";
   }
 }
 
@@ -42,20 +31,16 @@ function isP2002(e: unknown): boolean {
   return typeof e === "object" && e !== null && "code" in e && (e as any).code === "P2002";
 }
 
-// ---- Student resolution (canonical) -----------------------------------------
-
 async function resolveCanonicalStudent(
   tx: Prisma.TransactionClient,
   args: { discordId?: string | null; discordName?: string | null; riotTag: string }
 ) {
   const { discordId, discordName, riotTag } = args;
 
-  // 1) find by discordId (immutable) or riotTag
   let student =
     (discordId ? await tx.student.findUnique({ where: { discordId } }) : null) ??
     (await tx.student.findUnique({ where: { riotTag } }));
 
-  // 2) create if none
   if (!student) {
     const baseName = riotTag || "Student";
     let name = baseName;
@@ -81,8 +66,6 @@ async function resolveCanonicalStudent(
     if (!student) throw new Error("failed_to_create_student");
   }
 
-  // 3) force latest identity fields
-  // 3a) discordId (unique)
   if (discordId && discordId !== student.discordId) {
     try {
       student = await tx.student.update({ where: { id: student.id }, data: { discordId } });
@@ -96,12 +79,9 @@ async function resolveCanonicalStudent(
     }
   }
 
-  // 3b) discordName (not unique)
-  if (discordName && discordName !== student.discordName) {
+  if (discordName && discordName !== student.discordName)
     student = await tx.student.update({ where: { id: student.id }, data: { discordName } });
-  }
 
-  // 3c) riotTag (unique)
   if (riotTag && riotTag !== student.riotTag) {
     try {
       student = await tx.student.update({ where: { id: student.id }, data: { riotTag } });
@@ -117,8 +97,6 @@ async function resolveCanonicalStudent(
 
   return student;
 }
-
-// ---- Main finalize ----------------------------------------------------------
 
 export async function finalizeBooking(
   meta: FinalizeMeta,
@@ -146,6 +124,8 @@ export async function finalizeBooking(
     blockCsv: true,
     currency: true,
     amountCents: true,
+    couponCode: true,
+    couponDiscount: true,
   } as const;
 
   let sessionRow =
@@ -163,9 +143,7 @@ export async function finalizeBooking(
   }
   if (!sessionRow) throw new Error("booking not found");
 
-  if (sessionRow.status === "paid") {
-    return;
-  }
+  if (sessionRow.status === "paid") return;
 
   const liveBlocks =
     Number.isFinite(Number(meta.liveBlocks)) ? parseInt(meta.liveBlocks!, 10) : (sessionRow.liveBlocks ?? 0);
@@ -176,8 +154,7 @@ export async function finalizeBooking(
 
   const baseMinutes = Math.max(30, liveMinutes - liveBlocks * 45);
   const providedTitle = (meta.sessionType ?? "").trim();
-  const computedTitle = titleFromPreset(baseMinutes, followups, liveBlocks);
-  const sessionType = providedTitle || sessionRow.sessionType || computedTitle;
+  const sessionType = providedTitle || sessionRow.sessionType || titleFromPreset(baseMinutes, followups, liveBlocks);
 
   const slotIdsCsv = (meta.slotIds ?? sessionRow.blockCsv ?? "").trim();
   const slotIds = slotIdsCsv ? slotIdsCsv.split(",").filter(Boolean) : [];
@@ -189,63 +166,99 @@ export async function finalizeBooking(
   const discordId = sessionRow.discordId ?? null;
   const discordName = sessionRow.discordName ?? null;
 
-const incomingWaiver = meta.waiverAccepted === "true";
-
-const waiverAccepted =
-  sessionRow.waiverAccepted || incomingWaiver;
+  const incomingWaiver = meta.waiverAccepted === "true";
+  const waiverAccepted = sessionRow.waiverAccepted || incomingWaiver;
   const waiverAcceptedAt =
     waiverAccepted && !sessionRow.waiverAccepted ? new Date() : sessionRow.waiverAcceptedAt || undefined;
   const waiverIp = sessionRow.waiverIp || (meta.waiverIp || undefined);
 
   await prisma.$transaction(async (tx) => {
-    if (slotIds.length) {
-      await tx.slot.updateMany({
-        where: { id: { in: slotIds }, status: { in: [SlotStatus.free, SlotStatus.blocked] } },
-        data: { status: SlotStatus.taken, holdUntil: null, holdKey: null },
-      });
-    } else {
-      await tx.slot.update({
-        where: { id: firstSlotId },
-        data: { status: SlotStatus.taken, holdUntil: null, holdKey: null },
-      });
-    }
-
-    const startSlot = await tx.slot.findUnique({
-      where: { id: firstSlotId },
-      select: { startTime: true },
-    });
-    if (!startSlot) throw new Error("slot not found");
 
     const student = await resolveCanonicalStudent(tx, { discordId, discordName, riotTag });
 
-    const sessionId = sessionRow.id;
-    const currencyLower = (currency ?? sessionRow.currency ?? "eur").toLowerCase();
-    const blockCsv = slotIds.join(",");
+    await tx.session.update({
+      where: { id: sessionRow.id },
+      data: {
+        studentId: student.id,
+        sessionType,
+        status: "paid",
+        amountCents: amountCents ?? sessionRow.amountCents ?? null,
+        currency: (currency ?? sessionRow.currency ?? "eur").toLowerCase(),
+        blockCsv: slotIds.join(","),
+        paymentProvider: provider,
+        paymentRef,
+        scheduledStart: (await tx.slot.findUnique({ where: { id: firstSlotId }, select: { startTime: true } }))!.startTime,
+        scheduledMinutes: liveMinutes,
+        liveBlocks,
+        waiverAccepted,
+        waiverAcceptedAt: waiverAcceptedAt ?? null,
+        waiverIp: waiverIp ?? null,
+      },
+    });
 
-    await tx.$executeRaw(PrismaNS.sql`
-      UPDATE "public"."Session"
-      SET
-        "studentId" = ${student.id},
-        "sessionType" = ${sessionType},
-        "status" = 'paid',
-        "amountCents" = ${amountCents ?? sessionRow.amountCents ?? null},
-        "currency" = ${currencyLower},
-        "blockCsv" = ${blockCsv},
-        "paymentProvider" = ${provider},
-        "paymentRef" = ${paymentRef},
-        "scheduledStart" = ${startSlot.startTime},
-        "scheduledMinutes" = ${liveMinutes},
-        "liveBlocks" = ${liveBlocks},
-        "waiverAccepted" = ${waiverAccepted},
-        "waiverAcceptedAt" = ${waiverAcceptedAt ?? null},
-        "waiverIp" = ${waiverIp ?? null}
-      WHERE "id" = ${sessionId}
-    `);
+    // -------------------------------------------------------------
+    // COUPON LOGIC
+    // -------------------------------------------------------------
+    if (sessionRow.couponCode) {
+      const coupon = await tx.coupon.findUnique({
+        where: { code: sessionRow.couponCode },
+      });
+
+      if (coupon) {
+        if (coupon.studentId === student.id) {
+          await tx.coupon.update({
+            where: { code: coupon.code },
+            data: {
+              value: 5,
+              code: `${student.name}Diff`,
+            },
+          });
+        } else {
+          await tx.coupon.update({
+            where: { code: coupon.code },
+            data: {
+              value: coupon.value + 5,
+              code: coupon.code + "+",
+            },
+          });
+
+          const existing = await tx.coupon.findFirst({
+            where: { studentId: student.id },
+          });
+
+          if (!existing) {
+            await tx.coupon.create({
+              data: {
+                code: `${student.name}Diff`,
+                studentId: student.id,
+                value: 5,
+              },
+            });
+          }
+        }
+      }
+    } else {
+      // ⭐ NEW: student paid without coupon → create one if not owned already
+      const existing = await tx.coupon.findFirst({
+        where: { studentId: student.id },
+      });
+
+      if (!existing) {
+        await tx.coupon.create({
+          data: {
+            code: `${student.name}Diff`,
+            studentId: student.id,
+            value: 5,
+          },
+        });
+      }
+    }
 
     const exists = await tx.sessionDoc.findFirst({
       where: { sessionId: sessionRow.id },
       select: { id: true },
     });
+
     if (!exists) {
       const last = await tx.sessionDoc.findFirst({
         where: { studentId: student.id },
@@ -253,6 +266,7 @@ const waiverAccepted =
         select: { number: true },
       });
       const nextNumber = (last?.number ?? 0) + 1;
+
       await tx.sessionDoc.create({
         data: {
           studentId: student.id,

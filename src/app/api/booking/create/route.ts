@@ -9,7 +9,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
   if (!rateLimit(`booking:create:${ip}`, 20, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
@@ -17,19 +19,23 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
-  // Validate core checkout fields (slotId, liveMinutes, followups, etc.)
   const parsed = CheckoutZ.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
+
   const { slotId, liveMinutes, followups } = parsed.data;
 
-  // New/updated fields
   const sessionType = (body.sessionType ?? "").trim();
-  const riotTag = (body.riotTag ?? "").trim();              // REQUIRED now
-  const discordId: string | null = body.discordId ?? null;   // optional
-  const discordName: string | null = body.discordName ?? null; // optional
+  const riotTag = (body.riotTag ?? "").trim();
+  const discordId: string | null = body.discordId ?? null;
+  const discordName: string | null = body.discordName ?? null;
   const notes = (body.notes ?? "").trim() || null;
+  const studentId: string | null = body.studentId ?? null;
+
+  // NEW: coupon support
+  const couponCode: string | null = body.couponCode ?? null;
+  const couponDiscount: number = body.couponDiscount ?? 0;
 
   const waiverAccepted = body.waiverAccepted === true || body.waiver === true;
   const waiverIp = waiverAccepted ? ip : null;
@@ -39,7 +45,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  // get slot & reject if already taken
   const slot = await prisma.slot.findUnique({ where: { id: slotId } });
   if (!slot || slot.status === SlotStatus.taken) {
     return NextResponse.json({ error: "slot_unavailable" }, { status: 409 });
@@ -47,13 +52,13 @@ export async function POST(req: Request) {
 
   const { amountCents } = computePriceEUR(liveMinutes, followups);
 
-  // ---- Reuse-or-create to avoid P2002 on Session.slotId ----
   const existing = await prisma.session.findFirst({
     where: { slotId, status: "unpaid" },
     select: { id: true },
   });
 
   try {
+    // UPDATE existing
     if (existing) {
       const b = await prisma.session.update({
         where: { id: existing.id },
@@ -65,6 +70,9 @@ export async function POST(req: Request) {
           discordId,
           discordName,
           notes,
+          studentId,
+          couponCode,      // NEW
+          couponDiscount,  // NEW
           scheduledStart: slot.startTime,
           scheduledMinutes: liveMinutes,
           currency: "eur",
@@ -81,17 +89,20 @@ export async function POST(req: Request) {
       return res;
     }
 
-    // Otherwise create a fresh unpaid session
+    // CREATE new
     const b = await prisma.session.create({
       data: {
         sessionType,
-        slotId, // still unique; there will be at most one unpaid row per slot
+        slotId,
         liveMinutes,
         followups,
         riotTag,
         discordId,
         discordName,
         notes,
+        studentId,
+        couponCode,      // NEW
+        couponDiscount,  // NEW
         scheduledStart: slot.startTime,
         scheduledMinutes: liveMinutes,
         currency: "eur",
@@ -108,7 +119,6 @@ export async function POST(req: Request) {
     res.headers.set("Cache-Control", "no-store");
     return res;
   } catch (e: any) {
-    // Handle race: if another request just created the unpaid session, reuse it.
     if (e?.code === "P2002") {
       const again = await prisma.session.findFirst({
         where: { slotId, status: "unpaid" },
@@ -120,6 +130,7 @@ export async function POST(req: Request) {
         return res;
       }
     }
+
     console.error("BOOKING_CREATE_ERROR", e);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
