@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import SessionHero from "./_hero-components/SessionHero";
 import CalLikeOverlay from "@/app/calendar/Calendar";
-import CustomizeDrawer from "./_hero-components/CustomizeDrawer";
+import CustomizeDrawer from "./_hero-components/CustomizeDrawer/CustomizeDrawer";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import type { Cfg } from "@/utils/sessionConfig";
+import type { Cfg } from "@/engine/session/config";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { computePriceEUR } from "@/lib/pricing";
 import { getPreset, type Preset } from "@/lib/sessions/preset";
@@ -29,18 +29,70 @@ export default function Client({ preset }: { preset: string }) {
       const liveBlocks = Math.max(0, Math.min(2, safe(qLive, 0)));
       return {
         title: "Custom Session",
-        cfg: { liveMin, followups, liveBlocks } as Cfg,
+        cfg: {
+          liveMin,
+          followups,
+          liveBlocks,
+          productType: "normal",
+        } as Cfg,
       };
     }
 
     switch (preset) {
       case "signature":
-        return { title: "Signature Session", cfg: { liveMin: 45, liveBlocks: 0, followups: 1 } as Cfg };
+        return {
+          title: "Signature Session",
+          cfg: {
+            liveMin: 45,
+            liveBlocks: 0,
+            followups: 1,
+            productType: "normal",
+          } as Cfg,
+        };
+
       case "instant":
-        return { title: "Instant Insight", cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
+        return {
+          title: "Instant Insight",
+          cfg: {
+            liveMin: 30,
+            liveBlocks: 0,
+            followups: 0,
+            productType: "normal",
+          } as Cfg,
+        };
+
       case "vod":
+        return {
+          title: "VOD Review",
+          cfg: {
+            liveMin: 60,
+            liveBlocks: 0,
+            followups: 0,
+            productType: "normal",
+          } as Cfg,
+        };
+
+      case "bootcamp":
+        return {
+          title: "Bootcamp",
+          cfg: {
+            liveMin: 60,
+            liveBlocks: 0,
+            followups: 0,
+            productType: "bundle",
+          } as Cfg,
+        };
+
       default:
-        return { title: "VOD Review", cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
+        return {
+          title: "VOD Review",
+          cfg: {
+            liveMin: 60,
+            liveBlocks: 0,
+            followups: 0,
+            productType: "normal",
+          } as Cfg,
+        };
     }
   }, [preset, qBase, qFU, qLive]);
 
@@ -53,7 +105,7 @@ export default function Client({ preset }: { preset: string }) {
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
 
   const [activePreset, setActivePreset] = useState<Preset>(() =>
-    getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks)
+    getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks, preset as Preset)
   );
 
   // Defer scrollbar-hiding classes by a couple of frames to avoid first-paint vh reflow on mobile
@@ -90,12 +142,16 @@ export default function Client({ preset }: { preset: string }) {
   useEffect(() => {
     setCfg(init.cfg);
     setLiveMinutes(init.cfg.liveMin);
-    setActivePreset(getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks));
-  }, [init]);
+    setActivePreset(
+      getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks, preset as Preset)
+    );
+  }, [init, preset]);
 
   useEffect(() => {
-    setActivePreset(getPreset(cfg.liveMin, cfg.followups, cfg.liveBlocks));
-  }, [cfg.liveMin, cfg.followups, cfg.liveBlocks]);
+    setActivePreset(
+      getPreset(cfg.liveMin, cfg.followups, cfg.liveBlocks, preset as Preset)
+    );
+  }, [cfg.liveMin, cfg.followups, cfg.liveBlocks, preset]);
 
   // Prefetch availability when minutes change
   useEffect(() => {
@@ -133,7 +189,7 @@ export default function Client({ preset }: { preset: string }) {
   return (
     <LayoutGroup id="booking-flow">
       <main className="relative min-h-[100svh] text-white overflow-x-hidden bg-[#000000]">
-        
+
         <SessionHero
           presetOverride={activePreset}
           title={init.title}
@@ -150,7 +206,6 @@ export default function Client({ preset }: { preset: string }) {
             setLiveMinutes(liveMinutes);
             setCalendarOpen(true);
           }}
-          /* parallax removed */
         />
 
         <AnimatePresence>
@@ -186,7 +241,6 @@ export default function Client({ preset }: { preset: string }) {
           onClose={() => setDrawerOpen(false)}
           cfg={cfg}
           onChange={setCfg}
-          highlightKey={focus === "followups" ? "followups" : undefined}
         />
       </main>
 

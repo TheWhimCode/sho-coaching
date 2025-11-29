@@ -1,4 +1,4 @@
-import type { Cfg } from "@/utils/sessionConfig";
+import type { Cfg } from "@/engine/session/config";
 
 export const INGAME_MIN = 45;
 

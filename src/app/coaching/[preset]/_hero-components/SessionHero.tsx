@@ -11,15 +11,16 @@ import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
 import LeftSteps from "./LeftSteps";
 import RightBookingPanel from "./RightBooking";
-import { getPreset } from "@/lib/sessions/preset";
+import { derivePreset } from "@/lib/sessions/derivePreset";
 import { stepsByPreset } from "@/lib/sessions/steps";
 import { titlesByPreset, taglinesByPreset } from "@/lib/sessions/labels";
 import Calendar from "@/app/calendar/Calendar";
+import type { Cfg } from "@/engine/session/config";
 
 type Props = {
-  title: string;
-  subtitle: string;
-  image: string;
+  title?: string;
+  subtitle?: string;
+  image?: string;
   children?: ReactNode;
   followups?: number;
   onCustomize?: () => void;
@@ -27,15 +28,16 @@ type Props = {
   slots?: UiSlot[];
   baseMinutes?: number;
   isCustomizingCenter?: boolean;
-  isDrawerOpen?: boolean;
+  isDrawerOpen?: boolean; // <-- add this
+  cfg?: Cfg;
   liveBlocks?: number;
-  presetOverride?: "vod" | "signature" | "instant" | "custom";
+  presetOverride?: "vod" | "signature" | "instant" | "custom" | "bootcamp";
 };
+
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const BG_FADE_DURATION = 3;
 const CONTENT_BASE_DELAY = 0.8;
-
 const TITLE_DELAY = CONTENT_BASE_DELAY + 0.15;
 const TAGLINE_DELAY = CONTENT_BASE_DELAY + 0.35;
 const PANEL_DELAY = {
@@ -74,7 +76,7 @@ export default function SessionHero({
   followups,
   baseMinutes = 60,
   isCustomizingCenter = false,
-  isDrawerOpen = false,
+  cfg,
   liveBlocks = 0,
   presetOverride,
 }: Props) {
@@ -88,26 +90,22 @@ export default function SessionHero({
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
 
-  // ---- mobile height reservation (measure → apply min-height) ----
   const headerRef = useRef<HTMLDivElement | null>(null);
   const centerRef = useRef<HTMLDivElement | null>(null);
   const rightRef = useRef<HTMLDivElement | null>(null);
 
-  // conservative defaults to avoid initial collapse on mobile
   const [minHHeader, setMinHHeader] = useState<number>(110);
   const [minHCenter, setMinHCenter] = useState<number>(400);
   const [minHRight, setMinHRight] = useState<number>(300);
 
-  // helper to measure and set min-heights once content has laid out
   const measureHeights = () => {
-    if (isDesktop) return; // desktop doesn't need reservations
+    if (isDesktop) return;
     const h = headerRef.current?.offsetHeight ?? minHHeader;
     const c = centerRef.current?.offsetHeight ?? minHCenter;
     const r = rightRef.current?.offsetHeight ?? minHRight;
-    // only grow, never shrink (prevents flicker)
-    setMinHHeader((prev) => Math.max(prev, h));
-    setMinHCenter((prev) => Math.max(prev, c));
-    setMinHRight((prev) => Math.max(prev, r));
+    setMinHHeader(prev => Math.max(prev, h));
+    setMinHCenter(prev => Math.max(prev, c));
+    setMinHRight(prev => Math.max(prev, r));
   };
 
   useEffect(() => setIsFirstLoad(false), []);
@@ -126,15 +124,28 @@ export default function SessionHero({
     return () => window.removeEventListener("resize", calc);
   }, []);
 
-  const baseOnly = baseMinutes ?? 60;
+  const baseOnly = baseMinutes;
   const liveMinutesRaw = baseOnly + (liveBlocks ?? 0) * 45;
   const liveMinutes = Math.min(120, Math.max(30, liveMinutesRaw));
 
-  const computedPreset = getPreset(baseOnly, followups ?? 0, liveBlocks ?? 0);
+  // Use cfg if provided, otherwise compute default
+  const cfgForPreset: Cfg = cfg ?? {
+    productType: "normal",
+    liveMin: baseOnly,
+    followups: followups ?? 0,
+    liveBlocks: liveBlocks ?? 0,
+  };
+
+  const computedPreset = derivePreset(cfgForPreset);
   const preset = presetOverride ?? computedPreset;
+
   const leftSteps = stepsByPreset[preset];
 
-  // ---- data fetching (unchanged) ----
+  useEffect(() => {
+    const t = setTimeout(measureHeights, 0);
+    return () => clearTimeout(t);
+  }, [isDesktop, loading, preset, baseMinutes, liveBlocks, followups]);
+
   useEffect(() => {
     let on = true;
     (async () => {
@@ -147,7 +158,7 @@ export default function SessionHero({
         const rows = await fetchSlots(tomorrow, end, liveMinutes);
         if (!on) return;
         setSeedSlots(rows);
-        setQuickPool(rows.map((r) => ({ id: r.id, startISO: r.startTime ?? (r as any).startISO })));
+        setQuickPool(rows.map(r => ({ id: r.id, startISO: r.startTime ?? (r as any).startISO })));
       } catch {}
     })();
     return () => { on = false; };
@@ -161,7 +172,7 @@ export default function SessionHero({
         const s = await fetchSuggestedStarts(liveMinutes);
         if (!on) return;
         setAutoSlots(
-          s.map((x) => ({
+          s.map(x => ({
             id: x.id,
             startISO: x.startTime,
             durationMin: liveMinutes,
@@ -176,7 +187,7 @@ export default function SessionHero({
   }, [liveMinutes]);
 
   const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
-  const quickUiSlots: UiSlot[] = quick.map((q) => ({
+  const quickUiSlots: UiSlot[] = quick.map(q => ({
     id: q.id,
     startISO: q.startISO,
     durationMin: liveMinutes,
@@ -184,15 +195,7 @@ export default function SessionHero({
     label: q.label,
   }));
 
-  const shiftX = isDrawerOpen && isDesktop ? drawerW / 2 : 0;
-
-  // re-measure once content is in DOM and when loading flips
-  useEffect(() => {
-    // next frame & a micro delay to ensure layout finished
-    const t = setTimeout(measureHeights, 0);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDesktop, loading, preset, baseMinutes, liveBlocks, followups]);
+  const shiftX = false ? drawerW / 2 : 0; // placeholder if you want drawer animation
 
   const handleOpenCalendar = (opts: { slotId?: string; liveMinutes: number }) => {
     setInitialSlotId(opts.slotId ?? null);
@@ -201,14 +204,12 @@ export default function SessionHero({
 
   return (
     <section className="relative isolate min-h-[100svh] md:h-[100svh] overflow-hidden overscroll-contain text-white vignette">
-      {/* background */}
       <motion.div
         className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: BG_FADE_DURATION, ease: EASE }}
       >
-        {/* Desktop video (left aligned on base, center from md up to match previous) */}
         <video
           src="/videos/customize/Particle1_slow.webm"
           autoPlay
@@ -217,7 +218,6 @@ export default function SessionHero({
           playsInline
           className="hidden md:block h-full w-full object-cover object-left md:object-center"
         />
-        {/* Mobile static image, left aligned */}
         <img
           src="/videos/customize/Particle_static.png"
           alt=""
@@ -227,7 +227,6 @@ export default function SessionHero({
         <div className="absolute inset-0 bg-black/20" />
       </motion.div>
 
-      {/* content */}
       <motion.div
         className="relative z-20 h-full flex items-center py-5 md:py-14"
         animate={{ x: shiftX }}
@@ -235,7 +234,6 @@ export default function SessionHero({
       >
         <div className="mx-auto w-full max-w-7xl px-5 md:px-8">
           <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
-            {/* HEADER — measured & reserved on mobile */}
             <div
               style={!isDesktop ? { minHeight: minHHeader } : undefined}
               ref={headerRef}
@@ -267,12 +265,10 @@ export default function SessionHero({
               </AnimatePresence>
             </div>
 
-            {/* LEFT — hidden on mobile */}
             <div className="hidden md:block self-start">
-              <LeftSteps steps={leftSteps} title="How it works" animKey={preset} preset={preset} enterDelay={PANEL_DELAY.left} />
+              <LeftSteps steps={stepsByPreset[preset]} title="How it works" animKey={preset} preset={preset} enterDelay={PANEL_DELAY.left} />
             </div>
 
-            {/* CENTER — measured & reserved on mobile */}
             <motion.div
               style={!isDesktop ? { minHeight: minHCenter } : undefined}
               ref={centerRef}
@@ -287,10 +283,10 @@ export default function SessionHero({
                 isCustomizing={isCustomizingCenter}
                 followups={followups ?? 0}
                 liveBlocks={liveBlocks}
+                presetOverride={preset}
               />
             </motion.div>
 
-            {/* RIGHT — measured & reserved on mobile */}
             <motion.div
               style={!isDesktop ? { minHeight: minHRight } : undefined}
               ref={rightRef}
@@ -310,7 +306,6 @@ export default function SessionHero({
         </div>
       </motion.div>
 
-      {/* Mobile dimmer when calendar is open */}
       <AnimatePresence>
         {showCal && (
           <motion.div
@@ -324,7 +319,6 @@ export default function SessionHero({
         )}
       </AnimatePresence>
 
-      {/* Calendar overlay */}
       {showCal && (
         <Calendar
           sessionType={titlesByPreset[preset]}

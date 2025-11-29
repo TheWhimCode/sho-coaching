@@ -135,8 +135,24 @@ html, body {
 
   .selected-glow {
     box-shadow: 0 0 0 1px var(--color-lightblue),
-                0 0 10px 1px var(--color-lightblue) !important;
+                0 0 10px 0px var(--color-lightblue) !important;
   }
+}
+/* Soft orange glow (bundle active glow) */
+.orange-glow {
+  box-shadow:
+    0 0 0 1px #FFA033,
+    0 0 10px 0 rgba(255, 160, 51, 0.55) !important;
+}
+.text-bootcamp-glow {
+  background-image: linear-gradient(to bottom right, #3EA8FF, #FFA033);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+
+  filter:
+    drop-shadow(0 0 16px rgba(255, 200, 120, 1))
+    drop-shadow(0 0 40px rgba(255, 170, 70, 1));
 }
 
 .bg-dottexture {

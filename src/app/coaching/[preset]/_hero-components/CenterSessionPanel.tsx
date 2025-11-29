@@ -1,4 +1,3 @@
-// components/HeroSection/CenterSessionPanel.tsx
 "use client";
 
 import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock";
@@ -19,6 +18,8 @@ type Props = {
   liveBlocks?: number;     // number of 45m in-game blocks (0..2)
   /** Optional: match/stagger page enter timing */
   enterDelay?: number;
+    presetOverride?: "vod" | "signature" | "instant" | "custom" | "bootcamp"; // <-- add this
+
 };
 
 /* ===================== Stat Rules ===================== */
@@ -179,10 +180,11 @@ export default function CenterSessionPanel({
   );
   const { ring, glow } = colorsByPreset[preset];
 
-  const pricePreview = useMemo(
-    () => computePriceEUR(liveMinutes, followups).priceEUR,
-    [liveMinutes, followups]
-  );
+  // ⭐ Override price for Bootcamp
+  const pricePreview = useMemo(() => {
+    if (preset === "bootcamp") return 110; // forced price for Bootcamp
+    return computePriceEUR(liveMinutes, followups, "normal", preset).priceEUR;
+  }, [liveMinutes, followups, preset]);
 
   const stats = [
     { label: "Depth of Insight",    value: depthOfInsight(baseOnly, liveBlocks),           icon: <IconDepth  color={ring} glow={glow} /> },
@@ -204,7 +206,6 @@ export default function CenterSessionPanel({
 
   const STATS_AREA_HEIGHT = 160;
 
-  // Top-aligned placeholder (no extra spacer)
   const placeholder = (
     <div className="space-y-2 text-sm text-white/80">
       <p className="font-medium text-white/90">The most important mistakes to focus on are:</p>
@@ -240,7 +241,6 @@ export default function CenterSessionPanel({
       transition={{ duration: 0.35, delay: enterDelay }}
       className="relative w-full max-w-md"
     >
-      {/* Use GlassPanel as the background/border only; no extra spacing/visuals here */}
       <GlassPanel className="p-4 md:p-5">
         <SessionBlock
           title={title}
