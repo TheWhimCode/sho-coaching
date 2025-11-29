@@ -1,4 +1,4 @@
-// app/(legal)/impressum/page.tsx
+// app/(legal)/imprint/page.tsx
 import React from "react";
 
 export const metadata = {
@@ -26,12 +26,11 @@ export default function ImpressumPage() {
             space-y-6
           "
         >
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Impressum</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Legal notice</h1>
 
           <div className="space-y-4 text-white/90 leading-relaxed">
             <p>
-              Angaben gemäß § 5 TMG
-            </p>
+Legal information according to §5 TMG (German Telemedia Act)            </p>
 
             <p>
               <span className="font-medium">Tim Bäumler </span> 
@@ -44,17 +43,15 @@ export default function ImpressumPage() {
             <p>
               <span className="font-medium">Contact</span> <br />
               E-Mail: im.sho@yahoo.com <br />
-              Contact form: [link to contact page] (optional)
+              
             </p>
 
             <p>
-              Umsatzsteuer-ID: [falls vorhanden, § 27a UStG] <br />
-              Handelsregister: [falls zutreffend]
-            </p>
+No VAT is charged according to §19 German VAT Act (UStG).            </p>
 
             <p>
-              Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV: <br />
-              [Your Full Name, same as above]
+Responsible for content according to §55(2) RStV: <br />
+              Tim Bäumler
             </p>
 
             <p>
@@ -71,7 +68,7 @@ export default function ImpressumPage() {
             </p>
           </div>
 
-          <p className="text-xs text-white/55 pt-2">Last updated: [DD Month YYYY]</p>
+          <p className="text-xs text-white/55 pt-2">Last updated: 29 November 2025</p>
         </div>
       </div>
     </section>

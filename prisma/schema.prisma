@@ -44,41 +44,69 @@ model AvailabilityException {
 }
 
 model Session {
-  id               String      @id @default(cuid())
+  id               String    @id @default(cuid())
   sessionType      String
-  status           String      @default("unpaid")
-  slotId           String?     @unique
+  status           String    @default("unpaid")
+  slotId           String?   @unique
   liveMinutes      Int
-  followups        Int         @default(0)
+  followups        Int       @default(0)
   riotTag          String
   notes            String?
-  createdAt        DateTime    @default(now())
+  createdAt        DateTime  @default(now())
   paymentProvider  String?
-  paymentRef       String?     @unique
+  paymentRef       String?   @unique
   amountCents      Int?
-  currency         String      @default("eur")
+  currency         String    @default("eur")
   blockCsv         String?
   scheduledStart   DateTime
   scheduledMinutes Int
-  liveBlocks       Int         @default(0)
-  waiverAccepted   Boolean     @default(false)
+  liveBlocks       Int       @default(0)
+  waiverAccepted   Boolean   @default(false)
   waiverAcceptedAt DateTime?
   waiverIp         String?
   studentId        String?
   discordId        String?
   discordName      String?
-  slot             Slot?       @relation("SlotSession", fields: [slotId], references: [id])
-  student          Student?    @relation(fields: [studentId], references: [id])
-  sessionDoc       SessionDoc? @relation("SessionToDoc")
-  couponCode      String?
-  couponDiscount  Int         @default(0)
 
+  reminderSent Boolean @default(false)
+  followupSent Boolean @default(false)
+
+  slot       Slot?       @relation("SlotSession", fields: [slotId], references: [id])
+  student    Student?    @relation(fields: [studentId], references: [id])
+  sessionDoc SessionDoc? @relation("SessionToDoc")
+
+  couponCode     String?
+  couponDiscount Int     @default(0)
+
+  sessionAssets SessionAsset[]
 
   @@index([createdAt])
   @@index([scheduledStart])
   @@index([riotTag])
   @@index([discordId])
   @@index([studentId])
+}
+
+model PendingConfirmationDM {
+  discordId String   @id
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model SessionAsset {
+  id        String   @id @default(cuid())
+  sessionId String
+  assetId   String
+  createdAt DateTime @default(now())
+
+  session Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  asset   AssetLibrary @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, assetId])
+  @@index([sessionId])
+  @@index([assetId])
 }
 
 model ProcessedEvent {
@@ -111,22 +139,22 @@ model Student {
   sessions      Session[]
   sessionDocs   SessionDoc[]
   assets        StudentAsset[]
-    coupons       Coupon[]        
-
+  coupons       Coupon[]
 
   @@index([puuid])
 }
 
 model AssetLibrary {
-  id         String         @id @default(cuid())
-  name       String
-  type       String
-  storageKey String
-  url        String
-  mime       String?
-  size       Int?
-  createdAt  DateTime       @default(now())
-  students   StudentAsset[]
+  id            String         @id @default(cuid())
+  name          String
+  type          String
+  storageKey    String
+  url           String
+  mime          String?
+  size          Int?
+  createdAt     DateTime       @default(now())
+  students      StudentAsset[]
+  sessionAssets SessionAsset[]
 }
 
 model StudentAsset {
@@ -142,7 +170,6 @@ model StudentAsset {
   @@index([assetId])
 }
 
-/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model RankSnapshot {
   id         String   @id @default(cuid())
   studentId  String
@@ -179,14 +206,14 @@ enum SlotStatus {
 }
 
 model Coupon {
-  id         String   @id @default(cuid())
-  code       String   @unique
-  studentId  String
-  value      Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  code      String   @unique
+  studentId String
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  student    Student  @relation(fields: [studentId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
 
   @@index([studentId])
 }

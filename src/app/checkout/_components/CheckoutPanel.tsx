@@ -29,6 +29,9 @@ function BottomBar({
   const blockedByWaiver = flow.step === 2 && !flow.waiver;
   const disabled = footer.disabled || footer.loading || blockedByWaiver;
 
+  // ⭐ coupon lock after PI or booking exists
+  const couponLocked = !!flow.clientSecret;
+
   const handleApplyCoupon = async () => {
     const res = await fetch("/api/checkout/coupon/check", {
       method: "POST",
@@ -108,13 +111,15 @@ function BottomBar({
                       value={coupon}
                       onChange={(e) => setCoupon(e.target.value)}
                       placeholder="Coupon"
+                      disabled={couponLocked}
                       className="bg-white/[0.06] text-sm text-white/80 rounded-md px-3 py-2 w-full
                         placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                     <button
                       type="button"
+                      disabled={couponLocked}
                       className="text-sm px-3 py-2 bg-white/[0.07] rounded-md text-white/80
-                        hover:bg-white/[0.12] transition"
+                        hover:bg-white/[0.12] transition disabled:opacity-40"
                       onClick={handleApplyCoupon}
                     >
                       Apply
@@ -203,8 +208,8 @@ function BottomBar({
                 className="px-5 py-3 text-base w-full"
                 onClick={async () => {
                   if (disabled) return;
+                  if (footer.loading) return; // ⭐ prevents double click
 
-                  // <<< THE ONLY CHANGE
                   setFooter((f: any) => ({ ...f, loading: true }));
 
                   try {
@@ -271,7 +276,9 @@ function BottomBar({
   );
 }
 
-export default function CheckoutPanel(props: Parameters<typeof useCheckoutFlow>[0]) {
+export default function CheckoutPanel(props: Parameters<
+  typeof useCheckoutFlow
+>[0]) {
   const flow = useCheckoutFlow(props);
   const { payload, breakdown, selectedStart } = flow;
 

@@ -166,6 +166,15 @@ export function useCheckoutFlow({
     }
   }, [payloadForBackend, safePayload]);
 
+  // ⭐ Added stale PI cleanup here
+  useEffect(() => {
+    if (typeof window !== "undefined" &&
+        window.location.search.includes("canceled")) {
+      setClientSecret(null);
+      setBookingId(null);
+    }
+  }, []);
+
   const handleRiotVerified = async ({ riotTag: verifiedTag, puuid }: any) => {
     setRiotTag(verifiedTag);
     try {
@@ -213,7 +222,8 @@ export function useCheckoutFlow({
     setCardPmId(null);
     setSavedCard(null);
 
-    setStep(2);
+      setStep(2);
+
     setLoadingIntent(true);
 
     try {
@@ -249,9 +259,9 @@ export function useCheckoutFlow({
     }
   }
 
-  // Only create PaymentIntent on final Pay now click
   const createPaymentIntent = async (): Promise<string | null> => {
-    if (!bookingId || !payMethod) return null;
+    if (!bookingId || !
+ payMethod) return null;
     setLoadingIntent(true);
     try {
       const res = await fetch("/api/stripe/checkout/intent", {
@@ -279,7 +289,7 @@ export function useCheckoutFlow({
       if (sec) {
         setClientSecret(sec);
         setPiId(String(sec).split("_secret")[0] || null);
-        return sec; // IMPORTANT FIX
+        return sec;
       } else {
         console.error("INTENT_FAIL", data);
         setClientSecret(null);
@@ -337,3 +347,4 @@ export function useCheckoutFlow({
     applyCoupon,
   };
 }
+

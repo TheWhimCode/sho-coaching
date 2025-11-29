@@ -39,7 +39,7 @@ export default function WithdrawalPage() {
             </p>
             <p>
               To exercise your right of withdrawal, you must inform me (
-              <span className="font-medium">[Your Name / Company, Address, Email]</span>) by means of a clear
+              <span className="font-medium">Tim Bäumler / Sho Coaching</span>) by means of a clear
               statement (e.g. a letter sent by post or email). You may use the model withdrawal form below, but this is
               not obligatory.
             </p>
@@ -60,6 +60,10 @@ export default function WithdrawalPage() {
               proportionate to the services provided up to the time you informed me of the exercise of the right of
               withdrawal.
             </p>
+            <p>
+              If you request that the coaching begins before the end of the withdrawal period and the service is fully
+              performed, the right of withdrawal expires (§356(4) BGB).
+            </p>
 
             {/* Model Form */}
             <h2 className="text-xl font-semibold">Model Withdrawal Form</h2>
@@ -68,7 +72,7 @@ export default function WithdrawalPage() {
             </p>
 
             <div className="p-4 bg-black/30 rounded-lg border border-white/10 text-sm leading-relaxed">
-              <p>— To [Your Name / Company, Address, Email]:</p>
+              <p>— To Tim Bäumler – Sho Coaching, Emsdettener Straße 18, 48268 Greven, Germany, E-Mail: im.sho@yahoo.com</p>
               <p>
                 — I/We (*) hereby give notice that I/We (*) withdraw from my/our (*) contract of sale of the following
                 service (*)
@@ -82,7 +86,7 @@ export default function WithdrawalPage() {
             </div>
           </div>
 
-          <p className="text-xs text-white/55 pt-2">Last updated: [DD Month YYYY]</p>
+          <p className="text-xs text-white/55 pt-2">Last updated: 29 November 2025</p>
         </div>
       </div>
     </section>
