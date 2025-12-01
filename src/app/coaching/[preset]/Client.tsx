@@ -5,7 +5,7 @@ import SessionHero from "./_hero-components/SessionHero";
 import CalLikeOverlay from "@/app/calendar/Calendar";
 import CustomizeDrawer from "./_hero-components/CustomizeDrawer";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import type { SessionConfig } from "@/engine/session/config/session";
+import type { SessionConfig } from "@/engine/session/model/session";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { computePriceEUR } from "@/lib/pricing";
 import { getPreset, type Preset } from "@/engine/session/rules/preset";
