@@ -21,6 +21,7 @@ import {
   titlesByPreset,
   taglinesByPreset,
   stepsByPreset,
+  applyProductOverrides,
   type Preset,
 } from "@/engine/session";
 import type { ProductId } from "@/engine/session";
@@ -109,7 +110,10 @@ export default function SessionHero({
 }: Props) {
 
   // ✔ unified engine logic
-  const session = clamp({ liveMin: baseMinutes, followups, liveBlocks, productId });
+  const session = applyProductOverrides(
+  clamp({ liveMin: baseMinutes, followups, liveBlocks, productId })
+);
+
   const liveMinutes = totalMinutes(session);
 
   // now bundle-aware
@@ -370,6 +374,8 @@ export default function SessionHero({
           onClose={() => setShowCal(false)}
           liveBlocks={session.liveBlocks}
           followups={session.followups}
+            productId={session.productId}
+
         />
       )}
     </section>

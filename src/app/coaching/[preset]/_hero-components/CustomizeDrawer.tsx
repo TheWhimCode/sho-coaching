@@ -12,26 +12,31 @@ import {
   MAX_MINUTES,
   LIVEBLOCK_MIN,
   MAX_BLOCKS,
+  colorsByPreset,
+  getPreset,
+  type Preset,
 } from "@/engine/session";
-import { getPreset, type Preset } from "@/engine/session";
-import { colorsByPreset } from "@/engine/session";
-import { Signature, Scroll, Lightning, PuzzlePiece, X } from "@phosphor-icons/react";
+import { iconsByPreset } from "@/engine/session";
+import { X } from "@phosphor-icons/react";
 import InfoTooltip from "@/app/_components/small/InfoTooltip";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
+import PresetButton from "./PresetButton";
 
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
+  const Icon = iconsByPreset[preset].icon;
+  const weight = iconsByPreset[preset].weight ?? "fill";
   const { ring, glow } = colorsByPreset[preset];
-  const style = { filter: `drop-shadow(0 0 8px ${glow})` } as const;
-
-  if (preset === "vod") return <Scroll size={size} weight="fill" color={ring} style={style} aria-hidden />;
-  if (preset === "instant") return <Lightning size={size} weight="fill" color={ring} style={style} aria-hidden />;
-  if (preset === "signature") return <Signature size={size} weight="bold" color={ring} style={style} aria-hidden />;
-  return <PuzzlePiece size={size} weight="fill" color={ring} style={style} aria-hidden />;
+  return (
+    <Icon
+      size={size}
+      weight={weight}
+      color={ring}
+      style={{ filter: `drop-shadow(0 0 8px ${glow})` }}
+      aria-hidden
+    />
+  );
 }
 
-/**
- * UI-only interactions
- */
 function decDuration(c: SessionConfig): SessionConfig {
   return clamp({ ...c, liveMin: c.liveMin - 15 });
 }
@@ -255,7 +260,6 @@ function Content({
 
   return (
     <div>
-      {/* Duration */}
       <section>
         <div className="flex items-center justify-between">
           <span className="text-[15px] md:text-[16px] font-semibold">Add/remove time</span>
@@ -283,7 +287,6 @@ function Content({
 
       <Divider />
 
-      {/* Blocks */}
       <section>
         <div className="flex items-center justify-between">
           <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
@@ -321,7 +324,6 @@ function Content({
 
       <Divider />
 
-      {/* Follow-ups */}
       <section className="relative">
         <AnimatePresence>
           {showHighlight && highlightKey === "followups" && (
@@ -371,7 +373,6 @@ function Content({
 
       <Divider />
 
-      {/* Presets */}
       <section>
         <div className="text-[15px] md:text-[16px] font-semibold mb-2">Presets</div>
         <div className="grid gap-2">
@@ -399,10 +400,9 @@ function Content({
             isMobile={isMobile}
           />
 
-          {/* NEW BUNDLE BUTTON */}
           <PresetButton
             label="4-Session Bundle"
-            sub="4 × 60 min"
+            sub="60 min ⨯4"
             price="€110"
             preset="bundle_4x60"
             active={isBundle}
@@ -425,40 +425,5 @@ function Content({
         </div>
       </section>
     </div>
-  );
-}
-
-function PresetButton({
-  label, sub, price, preset, active, onClick, onHover, isMobile,
-}: {
-  label: string; sub: string; price: string; preset: Preset; active?: boolean;
-  onClick: () => void; onHover: (p: Preset | null) => void; isMobile: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      onMouseEnter={() => onHover(preset)}
-      onMouseLeave={() => onHover(null)}
-      className={[
-        "relative w-full rounded-xl px-4 py-3 text-left transition overflow-hidden",
-        isMobile
-          ? "ring-1 bg-black/[.04] hover:bg-black/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]"
-          : "ring-1 bg-white/[.04] hover:bg-white/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]",
-        active
-          ? "ring-[rgba(120,160,255,.55)] shadow-[0_0_6px_rgba(56,124,255,.35)]"
-          : "ring-white/12",
-      ].join(" ")}
-    >
-      <span aria-hidden className="pointer-events-none absolute inset-0 rounded-xl bg-dottexture" />
-      <div className="relative flex items-center">
-        <div className="grow">
-          <div className="font-semibold">{label}</div>
-          <div className="text-xs opacity-85">{sub}</div>
-        </div>
-        <div className="mr-3 text-base font-semibold">{price}</div>
-        <div className="shrink-0"><PresetIcon preset={preset} size={30} /></div>
-      </div>
-    </button>
   );
 }

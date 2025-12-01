@@ -9,11 +9,13 @@ import {
   totalMinutes,
   colorsByPreset,
   computeSessionPrice,
+  computePriceWithProduct,
 } from "@/engine/session";
 
 import type { SessionConfig, Preset } from "@/engine/session";
 
 import GlassPanel from "@/app/_components/panels/GlassPanel";
+import { Lightbulb, Layers, HeartPulse, Shuffle } from "lucide-react";
 
 /* ===================== Types ===================== */
 type Props = {
@@ -25,10 +27,11 @@ type Props = {
 };
 
 /* ===================== Stat Rules ===================== */
-const clamp15 = (n: number) => Math.max(1, Math.min(5, n)) as 1|2|3|4|5;
+const clamp15 = (n: number) => Math.max(1, Math.min(5, n)) as 1 | 2 | 3 | 4 | 5;
 
 function depthOfInsight(baseMin: number, liveBlocks: number) {
-  let v = baseMin <= 30 ? 2
+  let v =
+    baseMin <= 30 ? 2
     : baseMin <= 45 ? 3
     : baseMin <= 75 ? 4
     : 5;
@@ -37,7 +40,8 @@ function depthOfInsight(baseMin: number, liveBlocks: number) {
 }
 
 function clarityStructure(baseMin: number, preset: Preset, liveBlocks: number) {
-  let v = preset === "signature" ? 5
+  let v =
+    preset === "signature" ? 5
     : baseMin <= 45 ? 4
     : baseMin <= 75 ? 3
     : baseMin <= 105 ? 2
@@ -55,7 +59,8 @@ function lastingImpact(baseMin: number, followups: number, liveBlocks: number) {
 }
 
 function flexibility(preset: Preset, liveBlocks: number) {
-  let v = preset === "instant" ? 1
+  let v =
+    preset === "instant" ? 1
     : preset === "signature" ? 1
     : preset === "vod" ? 3
     : 5;
@@ -66,7 +71,9 @@ function flexibility(preset: Preset, liveBlocks: number) {
 /* ===================== Hooks ===================== */
 function usePrevious<T>(v: T) {
   const r = useRef(v);
-  useEffect(() => { r.current = v; }, [v]);
+  useEffect(() => {
+    r.current = v;
+  }, [v]);
   return r.current as T;
 }
 
@@ -78,13 +85,13 @@ function Pips({ value, ring, glow }: { value: number; ring: string; glow: string
   return (
     <div className="flex items-center gap-2">
       {Array.from({ length: 5 }).map((_, i) => {
-        const is  = i < value;
+        const is = i < value;
         return (
           <motion.div
             key={i}
             initial={false}
             animate={{
-              backgroundColor: is ? ring : inactiveBg,
+              background: is ? ring : inactiveBg,
               boxShadow: is ? `0 0 8px ${glow}` : "none",
               scale: is ? 1 : 0.94,
               opacity: is ? 1 : 0.75,
@@ -100,12 +107,22 @@ function Pips({ value, ring, glow }: { value: number; ring: string; glow: string
 }
 
 function StatRow({
-  icon, label, value, ring, glow,
-}: { icon: React.ReactNode; label: string; value: number; ring: string; glow: string }) {
+  icon: Icon,
+  label,
+  value,
+  ring,
+  glow,
+}: {
+  icon: any;
+  label: string;
+  value: number;
+  ring: string;
+  glow: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="flex items-center gap-2 text-[15px] text-white/90">
-        <span className="shrink-0">{icon}</span>
+        <Icon size={16} style={{ color: ring }} />
         {label}
       </span>
       <Pips value={value} ring={ring} glow={glow} />
@@ -121,19 +138,18 @@ export default function CenterSessionPanel({
   isCustomizing = false,
   enterDelay = 0.05,
 }: Props) {
-
   const liveMinutes = totalMinutes(session);
 
-  // ⭐️ IMPORTANT: preset is passed from SessionHero
+  /* MATCH LeftSteps behavior */
   const { ring, glow } = colorsByPreset[preset];
 
-  const pricePreview = computeSessionPrice(session).priceEUR;
+  const pricePreview = computePriceWithProduct(session).priceEUR;
 
   const stats = [
-    { label: "Depth of Insight",    value: depthOfInsight(session.liveMin, session.liveBlocks) },
-    { label: "Clarity & Structure", value: clarityStructure(session.liveMin, preset, session.liveBlocks) },
-    { label: "Lasting Impact",      value: lastingImpact(session.liveMin, session.followups, session.liveBlocks) },
-    { label: "Flexibility",         value: flexibility(preset, session.liveBlocks) },
+    { label: "Depth of Insight",    value: depthOfInsight(session.liveMin, session.liveBlocks), icon: Lightbulb },
+    { label: "Clarity & Structure", value: clarityStructure(session.liveMin, preset, session.liveBlocks), icon: Layers },
+    { label: "Lasting Impact",      value: lastingImpact(session.liveMin, session.followups, session.liveBlocks), icon: HeartPulse },
+    { label: "Flexibility",         value: flexibility(preset, session.liveBlocks), icon: Shuffle },
   ];
 
   const [revealed, setRevealed] = useState(false);
@@ -157,10 +173,9 @@ export default function CenterSessionPanel({
       className="relative w-full max-w-md"
     >
       <GlassPanel className="p-4 md:p-5">
-
         <SessionBlock
           session={session}
-          preset={preset}   // << works now
+          preset={preset}
           isActive={isCustomizing}
           className="p-0"
         />
@@ -176,15 +191,22 @@ export default function CenterSessionPanel({
               >
                 Session profile
               </div>
+
               <div className="space-y-3">
                 {stats.map((s) => (
-                  <StatRow key={s.label} icon={null} label={s.label} value={s.value} ring={ring} glow={glow} />
+                  <StatRow
+                    key={s.label}
+                    icon={s.icon}
+                    label={s.label}
+                    value={s.value}
+                    ring={ring}
+                    glow={glow}
+                  />
                 ))}
               </div>
             </div>
           </div>
         </div>
-
       </GlassPanel>
     </motion.div>
   );

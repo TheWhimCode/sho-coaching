@@ -89,7 +89,7 @@ export default function CheckoutClient() {
 
     return {
       slotId: getStr("slotId"),
-      slotIds: getStr("slotIds"), // <-- added
+      slotIds: getStr("slotIds"),
       sessionType: getStr("sessionType", "Session"),
       baseMinutes,
       liveMinutes: totalMins,
@@ -97,6 +97,10 @@ export default function CheckoutClient() {
       liveBlocks,
       discordId: getStr("discordId"),
       discordName: getStr("discordName"),
+
+      // ⭐ FIX: we now read productId
+      productId: getStr("productId", ""),
+
       preset: getStr("preset", "custom"),
       holdKey: getStr("holdKey"),
     };
@@ -110,7 +114,7 @@ export default function CheckoutClient() {
   const payloadForBackend = useMemo(
     () => ({
       slotId: payload.slotId,
-      slotIds: payload.slotIds, // <-- added
+      slotIds: payload.slotIds,
       sessionType: payload.sessionType,
       liveMinutes: payload.liveMinutes,
       followups: payload.followups,
@@ -119,6 +123,9 @@ export default function CheckoutClient() {
       discordName: payload.discordName,
       preset: payload.preset,
       holdKey: payload.holdKey,
+
+      // ⭐ FIX: forward productId
+      productId: payload.productId,
     }),
     [payload]
   );
@@ -143,17 +150,14 @@ export default function CheckoutClient() {
       <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
         <div className="flex justify-center">
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto_420px] gap-8 items-start lg:justify-items-stretch min-h-[70vh]">
-            {/* UsefulToKnow */}
             <div className="hidden md:block relative w-full mt-12 lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
               <UsefulToKnow />
             </div>
 
-            {/* Divider only visible on large screens */}
             <div className="hidden lg:flex items-stretch mx-2 px-4">
               <div className="w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
             </div>
 
-            {/* Right column */}
             <RightCol
               {...(isDesktop
                 ? { variants: rightCol, initial: "hidden", animate: "show" }
@@ -172,4 +176,5 @@ export default function CheckoutClient() {
         </div>
       </div>
     </section>
-  );}
+  );
+}

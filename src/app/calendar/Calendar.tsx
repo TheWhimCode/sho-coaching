@@ -19,6 +19,8 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 import { ArrowLeft } from "lucide-react";
+import type { ProductId } from "@/engine/session";
+
 
 type Props = {
   sessionType: string;
@@ -28,6 +30,8 @@ type Props = {
   initialSlotId?: string | null;
   prefetchedSlots?: Slot[];
   liveBlocks?: number;
+    productId?: ProductId;
+
 };
 
 const overlay: Variants = {
@@ -88,6 +92,7 @@ export default function Calendar({
   initialSlotId = null,
   prefetchedSlots,
   liveBlocks = 0,
+  productId
 }: Props) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -269,7 +274,7 @@ export default function Calendar({
       }
 
       const baseOnly = Math.max(30, liveMinutes);
-      const preset = getPreset(baseOnly, followups ?? 0, blocks);
+const preset = getPreset(baseOnly, followups ?? 0, blocks, productId);
 
       const url = new URL("/checkout", window.location.origin);
       url.searchParams.set("slotId", selectedSlotId);
@@ -278,6 +283,8 @@ export default function Calendar({
       url.searchParams.set("followups", String(followups ?? 0));
       url.searchParams.set("preset", preset);
       url.searchParams.set("holdKey", k);
+      url.searchParams.set("productId", productId ?? "");
+
       if (blocks) url.searchParams.set("liveBlocks", String(blocks));
       if (slotIds?.length) url.searchParams.set("slotIds", slotIds.join(","));
 

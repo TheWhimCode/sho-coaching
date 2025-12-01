@@ -166,6 +166,8 @@ export default function Client({ preset }: { preset: string }) {
           liveBlocks={session.liveBlocks}
           isCustomizingCenter={drawerOpen}
           isDrawerOpen={drawerOpen}
+            productId={session.productId}   // <<<<< REQUIRED
+
           onCustomize={() => setDrawerOpen(true)}
           onOpenCalendar={({ slotId, liveMinutes }) => {
             setInitialSlotId(slotId);
@@ -184,6 +186,8 @@ export default function Client({ preset }: { preset: string }) {
               followups={session.followups}
               liveBlocks={session.liveBlocks}
               onClose={() => setCalendarOpen(false)}
+                  productId={session.productId}   // <-- this was missing
+
             />
           )}
         </AnimatePresence>

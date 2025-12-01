@@ -4,21 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
 import {
-  computeSessionPrice,
+  computePriceWithProduct,
   totalMinutes,
   titlesByPreset,
   colorsByPreset,
+  products,
+  iconsByPreset,
 } from "@/engine/session";
 
 import type { SessionConfig, Preset } from "@/engine/session";
-import TypingText from "@/app/_components/animations/TypingText";
-
-// Icons
-import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react";
 
 type Props = {
   session: SessionConfig;
-  preset: Preset;          // ⭐ required now
+  preset: Preset;
   isActive?: boolean;
   className?: string;
   layoutId?: string;
@@ -27,23 +25,12 @@ type Props = {
 
 const TICK_H = 8;
 const TOTAL_TICKS = 6;
-
 const clampN = (n: number, min: number, max: number) =>
   Math.min(max, Math.max(min, n));
 
-function SessionIcon({ preset, color, glow }: { preset: Preset; color: string; glow: string }) {
-  const size = 26;
-  const glowStyle = glow ? { filter: `drop-shadow(0 0 8px ${glow})` } : undefined;
-
-  if (preset === "vod") return <Scroll size={size} weight="fill" color={color} style={glowStyle} />;
-  if (preset === "instant") return <Lightning size={size} weight="fill" color={color} style={glowStyle} />;
-  if (preset === "signature") return <Signature size={size} weight="bold" color={color} style={glowStyle} />;
-  return <PuzzlePiece size={size} weight="fill" color={color} style={glowStyle} />;
-}
-
 export default function SessionBlock({
   session,
-  preset,           // ⭐ we trust parent now
+  preset,
   isActive = false,
   className = "",
   layoutId,
@@ -52,12 +39,21 @@ export default function SessionBlock({
 
   const { liveMin, followups, liveBlocks } = session;
 
-  // ⭐ remove getPreset logic entirely
-  const { ring, glow } = colorsByPreset[preset];
+  // unified color system
+  const color = colorsByPreset[preset];
+  const glow = color.glow;
+  const isGradient = "gradient" in color;
+  const ring = isGradient ? color.gradient : color.ring;
+
+  const isBundle = preset.startsWith("bundle");
 
   const total = totalMinutes(session);
-  const sessionPrice = computeSessionPrice(session).priceEUR;
+  const { priceEUR: sessionPrice } = computePriceWithProduct(session);
   const title = titlesByPreset[preset];
+
+  const p = session.productId ? products[session.productId] : undefined;
+
+  const { icon: Icon, weight } = iconsByPreset[preset];
 
   const [everActivated, setEverActivated] = useState(false);
   useEffect(() => {
@@ -67,12 +63,18 @@ export default function SessionBlock({
   const showAffordance = isActive || everActivated;
 
   const litTicks = useMemo(() => {
+    if (isBundle) return TOTAL_TICKS;
     const raw = Math.round((total - 30) / 15);
     return clampN(raw, 0, TOTAL_TICKS);
-  }, [total]);
+  }, [total, isBundle]);
 
-  const ingameTicks = clampN(liveBlocks * 3, 0, litTicks);
-  const ingameStart = Math.max(0, litTicks - ingameTicks);
+  const ingameTicks = isBundle
+    ? 0
+    : clampN(liveBlocks * 3, 0, litTicks);
+
+  const ingameStart = isBundle
+    ? TOTAL_TICKS
+    : Math.max(0, litTicks - ingameTicks);
 
   const dateLabel = useMemo(() => {
     if (!selectedDate) return null;
@@ -112,8 +114,15 @@ export default function SessionBlock({
         }`}
       />
 
+      {/* ICON (always solid fallback color) */}
       <div className="pointer-events-none absolute right-6 top-5">
-        <SessionIcon preset={preset} color={ring} glow={glow} />
+        <svg width="26" height="26" style={{ filter: `drop-shadow(0 0 8px ${glow})` }}>
+          <Icon
+            size={26}
+            weight={weight}
+            color={color.ring}
+          />
+        </svg>
       </div>
 
       <div className="mb-2 flex items-center justify-between pr-10">
@@ -127,6 +136,8 @@ export default function SessionBlock({
       <div className="mt-10 flex items-center justify-between text-[15px] font-semibold">
         <span className="text-white/90 flex items-center gap-2">
           {total} min
+          {p?.sessionsCount && <span> ×{p.sessionsCount}</span>}
+
           {followups > 0 && (
             <>
               <span className="inline-block w-[5px] h-[5px] rounded-sm bg-white/55" />
@@ -136,6 +147,7 @@ export default function SessionBlock({
             </>
           )}
         </span>
+
         <span className="text-white/90">€{sessionPrice}</span>
       </div>
 
@@ -151,12 +163,12 @@ export default function SessionBlock({
                 className="relative flex-1 rounded-full ring-1 overflow-hidden"
                 style={{
                   height: TICK_H,
-                  backgroundColor: isLit ? ring : "rgba(255,255,255,0.12)",
+                  background: isLit ? ring : "rgba(255,255,255,0.12)",
                   borderColor: isLit ? "transparent" : "rgba(255,255,255,0.18)",
                   boxShadow: isLit ? `0 2px 10px ${glow}` : "none",
                 }}
               >
-                {isIngame && (
+                {!isBundle && isIngame && (
                   <motion.div
                     className="absolute inset-0 rounded-full pointer-events-none"
                     style={{
@@ -167,8 +179,14 @@ export default function SessionBlock({
                       )`,
                       backgroundSize: "32px 32px",
                     }}
-                    animate={{ backgroundPosition: ["0px 0px", "32px 0px"] }}
-                    transition={{ duration: 1.4, ease: "linear", repeat: Infinity }}
+                    animate={{
+                      backgroundPosition: ["0px 0px", "32px 0px"],
+                    }}
+                    transition={{
+                      duration: 1.4,
+                      ease: "linear",
+                      repeat: Infinity,
+                    }}
                   />
                 )}
               </div>

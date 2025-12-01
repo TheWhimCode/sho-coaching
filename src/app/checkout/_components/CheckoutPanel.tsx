@@ -9,11 +9,9 @@ import { FooterProvider, useFooter } from "@/app/checkout/_components/checkout-s
 import { AnimatePresence, motion } from "framer-motion";
 import type { ProductId } from "@/engine/session/model/product";
 
-
 // ⭐ NEW imports
 import {
   clamp,
-  getPreset,
   totalMinutes,
   titlesByPreset,
   type SessionConfig,
@@ -292,20 +290,16 @@ export default function CheckoutPanel(props: Parameters<
   const flow = useCheckoutFlow(props);
   const { payload, breakdown, selectedStart } = flow;
 
-  // ⭐ NEW ENGINE LOGIC HERE
+  // ⭐ Build session as before
   const session = clamp({
     liveMin: payload.baseMinutes,
     liveBlocks: payload.liveBlocks,
     followups: payload.followups,
-productId: (payload.productId ?? undefined) as ProductId | undefined,
+    productId: (payload.productId ?? undefined) as ProductId | undefined,
   });
 
-  const preset = getPreset(
-    session.liveMin,
-    session.followups,
-    session.liveBlocks,
-    session.productId,
-  );
+  // ⭐ The fix — never recalculate preset on checkout
+  const preset = payload.preset as any;
 
   return (
     <FooterProvider>
@@ -336,7 +330,7 @@ productId: (payload.productId ?? undefined) as ProductId | undefined,
           />
 
           <div className="flex flex-col flex-1 space-y-4 relative z-10 md:min-h-0 md:h-full">
-            {/* ⭐ New SessionBlock props */}
+
             <SessionBlock
               layoutId="session-block"
               session={session}

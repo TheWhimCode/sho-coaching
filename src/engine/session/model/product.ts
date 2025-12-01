@@ -14,6 +14,8 @@ export type Product = {
   durationOverrideMin?: number;
   priceOverrideEUR?: number;
   isBundle?: boolean;
+    sessionsCount?: number;   // <-- add here
+
 };
 
 export const products: Record<ProductId, Product> = {
@@ -43,6 +45,8 @@ export const products: Record<ProductId, Product> = {
     customizationAllowed: false,
     durationOverrideMin: 60,
     priceOverrideEUR: 110,
+      sessionsCount: 4,
+
   },
 
   bundle_bootcamp: {
