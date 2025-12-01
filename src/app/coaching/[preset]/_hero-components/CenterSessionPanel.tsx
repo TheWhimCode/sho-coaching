@@ -1,27 +1,32 @@
-// components/HeroSection/CenterSessionPanel.tsx
 "use client";
 
 import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock";
 import DualWipeLR from "@/components/DualWipeLR";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getPreset, type Preset } from "@/engine/session/rules/preset";
-import { colorsByPreset } from "@/lib/sessions/colors";
-import { computePriceEUR } from "@/lib/pricing";
+
+// ✔ updated engine imports
+import {
+  clamp,
+  totalMinutes,
+  getPreset,
+  colorsByPreset,
+  computeSessionPrice,
+} from "@/engine/session";
+
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 /* ===================== Types ===================== */
 type Props = {
   title?: string;
-  baseMinutes: number;     // base live minutes (no in-game added)
-  isCustomizing?: boolean; // drawer open/close
-  followups?: number;      // 0–2
-  liveBlocks?: number;     // number of 45m in-game blocks (0..2)
-  /** Optional: match/stagger page enter timing */
+  baseMinutes: number;
+  isCustomizing?: boolean;
+  followups?: number;
+  liveBlocks?: number;
   enterDelay?: number;
 };
 
-/* ===================== Stat Rules ===================== */
+/* ===================== Stat Rules (unchanged) ===================== */
 const clamp15 = (n: number) => Math.max(1, Math.min(5, n)) as 1|2|3|4|5;
 
 function depthOfInsight(baseMin: number, liveBlocks: number): 1|2|3|4|5 {
@@ -33,7 +38,7 @@ function depthOfInsight(baseMin: number, liveBlocks: number): 1|2|3|4|5 {
   return clamp15(v);
 }
 
-function clarityStructure(baseMin: number, preset: Preset, liveBlocks: number): 1|2|3|4|5 {
+function clarityStructure(baseMin: number, preset: any, liveBlocks: number): 1|2|3|4|5 {
   let v = preset === "signature" ? 5
         : baseMin <= 45 ? 4
         : baseMin <= 75 ? 3
@@ -51,11 +56,11 @@ function lastingImpact(baseMin: number, followups: number, liveBlocks: number): 
   return Math.max(1, Math.min(5, v)) as 1|2|3|4|5;
 }
 
-function flexibility(preset: Preset, liveBlocks: number): 1|2|3|4|5 {
+function flexibility(preset: any, liveBlocks: number): 1|2|3|4|5 {
   let v = preset === "instant" ? 1
         : preset === "signature" ? 1
         : preset === "vod" ? 3
-        : 5; // custom
+        : 5;
   v -= liveBlocks;
   return clamp15(v);
 }
@@ -67,7 +72,7 @@ function usePrevious<T>(v: T) {
   return r.current as T;
 }
 
-/* ===================== Icons ===================== */
+/* ===================== Icons (unchanged) ===================== */
 function IconDepth({ color, glow, size = 18 }: { color: string; glow: string; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden
@@ -107,7 +112,7 @@ function IconFlex({ color, glow, size = 18 }: { color: string; glow: string; siz
   );
 }
 
-/* ===================== UI Bits ===================== */
+/* ===================== UI Bits (unchanged) ===================== */
 function Pips({ value, ring, glow }: { value: number; ring: string; glow: string }) {
   const prev = usePrevious(value) ?? value;
   const rising = value > prev;
@@ -157,7 +162,7 @@ function StatRow({
   );
 }
 
-/* ===================== Main ===================== */
+/* ===================== Main (updated engine usage only) ===================== */
 export default function CenterSessionPanel({
   title = "VOD Review",
   baseMinutes,
@@ -166,28 +171,25 @@ export default function CenterSessionPanel({
   liveBlocks = 0,
   enterDelay = 0.05,
 }: Props) {
-  const baseOnly = baseMinutes;
 
-  const liveMinutes = useMemo(
-    () => baseOnly + (liveBlocks ?? 0) * 45,
-    [baseOnly, liveBlocks]
-  );
+  // ✔ new canonical session object
+  const session = clamp({ liveMin: baseMinutes, followups, liveBlocks });
 
-  const preset = useMemo(
-    () => getPreset(baseOnly, followups, liveBlocks),
-    [baseOnly, followups, liveBlocks]
-  );
+  // ✔ no duplicated duration math
+  const liveMinutes = totalMinutes(session);
+
+  // ✔ no duplicated preset inference
+  const preset = getPreset(session.liveMin, session.followups, session.liveBlocks);
+
   const { ring, glow } = colorsByPreset[preset];
 
-  const pricePreview = useMemo(
-    () => computePriceEUR(liveMinutes, followups).priceEUR,
-    [liveMinutes, followups]
-  );
+  // ✔ pricing = engine only
+  const pricePreview = computeSessionPrice(session).priceEUR;
 
   const stats = [
-    { label: "Depth of Insight",    value: depthOfInsight(baseOnly, liveBlocks),           icon: <IconDepth  color={ring} glow={glow} /> },
-    { label: "Clarity & Structure", value: clarityStructure(baseOnly, preset, liveBlocks), icon: <IconClarity color={ring} glow={glow} /> },
-    { label: "Lasting Impact",      value: lastingImpact(baseOnly, followups, liveBlocks), icon: <IconImpact  color={ring} glow={glow} /> },
+    { label: "Depth of Insight",    value: depthOfInsight(baseMinutes, liveBlocks),           icon: <IconDepth  color={ring} glow={glow} /> },
+    { label: "Clarity & Structure", value: clarityStructure(baseMinutes, preset, liveBlocks), icon: <IconClarity color={ring} glow={glow} /> },
+    { label: "Lasting Impact",      value: lastingImpact(baseMinutes, followups, liveBlocks), icon: <IconImpact  color={ring} glow={glow} /> },
     { label: "Flexibility",         value: flexibility(preset, liveBlocks),                icon: <IconFlex    color={ring} glow={glow} /> },
   ];
 
@@ -204,7 +206,6 @@ export default function CenterSessionPanel({
 
   const STATS_AREA_HEIGHT = 160;
 
-  // Top-aligned placeholder (no extra spacer)
   const placeholder = (
     <div className="space-y-2 text-sm text-white/80">
       <p className="font-medium text-white/90">The most important mistakes to focus on are:</p>
@@ -240,16 +241,13 @@ export default function CenterSessionPanel({
       transition={{ duration: 0.35, delay: enterDelay }}
       className="relative w-full max-w-md"
     >
-      {/* Use GlassPanel as the background/border only; no extra spacing/visuals here */}
       <GlassPanel className="p-4 md:p-5">
         <SessionBlock
-          title={title}
-          minutes={baseOnly}
+          minutes={baseMinutes}
           priceEUR={pricePreview}
           followups={followups}
           liveBlocks={liveBlocks}
           isActive={isCustomizing}
-          background="transparent"
           className="p-0"
         />
 

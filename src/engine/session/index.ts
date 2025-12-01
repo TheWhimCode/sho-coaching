@@ -1,26 +1,15 @@
-// engine/session/index.ts
+// model domain
+export * from "./model/session";
 
-// ─────────────────────────────────────────────────────────────
-// Core config + SessionConfig type
-// ─────────────────────────────────────────────────────────────
+// config + helpers
 export * from "./config/session";
 
-// ─────────────────────────────────────────────────────────────
-// Metadata (pure descriptive/ui-ish data)
-// ─────────────────────────────────────────────────────────────
+// rules
+export * from "./rules/preset";
+export * from "./rules/pricing";
+
+
+// metadata
 export * from "./metadata/colors";
 export * from "./metadata/labels";
 export * from "./metadata/steps";
-
-// ─────────────────────────────────────────────────────────────
-// Rules (business logic / preset logic / transformations)
-// ─────────────────────────────────────────────────────────────
-export * from "./rules/preset";
-
-// ─────────────────────────────────────────────────────────────
-// If you later add more model/config/pricing/time files,
-// add them below, but only once.
-// ─────────────────────────────────────────────────────────────
-// export * from "./config/pricing";
-// export * from "./config/time";
-// export * from "./model";

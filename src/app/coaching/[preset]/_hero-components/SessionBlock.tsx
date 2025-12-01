@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+
 import {
   getPreset,
   computeSessionPrice,
-  totalMinutes as calcTotalMinutes,
+  totalMinutes,
   titlesByPreset,
   colorsByPreset,
 } from "@/engine/session";
+
 import type { Preset } from "@/engine/session";
 import TypingText from "@/app/_components/animations/TypingText";
 
@@ -17,7 +19,7 @@ import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react
 
 type Props = {
   minutes: number;
-  priceEUR?: number; // optional now – engine computes it
+  priceEUR?: number;
   followups?: number;
   isActive?: boolean;
   className?: string;
@@ -28,6 +30,7 @@ type Props = {
 
 const TICK_H = 8;
 const TOTAL_TICKS = 6;
+
 const clampN = (n: number, min: number, max: number) =>
   Math.min(max, Math.max(min, n));
 
@@ -55,13 +58,14 @@ export default function SessionBlock({
   const preset = getPreset(minutes, followups, liveBlocks);
   const { ring, glow } = colorsByPreset[preset];
 
-  // unified calculation
-  const total = calcTotalMinutes({
+  // ✔ canonical duration calculation
+  const total = totalMinutes({
     liveMin: minutes,
     followups,
     liveBlocks,
   });
 
+  // ✔ canonical pricing
   const sessionPrice =
     priceEUR ??
     computeSessionPrice({
@@ -114,7 +118,6 @@ export default function SessionBlock({
       ].join(" ")}
       {...(layoutId ? { "data-framer-layout-id": layoutId } : {})}
     >
-
       {showAffordance && (
         <span className="pointer-events-none absolute inset-0 rounded-2xl bg-dottexture" />
       )}
@@ -185,21 +188,19 @@ export default function SessionBlock({
                 }}
               >
                 {isIngame && (
-                  <>
-                    <motion.div
-                      className="absolute inset-0 rounded-full pointer-events-none"
-                      style={{
-                        backgroundImage: `repeating-linear-gradient(
-                          135deg,
-                          rgba(0,0,0,0.28) 0 6px,
-                          transparent 6px 12px
-                        )`,
-                        backgroundSize: "32px 32px",
-                      }}
-                      animate={{ backgroundPosition: ["0px 0px", "32px 0px"] }}
-                      transition={{ duration: 1.4, ease: "linear", repeat: Infinity }}
-                    />
-                  </>
+                  <motion.div
+                    className="absolute inset-0 rounded-full pointer-events-none"
+                    style={{
+                      backgroundImage: `repeating-linear-gradient(
+                        135deg,
+                        rgba(0,0,0,0.28) 0 6px,
+                        transparent 6px 12px
+                      )`,
+                      backgroundSize: "32px 32px",
+                    }}
+                    animate={{ backgroundPosition: ["0px 0px", "32px 0px"] }}
+                    transition={{ duration: 1.4, ease: "linear", repeat: Infinity }}
+                  />
                 )}
               </div>
             );

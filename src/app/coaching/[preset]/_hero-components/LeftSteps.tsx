@@ -3,8 +3,8 @@
 
 import React from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { type Preset } from "@/engine/session/rules/preset";
-import { colorsByPreset } from "@/lib/sessions/colors";
+import type { Preset, } from "@/engine/session";
+import { colorsByPreset } from "@/engine/session";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 export type StepItem = { title: string };

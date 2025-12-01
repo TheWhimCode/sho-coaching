@@ -1,5 +1,5 @@
 // engine/session/metadata/colors.ts
-import type { Preset } from "./preset";
+import type { Preset } from "../rules/preset";
 
 export const colorsByPreset: Record<Preset, { ring: string; glow: string }> = {
   instant:   { ring: "#fee484ff", glow: "rgba(248,211,75,.65)" },

@@ -51,7 +51,7 @@ const PANEL_DELAY = {
   right: CONTENT_BASE_DELAY + 1.0,
 } as const;
 
-/* animations unchanged — retaining your originals */
+/* animations unchanged */
 const makeTitleVariants = (firstLoad: boolean) => ({
   hidden: { opacity: 0, x: -24 },
   show: {
@@ -103,14 +103,13 @@ export default function SessionHero({
   presetOverride,
 }: Props) {
 
-  // ✔ session config fully handled by engine
+  // ✔ unified engine logic
   const session = clamp({ liveMin: baseMinutes, followups, liveBlocks });
   const liveMinutes = totalMinutes(session);
   const computedPreset = getPreset(session.liveMin, session.followups, session.liveBlocks);
   const preset = presetOverride ?? computedPreset;
   const leftSteps = stepsByPreset[preset];
 
-  // everything else unchanged
   const [autoSlots, setAutoSlots] = useState<UiSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [seedSlots, setSeedSlots] = useState<Slot[]>([]);
@@ -197,7 +196,6 @@ export default function SessionHero({
     return () => { on = false; };
   }, [liveMinutes]);
 
-  // ✔ this was the only missing line
   const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
   const quickUiSlots: UiSlot[] = quick.map(q => ({
     id: q.id,
@@ -221,8 +219,32 @@ export default function SessionHero({
 
   return (
     <section className="relative isolate min-h-[100svh] md:h-[100svh] overflow-hidden overscroll-contain text-white vignette">
-      {/* background unchanged */}
+      
+      {/* ✔ restored background exactly like original */}
+      <motion.div
+        className="absolute inset-0 -z-10 overflow-hidden pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: BG_FADE_DURATION, ease: EASE }}
+      >
+        <video
+          src="/videos/customize/Particle1_slow.webm"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="hidden md:block h-full w-full object-cover object-left md:object-center"
+        />
+        <img
+          src="/videos/customize/Particle_static.png"
+          alt=""
+          className="block md:hidden h-full w-full object-cover object-left"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-black/20" />
+      </motion.div>
 
+      {/* content unchanged */}
       <motion.div
         className="relative z-20 h-full flex items-center py-5 md:py-14"
         animate={{ x: shiftX }}
@@ -230,7 +252,7 @@ export default function SessionHero({
       >
         <div className="mx-auto w-full max-w-7xl px-5 md:px-8">
           <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-[1.2fr_1.1fr_.95fr] items-start">
-
+            
             {/* HEADER */}
             <div
               style={!isDesktop ? { minHeight: minHHeader } : undefined}
