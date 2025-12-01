@@ -4,7 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Stripe } from "@stripe/stripe-js";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
+
+// ⭐ new imports
 import { getPreset } from "@/engine/session/rules/preset";
+import { titlesByPreset } from "@/engine/session";
+import type { ProductId } from "@/engine/session/model/product";
 
 export type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna";
 
@@ -18,6 +22,7 @@ export type Payload = {
   preset: string;
   holdKey: string;
   startTime?: string | number;
+  productId?: string | null;
 };
 
 export type PayloadForBackend = Pick<
@@ -74,20 +79,21 @@ export function useCheckoutFlow({
     [payload]
   );
 
+  // ⭐ correct version (bundle-safe)
   const sessionBlockTitle = useMemo(() => {
     const p = getPreset(
       safePayload.baseMinutes,
       safePayload.followups,
-      safePayload.liveBlocks
+      safePayload.liveBlocks,
+      safePayload.productId as ProductId | undefined
     );
-    return p === "vod"
-      ? "VOD Review"
-      : p === "instant"
-      ? "Instant Insight"
-      : p === "signature"
-      ? "Signature Session"
-      : "Custom Session";
-  }, [safePayload.baseMinutes, safePayload.followups, safePayload.liveBlocks]);
+    return titlesByPreset[p];
+  }, [
+    safePayload.baseMinutes,
+    safePayload.followups,
+    safePayload.liveBlocks,
+    safePayload.productId,
+  ]);
 
   const totalLiveMinutes = useMemo(
     () => safePayload.baseMinutes + safePayload.liveBlocks * 45,
@@ -166,10 +172,11 @@ export function useCheckoutFlow({
     }
   }, [payloadForBackend, safePayload]);
 
-  // ⭐ Added stale PI cleanup here
   useEffect(() => {
-    if (typeof window !== "undefined" &&
-        window.location.search.includes("canceled")) {
+    if (
+      typeof window !== "undefined" &&
+      window.location.search.includes("canceled")
+    ) {
       setClientSecret(null);
       setBookingId(null);
     }
@@ -222,7 +229,7 @@ export function useCheckoutFlow({
     setCardPmId(null);
     setSavedCard(null);
 
-      setStep(2);
+    setStep(2);
 
     setLoadingIntent(true);
 
@@ -260,8 +267,7 @@ export function useCheckoutFlow({
   }
 
   const createPaymentIntent = async (): Promise<string | null> => {
-    if (!bookingId || !
- payMethod) return null;
+    if (!bookingId || !payMethod) return null;
     setLoadingIntent(true);
     try {
       const res = await fetch("/api/stripe/checkout/intent", {
@@ -347,4 +353,3 @@ export function useCheckoutFlow({
     applyCoupon,
   };
 }
-

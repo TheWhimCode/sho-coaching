@@ -4,27 +4,24 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
 import {
-  getPreset,
   computeSessionPrice,
   totalMinutes,
   titlesByPreset,
   colorsByPreset,
 } from "@/engine/session";
 
-import type { Preset } from "@/engine/session";
+import type { SessionConfig, Preset } from "@/engine/session";
 import TypingText from "@/app/_components/animations/TypingText";
 
 // Icons
 import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react";
 
 type Props = {
-  minutes: number;
-  priceEUR?: number;
-  followups?: number;
+  session: SessionConfig;
+  preset: Preset;          // ⭐ required now
   isActive?: boolean;
   className?: string;
   layoutId?: string;
-  liveBlocks?: number;
   selectedDate?: Date | null;
 };
 
@@ -38,42 +35,28 @@ function SessionIcon({ preset, color, glow }: { preset: Preset; color: string; g
   const size = 26;
   const glowStyle = glow ? { filter: `drop-shadow(0 0 8px ${glow})` } : undefined;
 
-  if (preset === "vod") return <Scroll size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
-  if (preset === "instant") return <Lightning size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
-  if (preset === "signature") return <Signature size={size} weight="bold" color={color} style={glowStyle} aria-hidden />;
-  return <PuzzlePiece size={size} weight="fill" color={color} style={glowStyle} aria-hidden />;
+  if (preset === "vod") return <Scroll size={size} weight="fill" color={color} style={glowStyle} />;
+  if (preset === "instant") return <Lightning size={size} weight="fill" color={color} style={glowStyle} />;
+  if (preset === "signature") return <Signature size={size} weight="bold" color={color} style={glowStyle} />;
+  return <PuzzlePiece size={size} weight="fill" color={color} style={glowStyle} />;
 }
 
 export default function SessionBlock({
-  minutes,
-  followups = 0,
-  liveBlocks = 0,
-  priceEUR,
+  session,
+  preset,           // ⭐ we trust parent now
   isActive = false,
   className = "",
   layoutId,
   selectedDate,
 }: Props) {
 
-  const preset = getPreset(minutes, followups, liveBlocks);
+  const { liveMin, followups, liveBlocks } = session;
+
+  // ⭐ remove getPreset logic entirely
   const { ring, glow } = colorsByPreset[preset];
 
-  // ✔ canonical duration calculation
-  const total = totalMinutes({
-    liveMin: minutes,
-    followups,
-    liveBlocks,
-  });
-
-  // ✔ canonical pricing
-  const sessionPrice =
-    priceEUR ??
-    computeSessionPrice({
-      liveMin: minutes,
-      followups,
-      liveBlocks,
-    }).priceEUR;
-
+  const total = totalMinutes(session);
+  const sessionPrice = computeSessionPrice(session).priceEUR;
   const title = titlesByPreset[preset];
 
   const [everActivated, setEverActivated] = useState(false);
@@ -133,27 +116,14 @@ export default function SessionBlock({
         <SessionIcon preset={preset} color={ring} glow={glow} />
       </div>
 
-      {/* Header */}
       <div className="mb-2 flex items-center justify-between pr-10">
         <div className="text-xs uppercase tracking-wide text-white/65">
-          {dateLabel ? (
-            <TypingText
-              key={dateLabel}
-              text={dateLabel}
-              speed={22}
-              delay={500}
-              color="rgba(255,255,255,0.65)"
-            />
-          ) : (
-            "Session"
-          )}
+          {dateLabel ?? "Session"}
         </div>
       </div>
 
-      {/* Title */}
       <h3 className="text-2xl font-extrabold tracking-tight">{title}</h3>
 
-      {/* Meta */}
       <div className="mt-10 flex items-center justify-between text-[15px] font-semibold">
         <span className="text-white/90 flex items-center gap-2">
           {total} min
@@ -169,7 +139,6 @@ export default function SessionBlock({
         <span className="text-white/90">€{sessionPrice}</span>
       </div>
 
-      {/* Ticks */}
       <div className="mt-3">
         <div className="flex items-center gap-2">
           {Array.from({ length: TOTAL_TICKS }).map((_, i) => {

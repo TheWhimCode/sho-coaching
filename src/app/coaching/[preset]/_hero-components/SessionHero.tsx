@@ -21,7 +21,10 @@ import {
   titlesByPreset,
   taglinesByPreset,
   stepsByPreset,
+  type Preset,
 } from "@/engine/session";
+import type { ProductId } from "@/engine/session";
+
 
 type Props = {
   title: string;
@@ -36,7 +39,8 @@ type Props = {
   isCustomizingCenter?: boolean;
   isDrawerOpen?: boolean;
   liveBlocks?: number;
-  presetOverride?: "vod" | "signature" | "instant" | "custom";
+productId?: ProductId;
+  presetOverride?: Preset;
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -101,12 +105,21 @@ export default function SessionHero({
   isDrawerOpen = false,
   liveBlocks = 0,
   presetOverride,
+  productId,
 }: Props) {
 
   // ✔ unified engine logic
-  const session = clamp({ liveMin: baseMinutes, followups, liveBlocks });
+  const session = clamp({ liveMin: baseMinutes, followups, liveBlocks, productId });
   const liveMinutes = totalMinutes(session);
-  const computedPreset = getPreset(session.liveMin, session.followups, session.liveBlocks);
+
+  // now bundle-aware
+  const computedPreset = getPreset(
+    session.liveMin,
+    session.followups,
+    session.liveBlocks,
+    session.productId,
+  );
+
   const preset = presetOverride ?? computedPreset;
   const leftSteps = stepsByPreset[preset];
 
@@ -306,13 +319,13 @@ export default function SessionHero({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PANEL_DELAY.center }}
             >
-              <CenterSessionPanel
-                title={title}
-                baseMinutes={session.liveMin}
-                isCustomizing={isCustomizingCenter}
-                followups={session.followups}
-                liveBlocks={session.liveBlocks}
-              />
+<CenterSessionPanel
+  session={session}
+  preset={preset}
+  isCustomizing={isCustomizingCenter}
+/>
+
+
             </motion.div>
 
             {/* RIGHT */}

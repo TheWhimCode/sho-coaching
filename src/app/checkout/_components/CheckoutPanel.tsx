@@ -7,6 +7,17 @@ import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock"
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import { FooterProvider, useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 import { AnimatePresence, motion } from "framer-motion";
+import type { ProductId } from "@/engine/session/model/product";
+
+
+// ⭐ NEW imports
+import {
+  clamp,
+  getPreset,
+  totalMinutes,
+  titlesByPreset,
+  type SessionConfig,
+} from "@/engine/session";
 
 function BottomBar({
   step,
@@ -29,7 +40,6 @@ function BottomBar({
   const blockedByWaiver = flow.step === 2 && !flow.waiver;
   const disabled = footer.disabled || footer.loading || blockedByWaiver;
 
-  // ⭐ coupon lock after PI or booking exists
   const couponLocked = !!flow.clientSecret;
 
   const handleApplyCoupon = async () => {
@@ -208,7 +218,7 @@ function BottomBar({
                 className="px-5 py-3 text-base w-full"
                 onClick={async () => {
                   if (disabled) return;
-                  if (footer.loading) return; // ⭐ prevents double click
+                  if (footer.loading) return;
 
                   setFooter((f: any) => ({ ...f, loading: true }));
 
@@ -282,6 +292,21 @@ export default function CheckoutPanel(props: Parameters<
   const flow = useCheckoutFlow(props);
   const { payload, breakdown, selectedStart } = flow;
 
+  // ⭐ NEW ENGINE LOGIC HERE
+  const session = clamp({
+    liveMin: payload.baseMinutes,
+    liveBlocks: payload.liveBlocks,
+    followups: payload.followups,
+productId: (payload.productId ?? undefined) as ProductId | undefined,
+  });
+
+  const preset = getPreset(
+    session.liveMin,
+    session.followups,
+    session.liveBlocks,
+    session.productId,
+  );
+
   return (
     <FooterProvider>
       <div
@@ -311,12 +336,11 @@ export default function CheckoutPanel(props: Parameters<
           />
 
           <div className="flex flex-col flex-1 space-y-4 relative z-10 md:min-h-0 md:h-full">
+            {/* ⭐ New SessionBlock props */}
             <SessionBlock
               layoutId="session-block"
-              minutes={payload.baseMinutes}
-              liveBlocks={payload.liveBlocks}
-              followups={payload.followups}
-              priceEUR={breakdown?.total ?? 0}
+              session={session}
+              preset={preset}
               isActive
               className="mb-6 relative"
               selectedDate={selectedStart}

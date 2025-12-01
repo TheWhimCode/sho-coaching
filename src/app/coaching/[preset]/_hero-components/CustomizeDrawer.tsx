@@ -30,7 +30,7 @@ function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
 }
 
 /**
- * UI-only interactions (NOT domain rules).
+ * UI-only interactions
  */
 function decDuration(c: SessionConfig): SessionConfig {
   return clamp({ ...c, liveMin: c.liveMin - 15 });
@@ -39,10 +39,6 @@ function incDuration(c: SessionConfig): SessionConfig {
   return clamp({ ...c, liveMin: c.liveMin + 15 });
 }
 
-/**
- * UI helpers: let the drawer ASK the engine “is this allowed?”
- * instead of rewriting rules here.
- */
 function canDecDuration(c: SessionConfig) {
   return !(c.liveMin === MIN_MINUTES && c.liveBlocks === 0);
 }
@@ -72,7 +68,7 @@ export default function CustomizeDrawer({ open, onClose, session, onChange, high
   const [hoverPreset, setHoverPreset] = useState<Preset | null>(null);
 
   const currentPreset = useMemo(
-    () => getPreset(session.liveMin, session.followups, session.liveBlocks),
+    () => getPreset(session.liveMin, session.followups, session.liveBlocks, session.productId),
     [session],
   );
 
@@ -128,9 +124,12 @@ export default function CustomizeDrawer({ open, onClose, session, onChange, high
 
   function applyPreset(p: Exclude<Preset, "custom">) {
     clearHighlight();
-    if (p === "instant")   changeAndClear({ liveMin: 30, liveBlocks: 0, followups: 0 });
-    if (p === "vod")       changeAndClear({ liveMin: 60, liveBlocks: 0, followups: 0 });
-    if (p === "signature") changeAndClear({ liveMin: 45, liveBlocks: 0, followups: 1 });
+    changeAndClear({
+      productId: undefined,
+      ...(p === "instant"   && { liveMin: 30, liveBlocks: 0, followups: 0 }),
+      ...(p === "vod"       && { liveMin: 60, liveBlocks: 0, followups: 0 }),
+      ...(p === "signature" && { liveMin: 45, liveBlocks: 0, followups: 1 }),
+    } as SessionConfig);
   }
 
   const handleBackdropClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
@@ -252,6 +251,8 @@ function Content({
   squareBtn: string;
   setHoverPreset: (p: Preset | null) => void;
 }) {
+  const isBundle = session.productId === "bundle_4x60";
+
   return (
     <div>
       {/* Duration */}
@@ -265,7 +266,7 @@ function Content({
           <button
             className={squareBtn}
             onClick={() => changeAndClear(decDuration(session))}
-            disabled={!canDecDuration(session)}
+            disabled={isBundle || !canDecDuration(session)}
           >
             −15
           </button>
@@ -273,7 +274,7 @@ function Content({
           <button
             className={squareBtn}
             onClick={() => changeAndClear(incDuration(session))}
-            disabled={!canIncDuration(session)}
+            disabled={isBundle || !canIncDuration(session)}
           >
             +15
           </button>
@@ -302,7 +303,7 @@ function Content({
         <div className="mt-2 flex gap-2">
           <button
             className={squareBtn}
-            disabled={!canRemoveBlock(session)}
+            disabled={isBundle || !canRemoveBlock(session)}
             onClick={() => changeAndClear(removeLiveBlock(session))}
           >
             −45
@@ -310,7 +311,7 @@ function Content({
 
           <button
             className={squareBtn}
-            disabled={!canAddBlock(session)}
+            disabled={isBundle || !canAddBlock(session)}
             onClick={() => changeAndClear(addLiveBlock(session))}
           >
             +45
@@ -353,14 +354,14 @@ function Content({
         <div className="mt-2 flex gap-2 relative">
           <button
             className={squareBtn}
-            disabled={session.followups <= 0}
+            disabled={isBundle || session.followups <= 0}
             onClick={() => changeAndClear({ ...session, followups: session.followups - 1 })}
           >
             −
           </button>
           <button
             className={squareBtn}
-            disabled={session.followups >= 2}
+            disabled={isBundle || session.followups >= 2}
             onClick={() => changeAndClear({ ...session, followups: session.followups + 1 })}
           >
             +
@@ -376,17 +377,49 @@ function Content({
         <div className="grid gap-2">
           <PresetButton
             label="VOD Review" sub="60 min" price="€40" preset="vod"
-            active={currentPreset === "vod"} onClick={() => applyPreset("vod")} onHover={setHoverPreset}
+            active={!isBundle && currentPreset === "vod"}
+            onClick={() => applyPreset("vod")}
+            onHover={setHoverPreset}
             isMobile={isMobile}
           />
+
           <PresetButton
             label="Signature" sub="45 min + 15 min follow-up" price="€45" preset="signature"
-            active={currentPreset === "signature"} onClick={() => applyPreset("signature")} onHover={setHoverPreset}
+            active={!isBundle && currentPreset === "signature"}
+            onClick={() => applyPreset("signature")}
+            onHover={setHoverPreset}
             isMobile={isMobile}
           />
+
           <PresetButton
             label="Instant Insight" sub="30 min" price="€20" preset="instant"
-            active={currentPreset === "instant"} onClick={() => applyPreset("instant")} onHover={setHoverPreset}
+            active={!isBundle && currentPreset === "instant"}
+            onClick={() => applyPreset("instant")}
+            onHover={setHoverPreset}
+            isMobile={isMobile}
+          />
+
+          {/* NEW BUNDLE BUTTON */}
+          <PresetButton
+            label="4-Session Bundle"
+            sub="4 × 60 min"
+            price="€110"
+            preset="bundle_4x60"
+            active={isBundle}
+            onClick={() => {
+              if (isBundle) {
+                changeAndClear({ ...session, productId: undefined });
+              } else {
+                changeAndClear({
+                  ...session,
+                  productId: "bundle_4x60",
+                  liveMin: 60,
+                  liveBlocks: 0,
+                  followups: 0,
+                });
+              }
+            }}
+            onHover={setHoverPreset}
             isMobile={isMobile}
           />
         </div>

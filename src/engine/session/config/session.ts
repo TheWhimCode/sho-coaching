@@ -7,11 +7,20 @@ import {
   LIVEBLOCK_MIN,
   MAX_BLOCKS,
 } from "../model/session";
+import { products } from "../model/product";
+
+function isBundle(c: SessionConfig) {
+  return !!(c.productId && products[c.productId]?.isBundle);
+}
 
 /**
  * Clamp a session into a valid domain state.
  */
 export function clamp(c: SessionConfig): SessionConfig {
+
+  // bundles do NOT clamp / mutate
+  if (isBundle(c)) return c;
+
   let liveMin = Math.max(MIN_MINUTES, Math.min(c.liveMin, MAX_MINUTES));
   let liveBlocks = Math.max(0, Math.min(c.liveBlocks, MAX_BLOCKS));
 
@@ -31,9 +40,10 @@ export function clamp(c: SessionConfig): SessionConfig {
 }
 
 export const addLiveBlock = (c: SessionConfig): SessionConfig =>
-  clamp({ ...c, liveBlocks: c.liveBlocks + 1 });
+  isBundle(c) ? c : clamp({ ...c, liveBlocks: c.liveBlocks + 1 });
 
 export const removeLiveBlock = (c: SessionConfig): SessionConfig =>
+  isBundle(c) ? c :
   c.liveBlocks === 0 ? c : clamp({ ...c, liveBlocks: c.liveBlocks - 1 });
 
 export function totalMinutes(c: SessionConfig): number {

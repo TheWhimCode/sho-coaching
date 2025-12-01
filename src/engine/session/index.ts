@@ -1,5 +1,7 @@
 // model domain
 export * from "./model/session";
+export * from "./model/product";
+
 
 // config + helpers
 export * from "./config/session";
@@ -13,3 +15,4 @@ export * from "./rules/pricing";
 export * from "./metadata/colors";
 export * from "./metadata/labels";
 export * from "./metadata/steps";
+

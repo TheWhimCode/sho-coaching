@@ -12,6 +12,10 @@ import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { useSearchParams } from "next/navigation";
 
 export default function Client({ preset }: { preset: string }) {
+
+  // ⭐ normalize route param once
+  const canonicalPreset = preset.replace(/-/g, "_");
+
   const params = useSearchParams();
   const wantsCustomize = params.get("open") === "customize";
   const focus = params.get("focus");
@@ -21,28 +25,31 @@ export default function Client({ preset }: { preset: string }) {
   const qLive = Number(params.get("live") ?? NaN);
 
   const init = useMemo(() => {
-    const safe = (n: number, def: number) => (Number.isFinite(n) ? n : def);
+    const safe = (n: number, def: number) =>
+      (Number.isFinite(n) ? n : def);
 
-    if (preset === "custom") {
-      const liveMin = safe(qBase, 60);
-      const followups = Math.max(0, Math.min(2, safe(qFU, 0)));
-      const liveBlocks = Math.max(0, Math.min(2, safe(qLive, 0)));
+    if (canonicalPreset === "custom") {
       return {
         title: "Custom Session",
-        session: { liveMin, followups, liveBlocks } as SessionConfig,
+        session: {
+          liveMin: safe(qBase, 60),
+          followups: Math.max(0, Math.min(2, safe(qFU, 0))),
+          liveBlocks: Math.max(0, Math.min(2, safe(qLive, 0))),
+          productId: canonicalPreset,
+        } as SessionConfig,
       };
     }
 
-    switch (preset) {
-      case "signature":
-        return { title: "Signature Session", session: { liveMin: 45, liveBlocks: 0, followups: 1 } as SessionConfig };
-      case "instant":
-        return { title: "Instant Insight", session: { liveMin: 30, liveBlocks: 0, followups: 0 } as SessionConfig };
-      case "vod":
-      default:
-        return { title: "VOD Review", session: { liveMin: 60, liveBlocks: 0, followups: 0 } as SessionConfig };
-    }
-  }, [preset, qBase, qFU, qLive]);
+    return {
+      title: canonicalPreset,
+      session: {
+        liveMin: 60,
+        followups: 0,
+        liveBlocks: 0,
+        productId: canonicalPreset,
+      } as SessionConfig,
+    };
+  }, [canonicalPreset, qBase, qFU, qLive]);
 
   const [session, setSession] = useState<SessionConfig>(init.session);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -53,16 +60,19 @@ export default function Client({ preset }: { preset: string }) {
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
 
   const [activePreset, setActivePreset] = useState<Preset>(() =>
-    getPreset(init.session.liveMin, init.session.followups, init.session.liveBlocks)
+    getPreset(
+      init.session.liveMin,
+      init.session.followups,
+      init.session.liveBlocks,
+      init.session.productId
+    )
   );
 
-  // Defer scrollbar-hiding classes by a couple of frames to avoid first-paint vh reflow on mobile
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
 
-    let raf1 = 0;
-    let raf2 = 0;
+    let raf1 = 0, raf2 = 0;
     raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
         html.classList.add("no-scrollbar");
@@ -90,14 +100,27 @@ export default function Client({ preset }: { preset: string }) {
   useEffect(() => {
     setSession(init.session);
     setLiveMinutes(init.session.liveMin);
-    setActivePreset(getPreset(init.session.liveMin, init.session.followups, init.session.liveBlocks));
+    setActivePreset(
+      getPreset(
+        init.session.liveMin,
+        init.session.followups,
+        init.session.liveBlocks,
+        init.session.productId
+      )
+    );
   }, [init]);
 
   useEffect(() => {
-    setActivePreset(getPreset(session.liveMin, session.followups, session.liveBlocks));
-  }, [session.liveMin, session.followups, session.liveBlocks]);
+    setActivePreset(
+      getPreset(
+        session.liveMin,
+        session.followups,
+        session.liveBlocks,
+        session.productId
+      )
+    );
+  }, [session.liveMin, session.followups, session.liveBlocks, session.productId]);
 
-  // Prefetch availability when minutes change
   useEffect(() => {
     let on = true;
     const now = new Date();
@@ -124,16 +147,15 @@ export default function Client({ preset }: { preset: string }) {
   const { priceEUR } = computePriceEUR(totalMinutes, session.followups);
 
   useEffect(() => {
-    if (preset === "custom" && wantsCustomize) {
+    if (canonicalPreset === "custom" && wantsCustomize) {
       const t = setTimeout(() => setDrawerOpen(true), 2800);
       return () => clearTimeout(t);
     }
-  }, [preset, wantsCustomize]);
+  }, [canonicalPreset, wantsCustomize]);
 
   return (
     <LayoutGroup id="booking-flow">
       <main className="relative min-h-[100svh] text-white overflow-x-hidden bg-[#000000]">
-        
         <SessionHero
           presetOverride={activePreset}
           title={init.title}
@@ -183,7 +205,7 @@ export default function Client({ preset }: { preset: string }) {
         <CustomizeDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-  session={session}
+          session={session}
           onChange={setSession}
           highlightKey={focus === "followups" ? "followups" : undefined}
         />
