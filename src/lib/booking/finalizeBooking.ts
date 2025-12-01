@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { getPreset } from "@/lib/sessions/preset";
+import { getPreset } from "@/engine/session/rules/preset";
 
 export type FinalizeMeta = {
   bookingId?: string;

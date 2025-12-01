@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Stripe } from "@stripe/stripe-js";
 import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
-import { getPreset } from "@/lib/sessions/preset";
+import { getPreset } from "@/engine/session/rules/preset";
 
 export type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna";
 

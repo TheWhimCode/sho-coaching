@@ -1,5 +1,4 @@
-// lib/sessions/colors.ts
-// lib/sessions/colors.ts
+// engine/session/metadata/colors.ts
 import type { Preset } from "./preset";
 
 export const colorsByPreset: Record<Preset, { ring: string; glow: string }> = {

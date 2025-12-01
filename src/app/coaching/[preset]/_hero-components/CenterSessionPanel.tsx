@@ -5,7 +5,7 @@ import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock"
 import DualWipeLR from "@/components/DualWipeLR";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getPreset, type Preset } from "@/lib/sessions/preset";
+import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 import { computePriceEUR } from "@/lib/pricing";
 import GlassPanel from "@/app/_components/panels/GlassPanel";

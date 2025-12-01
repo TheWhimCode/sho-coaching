@@ -1,5 +1,5 @@
 // lib/sessions/labels.ts
-import { Preset } from "./preset";
+import { Preset } from "../rules/preset";
 
 export const titlesByPreset: Record<Preset, string> = {
   instant: "Instant Insights",

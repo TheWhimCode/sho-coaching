@@ -3,7 +3,7 @@
 
 import React from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { type Preset } from "@/lib/sessions/preset";
+import { type Preset } from "@/engine/session/rules/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 

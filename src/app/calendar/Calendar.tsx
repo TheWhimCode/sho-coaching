@@ -8,7 +8,7 @@ import { SlotStatus } from "@prisma/client";
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
 import { holdSlot, releaseHold } from "@/utils/holds";
-import { getPreset } from "@/lib/sessions/preset";
+import { getPreset } from "@/engine/session/rules/preset";
 
 import CalendarGrid from "./components/CalendarGrid";
 import TimeSlotsList from "./components/TimeSlotsList";

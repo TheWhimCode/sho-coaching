@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react";
-import type { Preset } from "@/lib/sessions/preset";
+import type { Preset } from "@/engine/session/rules/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 import { motion, type Variants } from "framer-motion";

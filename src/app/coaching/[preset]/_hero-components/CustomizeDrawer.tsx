@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Cfg, clamp, addLiveBlock, removeLiveBlock } from "@/utils/sessionConfig";
-import { getPreset, type Preset } from "@/lib/sessions/preset";
+import { SessionConfig, clamp, addLiveBlock, removeLiveBlock } from "@/engine/session/config/session";
+import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { colorsByPreset } from "@/lib/sessions/colors";
 import { Signature, Scroll, Lightning, PuzzlePiece, X } from "@phosphor-icons/react";
 import InfoTooltip from "@/app/_components/small/InfoTooltip";
@@ -19,15 +19,15 @@ function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   return <PuzzlePiece size={size} weight="fill" color={ring} style={style} aria-hidden />;
 }
 
-function decDuration(cfg: Cfg): Cfg {
-  if (cfg.liveMin > 30) return { ...cfg, liveMin: Math.max(30, cfg.liveMin - 15) };
-  if (cfg.liveBlocks > 0) return { ...cfg, liveBlocks: cfg.liveBlocks - 1 };
-  return cfg;
+function decDuration(session: SessionConfig): SessionConfig {
+  if (session.liveMin > 30) return { ...session, liveMin: Math.max(30, session.liveMin - 15) };
+  if (session.liveBlocks > 0) return { ...session, liveBlocks: session.liveBlocks - 1 };
+  return session;
 }
-function incDuration(cfg: Cfg): Cfg {
-  const total = cfg.liveMin + cfg.liveBlocks * 45;
-  if (total >= 120) return cfg;
-  return { ...cfg, liveMin: cfg.liveMin + 15 };
+function incDuration(session: SessionConfig): SessionConfig {
+  const total = session.liveMin + session.liveBlocks * 45;
+  if (total >= 120) return session;
+  return { ...session, liveMin: session.liveMin + 15 };
 }
 
 const Divider = () => (
@@ -37,18 +37,18 @@ const Divider = () => (
 type Props = {
   open: boolean;
   onClose: () => void;
-  cfg: Cfg;
-  onChange: (c: Cfg) => void;
+  session: SessionConfig;
+  onChange: (c: SessionConfig) => void;
   highlightKey?: "followups";
 };
 
-export default function CustomizeDrawer({ open, onClose, cfg, onChange, highlightKey }: Props) {
+export default function CustomizeDrawer({ open, onClose, session, onChange, highlightKey }: Props) {
   const [hoverPreset, setHoverPreset] = useState<Preset | null>(null);
 
-  const baseOnly = cfg.liveMin;
+  const baseOnly = session.liveMin;
   const currentPreset = useMemo(
-    () => getPreset(baseOnly, cfg.followups, cfg.liveBlocks),
-    [baseOnly, cfg.followups, cfg.liveBlocks],
+    () => getPreset(baseOnly, session.followups, session.liveBlocks),
+    [baseOnly, session.followups, session.liveBlocks],
   );
 
   const [showHighlight, setShowHighlight] = useState(false);
@@ -79,7 +79,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange, highligh
     window.addEventListener("popstate", handlePop);
     return () => {
       window.removeEventListener("popstate", handlePop);
-      // intentionally NOT calling history.back() here to avoid accidental closes
+      // intentionally NOT calling history.back() here
     };
   }, [open, isMobile, onClose]);
 
@@ -99,20 +99,18 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange, highligh
     }
   };
 
-  const changeAndClear = (next: Cfg) => {
+  const changeAndClear = (next: SessionConfig) => {
     clearHighlight();
     onChange(next);
   };
 
   function applyPreset(p: Exclude<Preset, "custom">) {
     clearHighlight();
-    if (p === "instant")   changeAndClear(clamp({ ...cfg, liveMin: 30, liveBlocks: 0, followups: 0 }));
-    else if (p === "vod")  changeAndClear(clamp({ ...cfg, liveMin: 60, liveBlocks: 0, followups: 0 }));
-    else if (p === "signature") changeAndClear(clamp({ ...cfg, liveMin: 45, liveBlocks: 0, followups: 1 }));
-    // no onClose() here
+    if (p === "instant")   changeAndClear(clamp({ ...session, liveMin: 30, liveBlocks: 0, followups: 0 }));
+    else if (p === "vod")  changeAndClear(clamp({ ...session, liveMin: 60, liveBlocks: 0, followups: 0 }));
+    else if (p === "signature") changeAndClear(clamp({ ...session, liveMin: 45, liveBlocks: 0, followups: 1 }));
   }
 
-  // Backdrop close handler — only when clicking the backdrop itself
   const handleBackdropClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (e.target === e.currentTarget) {
       clearHighlight();
@@ -120,7 +118,6 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange, highligh
     }
   };
 
-  // Also block mousedown bubbling from content to avoid premature closes on mobile
   const stopMouseDown: React.MouseEventHandler = (e) => e.stopPropagation();
 
   const squareBtn =
@@ -160,7 +157,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange, highligh
                 <Header onClose={() => { clearHighlight(); onClose(); }} />
                 <Divider />
                 <Content
-                  cfg={cfg}
+                  session={session}
                   changeAndClear={changeAndClear}
                   applyPreset={applyPreset}
                   currentPreset={currentPreset}
@@ -177,7 +174,7 @@ export default function CustomizeDrawer({ open, onClose, cfg, onChange, highligh
                   <Header onClose={() => { clearHighlight(); onClose(); }} />
                   <Divider />
                   <Content
-                    cfg={cfg}
+                    session={session}
                     changeAndClear={changeAndClear}
                     applyPreset={applyPreset}
                     currentPreset={currentPreset}
@@ -213,7 +210,7 @@ function Header({ onClose }: { onClose: () => void }) {
 }
 
 function Content({
-  cfg,
+  session,
   changeAndClear,
   applyPreset,
   currentPreset,
@@ -223,8 +220,8 @@ function Content({
   squareBtn,
   setHoverPreset,
 }: {
-  cfg: Cfg;
-  changeAndClear: (c: Cfg) => void;
+  session: SessionConfig;
+  changeAndClear: (c: SessionConfig) => void;
   applyPreset: (p: Exclude<Preset, "custom">) => void;
   currentPreset: Preset;
   isMobile: boolean;
@@ -239,21 +236,21 @@ function Content({
       <section>
         <div className="flex items-center justify-between">
           <span className="text-[15px] md:text-[16px] font-semibold">Add/remove time</span>
-          <span className="text-sm opacity-80">{cfg.liveMin} min</span>
+          <span className="text-sm opacity-80">{session.liveMin} min</span>
         </div>
         <div className="mt-2 flex gap-2">
           <button
             className={squareBtn}
-            onClick={() => changeAndClear(decDuration(cfg))}
-            disabled={cfg.liveMin <= 30 && cfg.liveBlocks === 0}
+            onClick={() => changeAndClear(decDuration(session))}
+            disabled={session.liveMin <= 30 && session.liveBlocks === 0}
             aria-label="Decrease 15 minutes"
           >
             −15
           </button>
           <button
             className={squareBtn}
-            onClick={() => changeAndClear(incDuration(cfg))}
-            disabled={cfg.liveMin + cfg.liveBlocks * 45 >= 120}
+            onClick={() => changeAndClear(incDuration(session))}
+            disabled={session.liveMin + session.liveBlocks * 45 >= 120}
             aria-label="Increase 15 minutes"
           >
             +15
@@ -277,21 +274,21 @@ function Content({
               </>
             </InfoTooltip>
           </span>
-          <span className="text-sm opacity-80">{cfg.liveBlocks} × 45 min</span>
+          <span className="text-sm opacity-80">{session.liveBlocks} × 45 min</span>
         </div>
         <div className="mt-2 flex gap-2">
           <button
             className={squareBtn}
-            disabled={cfg.liveBlocks === 0}
-            onClick={() => changeAndClear(removeLiveBlock(cfg))}
+            disabled={session.liveBlocks === 0}
+            onClick={() => changeAndClear(removeLiveBlock(session))}
             aria-label="Remove 45-minute block"
           >
             −45
           </button>
           <button
             className={squareBtn}
-            disabled={cfg.liveMin + (cfg.liveBlocks + 1) * 45 > 120 || cfg.liveBlocks >= 2}
-            onClick={() => changeAndClear(addLiveBlock(cfg))}
+            disabled={session.liveMin + (session.liveBlocks + 1) * 45 > 120 || session.liveBlocks >= 2}
+            onClick={() => changeAndClear(addLiveBlock(session))}
             aria-label="Add 45-minute block"
           >
             +45
@@ -328,21 +325,21 @@ function Content({
               A few days after your session, Sho will create a Follow-up recording to review your progress and give new input.
             </InfoTooltip>
           </span>
-          <span className="text-sm opacity-80">{cfg.followups} × 15 min</span>
+          <span className="text-sm opacity-80">{session.followups} × 15 min</span>
         </div>
         <div className="mt-2 flex gap-2 relative">
           <button
             className={squareBtn}
-            disabled={cfg.followups === 0}
-            onClick={() => changeAndClear({ ...cfg, followups: cfg.followups - 1 })}
+            disabled={session.followups === 0}
+            onClick={() => changeAndClear({ ...session, followups: session.followups - 1 })}
             aria-label="Decrease follow-ups"
           >
             −
           </button>
           <button
             className={squareBtn}
-            disabled={cfg.followups >= 2}
-            onClick={() => changeAndClear({ ...cfg, followups: cfg.followups + 1 })}
+            disabled={session.followups >= 2}
+            onClick={() => changeAndClear({ ...session, followups: session.followups + 1 })}
             aria-label="Increase follow-ups"
           >
             +
@@ -407,7 +404,8 @@ function PresetButton({
           <div className="font-semibold">{label}</div>
           <div className="text-xs opacity-85">{sub}</div>
         </div>
-        <div className="mr-3 text-base font-semibold">{price}</div>
+        <div className="mr-3 te
+        xt-base font-semibold">{price}</div>
         <div className="shrink-0"><PresetIcon preset={preset} size={30} /></div>
       </div>
     </button>

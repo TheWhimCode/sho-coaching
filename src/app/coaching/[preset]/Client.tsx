@@ -5,10 +5,10 @@ import SessionHero from "./_hero-components/SessionHero";
 import CalLikeOverlay from "@/app/calendar/Calendar";
 import CustomizeDrawer from "./_hero-components/CustomizeDrawer";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import type { Cfg } from "@/utils/sessionConfig";
+import type { SessionConfig } from "@/engine/session/config/session";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { computePriceEUR } from "@/lib/pricing";
-import { getPreset, type Preset } from "@/lib/sessions/preset";
+import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { useSearchParams } from "next/navigation";
 
 export default function Client({ preset }: { preset: string }) {
@@ -29,31 +29,31 @@ export default function Client({ preset }: { preset: string }) {
       const liveBlocks = Math.max(0, Math.min(2, safe(qLive, 0)));
       return {
         title: "Custom Session",
-        cfg: { liveMin, followups, liveBlocks } as Cfg,
+        session: { liveMin, followups, liveBlocks } as SessionConfig,
       };
     }
 
     switch (preset) {
       case "signature":
-        return { title: "Signature Session", cfg: { liveMin: 45, liveBlocks: 0, followups: 1 } as Cfg };
+        return { title: "Signature Session", session: { liveMin: 45, liveBlocks: 0, followups: 1 } as SessionConfig };
       case "instant":
-        return { title: "Instant Insight", cfg: { liveMin: 30, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "Instant Insight", session: { liveMin: 30, liveBlocks: 0, followups: 0 } as SessionConfig };
       case "vod":
       default:
-        return { title: "VOD Review", cfg: { liveMin: 60, liveBlocks: 0, followups: 0 } as Cfg };
+        return { title: "VOD Review", session: { liveMin: 60, liveBlocks: 0, followups: 0 } as SessionConfig };
     }
   }, [preset, qBase, qFU, qLive]);
 
-  const [cfg, setCfg] = useState<Cfg>(init.cfg);
+  const [session, setSession] = useState<SessionConfig>(init.session);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [initialSlotId, setInitialSlotId] = useState<string | undefined>();
-  const [liveMinutes, setLiveMinutes] = useState(init.cfg.liveMin);
+  const [liveMinutes, setLiveMinutes] = useState(init.session.liveMin);
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
 
   const [activePreset, setActivePreset] = useState<Preset>(() =>
-    getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks)
+    getPreset(init.session.liveMin, init.session.followups, init.session.liveBlocks)
   );
 
   // Defer scrollbar-hiding classes by a couple of frames to avoid first-paint vh reflow on mobile
@@ -88,14 +88,14 @@ export default function Client({ preset }: { preset: string }) {
   }, [drawerOpen, calendarOpen]);
 
   useEffect(() => {
-    setCfg(init.cfg);
-    setLiveMinutes(init.cfg.liveMin);
-    setActivePreset(getPreset(init.cfg.liveMin, init.cfg.followups, init.cfg.liveBlocks));
+    setSession(init.session);
+    setLiveMinutes(init.session.liveMin);
+    setActivePreset(getPreset(init.session.liveMin, init.session.followups, init.session.liveBlocks));
   }, [init]);
 
   useEffect(() => {
-    setActivePreset(getPreset(cfg.liveMin, cfg.followups, cfg.liveBlocks));
-  }, [cfg.liveMin, cfg.followups, cfg.liveBlocks]);
+    setActivePreset(getPreset(session.liveMin, session.followups, session.liveBlocks));
+  }, [session.liveMin, session.followups, session.liveBlocks]);
 
   // Prefetch availability when minutes change
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function Client({ preset }: { preset: string }) {
     end.setDate(end.getDate() + 14);
     end.setHours(23, 59, 59, 999);
 
-    const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;
+    const totalMinutes = session.liveMin + session.liveBlocks * 45;
 
     (async () => {
       try {
@@ -118,10 +118,10 @@ export default function Client({ preset }: { preset: string }) {
     return () => {
       on = false;
     };
-  }, [cfg.liveMin, cfg.liveBlocks]);
+  }, [session.liveMin, session.liveBlocks]);
 
-  const totalMinutes = cfg.liveMin + cfg.liveBlocks * 45;
-  const { priceEUR } = computePriceEUR(totalMinutes, cfg.followups);
+  const totalMinutes = session.liveMin + session.liveBlocks * 45;
+  const { priceEUR } = computePriceEUR(totalMinutes, session.followups);
 
   useEffect(() => {
     if (preset === "custom" && wantsCustomize) {
@@ -139,9 +139,9 @@ export default function Client({ preset }: { preset: string }) {
           title={init.title}
           subtitle=""
           image=""
-          baseMinutes={cfg.liveMin}
-          followups={cfg.followups}
-          liveBlocks={cfg.liveBlocks}
+          baseMinutes={session.liveMin}
+          followups={session.followups}
+          liveBlocks={session.liveBlocks}
           isCustomizingCenter={drawerOpen}
           isDrawerOpen={drawerOpen}
           onCustomize={() => setDrawerOpen(true)}
@@ -150,7 +150,6 @@ export default function Client({ preset }: { preset: string }) {
             setLiveMinutes(liveMinutes);
             setCalendarOpen(true);
           }}
-          /* parallax removed */
         />
 
         <AnimatePresence>
@@ -160,8 +159,8 @@ export default function Client({ preset }: { preset: string }) {
               liveMinutes={liveMinutes}
               initialSlotId={initialSlotId ?? null}
               prefetchedSlots={prefetchedSlots}
-              followups={cfg.followups}
-              liveBlocks={cfg.liveBlocks}
+              followups={session.followups}
+              liveBlocks={session.liveBlocks}
               onClose={() => setCalendarOpen(false)}
             />
           )}
@@ -184,8 +183,8 @@ export default function Client({ preset }: { preset: string }) {
         <CustomizeDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-          cfg={cfg}
-          onChange={setCfg}
+  session={session}
+          onChange={setSession}
           highlightKey={focus === "followups" ? "followups" : undefined}
         />
       </main>

@@ -1,5 +1,5 @@
 // lib/sessions/steps.ts
-import type { Preset } from "./preset";
+import type { Preset } from "../rules/preset";
 
 type Step = { title: string };
 
