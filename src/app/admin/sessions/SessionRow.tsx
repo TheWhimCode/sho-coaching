@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { SessionData } from "./SessionData";
-import { colorsByPreset } from "@/lib/sessions/colors";
+import { colorsByPreset } from "@/engine/session";
 
 // -----------------------------------------------------
 // Helpers

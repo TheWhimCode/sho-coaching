@@ -3,7 +3,7 @@
 
 import React from "react";
 import type { Preset } from "@/lib/survey/presets";
-import { colorsByPreset } from "@/lib/sessions/colors";
+import { colorsByPreset } from "@/engine/session";
 
 type Props = {
   preset: Preset;
