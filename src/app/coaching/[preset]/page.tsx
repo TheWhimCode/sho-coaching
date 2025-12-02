@@ -3,21 +3,19 @@ import Client from "./Client";
 export default async function Page({
   params,
 }: {
-  params: { preset: string };
+  params: Promise<{ preset: string }>;
 }) {
-  const { preset } = params;
+  const { preset } = await params;
   return <Client preset={preset} />;
 }
 
-
+// (optional) SEO per preset
 export async function generateMetadata({
   params,
 }: {
-  params: { preset: string };
+  params: Promise<{ preset: string }>;
 }) {
-  const { preset } = params;
-  const canonicalPreset = preset.replace(/-/g, "_");
-
+  const { preset } = await params;
   const titles: Record<string, string> = {
     vod: "VOD Review",
     signature: "Signature Session",
@@ -25,10 +23,8 @@ export async function generateMetadata({
     custom: "Custom Session",
     bundle_4x60: "Elo Rush",
   };
-
   return {
-    title: `${titles[canonicalPreset] ?? canonicalPreset} | Sho`,
+    title: `${titles[preset] ?? preset} | Sho`,
     description: "Book a session tailored to your goals.",
   };
 }
-
