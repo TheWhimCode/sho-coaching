@@ -22,7 +22,7 @@ export type Payload = {
   preset: string;
   holdKey: string;
   startTime?: string | number;
-  productId?: string | null;
+ productId?: ProductId | null;
 };
 
 export type PayloadForBackend = Pick<
@@ -34,6 +34,8 @@ export type PayloadForBackend = Pick<
   | "liveBlocks"
   | "preset"
   | "holdKey"
+  | "productId"
+
 > & {
   startTime?: string | number | Date;
 };
@@ -273,7 +275,7 @@ export function useCheckoutFlow({
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, payMethod }),
+        body: JSON.stringify({ bookingId, payMethod,productId: payload.productId }),
       });
 
       if (res.status === 409) {

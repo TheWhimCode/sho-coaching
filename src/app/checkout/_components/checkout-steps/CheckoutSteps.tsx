@@ -99,6 +99,7 @@ export default function CheckoutSteps({
                 baseMinutes: payload.baseMinutes,
                 liveBlocks: payload.liveBlocks,
                 followups: payload.followups,
+                productId: payload.productId,
               }}
               breakdown={breakdown}
               payMethod={(payMethod || "card") as any}

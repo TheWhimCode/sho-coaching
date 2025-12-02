@@ -1,4 +1,3 @@
-// src/app/api/stripe/checkout/intent/route.ts
 import Stripe from "stripe";
 import crypto from "crypto";
 import { NextResponse } from "next/server";
@@ -8,6 +7,10 @@ import { getBlockIdsByTime, SLOT_SIZE_MIN, ceilDiv } from "@/lib/booking/block";
 import { rateLimit } from "@/lib/rateLimit";
 import { CFG_SERVER } from "@/lib/config.server";
 import { SlotStatus } from "@prisma/client";
+import { computePriceWithProduct } from "@/engine/session/rules/product";
+import { clamp } from "@/engine/session/config/session"; // optional
+import type { ProductId } from "@/engine/session/model/product";
+
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,8 +42,13 @@ export async function POST(req: Request) {
     if (!body) return NextResponse.json({ error: "invalid_json" }, { status: 400 });
 
     const bookingId = (body as { bookingId?: string }).bookingId?.trim() || null;
-    const { payMethod = "card" } = body as {
+
+    const {
+      payMethod = "card",
+      productId,
+    } = body as {
       payMethod?: "card" | "paypal" | "revolut_pay" | "klarna";
+      productId?: ProductId | null;
     };
 
     let slotId: string;
@@ -48,7 +56,6 @@ export async function POST(req: Request) {
     let followups: number;
     let sessionType: string;
     let riotTag: string | null = null;
-
     let booking = null;
 
     if (bookingId) {
@@ -63,9 +70,11 @@ export async function POST(req: Request) {
           waiverAccepted: true,
         },
       });
+
       if (!booking || !booking.slotId) {
         return NextResponse.json({ error: "booking_not_found" }, { status: 404 });
       }
+
       slotId = booking.slotId;
       liveMinutes = booking.liveMinutes;
       followups = booking.followups;
@@ -77,6 +86,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "invalid_body" }, { status: 400 });
       }
       const d = parsed.data;
+
       slotId = d.slotId;
       liveMinutes = d.liveMinutes;
       followups = d.followups ?? 0;
@@ -88,7 +98,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "invalid_minutes" }, { status: 400 });
     }
 
-    const base = computePriceEUR(liveMinutes, followups);
+    // --- BUNDLE PRICING HERE ---
+    let amountCents: number;
 
     let discount = 0;
     if (bookingId) {
@@ -99,17 +110,30 @@ export async function POST(req: Request) {
       discount = couponData?.couponDiscount ?? 0;
     }
 
-    const amountCents = Math.max(base.amountCents - discount * 100, 0);
+    if (productId) {
+      const sessionConfig = clamp({
+        liveMin: liveMinutes,
+        liveBlocks: 0,
+        followups,
+        productId,
+      });
+
+      const { priceEUR } = computePriceWithProduct(sessionConfig);
+      amountCents = Math.max(priceEUR * 100 - discount * 100, 0);
+    } else {
+      const base = computePriceEUR(liveMinutes, followups);
+      amountCents = Math.max(base.amountCents - discount * 100, 0);
+    }
 
     const anchor = await prisma.slot.findUnique({
       where: { id: slotId },
       select: { id: true, startTime: true, status: true, holdKey: true },
     });
+
     if (!anchor) return NextResponse.json({ error: "unavailable" }, { status: 409 });
     if (anchor.status === SlotStatus.taken) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
     const effKey = anchor.holdKey || crypto.randomUUID();
-
     let slotIds = await getBlockIdsByTime(anchor.startTime, liveMinutes, prisma);
 
     if (!slotIds) {
@@ -136,6 +160,7 @@ export async function POST(req: Request) {
       }
 
       const expected = ceilDiv(liveMinutes + BUFFER_BEFORE_MIN + BUFFER_AFTER_MIN, SLOT_SIZE_MIN);
+
       if (rows.length !== expected) return NextResponse.json({ error: "unavailable" }, { status: 409 });
 
       const stepMs = SLOT_SIZE_MIN * 60_000;
@@ -144,13 +169,17 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: "unavailable" }, { status: 409 });
         }
       }
+
       slotIds = rows.map((r) => r.id);
     }
 
-    if (!slotIds?.length) return NextResponse.json({ error: "unavailable" }, { status: 409 });
+    if (!slotIds?.length) {
+      return NextResponse.json({ error: "unavailable" }, { status: 409 });
+    }
 
     const now = new Date();
     const holdUntil = new Date(now.getTime() + HOLD_TTL_MIN * 60_000);
+
     await prisma.slot.updateMany({
       where: {
         id: { in: slotIds },
@@ -196,13 +225,6 @@ export async function POST(req: Request) {
       { idempotencyKey: idemKey }
     );
 
-    try {
-      await getStripe().paymentIntents.update(pi.id, { metadata });
-    } catch (e) {
-      console.warn("[intent] failed to update PI metadata (non-fatal)", pi.id, e);
-    }
-
-    // 🔴 IMPORTANT: persist blockCsv so finalizeBooking + webhook can rely on DB too
     if (bookingId) {
       await prisma.session.update({
         where: { id: bookingId },
@@ -211,36 +233,17 @@ export async function POST(req: Request) {
           amountCents,
           currency: "eur",
           paymentProvider: "stripe",
-          blockCsv: slotIds.join(","),          // <<< added
+          blockCsv: slotIds.join(","),
         },
       });
     }
 
-    console.log("[intent] created PI", { piId: pi.id, bookingId, slotId, slotCount: slotIds.length });
-
     const res = NextResponse.json({ clientSecret: pi.client_secret, pmTypes });
     res.headers.set("Cache-Control", "no-store");
     return res;
-} catch (err: any) {
-  console.error("INTENT_ERROR", {
-    message: err?.message,
-    type: err?.type,
-    code: err?.code,
-    param: err?.param,
-    raw: err?.raw,
-    full: err
-  });
 
-  return NextResponse.json(
-    {
-      error: "internal_error",
-      detail: err?.message,
-      code: err?.code,
-      type: err?.type,
-      param: err?.param,
-    },
-    { status: 500 }
-  );
-}
-
+  } catch (err: any) {
+    console.error("INTENT_ERROR", err);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }

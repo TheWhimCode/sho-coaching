@@ -7,7 +7,8 @@ import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock"
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import { FooterProvider, useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 import { AnimatePresence, motion } from "framer-motion";
-import type { ProductId } from "@/engine/session/model/product";
+import type { ProductId } from "@/engine/session";
+import { computePriceWithProduct } from "@/engine/session";
 
 // ⭐ NEW imports
 import {
@@ -21,10 +22,13 @@ function BottomBar({
   step,
   dir,
   flow,
+  session,
 }: {
   step: number;
   dir: 1 | -1;
   flow: ReturnType<typeof useCheckoutFlow>;
+  session: SessionConfig
+
 }) {
   const [footer, setFooter] = useFooter();
   const show = !footer.hidden;
@@ -32,8 +36,9 @@ function BottomBar({
   const [coupon, setCoupon] = useState("");
   const [couponMsg, setCouponMsg] = useState<{ type: "error" | "success"; msg: string } | null>(null);
 
-  const baseTotal = flow.breakdown?.total ?? 0;
-  const discountedTotal = baseTotal - (flow.couponDiscount ?? 0);
+const { priceEUR } = computePriceWithProduct(session);
+const baseTotal = priceEUR;
+const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
 
   const blockedByWaiver = flow.step === 2 && !flow.waiver;
   const disabled = footer.disabled || footer.loading || blockedByWaiver;
@@ -230,7 +235,7 @@ function BottomBar({
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                           method: "card",
-                          amountCents: flow.breakdown.total * 100,
+ amountCents: priceEUR * 100,
                         }),
                       });
 
@@ -346,7 +351,7 @@ export default function CheckoutPanel(props: Parameters<
               <CheckoutSteps flow={flow} />
             </div>
 
-            <BottomBar step={flow.step} dir={flow.dir} flow={flow} />
+<BottomBar step={flow.step} dir={flow.dir} flow={flow} session={session} />
 
             <div className="hidden md:flex items-center gap-3 text-white/75">
               <span className="inline-flex items-center gap-1 text-xs">

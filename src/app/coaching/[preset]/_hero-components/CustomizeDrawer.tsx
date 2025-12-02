@@ -5,22 +5,15 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import {
   SessionConfig,
   clamp,
-  addLiveBlock,
-  removeLiveBlock,
-  totalMinutes,
-  MIN_MINUTES,
-  MAX_MINUTES,
-  LIVEBLOCK_MIN,
-  MAX_BLOCKS,
   colorsByPreset,
   getPreset,
   type Preset,
 } from "@/engine/session";
 import { iconsByPreset } from "@/engine/session";
 import { X } from "@phosphor-icons/react";
-import InfoTooltip from "@/app/_components/small/InfoTooltip";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 import PresetButton from "./PresetButton";
+import CustomizationControls from "./CustomizationControls";
 
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const Icon = iconsByPreset[preset].icon;
@@ -36,30 +29,6 @@ function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
     />
   );
 }
-
-function decDuration(c: SessionConfig): SessionConfig {
-  return clamp({ ...c, liveMin: c.liveMin - 15 });
-}
-function incDuration(c: SessionConfig): SessionConfig {
-  return clamp({ ...c, liveMin: c.liveMin + 15 });
-}
-
-function canDecDuration(c: SessionConfig) {
-  return !(c.liveMin === MIN_MINUTES && c.liveBlocks === 0);
-}
-function canIncDuration(c: SessionConfig) {
-  return totalMinutes(c) < MAX_MINUTES;
-}
-function canAddBlock(c: SessionConfig) {
-  return c.liveBlocks < MAX_BLOCKS && totalMinutes({ ...c, liveBlocks: c.liveBlocks + 1 }) <= MAX_MINUTES;
-}
-function canRemoveBlock(c: SessionConfig) {
-  return c.liveBlocks > 0;
-}
-
-const Divider = () => (
-  <div className="my-4 h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-);
 
 type Props = {
   open: boolean;
@@ -106,15 +75,6 @@ export default function CustomizeDrawer({ open, onClose, session, onChange, high
     };
   }, [open, isMobile, onClose]);
 
-  useEffect(() => {
-    if (open && highlightKey && !interactedRef.current) {
-      const t = setTimeout(() => setShowHighlight(true), 0);
-      return () => clearTimeout(t);
-    } else {
-      setShowHighlight(false);
-    }
-  }, [open, highlightKey]);
-
   const clearHighlight = () => {
     if (!interactedRef.current) {
       interactedRef.current = true;
@@ -146,14 +106,6 @@ export default function CustomizeDrawer({ open, onClose, session, onChange, high
 
   const stopMouseDown: React.MouseEventHandler = (e) => e.stopPropagation();
 
-  const squareBtn =
-    "w-12 h-12 grid place-items-center rounded-[10px] text-[15px] font-semibold text-white/95 " +
-    "bg-white/[.08] supports-[backdrop-filter]:backdrop-blur-md " +
-    "ring-1 ring-white/12 shadow-[inset_0_0_0_1px_rgba(0,0,0,.28)] " +
-    "hover:bg-white/[.12] hover:ring-[rgba(120,160,255,.45)] " +
-    "hover:shadow-[0_0_10px_rgba(56,124,255,.38),inset_0_0_0_1px_rgba(0,0,0,.28)] " +
-    "active:scale-[.98] transition disabled:opacity-45 disabled:shadow-none disabled:cursor-not-allowed";
-
   return (
     <AnimatePresence>
       {open && (
@@ -175,22 +127,21 @@ export default function CustomizeDrawer({ open, onClose, session, onChange, high
             initial={isMobile ? { y: 16, opacity: 0 } : { x: -24, opacity: 0 }}
             animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
             exit={isMobile ? { y: 16, opacity: 0 } : { x: -24, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+transition={{
+  duration: 0.85,
+  ease: [0.16, 1, 0.3, 1] // smooth + soft spring-like easeOut
+}}
             onMouseDown={stopMouseDown}
           >
             {isMobile ? (
               <div className="p-6">
                 <Header onClose={() => { clearHighlight(); onClose(); }} />
-                <Divider />
                 <Content
                   session={session}
                   changeAndClear={changeAndClear}
                   applyPreset={applyPreset}
                   currentPreset={currentPreset}
                   isMobile={true}
-                  showHighlight={showHighlight}
-                  highlightKey={highlightKey}
-                  squareBtn={squareBtn}
                   setHoverPreset={setHoverPreset}
                 />
               </div>
@@ -198,16 +149,12 @@ export default function CustomizeDrawer({ open, onClose, session, onChange, high
               <GlassPanel className="h-full w-full rounded-none text-white md:border-r md:border-white/10">
                 <div className="p-6 h-full overflow-y-auto" onMouseDown={stopMouseDown}>
                   <Header onClose={() => { clearHighlight(); onClose(); }} />
-                  <Divider />
                   <Content
                     session={session}
                     changeAndClear={changeAndClear}
                     applyPreset={applyPreset}
                     currentPreset={currentPreset}
                     isMobile={false}
-                    showHighlight={showHighlight}
-                    highlightKey={highlightKey}
-                    squareBtn={squareBtn}
                     setHoverPreset={setHoverPreset}
                   />
                 </div>
@@ -241,9 +188,6 @@ function Content({
   applyPreset,
   currentPreset,
   isMobile,
-  showHighlight,
-  highlightKey,
-  squareBtn,
   setHoverPreset,
 }: {
   session: SessionConfig;
@@ -251,128 +195,73 @@ function Content({
   applyPreset: (p: Exclude<Preset, "custom">) => void;
   currentPreset: Preset;
   isMobile: boolean;
-  showHighlight: boolean;
-  highlightKey?: "followups";
-  squareBtn: string;
   setHoverPreset: (p: Preset | null) => void;
 }) {
   const isBundle = session.productId === "bundle_4x60";
+  const [customOpen, setCustomOpen] = useState(!isBundle);
+
+  useEffect(() => {
+    setCustomOpen(!isBundle);
+  }, [isBundle]);
 
   return (
     <div>
-      <section>
-        <div className="flex items-center justify-between">
-          <span className="text-[15px] md:text-[16px] font-semibold">Add/remove time</span>
-          <span className="text-sm opacity-80">{session.liveMin} min</span>
-        </div>
 
-        <div className="mt-2 flex gap-2">
-          <button
-            className={squareBtn}
-            onClick={() => changeAndClear(decDuration(session))}
-            disabled={isBundle || !canDecDuration(session)}
+      {/* CUSTOM COLLAPSIBLE */}
+      <AnimatePresence initial={false}>
+        {!customOpen ? (
+          <motion.div
+            key="collapsed"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
-            −15
-          </button>
+<button
+  onClick={() => {
+    if (session.productId === "bundle_4x60") {
+      changeAndClear({ ...session, productId: undefined });
+    }
+    setCustomOpen(true);
+  }}
+              className="relative w-full rounded-xl px-4 py-3 text-left border
+                        bg-white/[.04] hover:bg-white/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]
+                        border-white/12 flex justify-between items-center transition"
+            >
+              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-xl bg-dottexture" />
+              <span className="relative font-semibold text-[15px]">Adjust time</span>
 
-          <button
-            className={squareBtn}
-            onClick={() => changeAndClear(incDuration(session))}
-            disabled={isBundle || !canIncDuration(session)}
+              <motion.span
+                animate={{ rotate: 0 }}
+                className="relative text-lg leading-none"
+              >
+                ▶
+              </motion.span>
+            </button>
+
+            <div className="mt-3" />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="expanded"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ overflow: "hidden" }}
           >
-            +15
-          </button>
-        </div>
-      </section>
-
-      <Divider />
-
-      <section>
-        <div className="flex items-center justify-between">
-          <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
-            In-game coaching
-            <InfoTooltip ariaLabel="What is in-game coaching?">
-              <>
-                Receive coaching while playing.{" "}
-                <span className="text-red-400 font-semibold">
-                  Warning, in-game coaching is very stressful and often less informative than regular coaching!
-                </span>
-              </>
-            </InfoTooltip>
-          </span>
-          <span className="text-sm opacity-80">{session.liveBlocks} × {LIVEBLOCK_MIN} min</span>
-        </div>
-
-        <div className="mt-2 flex gap-2">
-          <button
-            className={squareBtn}
-            disabled={isBundle || !canRemoveBlock(session)}
-            onClick={() => changeAndClear(removeLiveBlock(session))}
-          >
-            −45
-          </button>
-
-          <button
-            className={squareBtn}
-            disabled={isBundle || !canAddBlock(session)}
-            onClick={() => changeAndClear(addLiveBlock(session))}
-          >
-            +45
-          </button>
-        </div>
-      </section>
-
-      <Divider />
-
-      <section className="relative">
-        <AnimatePresence>
-          {showHighlight && highlightKey === "followups" && (
-            <motion.span
-              key="fu-highlight"
-              aria-hidden
-              className="pointer-events-none absolute -inset-2 rounded-xl"
-              initial={{ clipPath: "inset(0% 100% 0% 0%)" }}
-              animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
-              exit={{ clipPath: "inset(0% 100% 0% 0%)" }}
-              transition={{ delay: 0.5, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(139,92,246,0.30), rgba(59,130,246,0.22))",
-              }}
+            <CustomizationControls
+              session={session}
+              onChange={changeAndClear}
+              disabled={false}
             />
-          )}
-        </AnimatePresence>
+            <div className="mt-3" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <div className="flex items-center justify-between relative">
-          <span className="text-[15px] md:text-[16px] font-semibold flex items-center gap-1">
-            Follow-up recordings
-            <InfoTooltip ariaLabel="What are follow-ups?">
-              A few days after your session, Sho will create a Follow-up recording to review your progress and give new input.
-            </InfoTooltip>
-          </span>
-          <span className="text-sm opacity-80">{session.followups} × 15 min</span>
-        </div>
-
-        <div className="mt-2 flex gap-2 relative">
-          <button
-            className={squareBtn}
-            disabled={isBundle || session.followups <= 0}
-            onClick={() => changeAndClear({ ...session, followups: session.followups - 1 })}
-          >
-            −
-          </button>
-          <button
-            className={squareBtn}
-            disabled={isBundle || session.followups >= 2}
-            onClick={() => changeAndClear({ ...session, followups: session.followups + 1 })}
-          >
-            +
-          </button>
-        </div>
-      </section>
-
-      <Divider />
-
+      {/* PRESETS */}
       <section>
         <div className="text-[15px] md:text-[16px] font-semibold mb-2">Presets</div>
         <div className="grid gap-2">
@@ -401,10 +290,19 @@ function Content({
           />
 
           <PresetButton
-            label="4-Session Bundle"
+            label="Elo Rush"
             sub="60 min ⨯4"
-            price="€110"
-            preset="bundle_4x60"
+price={
+<span className="
+  inline-flex items-center
+  bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00]
+  bg-clip-text text-transparent font-extrabold
+  drop-shadow-[0_0_6px_rgba(30,159,255,0.6),0_0_12px_rgba(255,140,0,0.5)]
+">
+  
+    €110
+  </span>
+}            preset="bundle_4x60"
             active={isBundle}
             onClick={() => {
               if (isBundle) {

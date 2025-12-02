@@ -36,10 +36,11 @@ export const stepsByPreset: Record<Preset, Step[]> = {
   ],
 
   bundle_4x60: [
-    { title: "Weekly 60-min sessions" },
-    { title: "Optimize your gameplay habits" },
-    { title: "Apply feedback in real matches" },
-    { title: "Build consistent improvement" },
+    { title: "Define your core championpool" },
+    { title: "Enter your games with a plan" },
+    { title: "Receive feedback between sessions" },
+    { title: "Refine your macro & micro" },
+    { title: "Observe real, long-term improvement" },
   ],
 
   bundle_bootcamp: [

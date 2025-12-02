@@ -17,7 +17,6 @@ import type { SessionConfig, Preset } from "@/engine/session";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 import { Lightbulb, Layers, HeartPulse, Shuffle } from "lucide-react";
 
-/* ===================== Types ===================== */
 type Props = {
   title?: string;
   session: SessionConfig;
@@ -26,7 +25,6 @@ type Props = {
   enterDelay?: number;
 };
 
-/* ===================== Stat Rules ===================== */
 const clamp15 = (n: number) => Math.max(1, Math.min(5, n)) as 1 | 2 | 3 | 4 | 5;
 
 function depthOfInsight(baseMin: number, liveBlocks: number) {
@@ -54,6 +52,7 @@ function clarityStructure(baseMin: number, preset: Preset, liveBlocks: number) {
 function lastingImpact(baseMin: number, followups: number, liveBlocks: number) {
   const base = baseMin <= 30 ? 2 : 3;
   let v = base + Math.min(2, Math.max(0, followups));
+  
   if (liveBlocks >= 2 && v <= 3) v += 1;
   return clamp15(v);
 }
@@ -63,12 +62,12 @@ function flexibility(preset: Preset, liveBlocks: number) {
     preset === "instant" ? 1
     : preset === "signature" ? 1
     : preset === "vod" ? 3
+    : preset === "bundle_4x60" ? 5
     : 5;
   v -= liveBlocks;
   return clamp15(v);
 }
 
-/* ===================== Hooks ===================== */
 function usePrevious<T>(v: T) {
   const r = useRef(v);
   useEffect(() => {
@@ -77,8 +76,17 @@ function usePrevious<T>(v: T) {
   return r.current as T;
 }
 
-/* ===================== UI Bits ===================== */
-function Pips({ value, ring, glow }: { value: number; ring: string; glow: string }) {
+function Pips({
+  value,
+  ring,
+  glow,
+  gradient,
+}: {
+  value: number;
+  ring: string;
+  glow: string;
+  gradient?: string;
+}) {
   const prev = usePrevious(value) ?? value;
   const inactiveBg = "rgba(255,255,255,0.07)";
 
@@ -86,12 +94,15 @@ function Pips({ value, ring, glow }: { value: number; ring: string; glow: string
     <div className="flex items-center gap-2">
       {Array.from({ length: 5 }).map((_, i) => {
         const is = i < value;
+
         return (
           <motion.div
             key={i}
             initial={false}
             animate={{
-              background: is ? ring : inactiveBg,
+              background: is
+                ? gradient ?? ring
+                : inactiveBg,
               boxShadow: is ? `0 0 8px ${glow}` : "none",
               scale: is ? 1 : 0.94,
               opacity: is ? 1 : 0.75,
@@ -112,12 +123,14 @@ function StatRow({
   value,
   ring,
   glow,
+  gradient,
 }: {
   icon: any;
   label: string;
   value: number;
   ring: string;
   glow: string;
+  gradient?: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -125,12 +138,11 @@ function StatRow({
         <Icon size={16} style={{ color: ring }} />
         {label}
       </span>
-      <Pips value={value} ring={ring} glow={glow} />
+      <Pips value={value} ring={ring} glow={glow} gradient={gradient} />
     </div>
   );
 }
 
-/* ===================== Main ===================== */
 export default function CenterSessionPanel({
   title = "VOD Review",
   session,
@@ -140,16 +152,21 @@ export default function CenterSessionPanel({
 }: Props) {
   const liveMinutes = totalMinutes(session);
 
-  /* MATCH LeftSteps behavior */
-  const { ring, glow } = colorsByPreset[preset];
+  const color = colorsByPreset[preset];
+  const glow = color.glow;
+  const isGradient = "gradient" in color;
+  const ring = isGradient ? color.ring : color.ring;
+  const gradient = isGradient ? color.gradient : undefined;
 
   const pricePreview = computePriceWithProduct(session).priceEUR;
 
+  const forceFive = preset === "bundle_4x60";
+
   const stats = [
-    { label: "Depth of Insight",    value: depthOfInsight(session.liveMin, session.liveBlocks), icon: Lightbulb },
-    { label: "Clarity & Structure", value: clarityStructure(session.liveMin, preset, session.liveBlocks), icon: Layers },
-    { label: "Lasting Impact",      value: lastingImpact(session.liveMin, session.followups, session.liveBlocks), icon: HeartPulse },
-    { label: "Flexibility",         value: flexibility(preset, session.liveBlocks), icon: Shuffle },
+    { label: "Depth of Insight",    value: forceFive ? 5 : depthOfInsight(session.liveMin, session.liveBlocks), icon: Lightbulb },
+    { label: "Clarity & Structure", value: forceFive ? 5 : clarityStructure(session.liveMin, preset, session.liveBlocks), icon: Layers },
+    { label: "Lasting Impact",      value: forceFive ? 5 : lastingImpact(session.liveMin, session.followups, session.liveBlocks), icon: HeartPulse },
+    { label: "Flexibility",         value: forceFive ? 5 : flexibility(preset, session.liveBlocks), icon: Shuffle },
   ];
 
   const [revealed, setRevealed] = useState(false);
@@ -201,6 +218,7 @@ export default function CenterSessionPanel({
                     value={s.value}
                     ring={ring}
                     glow={glow}
+                    gradient={gradient}
                   />
                 ))}
               </div>

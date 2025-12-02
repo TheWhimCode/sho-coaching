@@ -11,6 +11,8 @@ import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 
 import { loadStripe } from "@stripe/stripe-js";
 import { motion, type Variants } from "framer-motion";
+import type { ProductId } from "@/engine/session";
+
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -99,7 +101,7 @@ export default function CheckoutClient() {
       discordName: getStr("discordName"),
 
       // ⭐ FIX: we now read productId
-      productId: getStr("productId", ""),
+productId: getStr("productId") as ProductId | null,
 
       preset: getStr("preset", "custom"),
       holdKey: getStr("holdKey"),

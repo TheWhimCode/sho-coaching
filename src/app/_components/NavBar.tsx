@@ -9,7 +9,7 @@ import { FaDiscord, FaTiktok, FaYoutube } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6"; // ✅ added
 
 const NAV = [
-  { label: "Coaching", href: "/coaching/vod" },
+  { label: "Coaching", href: "/coaching" },
   { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
 ];
 
