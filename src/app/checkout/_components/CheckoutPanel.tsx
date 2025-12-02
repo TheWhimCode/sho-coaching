@@ -235,7 +235,7 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                           method: "card",
- amountCents: priceEUR * 100,
+amountCents: Math.round(discountedTotal * 100),
                         }),
                       });
 
