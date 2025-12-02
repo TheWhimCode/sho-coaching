@@ -254,7 +254,7 @@ export default function SessionHero({
         />
 
                 <video
-          src="/videos/customize/Particle_mobile-1.webm"
+          src="/videos/customize/Particle_mobile480.webm"
           autoPlay
           muted
           loop
