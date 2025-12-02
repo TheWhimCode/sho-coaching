@@ -124,8 +124,16 @@ export default function LeftSteps({
 
         {/* Footer */}
         <p className="mt-2 text-xs text-white/60">
-          For more information — reach out to Sho directly.
+          For more information — check out the                    <a
+                      href="/coaching"
+                      target=""
+                      rel="noreferrer"
+                      className="underline hover:text-white font-bold"
+                    >
+                      previous page
+                    </a>{" "}
         </p>
+
 
         {/* corner glow */}
         <span className="pointer-events-none absolute -inset-3 -z-10 rounded-[24px] opacity-10 blur-2xl bg-[radial-gradient(70%_50%_at_0%_0%,_rgba(148,182,255,.25),_transparent_60%)]" />

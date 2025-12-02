@@ -252,11 +252,14 @@ export default function SessionHero({
           playsInline
           className="hidden md:block h-full w-full object-cover object-left md:object-center"
         />
-        <img
-          src="/videos/customize/Particle_static.png"
-          alt=""
-          className="block md:hidden h-full w-full object-cover object-left"
-          loading="eager"
+
+                <video
+          src="/videos/customize/Particle_mobile.webm"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="block md:hidden h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-black/20" />
       </motion.div>
