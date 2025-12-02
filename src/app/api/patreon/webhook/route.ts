@@ -59,15 +59,14 @@ export async function POST(req: Request) {
   try {
     const raw = Buffer.from(await req.arrayBuffer());
     const sig = req.headers.get("x-patreon-signature") || req.headers.get("X-Patreon-Signature");
-// TEMPORARY for testing:
-if (process.env.NODE_ENV === "production" && !verify(raw, sig, SECRET)) {
-  return new Response("invalid signature", { status: 401 });
-}
+    if (!verify(raw, sig, SECRET)) return new Response("invalid signature", { status: 401 });
 
     let payload: any;
     try { payload = JSON.parse(raw.toString("utf8")); } catch { return new Response("ignored", { status: 200 }); }
 
-    const evt = payload?.event_name || payload?.event_type || null;
+const evt = payload?.event_name || payload?.event_type || null;
+console.log("[patreon] EVENT:", evt);
+
     if (evt !== "posts:publish") return new Response("ignored", { status: 200 });
 
     const { postId, title, url } = extract(payload);
