@@ -28,6 +28,10 @@ export async function generateMetadata({
   // Map presets → OG banner images
   const ogImages: Record<string, string> = {
     signature: "/images/sessions/banner/SignatureBanner.png",
+    vod: "/images/sessions/banner/VODBanner.png",
+    instant: "/images/sessions/banner/InstantBanner.png",
+    bundle_4x60: "/images/sessions/banner/RushBanner.png",
+
     // Add more here later:
     // vod: "/images/sessions/banner/VODBanner.png",
     // instant: "/images/sessions/banner/InstantBanner.png",
