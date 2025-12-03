@@ -42,7 +42,7 @@ export default function PresetButton({
   onHover,
   isMobile,
 }: Props) {
-  const isBundle = preset === "rush" && active;
+  const isBundle = preset === "bundle_4x60" && active;
   const { ring } = colorsByPreset[preset];
 
   return (
@@ -73,7 +73,7 @@ export default function PresetButton({
             <div className="text-xs opacity-85">{sub}</div>
           </div>
 
-          {preset === "rush" ? (
+          {preset === "bundle_4x60" ? (
  <div className="mr-3 flex items-baseline gap-2">
   <span className="text-[21px] font-bold leading-none">
     {price}
@@ -121,9 +121,6 @@ export default function PresetButton({
                       from-black/0 via-black/30 to-black/60
                     "
                   />
-
-                  <div className="absolute left-4 top-0 bottom-0 border-l border-white/10 pointer-events-none" />
-                  <div className="absolute left-4 right-4 bottom-0 border-b border-white/10 pointer-events-none" />
 
                   <div className="relative space-y-2">
                     {[
