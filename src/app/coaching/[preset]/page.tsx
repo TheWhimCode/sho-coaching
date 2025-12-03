@@ -22,7 +22,7 @@ export async function generateMetadata({
     signature: "Signature Session",
     instant: "Instant Insight",
     custom: "Custom Session",
-    bundle_4x60: "Elo Rush",
+    rush: "Elo Rush",
   };
 
   // Map presets → OG banner images
@@ -30,7 +30,7 @@ export async function generateMetadata({
     signature: "/images/sessions/banner/SignatureBanner.png",
     vod: "/images/sessions/banner/VODBanner.png",
     instant: "/images/sessions/banner/InstantBanner.png",
-    bundle_4x60: "/images/sessions/banner/RushBanner.png",
+    rush: "/images/sessions/banner/RushBanner.png",
 
     // Add more here later:
     // vod: "/images/sessions/banner/VODBanner.png",
