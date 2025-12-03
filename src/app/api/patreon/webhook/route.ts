@@ -64,7 +64,9 @@ export async function POST(req: Request) {
     let payload: any;
     try { payload = JSON.parse(raw.toString("utf8")); } catch { return new Response("ignored", { status: 200 }); }
 
-    const evt = payload?.event_name || payload?.event_type || null;
+const evt = payload?.event_name || payload?.event_type || null;
+console.log("[patreon] EVENT:", evt);
+
     if (evt !== "posts:publish") return new Response("ignored", { status: 200 });
 
     const { postId, title, url } = extract(payload);

@@ -122,9 +122,6 @@ export default function PresetButton({
                     "
                   />
 
-                  <div className="absolute left-4 top-0 bottom-0 border-l border-white/10 pointer-events-none" />
-                  <div className="absolute left-4 right-4 bottom-0 border-b border-white/10 pointer-events-none" />
-
                   <div className="relative space-y-2">
                     {[
                       ["Session 1", "€35", "-12%"],
