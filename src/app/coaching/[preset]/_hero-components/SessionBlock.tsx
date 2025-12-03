@@ -45,7 +45,7 @@ export default function SessionBlock({
   const isGradient = "gradient" in color;
   const ring = isGradient ? color.gradient : color.ring;
 
-  const isBundle = preset.startsWith("bundle");
+  const isBundle = preset === "rush";
 
   const total = totalMinutes(session);
   const { priceEUR: sessionPrice } = computePriceWithProduct(session);
