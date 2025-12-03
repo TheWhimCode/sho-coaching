@@ -62,7 +62,7 @@ function flexibility(preset: Preset, liveBlocks: number) {
     preset === "instant" ? 1
     : preset === "signature" ? 1
     : preset === "vod" ? 3
-    : preset === "bundle_4x60" ? 5
+    : preset === "rush" ? 5
     : 5;
   v -= liveBlocks;
   return clamp15(v);
@@ -160,7 +160,7 @@ export default function CenterSessionPanel({
 
   const pricePreview = computePriceWithProduct(session).priceEUR;
 
-  const forceFive = preset === "bundle_4x60";
+  const forceFive = preset === "rush";
 
   const stats = [
     { label: "Depth of Insight",    value: forceFive ? 5 : depthOfInsight(session.liveMin, session.liveBlocks), icon: Lightbulb },

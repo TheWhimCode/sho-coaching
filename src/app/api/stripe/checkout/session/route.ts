@@ -18,6 +18,7 @@ export async function POST(req: Request) {
   }
 
   let metadata: Record<string, string> = {};
+  let finalAmountCents = amountCents;
 
   if (bookingId) {
     const s = await prisma.session.findUnique({
@@ -29,12 +30,17 @@ export async function POST(req: Request) {
         sessionType: true,
         riotTag: true,
         waiverAccepted: true,
+        couponDiscount: true, // <-- add this
       },
     });
 
     console.log("[checkout/session] booking row", s);
 
     if (s) {
+      // apply discount like in checkout/intent
+      const discount = s.couponDiscount ?? 0; // discount in EUR
+      finalAmountCents = Math.max(amountCents - discount * 100, 0);
+
       metadata = {
         bookingId: s.id,
         slotId: s.slotId ?? "",
@@ -47,6 +53,7 @@ export async function POST(req: Request) {
   }
 
   console.log("[checkout/session] metadata to attach", metadata);
+  console.log("[checkout/session] finalAmountCents", finalAmountCents);
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -64,7 +71,7 @@ export async function POST(req: Request) {
             product_data: {
               name: "Coaching Session",
             },
-            unit_amount: amountCents,
+            unit_amount: finalAmountCents, // <-- discounted amount goes here
           },
           quantity: 1,
         },

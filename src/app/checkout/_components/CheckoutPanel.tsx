@@ -279,7 +279,7 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
                 }}
                 aria-disabled={disabled}
               >
-                {footer.loading ? "Checking…" : footer.label ?? "Continue"}
+                {footer.loading ? "Just a moment…" : footer.label ?? "Continue"}
               </PrimaryCTA>
             </div>
           </motion.div>

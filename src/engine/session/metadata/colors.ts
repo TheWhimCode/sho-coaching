@@ -27,7 +27,7 @@ export const colorsByPreset: Record<Preset, ColorStyle> = {
     glow: "rgba(255,255,255,0.39)",
   },
 
-  bundle_4x60: {
+  rush: {
     ring: "#ffac38ff",
     gradient:
       "linear-gradient(90deg, #D08A2A 0%, #E1A653 25%, #F1C97F 50%, #E1A653 75%, #C07827 100%)",

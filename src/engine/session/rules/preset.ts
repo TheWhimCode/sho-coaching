@@ -5,7 +5,7 @@ export type Preset =
   | "instant"
   | "signature"
   | "custom"
-  | "bundle_4x60"
+  | "rush"
   | "bundle_bootcamp";
 
 /**

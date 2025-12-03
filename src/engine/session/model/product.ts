@@ -5,7 +5,7 @@ export type ProductId =
   | "signature"
   | "instant"
   | "custom"
-  | "bundle_4x60"
+  | "rush"
   | "bundle_bootcamp";
 
 export type Product = {
@@ -39,8 +39,8 @@ export const products: Record<ProductId, Product> = {
     customizationAllowed: true,
   },
 
-  bundle_4x60: {
-    preset: "bundle_4x60",
+  rush: {
+    preset: "rush",
     isBundle: true,
     customizationAllowed: false,
     durationOverrideMin: 60,

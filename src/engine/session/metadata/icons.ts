@@ -35,7 +35,7 @@ export const iconsByPreset: Record<Preset, IconMeta> = {
 
   // bundles reuse PuzzlePiece for now,
   // but you can replace with a new icon later
-  bundle_4x60: {
+  rush: {
     icon: StackPlus,
     weight: "fill",
   },

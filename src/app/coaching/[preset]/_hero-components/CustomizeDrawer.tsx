@@ -197,7 +197,7 @@ function Content({
   isMobile: boolean;
   setHoverPreset: (p: Preset | null) => void;
 }) {
-  const isBundle = session.productId === "bundle_4x60";
+  const isBundle = session.productId === "rush";
   const [customOpen, setCustomOpen] = useState(!isBundle);
 
   useEffect(() => {
@@ -220,7 +220,7 @@ function Content({
           >
 <button
   onClick={() => {
-    if (session.productId === "bundle_4x60") {
+    if (session.productId === "rush") {
       changeAndClear({ ...session, productId: undefined });
     }
     setCustomOpen(true);
@@ -302,7 +302,7 @@ price={
   
     €110
   </span>
-}            preset="bundle_4x60"
+}            preset="rush"
             active={isBundle}
             onClick={() => {
               if (isBundle) {
@@ -310,7 +310,7 @@ price={
               } else {
                 changeAndClear({
                   ...session,
-                  productId: "bundle_4x60",
+                  productId: "rush",
                   liveMin: 60,
                   liveBlocks: 0,
                   followups: 0,

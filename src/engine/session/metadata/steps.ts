@@ -35,7 +35,7 @@ export const stepsByPreset: Record<Preset, Step[]> = {
     { title: "Get your VOD + notes package" },
   ],
 
-  bundle_4x60: [
+  rush: [
     { title: "Define your core championpool" },
     { title: "Enter your games with a plan" },
     { title: "Receive feedback between sessions" },
