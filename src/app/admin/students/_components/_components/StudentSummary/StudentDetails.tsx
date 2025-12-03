@@ -124,11 +124,11 @@ export default function StudentDetails({ student, onChange }: Props) {
   };
 
   return (
-    <div className="flex-1 p-0">
-      <h1 className="text-4xl font-extrabold tracking-tight text-white">
+    <div className="flex-1 min-w-0">
+      <h1 className="min-w-0 text-4xl font-extrabold tracking-tight text-white overflow-hidden">
         <input
           aria-label="Name"
-          className="bg-transparent border-none p-0 m-0 outline-none focus:outline-none focus:ring-0"
+          className="truncate bg-transparent border-none p-0 m-0 outline-none focus:outline-none focus:ring-0"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={() => emit({ name })}

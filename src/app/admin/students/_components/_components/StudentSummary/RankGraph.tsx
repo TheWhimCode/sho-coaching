@@ -131,7 +131,7 @@ export default function RankGraph({ studentId }: { studentId: string }) {
     topTier = Math.min(maxTierIndex, topTier);
 
     // domain from bottom tier 0 LP → top tier 0 LP
-    const yDomain: [number, number] = [bottomTier * 400, topTier * 400];
+    const yDomain: [number, number] = [bottomTier * 400, topTier * 400 + 10];
 
     // crests from bottom → top (inclusive)
     const crestTiers = [];
@@ -154,10 +154,10 @@ export default function RankGraph({ studentId }: { studentId: string }) {
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full overflow-visible">
       {/* Left crest column */}
       <div
-        className="absolute left-0 top-0 bottom-0 pointer-events-none"
+        className="absolute left-0 top-0 bottom-0 pointer-events-none "
         style={{ width: CREST_COL }}
       >
         {crestTiers.map(({ ti, tier, value }) => {
@@ -183,8 +183,8 @@ export default function RankGraph({ studentId }: { studentId: string }) {
       </div>
 
       {/* Chart area */}
-      <div className="w-full h-full" style={{ paddingLeft: CREST_COL }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full h-full overflow-visible" style={{ paddingLeft: CREST_COL }}>
+        <ResponsiveContainer width="100%" height="100%" className="overflow-visible">
           <LineChart
             data={chartData}
             margin={{ top: 0, right: 8, bottom: 0, left: 8 }}
