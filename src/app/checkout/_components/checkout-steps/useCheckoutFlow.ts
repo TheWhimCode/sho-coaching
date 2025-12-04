@@ -102,16 +102,20 @@ export function useCheckoutFlow({
     [safePayload.baseMinutes, safePayload.liveBlocks]
   );
 
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  const [dir, setDir] = useState<1 | -1>(1);
-  const goNext = () => {
-    setDir(1);
-    setStep((s) => (s === 3 ? 3 : ((s + 1) as 0 | 1 | 2 | 3)));
-  };
-  const goBack = () => {
-    setDir(-1);
-    setStep((s) => (s === 0 ? 0 : ((s - 1) as 0 | 1 | 2 | 3)));
-  };
+// Only valid steps: 0 = contact, 1 = choose, 2 = summary+payment
+const [step, setStep] = useState<0 | 1 | 2>(0);
+const [dir, setDir] = useState<1 | -1>(1);
+
+const goNext = () => {
+  setDir(1);
+  setStep((s) => (s >= 2 ? 2 : ((s + 1) as 0 | 1 | 2)));
+};
+
+const goBack = () => {
+  setDir(-1);
+  setStep((s) => (s <= 0 ? 0 : ((s - 1) as 0 | 1 | 2)));
+};
+
 
   const [payMethod, setPayMethod] = useState<PayMethod>("");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -231,7 +235,8 @@ export function useCheckoutFlow({
     setCardPmId(null);
     setSavedCard(null);
 
-    setStep(2);
+setDir(1);
+setStep(2);  // ok, but now guaranteed as a valid step
 
     setLoadingIntent(true);
 

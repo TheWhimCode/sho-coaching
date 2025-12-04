@@ -219,64 +219,69 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
                 type="button"
                 disabled={disabled}
                 className="px-5 py-3 text-base w-full"
-                onClick={async () => {
-                  if (disabled) return;
-                  if (footer.loading) return;
+onClick={async () => {
+  if (disabled || footer.loading) return;
 
-                  setFooter((f: any) => ({ ...f, loading: true }));
+  // STEP LOGIC: If not on final step, just advance.
+  if (flow.step < 2) {
+    footer.onClick?.();  // Usually goNext or chooseAndGo
+    return;
+  }
 
-                  try {
-                    const stripe = await flow.stripePromise;
-                    if (!stripe) return;
+  // PAYMENT LOGIC — only runs on step 2
+  setFooter((f: any) => ({ ...f, loading: true }));
 
-                    if (flow.payMethod === "card") {
-                      const resp = await fetch("/api/stripe/checkout/session", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          method: "card",
-amountCents: Math.round(discountedTotal * 100),
-                        }),
-                      });
+  try {
+    const stripe = await flow.stripePromise;
+    if (!stripe) return;
 
-                      const data = await resp.json().catch(() => null);
-                      if (!data?.url) {
-                        console.error("Failed to create Checkout Session", data);
-                        return;
-                      }
+    if (flow.payMethod === "card") {
+      const resp = await fetch("/api/stripe/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: "card",
+          amountCents: Math.round(discountedTotal * 100),
+        }),
+      });
 
-                      window.location.href = data.url;
-                      return;
-                    }
+      const data = await resp.json().catch(() => null);
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
 
-                    if (["paypal", "klarna", "revolut_pay"].includes(flow.payMethod)) {
-                      let secret = flow.clientSecret ?? (await flow.createPaymentIntent?.());
-                      if (!secret) {
-                        console.error("No PaymentIntent client secret.");
-                        return;
-                      }
+      console.error("Failed to create Checkout Session", data);
+      return;
+    }
 
-                      const elements = stripe.elements({ clientSecret: secret });
-                      const paymentElement = elements.create("payment");
-                      paymentElement.mount("#hidden-payment-element");
+    if (["paypal", "klarna", "revolut_pay"].includes(flow.payMethod)) {
+      const secret =
+        flow.clientSecret ?? (await flow.createPaymentIntent?.());
+      if (!secret) {
+        console.error("Missing client secret");
+        return;
+      }
 
-                      const { error } = await stripe.confirmPayment({
-                        elements,
-                        confirmParams: {
-                          return_url: window.location.origin + "/checkout/success",
-                        },
-                      });
+      const elements = stripe.elements({ clientSecret: secret });
+      const paymentElement = elements.create("payment");
+      paymentElement.mount("#hidden-payment-element");
 
-                      if (error) console.error("Redirect failed:", error.message);
-                    }
-                  } catch (err) {
-                    console.error("Payment handling failed:", err);
-                  } finally {
-                    setFooter((f: any) => ({ ...f, loading: false }));
-                  }
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: { return_url: window.location.origin + "/checkout/success" },
+      });
 
-                  footer.onClick?.();
-                }}
+      if (error) console.error("Payment failed:", error.message);
+    }
+  } catch (err) {
+    console.error("Payment handling failed:", err);
+  } finally {
+    setFooter((f: any) => ({ ...f, loading: false }));
+  }
+}}
+
+
                 aria-disabled={disabled}
               >
                 {footer.loading ? "Just a moment…" : footer.label ?? "Continue"}
