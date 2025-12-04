@@ -14,10 +14,9 @@ const items: ExampleItem[] = [
   { role: "Top",     href: "https://www.patreon.com/posts/144158074",                             src: "/images/squarebuttons/Irelia.png" },
   { role: "Jungle",  href: "https://www.patreon.com/posts/108659798",                             src: "/images/squarebuttons/Shyvana7.png" },
   { role: "Mid",     href: "https://www.patreon.com/posts/syndra-emerald-113265874",              src: "/images/squarebuttons/Syndra8.png" },
-  { role: "ADC",     href: "https://www.patreon.com/posts/jhin-emerald-107308126",                src: "/images/squarebuttons/Jhin2.png" },
+  { role: "ADC",     href: "https://www.patreon.com/posts/144983179",                src: "/images/squarebuttons/Aphelios.svg" },
   { role: "Support", href: "https://www.patreon.com/posts/nami-diamond-2-113193138",              src: "/images/squarebuttons/Nami.png" },
 ];
-
 export default function CoachingExamples() {
   return (
     <section className="relative">
