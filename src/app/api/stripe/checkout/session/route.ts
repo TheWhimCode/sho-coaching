@@ -8,9 +8,32 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: Request) {
-  const { method, amountCents, bookingId } = await req.json().catch(() => ({}));
+  // Extract body
+  let { method, amountCents, bookingId } = await req.json().catch(() => ({}));
 
   console.log("[checkout/session] body", { method, amountCents, bookingId });
+
+  // ⭐ SAFETY FIX:
+  // If bookingId missing (because front-end forgot to send it),
+  // recover it by checking if the user already has an unpaid booking.
+  if (!bookingId) {
+    try {
+      const unpaid = await prisma.session.findFirst({
+        where: { status: "unpaid" },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+      if (unpaid?.id) {
+        console.warn(
+          "[checkout/session] WARNING: bookingId missing from client — recovered automatically:",
+          unpaid.id
+        );
+        bookingId = unpaid.id;
+      }
+    } catch (err) {
+      console.error("[checkout/session] failed to recover bookingId", err);
+    }
+  }
 
   if (!amountCents) {
     console.error("[checkout/session] missing_amount");
@@ -20,6 +43,7 @@ export async function POST(req: Request) {
   let metadata: Record<string, string> = {};
   let finalAmountCents = amountCents;
 
+  // If bookingId available → attach full metadata
   if (bookingId) {
     const s = await prisma.session.findUnique({
       where: { id: bookingId },
@@ -30,15 +54,14 @@ export async function POST(req: Request) {
         sessionType: true,
         riotTag: true,
         waiverAccepted: true,
-        couponDiscount: true, // <-- add this
+        couponDiscount: true,
       },
     });
 
     console.log("[checkout/session] booking row", s);
 
     if (s) {
-      // apply discount like in checkout/intent
-      const discount = s.couponDiscount ?? 0; // discount in EUR
+      const discount = s.couponDiscount ?? 0;
       finalAmountCents = Math.max(amountCents - discount * 100, 0);
 
       metadata = {
@@ -71,11 +94,12 @@ export async function POST(req: Request) {
             product_data: {
               name: "Coaching Session",
             },
-            unit_amount: finalAmountCents, // <-- discounted amount goes here
+            unit_amount: finalAmountCents,
           },
           quantity: 1,
         },
       ],
+
       success_url: `${req.headers.get("origin")}/checkout/success`,
       cancel_url: `${req.headers.get("origin")}/checkout`,
     });

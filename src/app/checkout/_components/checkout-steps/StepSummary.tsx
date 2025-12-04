@@ -49,7 +49,7 @@ export default function StepSummary({
 productId: payload.productId ?? undefined,  });
 
   const { priceEUR } = computePriceWithProduct(session);
-  const isBundle = !!payload.productId?.startsWith("bundle");
+  const isBundle = !!payload.productId?.startsWith("rush");
 
   return (
     <div className="flex flex-col h-full md:pt-2">

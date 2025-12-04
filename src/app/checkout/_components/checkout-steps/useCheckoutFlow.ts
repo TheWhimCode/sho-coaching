@@ -257,6 +257,8 @@ setStep(2);  // ok, but now guaranteed as a valid step
           waiverAccepted: waiver,
           couponCode,
           couponDiscount,
+            productId: safePayload.productId,  // ← ADD THIS
+
         }),
       });
 

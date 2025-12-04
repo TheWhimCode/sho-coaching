@@ -98,6 +98,8 @@ export async function POST(req: Request) {
         // Fetch fresh PI to ensure latest metadata
         const pi = await getStripe().paymentIntents.retrieve(piEvent.id);
         console.log("[webhook] PI meta", { id: pi.id, metadata: pi.metadata });
+        console.log("🔥 WEBHOOK METADATA:", pi.metadata);
+
         const meta = (pi.metadata ?? {}) as Record<string, string>;
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id);
         break;

@@ -242,6 +242,8 @@ onClick={async () => {
         body: JSON.stringify({
           method: "card",
           amountCents: Math.round(discountedTotal * 100),
+              bookingId: flow.bookingId,   // ✅ FIX
+
         }),
       });
 
