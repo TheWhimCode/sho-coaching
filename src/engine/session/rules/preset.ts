@@ -21,9 +21,8 @@ export function getPreset(
 ): Preset {
   const p = productId ? products[productId] : undefined;
 
-  if (p?.isBundle) {
-    return p.preset as Preset;
-  }
+ if (p) return p.preset as Preset;
+
 
   if (liveBlocks > 0) return "custom";
   if (baseMinutes === 60 && followups === 0) return "vod";
