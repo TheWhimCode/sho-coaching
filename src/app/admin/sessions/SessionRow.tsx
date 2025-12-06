@@ -152,11 +152,8 @@ export default function SessionRowItem({ r, onReschedule }: Props) {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.open(
-                    `/admin/students/${r.studentId}`,
-                    "_blank",
-                    "width=900,height=800"
-                  );
+window.open(`/admin/students/${r.studentId}`, "_blank", "noopener,noreferrer");
+                  
                 }}
                 className="font-semibold text-left text-white hover:text-blue-400 hover:underline transition"
               >
