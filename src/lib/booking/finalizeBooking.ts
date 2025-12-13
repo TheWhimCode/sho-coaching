@@ -42,7 +42,7 @@ async function resolveCanonicalStudent(
     (await tx.student.findUnique({ where: { riotTag } }));
 
   if (!student) {
-    const baseName = riotTag || "Student";
+const baseName = riotTag ? riotTag.split("#")[0] : "Student";
     let name = baseName;
     for (let i = 0; i < 5; i++) {
       try {

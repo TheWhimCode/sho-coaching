@@ -3,8 +3,10 @@ export * from "./model/session";
 export * from "./model/product";
 
 
-// config + helpers
+// config
 export * from "./config/session";
+export * from "./config/defineSession";
+
 
 // rules
 export * from "./rules/preset";

@@ -10,6 +10,7 @@ import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { computePriceEUR } from "@/lib/pricing";
 import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { useSearchParams } from "next/navigation";
+import { defineSession } from "@/engine/session/config/defineSession";
 
 export default function Client({ preset }: { preset: string }) {
 
@@ -29,26 +30,18 @@ export default function Client({ preset }: { preset: string }) {
       (Number.isFinite(n) ? n : def);
 
     if (canonicalPreset === "custom") {
-      return {
-        title: "Custom Session",
-        session: {
-          liveMin: safe(qBase, 60),
-          followups: Math.max(0, Math.min(2, safe(qFU, 0))),
-          liveBlocks: Math.max(0, Math.min(2, safe(qLive, 0))),
-          productId: canonicalPreset,
-        } as SessionConfig,
-      };
+return {
+  title: canonicalPreset,
+  session: defineSession(canonicalPreset as any),
+};
+  
     }
 
-    return {
-      title: canonicalPreset,
-      session: {
-        liveMin: 60,
-        followups: 0,
-        liveBlocks: 0,
-        productId: canonicalPreset,
-      } as SessionConfig,
-    };
+return {
+  title: canonicalPreset,
+  session: defineSession(canonicalPreset as any),
+};
+
   }, [canonicalPreset, qBase, qFU, qLive]);
 
   const [session, setSession] = useState<SessionConfig>(init.session);

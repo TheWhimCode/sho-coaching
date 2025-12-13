@@ -25,25 +25,27 @@ export async function generateMetadata({
     rush: "Elo Rush",
   };
 
-  // Map presets → OG banner images
+  const descriptions: Record<string, string> = {
+    vod: "Get an in-depth analysis of your gameplay. All your questions will be answered.",
+    instant: "Fast, detailed answers on a budget. Fantastic value, especially for beginners.",
+    signature: "My take on the perfect coaching session. No information overload, yet highly informative.",
+    custom: "A session tailored exactly to your needs.",
+    rush: "Four-session bundle at a massive discount. Improvement plan included.",
+  };
+
   const ogImages: Record<string, string> = {
     signature: "/images/sessions/banner/SignatureBanner.png",
     vod: "/images/sessions/banner/VODBanner.png",
     instant: "/images/sessions/banner/InstantBanner.png",
     rush: "/images/sessions/banner/RushBanner.png",
-
-    // Add more here later:
-    // vod: "/images/sessions/banner/VODBanner.png",
-    // instant: "/images/sessions/banner/InstantBanner.png",
   };
 
   const title = `${titles[preset] ?? preset} | Sho`;
-  const description = "Book a session tailored to your goals.";
+  const description = descriptions[preset] ?? "Book a session tailored to your goals.";
 
-  // If preset has a specific banner, use it. Otherwise use a fallback.
   const ogImage = ogImages[preset]
     ? `https://sho-coaching.com${ogImages[preset]}`
-    : "https://sho-coaching.com/default-og.png"; // optional fallback, replace or remove
+    : "https://sho-coaching.com/default-og.png";
 
   return {
     title,
