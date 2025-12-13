@@ -62,4 +62,13 @@ export const REVIEWS: Review[] = [
     champion: "Aphelios",
   },
 
+  {
+    name: "Shady",
+    text:
+      "I got 2 sessions in total. Those helped me understand my weaknesses, to play for the strengths of my champ, go for more objectives and clean teamfights with my ult. +400 LP in 30 days!",
+    rankFrom: "Emerald II",
+    rankTo: "Master",
+    champion: "Qiyana",
+  },
+
 ];

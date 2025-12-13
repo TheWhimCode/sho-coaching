@@ -16,7 +16,7 @@ const ALIAS: Record<string, string> = {
   'lee sin': 'LeeSin',
   'jarvaniv': 'JarvanIV',
   'twisted fate': 'TwistedFate',
-  'tahm kench': 'TahmKench',
+  'tahmkench': 'TahmKench',
   "cho'gath": 'Chogath',
   "vel'koz": 'Velkoz',
   "kha'zix": 'Khazix',
