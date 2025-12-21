@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
-import { SlotStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +25,11 @@ export async function POST(req: Request) {
 
   const { slotId, liveMinutes, followups } = parsed.data;
 
+  const holdKey: string | null = body.holdKey ?? null;
+  if (!holdKey) {
+    return NextResponse.json({ error: "missing_hold" }, { status: 400 });
+  }
+
   const sessionType = (body.sessionType ?? "").trim();
   const riotTag = (body.riotTag ?? "").trim();
   const discordId: string | null = body.discordId ?? null;
@@ -33,7 +37,7 @@ export async function POST(req: Request) {
   const notes = (body.notes ?? "").trim() || null;
   const studentId: string | null = body.studentId ?? null;
 
-  // NEW: coupon support
+  // coupon support
   const couponCode: string | null = body.couponCode ?? null;
   const couponDiscount: number = body.couponDiscount ?? 0;
 
@@ -45,10 +49,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  const slot = await prisma.slot.findUnique({ where: { id: slotId } });
-  if (!slot || slot.status === SlotStatus.taken) {
-    return NextResponse.json({ error: "slot_unavailable" }, { status: 409 });
+  // 🔒 ENGINE SOURCE OF TRUTH: verify active hold
+  const heldSlots = await prisma.slot.findMany({
+    where: {
+      holdKey,
+      holdUntil: { gt: new Date() },
+    },
+    orderBy: { startTime: "asc" },
+  });
+
+  if (!heldSlots.length) {
+    return NextResponse.json({ error: "hold_expired" }, { status: 409 });
   }
+
+  // canonical start = first held slot
+  const scheduledStart = heldSlots[0].startTime;
 
   const { amountCents } = computePriceEUR(liveMinutes, followups);
 
@@ -71,9 +86,9 @@ export async function POST(req: Request) {
           discordName,
           notes,
           studentId,
-          couponCode,      // NEW
-          couponDiscount,  // NEW
-          scheduledStart: slot.startTime,
+          couponCode,
+          couponDiscount,
+          scheduledStart,
           scheduledMinutes: liveMinutes,
           currency: "eur",
           amountCents,
@@ -101,9 +116,9 @@ export async function POST(req: Request) {
         discordName,
         notes,
         studentId,
-        couponCode,      // NEW
-        couponDiscount,  // NEW
-        scheduledStart: slot.startTime,
+        couponCode,
+        couponDiscount,
+        scheduledStart,
         scheduledMinutes: liveMinutes,
         currency: "eur",
         amountCents,

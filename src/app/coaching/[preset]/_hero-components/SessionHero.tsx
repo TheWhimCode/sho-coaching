@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Slot as UiSlot } from "@/components/AvailableSlots";
 import CenterSessionPanel from "./CenterSessionPanel";
-import { fetchSuggestedStarts } from "@/lib/booking/suggest";
+import { suggestStarts } from "@/lib/booking/suggest";
 import { SlotStatus } from "@prisma/client";
 import { computeQuickPicks } from "@/lib/booking/quickPicks";
 import { fetchSlots } from "@/utils/api";
@@ -173,13 +173,15 @@ export default function SessionHero({
     let on = true;
     (async () => {
       try {
-        const now = new Date();
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        const end = new Date(tomorrow);
-        end.setDate(end.getDate() + 21);
-        end.setHours(23, 59, 59, 999);
+const start = new Date();
+start.setDate(start.getDate() + 1); // tomorrow, no policy
 
-        const rows = await fetchSlots(tomorrow, end, liveMinutes);
+const end = new Date(start);
+end.setDate(start.getDate() + 21);
+end.setUTCHours(23, 59, 59, 999);
+
+const rows = await fetchSlots(start, end, liveMinutes);
+
         if (!on) return;
         setSeedSlots(rows);
         setQuickPool(rows.map(r => ({
@@ -196,8 +198,12 @@ export default function SessionHero({
     setLoading(true);
     (async () => {
       try {
-        const s = await fetchSuggestedStarts(liveMinutes);
-        if (!on) return;
+const s = suggestStarts(
+  seedSlots.map(r => ({
+    id: r.id,
+    startTime: r.startTime,
+  }))
+);        if (!on) return;
         setAutoSlots(
           s.map(x => ({
             id: x.id,

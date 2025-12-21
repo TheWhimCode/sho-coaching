@@ -33,6 +33,7 @@ function toValidDate(v: unknown, fallback = new Date()) {
     new Date(NaN);
   return Number.isNaN(d.getTime()) ? fallback : d;
 }
+
 function dayKeyLocal(d: Date) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -73,7 +74,9 @@ export default function CalendarGrid({
         >
           <ArrowLeft size={16} />
         </button>
+
         <div className="font-semibold">{format(safeMonth, "MMMM yyyy")}</div>
+
         <button
           onClick={() => onMonthChange(addMonths(safeMonth, 1))}
           className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0d1b34] hover:bg-[#12264a] ring-1 ring-[rgba(146,180,255,.22)] text-white/90"
@@ -83,9 +86,13 @@ export default function CalendarGrid({
       </div>
 
       {loading ? (
-        <div className="h-[300px] grid place-items-center text-white/60">Loading…</div>
+        <div className="h-[300px] grid place-items-center text-white/60">
+          Loading…
+        </div>
       ) : error ? (
-        <div className="h-[300px] grid place-items-center text-rose-400">{error}</div>
+        <div className="h-[300px] grid place-items-center text-rose-400">
+          {error}
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-7 text-center text-[11px] text-white/60 mb-1">
@@ -97,21 +104,11 @@ export default function CalendarGrid({
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
               const key = dayKeyLocal(d);
-              const hasAvailDisplayable = displayableDayKeys?.has(key) ?? false;
-              const hasAvailLegacy = (validStartCountByDay.get(key) ?? 0) > 0;
-              const hasAvail = displayableDayKeys ? hasAvailDisplayable : hasAvailLegacy;
+              const hasAvail = displayableDayKeys?.has(key) ?? false;
 
               const selected = !!selectedDate && isSameDay(d, selectedDate);
               const outside = !isSameMonth(d, safeMonth);
               const today = isToday(d);
-
-              const tmr = new Date();
-              tmr.setDate(tmr.getDate() + 1);
-              tmr.setHours(0, 0, 0, 0);
-              const end = new Date(tmr);
-              end.setDate(end.getDate() + 14);
-              end.setHours(23, 59, 59, 999);
-              const inWindow = d >= tmr && d <= end;
 
               const base =
                 "aspect-square rounded-xl text-sm transition-all relative overflow-hidden";
@@ -120,27 +117,33 @@ export default function CalendarGrid({
               const selectedCls = "bg-[#0d1b34] text-white selected-glow";
               const disabled = "bg-[#0b1220] opacity-45 cursor-not-allowed";
               const outsideCls =
-                outside && (!hasAvail || !inWindow) ? "opacity-35" : "";
+                outside && !hasAvail ? "opacity-35" : "";
 
               return (
                 <button
                   key={key}
-                  disabled={!hasAvail || !inWindow}
+                  disabled={!hasAvail}
                   onClick={() => onSelectDate(d)}
                   className={[
                     base,
                     outsideCls,
-                    selected ? selectedCls : (hasAvail && inWindow ? enabled : disabled),
+                    selected
+                      ? selectedCls
+                      : hasAvail
+                      ? enabled
+                      : disabled,
                   ].join(" ")}
                 >
                   <div className="flex h-full w-full items-center justify-center relative">
                     <span className="text-white">{format(d, "d")}</span>
+
                     {today && (
                       <span className="absolute top-0.5 inset-x-0 text-[9px] text-[var(--color-lightblue)] font-medium">
                         Today
                       </span>
                     )}
-                    {hasAvail && inWindow && (
+
+                    {hasAvail && (
                       <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[var(--color-orange)]" />
                     )}
                   </div>

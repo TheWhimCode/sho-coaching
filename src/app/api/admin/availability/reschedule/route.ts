@@ -3,13 +3,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
 
+import { getBlockIdsByTime } from "@/engine/scheduling/startability/getBlockIdsByTime";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const Body = z.object({
-  id: z.string(),                // Session ID
+  id: z.string(),                 // Session ID
   newStart: z.string().datetime(), // ISO string
-  // optional: how many minutes the session lasts (used only for blocking window convenience)
   scheduledMinutes: z.number().int().positive().optional(),
 });
 
@@ -37,16 +38,26 @@ export async function POST(req: Request) {
       select: { id: true, scheduledMinutes: true },
     });
 
-    // 2) (Optional but recommended) Block slots in your calendar using the same logic
-    //    as your exceptions route: block the window [newStart - 30m, newStart + duration + 30m]
+    // 2) Ask the ENGINE which slots must be blocked
     const dur = scheduledMinutes ?? session.scheduledMinutes ?? 60;
-    const startWindow = new Date(newStartDate.getTime() - 30 * 60_000);
-    const endWindow = new Date(newStartDate.getTime() + (dur + 30) * 60_000);
 
-    // Block only FREE slots inside that window (same as your exceptions logic)
+    const blockIds = await getBlockIdsByTime(
+      newStartDate,
+      dur,
+      prisma
+    );
+
+    if (!blockIds || !blockIds.length) {
+      return NextResponse.json(
+        { error: "invalid_schedule" },
+        { status: 409 }
+      );
+    }
+
+    // 3) Apply the engine result
     await prisma.slot.updateMany({
       where: {
-        startTime: { gte: startWindow, lt: endWindow },
+        id: { in: blockIds },
         status: SlotStatus.free,
       },
       data: { status: SlotStatus.blocked },
@@ -54,6 +65,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || String(err) }, { status: 400 });
+    return NextResponse.json(
+      { error: err?.message || String(err) },
+      { status: 400 }
+    );
   }
 }
