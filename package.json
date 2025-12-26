@@ -5,10 +5,15 @@
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev --turbopack",
+    "dev:skillcheck": "dotenv -e .env.skillcheck -- next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "db:push:skillcheck": "dotenv -e .env.skillcheck -- npx prisma db push",
+    "migrate:skillcheck": "dotenv -e .env.skillcheck -- npx prisma migrate dev",
+    "studio:skillcheck": "dotenv -e .env.skillcheck -- npx prisma studio"    
+
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

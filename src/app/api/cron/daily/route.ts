@@ -174,6 +174,11 @@ async function runAll(origin: string) {
   } catch (e: any) {
     results.errors.push(`ranks: ${e?.message || e}`);
   }
+    try {
+    await assignDailyDraft();
+  } catch (e: any) {
+    results.errors.push(`dailyDraft: ${e?.message || e}`);
+  }
 
   return results;
 }
@@ -206,4 +211,17 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return GET(req);
+}
+async function assignDailyDraft() {
+  const draft = await prisma.draft.findFirst({
+    where: { status: "APPROVED" },
+    orderBy: { usedLast: "asc" }, // nulls first = never used
+  });
+
+  if (!draft) return;
+
+  await prisma.draft.update({
+    where: { id: draft.id },
+    data: { usedLast: new Date() },
+  });
 }

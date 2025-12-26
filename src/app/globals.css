@@ -30,6 +30,9 @@
 .tiny-gap {
   @apply my-2 md:my-4;
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
 :root {
   --color-bg:        #050B18;
@@ -106,6 +109,18 @@ html, body {
 .glow-stroke {
   position: relative;
   border-radius: 16px;
+}
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+
+.animate-shake {
+  animation: shake 0.35s ease-in-out;
 }
 
 .glow-stroke::before {

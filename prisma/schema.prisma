@@ -220,3 +220,31 @@ model Coupon {
 
   @@index([studentId])
 }
+model Draft {
+  id        String   @id @default(cuid())
+
+  blue      Json
+  red       Json
+
+  role      String
+  userTeam  String
+
+  answers   Json   // DraftAnswer[]
+
+  usedLast        DateTime?
+  attempts        Int      @default(0)
+  correctAttempts Int      @default(0)
+  likes           Int      @default(0)
+  dislikes        Int      @default(0)
+
+  status     DraftStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+}
+
+
+
+enum DraftStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
