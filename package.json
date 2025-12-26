@@ -2,17 +2,25 @@
   "name": "my-coaching-site",
   "version": "0.1.0",
   "private": true,
+
   "scripts": {
     "postinstall": "prisma generate",
+
     "dev": "next dev --turbopack",
-    "dev:skillcheck": "dotenv -e .env.skillcheck -- next dev --turbopack",
+
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+
     "prisma:seed": "prisma db seed",
-    "db:push:skillcheck": "dotenv -e .env.skillcheck -- npx prisma db push",
-    "migrate:skillcheck": "dotenv -e .env.skillcheck -- npx prisma migrate dev",
-    "studio:skillcheck": "dotenv -e .env.skillcheck -- npx prisma studio"    
+
+    "migrate:create": "prisma migrate dev --create-only",
+    "migrate:deploy": "prisma migrate deploy",
+
+    "studio": "prisma studio"
+  
+
+
 
   },
   "dependencies": {
