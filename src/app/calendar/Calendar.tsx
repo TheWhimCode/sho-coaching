@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { addDays, format, startOfDay } from "date-fns";
+import { format } from "date-fns";
 import { SlotStatus } from "@prisma/client";
 
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
 import { holdSlot, releaseHold } from "@/utils/holds";
 import { getPreset } from "@/engine/session/rules/preset";
+
+
 
 import CalendarGrid from "./components/CalendarGrid";
 import TimeSlotsList from "./components/TimeSlotsList";
@@ -21,7 +23,6 @@ import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 import { ArrowLeft } from "lucide-react";
 import type { ProductId } from "@/engine/session";
 
-
 type Props = {
   sessionType: string;
   liveMinutes: number;
@@ -30,8 +31,7 @@ type Props = {
   initialSlotId?: string | null;
   prefetchedSlots?: Slot[];
   liveBlocks?: number;
-    productId?: ProductId;
-
+  productId?: ProductId;
 };
 
 const overlay: Variants = {
@@ -92,7 +92,7 @@ export default function Calendar({
   initialSlotId = null,
   prefetchedSlots,
   liveBlocks = 0,
-  productId
+  productId,
 }: Props) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -107,9 +107,6 @@ export default function Calendar({
     return d;
   });
 
-  const DISPLAY_STEP_MIN = 30;
-  const LEAD_HOURS = 18;
-
   const [mobileStep, setMobileStep] = useState<"day" | "time">("day");
   const [mobileDir, setMobileDir] = useState<1 | -1>(1);
   const [wheelVisible, setWheelVisible] = useState(false);
@@ -118,19 +115,6 @@ export default function Calendar({
     setMobileDir(dir);
     setMobileStep(next);
     if (next === "day") setWheelVisible(false);
-  }
-
-  function roundUpToStep(d: Date, stepMin: number) {
-    const m = d.getMinutes();
-    const up = Math.ceil(m / stepMin) * stepMin;
-    d.setMinutes(up === 60 ? 0 : up, 0, 0);
-    if (up === 60) d.setHours(d.getHours() + 1);
-    return d;
-  }
-
-  function startBoundaryNowPlusLead() {
-    const s = new Date(Date.now() + LEAD_HOURS * 60 * 60 * 1000);
-    return roundUpToStep(s, DISPLAY_STEP_MIN);
   }
 
   const [slots, setSlots] = useState<Slot[]>(() => prefetchedSlots ?? []);
@@ -155,38 +139,36 @@ export default function Calendar({
     }
   }, [prefetchedSlots, selectedSlotId]);
 
-  // Fetch slots for the next 14 days
-  useEffect(() => {
-    let ignore = false;
-    const startBoundary = startBoundaryNowPlusLead();
-    const end = addDays(startOfDay(startBoundary), 14);
-    end.setHours(23, 59, 59, 999);
+// Fetch slots
+useEffect(() => {
+  let ignore = false;
 
-    const doSpinner = slots.length === 0;
+  // ⚠️ Client must NOT import scheduling policy.
+  // This is a dumb UI range; the engine/API enforce real limits.
+  const start = new Date();
+  const end = new Date();
+  end.setDate(start.getDate() + 14);
 
-    (async () => {
-      if (doSpinner) setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchSlots(startBoundary, end, totalMinutes);
-        if (!ignore) {
-          setSlots(data);
-          if (selectedSlotId && !data.some((s) => s.id === selectedSlotId)) {
-            setSelectedSlotId(null);
-          }
-        }
-      } catch (e) {
-        if (!ignore) setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        if (!ignore && doSpinner) setLoading(false);
+  (async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchSlots(start, end, totalMinutes);
+      if (!ignore) setSlots(data);
+    } catch (e) {
+      if (!ignore) {
+        setError(e instanceof Error ? e.message : String(e));
       }
-    })();
+    } finally {
+      if (!ignore) setLoading(false);
+    }
+  })();
 
-    return () => {
-      ignore = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalMinutes]);
+  return () => {
+    ignore = true;
+  };
+}, [totalMinutes]);
+
 
   // Use initialSlotId to preselect date + time (triggered by AvailableSlots)
   useEffect(() => {
@@ -198,7 +180,6 @@ export default function Calendar({
     );
     if (!slot) return;
 
-    // Adjust if your API uses a different field; original code used `startTime`
     const dt = new Date((slot as any).startTime ?? (slot as any).startISO);
     if (Number.isNaN(dt.getTime())) return;
 
@@ -206,9 +187,7 @@ export default function Calendar({
     setSelectedDate(dt);
 
     // Ensure the visible month matches the selected slot
-    setMonth(
-      new Date(dt.getFullYear(), dt.getMonth(), 1, 0, 0, 0, 0)
-    );
+    setMonth(new Date(dt.getFullYear(), dt.getMonth(), 1, 0, 0, 0, 0));
 
     // On mobile, jump directly to time selection
     if (!isDesktop) {
@@ -217,45 +196,57 @@ export default function Calendar({
     }
   }, [initialSlotId, slots, isDesktop]);
 
-  const startsByDay = useMemo(() => {
-    const map = new Map<string, { id: string; local: Date }[]>();
-    const startBoundary = startBoundaryNowPlusLead();
-    const end = addDays(startOfDay(startBoundary), 14);
-    end.setHours(23, 59, 59, 999);
+  const normalizedSlots = useMemo(
+    () =>
+      slots.map((s) => ({
+        ...s,
+        startTime: new Date((s as any).startTime ?? (s as any).startISO),
+      })),
+    [slots]
+  );
 
-    for (const s of slots) {
-      if (s.status !== SlotStatus.free) continue;
-      const dt = new Date((s as any).startTime ?? (s as any).startISO);
-      if (dt < startBoundary || dt > end) continue;
-      const key = dayKeyLocal(dt);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push({ id: s.id, local: dt });
-    }
+const startsByDay = useMemo(() => {
+  const map = new Map<string, { id: string; start: Date }[]>();
 
-    for (const arr of map.values()) {
-      arr.sort((a, b) => a.local.getTime() - b.local.getTime());
-    }
+  for (const s of normalizedSlots) {
+    const d = s.startTime;
+    // UI display rule: only show :00 / :30
+    if (d.getMinutes() % 30 !== 0) continue;
 
-    return map;
-  }, [slots]);
+    const key = dayKeyLocal(d);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push({ id: s.id, start: d });
+  }
 
-  const displayableStartCountByDay = useMemo(() => {
-    const out = new Map<string, number>();
-    for (const [k, arr] of startsByDay.entries()) {
-      const displayables = arr.filter(
-        ({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0
-      );
-      if (displayables.length > 0) out.set(k, displayables.length);
-    }
-    return out;
-  }, [startsByDay]);
+  for (const arr of map.values()) {
+    arr.sort((a, b) => a.start.getTime() - b.start.getTime());
+  }
+
+  return map;
+}, [normalizedSlots]);
+
+const displayableStartCountByDay = useMemo(() => {
+  const out = new Map<string, number>();
+  for (const [k, arr] of startsByDay.entries()) {
+    if (arr.length > 0) out.set(k, arr.length);
+  }
+  return out;
+}, [startsByDay]);
+
+
+const displayableDayKeys = useMemo(
+  () => new Set(displayableStartCountByDay.keys()),
+  [displayableStartCountByDay]
+);
+
 
   const displayableStartsForSelected = useMemo(() => {
     if (!selectedDate) return [];
-    const all = startsByDay.get(dayKeyLocal(selectedDate)) ?? [];
-    return all.filter(
-      ({ local }) => local.getMinutes() % DISPLAY_STEP_MIN === 0
-    );
+    const key = dayKeyLocal(selectedDate);
+    return (startsByDay.get(key) ?? []).map(({ id, start }) => ({
+      id,
+      local: start,
+    }));
   }, [selectedDate, startsByDay]);
 
   async function submitBooking() {
@@ -274,7 +265,7 @@ export default function Calendar({
       }
 
       const baseOnly = Math.max(30, liveMinutes);
-const preset = getPreset(baseOnly, followups ?? 0, blocks, productId);
+      const preset = getPreset(baseOnly, followups ?? 0, blocks, productId);
 
       const url = new URL("/checkout", window.location.origin);
       url.searchParams.set("slotId", selectedSlotId);
@@ -378,6 +369,7 @@ const preset = getPreset(baseOnly, followups ?? 0, blocks, productId);
                           setSelectedSlotId(null);
                         }}
                         validStartCountByDay={displayableStartCountByDay}
+                        displayableDayKeys={displayableDayKeys}  
                         loading={loading && slots.length === 0}
                         error={error}
                       />
@@ -385,11 +377,7 @@ const preset = getPreset(baseOnly, followups ?? 0, blocks, productId);
 
                     {/* Mobile flow */}
                     <div className="md:hidden flex flex-col h-full">
-                      <AnimatePresence
-                        custom={mobileDir}
-                        mode="wait"
-                        initial={false}
-                      >
+                      <AnimatePresence custom={mobileDir} mode="wait" initial={false}>
                         {mobileStep === "day" ? (
                           <motion.div
                             key="day"
@@ -410,6 +398,7 @@ const preset = getPreset(baseOnly, followups ?? 0, blocks, productId);
                                 setSelectedSlotId(null);
                               }}
                               validStartCountByDay={displayableStartCountByDay}
+                              displayableDayKeys={displayableDayKeys} 
                               loading={loading && slots.length === 0}
                               error={error}
                             />

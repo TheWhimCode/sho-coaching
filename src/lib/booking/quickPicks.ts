@@ -1,16 +1,13 @@
 // src/lib/booking/quickPicks.ts
+
 export type QuickIn = { id: string; startISO: string };
-export type QuickOut = QuickIn & { label?: "ASAP" | "Weekend" }; 
-// label optional now
+export type QuickOut = QuickIn & { label?: "ASAP" | "Weekend" };
 
-export function computeQuickPicks(slots: QuickIn[], now = new Date()): QuickOut[] {
-  // ✅ only consider slots aligned to :00 / :30
-  const aligned = slots.filter((s) => {
-    const m = new Date(s.startISO).getMinutes();
-    return m === 0 || m === 30;
-  });
-
-  const sorted = [...aligned].sort(
+export function computeQuickPicks(
+  slots: QuickIn[],
+  now = new Date()
+): QuickOut[] {
+  const sorted = [...slots].sort(
     (a, b) => new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
   );
   if (!sorted.length) return [];
@@ -35,16 +32,14 @@ export function computeQuickPicks(slots: QuickIn[], now = new Date()): QuickOut[
   const startOfToday = new Date(now);
   startOfToday.setHours(0, 0, 0, 0);
   const threshold = new Date(startOfToday);
-  threshold.setDate(startOfToday.getDate() + 4); // >= 4 days after today
-  const thresholdTs = threshold.getTime();
+  threshold.setDate(startOfToday.getDate() + 4);
 
   const fourPlus = sorted.find((s) => {
     const t = new Date(s.startISO).getTime();
-    return t >= thresholdTs && t > ASAPTs && (!wknd || s.id !== wknd.id);
+    return t >= threshold.getTime() && t > ASAPTs && (!wknd || s.id !== wknd.id);
   });
-  if (fourPlus) out.push({ ...fourPlus }); // 👈 no label here
+  if (fourPlus) out.push({ ...fourPlus });
 
-  // ✅ Sort by actual date so order always feels natural
   return out.sort(
     (a, b) => new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
   );

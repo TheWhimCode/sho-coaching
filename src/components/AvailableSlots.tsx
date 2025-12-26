@@ -32,37 +32,32 @@ export default function AvailableSlots({
 }) {
   return (
     <div className="grid grid-cols-1 gap-2">
+      {slots.map((s) => {
+        const dt = new Date(s.startISO);
+        const day = niceDayLabel(dt);
+        const time = dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
-
-      {slots
-        .filter(
-          (s) =>
-            s.status === SlotStatus.free &&
-            [0, 30].includes(new Date(s.startISO).getMinutes())
-        )
-        .map((s) => {
-          const dt = new Date(s.startISO);
-          const day = niceDayLabel(dt);
-          const time = dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-          return (
-            <button
-              key={s.id}
-              onClick={() => onPick?.(s.id)}
-              className="h-10 w-full rounded-xl px-3 text-sm ring-1 ring-white/10 
-                         hover:ring-white/30 text-left transition-colors"
-              title={dt.toLocaleString()}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-medium">{day}</span>
-                  <span className="mx-1 text-white/40">•</span>
-                  <span>{time}</span>
-                </div>
-                {s.label && <span className="text-xs text-white/60">{s.label}</span>}
+        return (
+          <button
+            key={s.id}
+            onClick={() => onPick?.(s.id)}
+            className="h-10 w-full rounded-xl px-3 text-sm ring-1 ring-white/10 
+                       hover:ring-white/30 text-left transition-colors"
+            title={dt.toLocaleString()}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-medium">{day}</span>
+                <span className="mx-1 text-white/40">•</span>
+                <span>{time}</span>
               </div>
-            </button>
-          );
-        })}
+              {s.label && (
+                <span className="text-xs text-white/60">{s.label}</span>
+              )}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }

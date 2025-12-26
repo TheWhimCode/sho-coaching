@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDayAvailability } from "@/lib/booking/availability";
-import { SLOT_SIZE_MIN } from "@/lib/booking/block";
 import { SlotStatus } from "@prisma/client";
+
+// ✅ ENGINE imports
+import { getDayAvailability } from "@/engine/scheduling/availability/getDayAvailability";
+import { SLOT_SIZE_MIN } from "@/engine/scheduling/time/timeMath";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,10 +46,17 @@ export async function POST() {
       for (let m = openMinute; m < closeMinute; m += SLOT_SIZE_MIN) {
         const t = new Date(day);
         t.setUTCMinutes(m, 0, 0);
-        batch.push({ startTime: t, duration: SLOT_SIZE_MIN, status: SlotStatus.free });
+        batch.push({
+          startTime: t,
+          duration: SLOT_SIZE_MIN,
+          status: SlotStatus.free,
+        });
       }
       if (batch.length) {
-        const res = await prisma.slot.createMany({ data: batch, skipDuplicates: true });
+        const res = await prisma.slot.createMany({
+          data: batch,
+          skipDuplicates: true,
+        });
         created += res.count;
       }
     }

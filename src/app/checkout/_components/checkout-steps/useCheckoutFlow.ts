@@ -257,6 +257,8 @@ setStep(2);  // ok, but now guaranteed as a valid step
           waiverAccepted: waiver,
           couponCode,
           couponDiscount,
+          holdKey: safePayload.holdKey,
+
             productId: safePayload.productId,  // ← ADD THIS
 
         }),
@@ -282,8 +284,12 @@ setStep(2);  // ok, but now guaranteed as a valid step
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, payMethod,productId: payload.productId }),
-      });
+body: JSON.stringify({
+  bookingId,
+  payMethod,
+  holdKey: safePayload.holdKey,
+  productId: payload.productId,
+})      });
 
       if (res.status === 409) {
         console.warn("Selected start time can’t fit this duration.");

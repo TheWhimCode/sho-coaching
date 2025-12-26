@@ -102,6 +102,15 @@ export async function POST(req: Request) {
 
         const meta = (pi.metadata ?? {}) as Record<string, string>;
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id);
+const paymentRef = pi.id;
+
+if (meta.bookingId) {
+  await prisma.session.update({
+    where: { id: meta.bookingId },
+    data: { paymentRef },
+  });
+}
+
         break;
       }
 

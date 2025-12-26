@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getDayAvailability } from "@/lib/booking/availability";
-import { SLOT_SIZE_MIN } from "@/lib/booking/block";
 import { SlotStatus } from "@prisma/client";
+
+// ✅ ENGINE imports
+import { getDayAvailability } from "@/engine/scheduling/availability/getDayAvailability";
+import { SLOT_SIZE_MIN } from "@/engine/scheduling/time/timeMath";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,27 +58,39 @@ async function manageSlots() {
   });
 
   let created = 0;
+
   for (let day = new Date(today); day < end; day.setUTCDate(day.getUTCDate() + 1)) {
+    // ✅ engine decides availability windows
     const intervals = await getDayAvailability(day);
     if (!intervals) continue;
 
     const batch: { startTime: Date; duration: number; status: SlotStatus }[] = [];
+
     for (const { openMinute, closeMinute } of intervals) {
       for (let m = openMinute; m < closeMinute; m += SLOT_SIZE_MIN) {
         const t = new Date(day);
         t.setUTCMinutes(m, 0, 0);
-        batch.push({ startTime: t, duration: SLOT_SIZE_MIN, status: SlotStatus.free });
+        batch.push({
+          startTime: t,
+          duration: SLOT_SIZE_MIN,
+          status: SlotStatus.free,
+        });
       }
     }
 
     if (batch.length) {
-      const res = await prisma.slot.createMany({ data: batch, skipDuplicates: true });
+      const res = await prisma.slot.createMany({
+        data: batch,
+        skipDuplicates: true,
+      });
       created += res.count;
     }
   }
 
   return { deleted: delPast.count + delFuture.count, created };
 }
+
+/* ---------- RANK SNAPSHOT LOGIC (UNCHANGED) ---------- */
 
 type RiotRank = { tier: string; division?: string | null; lp: number };
 
@@ -195,16 +209,7 @@ export async function GET(req: NextRequest) {
 
   const result = await runAll(origin);
 
-  console.log(
-    "CRON RESULT:",
-    JSON.stringify({
-      vercelEnv: process.env.VERCEL_ENV,
-      host: req.headers.get("host"),
-      originUsed: origin,
-      db: (process.env.DATABASE_URL || "").replace(/:\/\/.*@/, "://***@").split("?")[0],
-      result,
-    })
-  );
+  console.log("CRON RESULT:", JSON.stringify({ result }));
 
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
