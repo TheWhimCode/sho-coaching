@@ -31,8 +31,6 @@ export const CFG_SERVER = Object.freeze({
     BUFFER_AFTER_MIN: int("BUFFER_AFTER_MIN", 30),
     LEAD_MINUTES:     int("LEAD_MINUTES", 1080),
     MAX_ADVANCE_DAYS: int("MAX_ADVANCE_DAYS", 15),
-    OPEN_HOUR:        int("OPEN_HOUR", 0),
-    CLOSE_HOUR:       int("CLOSE_HOUR", 24),
     PER_DAY_CAP:      int("PER_DAY_CAP", 2),
   }),
 });
