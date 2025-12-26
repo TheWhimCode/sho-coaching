@@ -4,6 +4,9 @@ import MultipleChoiceLayout from "@/app/skillcheck/layout/MultipleChoice";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import { champSquareUrlById, resolveChampionId } from "@/lib/league/datadragon";
 
+const HEAVY_TEXT_SHADOW =
+  "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
+
 export default function ChampOptions({
   question,
   answers,
@@ -33,7 +36,10 @@ export default function ChampOptions({
     <MultipleChoiceLayout>
       {question && (
         <div className="w-full text-center">
-          <h2 className="text-3xl font-semibold text-gray-200">
+          <h2
+            className="text-3xl font-semibold text-gray-200"
+            style={{ textShadow: HEAVY_TEXT_SHADOW }}
+          >
             {question}
           </h2>
         </div>

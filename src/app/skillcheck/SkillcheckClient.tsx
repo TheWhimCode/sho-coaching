@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import MainSection from "@/app/skillcheck/layout/MainSection";
+import Hero from "@/app/skillcheck/layout/Hero";
 import { DraftOverlay } from "./games/draft/DraftOverlay";
 import ChampOptions from "./games/draft/ChampOptions";
 import { ResultScreen } from "./games/draft/ResultScreen";
@@ -201,56 +201,54 @@ export default function SkillcheckClient({
 
       <div className="relative z-10">
         {/* MAIN DRAFT AREA */}
-        <MainSection
-          main={
-            authoring ? (
-              <DraftAuthorMain />
-            ) : (
-              <DraftOverlay
-                blue={blue}
-                red={red}
-                role={draft.role}
-                userTeam={draft.userTeam}
-                previewChamp={!completed ? selected : null}
-                locked={completed}
-              />
-            )
-          }
+<Hero
+  hero={
+    authoring ? (
+      <DraftAuthorMain />
+    ) : (
+      <DraftOverlay
+        blue={blue}
+        red={red}
+        role={draft.role}
+        userTeam={draft.userTeam}
+        previewChamp={!completed ? selected : null}
+        locked={completed}
+      />
+    )
+  }
+  content={
+    !authoring ? (
+      <>
+        <ChampOptions
+          question="What champion is the best pick?"
+          answers={answerChamps}
+          selected={selected}
+          locked={completed}
+          correctAnswer={correctAnswer ?? ""}
+          attempts={attempts}
+          disabledAnswers={disabledAnswers}
+          lastWrong={lastWrong}
+          onSelect={handleSelect}
+          onLock={handleLockIn}
         />
 
-        {/* GAMEPLAY OPTIONS */}
-        {!authoring && (
-          <section className="relative mt-2">
-            <div className="max-w-2xl mx-auto px-6">
-              <ChampOptions
-                question="What champion is the best pick?"
-                answers={answerChamps}
-                selected={selected}
-                locked={completed}
-                correctAnswer={correctAnswer ?? ""}
-                attempts={attempts}
-                disabledAnswers={disabledAnswers}
-                lastWrong={lastWrong}
-                onSelect={handleSelect}
-                onLock={handleLockIn}
-              />
-            </div>
-          </section>
-        )}
-
-        {/* RESULT SCREEN (ALWAYS STAYS) */}
         {showResult && (
-          <section ref={resultRef} className="relative mt-16">
-            <ResultScreen
-              answers={draft.answers}
-              avgAttempts={avgAttempts}
-              onCreateDraft={() => {
-                setAuthoring(true);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-            />
-          </section>
+          <ResultScreen
+            answers={draft.answers}
+            avgAttempts={avgAttempts}
+            onCreateDraft={() => {
+              setAuthoring(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
         )}
+      </>
+    ) : null
+  }
+/>
+
+
+
       </div>
     </>
   );

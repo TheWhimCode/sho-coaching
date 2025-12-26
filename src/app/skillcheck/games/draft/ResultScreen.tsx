@@ -14,6 +14,9 @@ type DraftAnswer = {
   correct?: true;
 };
 
+const HEAVY_TEXT_SHADOW =
+  "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
+
 export function ResultScreen({
   answers,
   avgAttempts,
@@ -24,6 +27,19 @@ export function ResultScreen({
   onCreateDraft?: () => void;
 }) {
   const correct = answers.find((a) => a.correct);
+
+  /* -----------------------------
+     difficulty
+  ----------------------------- */
+
+  const avg = Number(avgAttempts);
+
+  const difficulty =
+    avg <= 1.5
+      ? { label: "Easy", color: "border-green-400/40 text-green-400" }
+      : avg <= 2.3
+      ? { label: "Hard", color: "border-yellow-400/40 text-yellow-400" }
+      : { label: "Nightmare", color: "border-red-400/40 text-red-400" };
 
   /* -----------------------------
      countdown (HH:MM:SS)
@@ -67,7 +83,10 @@ export function ResultScreen({
       >
         <div className="max-w-4xl mx-auto flex flex-col">
           {/* HEADER */}
-          <h3 className="text-2xl md:text-3xl font-semibold text-white mb-10">
+          <h3
+            className="text-2xl md:text-3xl font-semibold text-white mb-10"
+            style={{ textShadow: HEAVY_TEXT_SHADOW }}
+          >
             Why {correct?.champ}?
           </h3>
 
@@ -98,7 +117,7 @@ export function ResultScreen({
                     "
                   />
 
-                  <p className="text-sm md:text-base text-gray-200 leading-relaxed">
+                  <p className="text-sm text-gray-200 leading-relaxed">
                     {a.explanation}
                   </p>
                 </div>
@@ -106,13 +125,24 @@ export function ResultScreen({
             })}
           </div>
 
-          {/* STATS */}
+          {/* STATS (border-only, CTA width) */}
           <div className="mt-10 flex justify-center">
-            <div className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-sm text-gray-300">
-              Average attempts to solve
-              <span className="ml-2 text-white font-semibold">
-                {avgAttempts}
-              </span>
+            <div
+              className={`
+                w-full max-w-[320px]
+                px-4 py-2
+                rounded-lg
+                border
+                text-sm
+                flex items-center justify-center gap-2
+                text-gray-300
+                ${difficulty.color}
+              `}
+            >
+              <span>Average attempts:</span>
+              <span className="text-white font-semibold">{avgAttempts}</span>
+              <span className="opacity-60">•</span>
+              <span className="font-semibold">{difficulty.label}</span>
             </div>
           </div>
 
@@ -121,7 +151,7 @@ export function ResultScreen({
             <div className="mt-12 flex justify-center">
               <PrimaryCTA
                 onClick={onCreateDraft}
-                className="px-10 py-4 text-lg"
+                className="px-10 py-4 text-lg w-full max-w-[320px]"
               >
                 Make your own draft
               </PrimaryCTA>

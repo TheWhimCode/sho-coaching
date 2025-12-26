@@ -236,17 +236,37 @@ function Team({
                     : slotStyles(state, side))
                 }
               >
-                {champToShow ? (
-                  <img
-                    src={champSquareUrlById(
-                      resolveChampionId(champToShow)
-                    )}
-                    alt={champToShow}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-800 opacity-40" />
-                )}
+                <div className="relative w-full h-full">
+                  {champToShow ? (
+                    <img
+                      src={champSquareUrlById(
+                        resolveChampionId(champToShow)
+                      )}
+                      alt={champToShow}
+                      className={
+                        "w-full h-full object-cover " +
+                        (state === "hover" && !authoring
+                          ? "opacity-50"
+                          : "")
+                      }
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-800 opacity-40" />
+                  )}
+
+                  {state === "hover" && !authoring && (
+                    <div
+                      className="
+                        absolute inset-0
+                        flex items-center justify-center
+                        bg-black/40
+                        text-white/50 text-[8px] font-semibold tracking-wide
+                      "
+                    >
+                      HOVERING
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -256,7 +276,7 @@ function Team({
   );
 }
 
-/* helpers unchanged */
+/* helpers */
 
 function getSlotState(
   pick: Pick,
