@@ -11,17 +11,19 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   const hideCheckout =
     p === "/checkout" ||
     (p.startsWith("/checkout/") && !p.startsWith("/checkout/success"));
+  const hideSkillcheckNavbar = p === "/skillcheck";
 
-  const showChrome = !(hideCoaching || hideCheckout);
+  const showNavBar = !(hideCoaching || hideCheckout || hideSkillcheckNavbar);
+  const showFooter = !(hideCoaching || hideCheckout); // footer still shows on skillcheck
 
   return (
     <>
-      {showChrome && <NavBar />}
-      {showChrome && <div className="h-16 md:h-20" />}
+      {showNavBar && <NavBar />}
+      {showNavBar && <div className="h-16 md:h-20" />}
 
       <main>{children}</main>
 
-      {showChrome && <Footer />} {/* footer added */}
+      {showFooter && <Footer />}
     </>
   );
 }

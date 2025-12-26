@@ -1,0 +1,18 @@
+CREATE TYPE "DraftStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+CREATE TABLE "Draft" (
+  "id" TEXT NOT NULL,
+  "blue" JSONB NOT NULL,
+  "red" JSONB NOT NULL,
+  "role" TEXT NOT NULL,
+  "userTeam" TEXT NOT NULL,
+  "answers" JSONB NOT NULL,
+  "usedLast" TIMESTAMP(3),
+  "attempts" INTEGER NOT NULL DEFAULT 0,
+  "correctAttempts" INTEGER NOT NULL DEFAULT 0,
+  "likes" INTEGER NOT NULL DEFAULT 0,
+  "dislikes" INTEGER NOT NULL DEFAULT 0,
+  "status" "DraftStatus" NOT NULL DEFAULT 'PENDING',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "Draft_pkey" PRIMARY KEY ("id")
+);
