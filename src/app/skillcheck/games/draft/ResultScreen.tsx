@@ -84,7 +84,7 @@ export function ResultScreen({
         <div className="max-w-4xl mx-auto flex flex-col">
           {/* HEADER */}
           <h3
-            className="text-2xl md:text-3xl font-semibold text-white mb-10"
+            className="text-3xl md:text-4xl font-semibold text-white mb-4"
             style={{ textShadow: HEAVY_TEXT_SHADOW }}
           >
             Why {correct?.champ}?
@@ -117,7 +117,7 @@ export function ResultScreen({
                     "
                   />
 
-                  <p className="text-sm text-gray-200 leading-relaxed">
+                  <p className="text-md text-gray-200 leading-relaxed">
                     {a.explanation}
                   </p>
                 </div>
@@ -126,14 +126,14 @@ export function ResultScreen({
           </div>
 
           {/* STATS (border-only, CTA width) */}
-          <div className="mt-10 flex justify-center">
+          <div className="mt-12 flex justify-center">
             <div
               className={`
                 w-full max-w-[320px]
-                px-4 py-2
+                px-4 py-3
                 rounded-lg
                 border
-                text-sm
+                text-md
                 flex items-center justify-center gap-2
                 text-gray-300
                 ${difficulty.color}
@@ -142,7 +142,7 @@ export function ResultScreen({
               <span>Average attempts:</span>
               <span className="text-white font-semibold">{avgAttempts}</span>
               <span className="opacity-60">•</span>
-              <span className="font-semibold">{difficulty.label}</span>
+              <span className="font-black">{difficulty.label}</span>
             </div>
           </div>
 
@@ -160,13 +160,13 @@ export function ResultScreen({
 
           {/* COUNTDOWN */}
           <div className="mt-12 text-center">
-            <div className="text-sm uppercase tracking-wide text-gray-400 mb-2">
+            <div className="text-md uppercase tracking-wide text-gray-400 mb-2">
               Come back tomorrow for a new draft
             </div>
 
             <div
               className="
-                text-5xl md:text-6xl font-mono font-semibold
+                text-6xl md:text-7xl font-mono font-semibold
                 bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400
                 bg-clip-text text-transparent
               "

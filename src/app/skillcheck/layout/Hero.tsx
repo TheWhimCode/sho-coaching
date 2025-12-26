@@ -48,7 +48,7 @@ export default function Hero({
           ref={resultRef}
           className="w-full py-6 text-white"
         >
-          <div className="max-w-3xl mx-auto px-6 flex flex-col gap-6">
+          <div className="max-w-4xl mx-auto px-6 flex flex-col gap-6">
             {content}
           </div>
         </section>
