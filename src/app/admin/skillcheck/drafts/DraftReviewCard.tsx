@@ -78,7 +78,6 @@ export default function DraftReviewCard({
       <AnswerAuthorPanel
         value={answers}
         onChange={setAnswers}
-        onSubmit={() => submit("APPROVED")}
       />
 
       {/* ACTIONS */}

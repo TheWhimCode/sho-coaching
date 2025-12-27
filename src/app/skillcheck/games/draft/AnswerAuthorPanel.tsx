@@ -5,7 +5,6 @@ import {
   champSquareUrlById,
   resolveChampionId,
 } from "@/lib/league/datadragon";
-import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 
 type Answer = {
   champ: string;
@@ -13,20 +12,13 @@ type Answer = {
   correct?: true;
 };
 
-type SubmitState = "idle" | "submitting" | "submitted";
-
 export default function AnswerAuthorPanel({
   value,
   onChange,
-  onSubmit,
 }: {
   value: Answer[];
   onChange: (answers: Answer[]) => void;
-  onSubmit: () => Promise<void> | void;
 }) {
-  const [submitState, setSubmitState] =
-    useState<SubmitState>("idle");
-
   function update(i: number, patch: Partial<Answer>) {
     const next = [...value];
     next[i] = { ...next[i], ...patch };
@@ -41,24 +33,6 @@ export default function AnswerAuthorPanel({
           : { ...a, correct: undefined }
       )
     );
-  }
-
-  const canSubmit =
-    value.length === 3 &&
-    value.every((a) => a.champ && a.explanation.trim()) &&
-    value.some((a) => a.correct);
-
-  async function handleSubmit() {
-    if (!canSubmit || submitState !== "idle") return;
-
-    setSubmitState("submitting");
-
-    try {
-      await onSubmit();
-      setSubmitState("submitted");
-    } catch {
-      setSubmitState("idle");
-    }
   }
 
   return (
@@ -109,7 +83,6 @@ export default function AnswerAuthorPanel({
           {/* CORRECT */}
           <button
             onClick={() => setCorrect(i)}
-            disabled={submitState !== "idle"}
             className={[
               "px-3 py-2 rounded text-sm transition",
               a.correct
@@ -121,32 +94,6 @@ export default function AnswerAuthorPanel({
           </button>
         </div>
       ))}
-
-      <div className="flex justify-center mt-4">
-        <PrimaryCTA
-          className={[
-            "px-6 py-2 min-w-[160px] transition-all duration-300",
-            submitState === "submitted"
-              ? "bg-blue-500 hover:bg-blue-500 scale-105"
-              : "",
-          ].join(" ")}
-          disabled={
-            !canSubmit || submitState !== "idle"
-          }
-          onClick={handleSubmit}
-        >
-          {submitState === "idle" && "Submit"}
-
-          {submitState === "submitting" && (
-            <span className="flex items-center gap-2">
-              <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-              Submitting…
-            </span>
-          )}
-
-          {submitState === "submitted" && "Submitted ✓"}
-        </PrimaryCTA>
-      </div>
     </div>
   );
 }
