@@ -75,7 +75,7 @@ CREATE TABLE "Session" (
 CREATE TABLE "PendingConfirmationDM" (
     "discordId" TEXT NOT NULL,
     "message" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "PendingConfirmationDM_pkey" PRIMARY KEY ("discordId")
 );
@@ -85,7 +85,7 @@ CREATE TABLE "SessionAsset" (
     "id" TEXT NOT NULL,
     "sessionId" TEXT NOT NULL,
     "assetId" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "SessionAsset_pkey" PRIMARY KEY ("id")
 );
@@ -224,15 +224,6 @@ CREATE INDEX "Session_discordId_idx" ON "Session"("discordId");
 CREATE INDEX "Session_studentId_idx" ON "Session"("studentId");
 
 -- CreateIndex
-CREATE INDEX "PendingConfirmationDM_createdAt_idx" ON "PendingConfirmationDM"("createdAt");
-
--- CreateIndex
-CREATE INDEX "SessionAsset_sessionId_idx" ON "SessionAsset"("sessionId");
-
--- CreateIndex
-CREATE INDEX "SessionAsset_assetId_idx" ON "SessionAsset"("assetId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "SessionAsset_sessionId_assetId_key" ON "SessionAsset"("sessionId", "assetId");
 
 -- CreateIndex
@@ -294,12 +285,6 @@ ALTER TABLE "Session" ADD CONSTRAINT "Session_slotId_fkey" FOREIGN KEY ("slotId"
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "SessionAsset" ADD CONSTRAINT "SessionAsset_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "SessionAsset" ADD CONSTRAINT "SessionAsset_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "AssetLibrary"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "StudentAsset" ADD CONSTRAINT "StudentAsset_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "AssetLibrary"("id") ON DELETE CASCADE ON UPDATE CASCADE;

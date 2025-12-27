@@ -143,30 +143,24 @@ export default function DraftAuthorMain() {
         }
       />
 
-      {/* CONTROLS */}
-      <div className="flex gap-4">
-        <PrimaryCTA
-          disabled={locked}
-          onClick={() => {
-            setLocked(true);
-            setStep("answers");
-          }}
-        >
-          Lock Draft
-        </PrimaryCTA>
-
-        {locked && (
-          <PrimaryCTA
-            onClick={() => {
-              setLocked(false);
-              setStep("draft");
-              setActiveSlot({ side: "blue", index: 0 });
-            }}
-          >
-            Unlock
-          </PrimaryCTA>
-        )}
-      </div>
+{/* CONTROLS */}
+<div className="flex gap-4">
+  <PrimaryCTA
+    className="px-6 py-2 min-w-[140px]"
+    onClick={() => {
+      if (locked) {
+        setLocked(false);
+        setStep("draft");
+        setActiveSlot({ side: "blue", index: 0 });
+      } else {
+        setLocked(true);
+        setStep("answers");
+      }
+    }}
+  >
+    {locked ? "Unlock" : "Lock Draft"}
+  </PrimaryCTA>
+</div>
 
       {/* ANSWER AUTHORING */}
       {step === "answers" && (

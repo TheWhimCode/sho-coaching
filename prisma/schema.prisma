@@ -239,6 +239,7 @@ model Draft {
 
   status     DraftStatus @default(PENDING)
   createdAt  DateTime    @default(now())
+  submitIp String?
 }
 
 
