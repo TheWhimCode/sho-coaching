@@ -19,6 +19,8 @@ type ActiveSlot = {
   index: number;
 } | null;
 
+type DisabledSlots = Partial<Record<Side, boolean[]>>;
+
 export function DraftOverlay({
   blue,
   red,
@@ -32,12 +34,14 @@ export function DraftOverlay({
   onSlotClick,
   center,
   onMoveRole,
+  disabledSlots,
 }: {
   blue: Pick[];
   red: Pick[];
   role: Role;
   userTeam: Side;
   solutionChamp: string;
+
   previewChamp?: string | null;
   locked: boolean;
   authoring?: boolean;
@@ -48,6 +52,8 @@ export function DraftOverlay({
   center?: React.ReactNode;
 
   onMoveRole?: (side: Side, index: number, dir: -1 | 1) => void;
+
+  disabledSlots?: DisabledSlots;
 }) {
   return (
     <div className="flex justify-center my-6 gap-10">
@@ -56,13 +62,13 @@ export function DraftOverlay({
         side="blue"
         role={role}
         userTeam={userTeam}
-        solutionChamp={solutionChamp}
         previewChamp={previewChamp}
         locked={locked}
         authoring={authoring}
         activeSlot={activeSlot}
         onSlotClick={onSlotClick}
         onMoveRole={onMoveRole}
+        disabledSlots={disabledSlots}
       />
 
       {authoring && (
@@ -76,13 +82,13 @@ export function DraftOverlay({
         side="red"
         role={role}
         userTeam={userTeam}
-        solutionChamp={solutionChamp}
         previewChamp={previewChamp}
         locked={locked}
         authoring={authoring}
         activeSlot={activeSlot}
         onSlotClick={onSlotClick}
         onMoveRole={onMoveRole}
+        disabledSlots={disabledSlots}
       />
     </div>
   );
@@ -93,19 +99,18 @@ function Team({
   side,
   role,
   userTeam,
-  solutionChamp,
   previewChamp,
   locked,
   authoring,
   activeSlot,
   onSlotClick,
   onMoveRole,
+  disabledSlots,
 }: {
   team: Pick[];
   side: Side;
   role: Role;
   userTeam: Side;
-  solutionChamp: string;
   previewChamp?: string | null;
   locked: boolean;
 
@@ -114,12 +119,12 @@ function Team({
   onSlotClick?: (side: Side, index: number) => void;
 
   onMoveRole?: (side: Side, index: number, dir: -1 | 1) => void;
+
+  disabledSlots?: DisabledSlots;
 }) {
-  const userIndex = authoring
-    ? -1
-    : team.findIndex(
-        (p) => side === userTeam && p.role === role
-      );
+  const userIndex = team.findIndex(
+    (p) => side === userTeam && p.role === role
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -127,29 +132,33 @@ function Team({
         const isUserSlot =
           !authoring && side === userTeam && p.role === role;
 
-        const isSolutionSlot =
-          authoring &&
-          side === userTeam &&
-          p.role === role;
-
         const isActiveAuthorSlot =
           authoring &&
           activeSlot?.side === side &&
           activeSlot?.index === i;
 
-        const isPreviewing = !!(
-          previewChamp &&
-          (authoring ? isActiveAuthorSlot : isUserSlot)
-        );
+        const isDisabled =
+          !!authoring && !!disabledSlots?.[side]?.[i];
 
-        const champToShow = isSolutionSlot
-          ? solutionChamp
-          : isPreviewing
+        const isOwnFutureSlot =
+          authoring &&
+          side === userTeam &&
+          i > userIndex;
+
+        const isPreviewing =
+          !!previewChamp &&
+          (authoring ? isActiveAuthorSlot : isUserSlot);
+
+        const champToShow = isPreviewing
           ? previewChamp
           : p.champ;
 
         const state = authoring
-          ? p.champ || isSolutionSlot
+          ? isDisabled
+            ? "disabled"
+            : isOwnFutureSlot && p.champ
+            ? "hover"
+            : p.champ
             ? "filled"
             : "empty"
           : getSlotState(
@@ -163,20 +172,17 @@ function Team({
             );
 
         const goldBorder =
-          "border-yellow-400 " +
-          (!locked ? "animate-pulse " : "");
+          "border-yellow-400 " + (!locked ? "animate-pulse " : "");
 
         return (
           <div
             key={`${side}-${i}`}
             className={
               "flex items-center gap-3 " +
-              (side === "red"
-                ? "flex-row-reverse"
-                : "")
+              (side === "red" ? "flex-row-reverse" : "")
             }
           >
-            {/* REORDER ARROWS (ALWAYS ALLOWED IN AUTHORING) */}
+            {/* REORDER ARROWS */}
             {authoring && onMoveRole && (
               <div className="flex flex-col items-center gap-[2px]">
                 <button
@@ -231,23 +237,20 @@ function Team({
             >
               <div
                 onClick={() => {
-                  if (
-                    authoring &&
-                    onSlotClick &&
-                    !locked &&
-                    !isSolutionSlot
-                  ) {
+                  if (authoring && onSlotClick && !locked && !isDisabled) {
                     onSlotClick(side, i);
                   }
                 }}
                 className={[
-                  "w-16 h-16 rounded-lg overflow-hidden bg-gray-900 border-2",
-                  isSolutionSlot
-                    ? side === "blue"
-                      ? "border-blue-500 cursor-default"
-                      : "border-red-500 cursor-default"
-                    : authoring && isActiveAuthorSlot
-                    ? "border-yellow-300 cursor-pointer"
+                  "w-16 h-16 rounded-lg overflow-hidden bg-gray-900 border-2 relative",
+                  authoring
+                    ? isDisabled
+                      ? "cursor-not-allowed " +
+                        slotStyles("disabled", side)
+                      : isActiveAuthorSlot
+                      ? "border-yellow-300 cursor-pointer"
+                      : "cursor-pointer " +
+                        slotStyles(state, side)
                     : isUserSlot
                     ? goldBorder
                     : slotStyles(state, side),
@@ -260,10 +263,38 @@ function Team({
                         resolveChampionId(champToShow)
                       )}
                       alt={champToShow}
-                      className="w-full h-full object-cover"
+                      className={[
+                        "w-full h-full object-cover",
+                        state === "hover"
+                          ? "opacity-50"
+                          : state === "disabled"
+                          ? "opacity-25"
+                          : "",
+                      ].join(" ")}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-800 opacity-40" />
+                    <div
+                      className={[
+                        "w-full h-full bg-gray-800",
+                        state === "disabled"
+                          ? "opacity-20"
+                          : "opacity-40",
+                      ].join(" ")}
+                    />
+                  )}
+
+                  {state === "hover" && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white/50 text-[8px] font-semibold tracking-wide">
+                      HOVERING
+                    </div>
+                  )}
+
+                  {state === "disabled" && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+                      <span className="text-white/70 text-xs font-semibold">
+                        ✕
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -291,11 +322,7 @@ function getSlotState(
   if (isUserSlot && previewMode) return "hover";
   if (isUserSlot) return "active";
 
-  if (
-    side === userTeam &&
-    index > userIndex &&
-    pick.champ
-  ) {
+  if (side === userTeam && index > userIndex && pick.champ) {
     return "hover";
   }
 
@@ -304,7 +331,7 @@ function getSlotState(
 }
 
 function slotStyles(
-  state: "filled" | "active" | "hover" | "empty",
+  state: "filled" | "active" | "hover" | "empty" | "disabled",
   side: Side
 ) {
   switch (state) {
@@ -315,6 +342,8 @@ function slotStyles(
     case "active":
     case "hover":
       return "border-gray-500";
+    case "disabled":
+      return "border-gray-700 opacity-90";
     default:
       return "border-gray-700 opacity-90";
   }
