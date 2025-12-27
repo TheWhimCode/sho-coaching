@@ -56,7 +56,7 @@ export default function ChampSelectPanel({
   return (
     <div
       className="
-        w-[560px] h-[520px]
+        w-[660px] h-[380px]
         bg-black/60 backdrop-blur-md
         rounded-xl border border-white/10
         p-4 flex flex-col
@@ -76,7 +76,7 @@ export default function ChampSelectPanel({
       <div
         className="
           flex-1 overflow-y-auto
-          grid grid-cols-7 gap-2
+          grid grid-cols-8 gap-2
           no-scrollbar
         "
         style={{
@@ -90,7 +90,7 @@ export default function ChampSelectPanel({
           onMouseLeave={() => onHover(null)}
           onClick={() => onSelect(null)}
           className="
-            w-12 h-12 rounded-lg
+            w-16 h-16 rounded-lg
             bg-gray-800 border border-gray-600
             flex items-center justify-center
             text-gray-400 text-xl font-semibold
@@ -119,7 +119,7 @@ export default function ChampSelectPanel({
                 onMouseLeave={() => onHover(null)}
                 onClick={() => onSelect(name)}
                 className="
-                  w-12 h-12 rounded-lg overflow-hidden
+                  w-16 h-16 rounded-lg overflow-hidden
                   hover:scale-105 transition
                 "
                 title={name}

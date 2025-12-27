@@ -49,6 +49,7 @@ export default function SkillcheckClient({
   const [authoring, setAuthoring] = useState(false);
 
   const resultRef = useRef<HTMLDivElement | null>(null);
+  const hasScrolledRef = useRef(false);
 
   /* -----------------------------
      derived data
@@ -176,16 +177,27 @@ export default function SkillcheckClient({
   }
 
   /* -----------------------------
-     scroll on success
+     scroll result into view (once)
   ----------------------------- */
 
   useEffect(() => {
-    if (showResult && resultRef.current) {
-      resultRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
+    if (!showResult || !resultRef.current) return;
+    if (hasScrolledRef.current) return;
+
+    hasScrolledRef.current = true;
+
+    const timeout = setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resultRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        });
       });
-    }
+    }, 1500);
+
+    return () => clearTimeout(timeout);
   }, [showResult]);
 
   return (
@@ -200,55 +212,57 @@ export default function SkillcheckClient({
       />
 
       <div className="relative z-10">
-        {/* MAIN DRAFT AREA */}
-<Hero
-  hero={
-    authoring ? (
-      <DraftAuthorMain />
-    ) : (
-      <DraftOverlay
-        blue={blue}
-        red={red}
-        role={draft.role}
-        userTeam={draft.userTeam}
-        previewChamp={!completed ? selected : null}
-        locked={completed}
-      />
-    )
-  }
-  content={
-    !authoring ? (
-      <>
-        <ChampOptions
-          question="What champion is the best pick?"
-          answers={answerChamps}
-          selected={selected}
-          locked={completed}
-          correctAnswer={correctAnswer ?? ""}
-          attempts={attempts}
-          disabledAnswers={disabledAnswers}
-          lastWrong={lastWrong}
-          onSelect={handleSelect}
-          onLock={handleLockIn}
+        <Hero
+          hero={
+            authoring ? (
+              <DraftAuthorMain />
+            ) : (
+              <DraftOverlay
+                blue={blue}
+                red={red}
+                role={draft.role}
+                userTeam={draft.userTeam}
+                previewChamp={!completed ? selected : null}
+                locked={completed}
+              />
+            )
+          }
+          content={
+            <>
+              {!authoring && (
+                <ChampOptions
+                  question="What champion is the best pick?"
+                  answers={answerChamps}
+                  selected={selected}
+                  locked={completed}
+                  correctAnswer={correctAnswer ?? ""}
+                  attempts={attempts}
+                  disabledAnswers={disabledAnswers}
+                  lastWrong={lastWrong}
+                  onSelect={handleSelect}
+                  onLock={handleLockIn}
+                />
+              )}
+
+              {showResult && (
+                <div ref={resultRef}>
+                  <ResultScreen
+                    answers={draft.answers}
+                    avgAttempts={avgAttempts}
+                    onCreateDraft={() => {
+                      hasScrolledRef.current = false;
+                      setAuthoring(true);
+                      window.scrollTo({
+                        top: 0,
+                        behavior: "smooth",
+                      });
+                    }}
+                  />
+                </div>
+              )}
+            </>
+          }
         />
-
-        {showResult && (
-          <ResultScreen
-            answers={draft.answers}
-            avgAttempts={avgAttempts}
-            onCreateDraft={() => {
-              setAuthoring(true);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          />
-        )}
-      </>
-    ) : null
-  }
-/>
-
-
-
       </div>
     </>
   );

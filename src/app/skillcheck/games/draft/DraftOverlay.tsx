@@ -63,7 +63,7 @@ export function DraftOverlay({
       />
 
       {authoring && (
-        <div className="w-[420px] flex items-center justify-center">
+        <div className="w-[720px] flex items-center justify-center">
           {center}
         </div>
       )}

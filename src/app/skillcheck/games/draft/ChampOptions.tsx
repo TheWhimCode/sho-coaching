@@ -1,8 +1,10 @@
 "use client";
 
-import MultipleChoiceLayout from "@/app/skillcheck/layout/MultipleChoice";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
-import { champSquareUrlById, resolveChampionId } from "@/lib/league/datadragon";
+import {
+  champSquareUrlById,
+  resolveChampionId,
+} from "@/lib/league/datadragon";
 
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
@@ -33,7 +35,7 @@ export default function ChampOptions({
   const shakeCTA = !!lastWrong;
 
   return (
-    <MultipleChoiceLayout>
+    <>
       {question && (
         <div className="w-full text-center">
           <h2
@@ -48,7 +50,9 @@ export default function ChampOptions({
       <div className="inline-flex flex-row items-center mx-auto">
         <div className="flex flex-row gap-4">
           {answers.map((a) => {
-            const src = champSquareUrlById(resolveChampionId(a));
+            const src = champSquareUrlById(
+              resolveChampionId(a)
+            );
 
             const isSelected = selected === a;
             const isDisabled = disabledAnswers.includes(a);
@@ -62,12 +66,22 @@ export default function ChampOptions({
                 disabled={locked || isDisabled}
                 className={[
                   "relative w-16 h-16 rounded-lg overflow-hidden transition-all duration-200",
-                  !locked && !isDisabled ? "hover:scale-105" : "",
-                  isSelected && !locked ? "ring-1 ring-blue-300" : "",
-                  isCorrect ? "ring-2 ring-green-500 scale-105" : "",
-                  isDisabled && !isCorrect ? "ring-2 ring-red-500" : "",
+                  !locked && !isDisabled
+                    ? "hover:scale-105"
+                    : "",
+                  isSelected && !locked
+                    ? "ring-1 ring-blue-300"
+                    : "",
+                  isCorrect
+                    ? "ring-2 ring-green-500 scale-105"
+                    : "",
+                  isDisabled && !isCorrect
+                    ? "ring-2 ring-red-500"
+                    : "",
                   isWrong ? "animate-shake" : "",
-                  isDisabled ? "opacity-50 cursor-not-allowed" : "",
+                  isDisabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "",
                 ].join(" ")}
               >
                 <div className="relative w-full h-full">
@@ -76,7 +90,9 @@ export default function ChampOptions({
                     alt={a}
                     className={[
                       "w-full h-full object-cover transition-opacity",
-                      isDisabled ? "opacity-40 grayscale" : "",
+                      isDisabled
+                        ? "opacity-40 grayscale"
+                        : "",
                     ].join(" ")}
                   />
 
@@ -117,6 +133,6 @@ export default function ChampOptions({
           </PrimaryCTA>
         </div>
       </div>
-    </MultipleChoiceLayout>
+    </>
   );
 }

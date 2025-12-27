@@ -42,7 +42,7 @@ export default function Hero({
         </div>
       </section>
 
-      {/* BELOW-HERO CONTENT (multiple choice / result) */}
+      {/* BELOW-HERO CONTENT */}
       {content && (
         <section
           ref={resultRef}
