@@ -34,12 +34,15 @@ export function ResultScreen({
 
   const avg = Number(avgAttempts);
 
-  const difficulty =
-    avg <= 1.5
-      ? { label: "Easy", color: "border-green-400/40 text-green-400" }
-      : avg <= 2.3
-      ? { label: "Hard", color: "border-yellow-400/40 text-yellow-400" }
-      : { label: "Nightmare", color: "border-red-400/40 text-red-400" };
+ const difficulty =
+  avg <= 1.4
+    ? { label: "Easy", color: "border-green-400/40 text-green-400" }
+  : avg <= 2.0
+    ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
+  : avg <= 2.6
+    ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
+    : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
+
 
   /* -----------------------------
      countdown (HH:MM:SS)
@@ -71,12 +74,12 @@ export function ResultScreen({
   }, []);
 
   return (
-    <section className="relative z-10 mx-auto max-w-4xl px-6">
+<section className="relative z-10 w-full sm:max-w-4xl sm:mx-auto px-0 sm:px-6">
       <GlassPanel
         className="
           mt-12
           min-h-[80vh]
-          p-6 md:p-10
+          py-6 px-3 md:p-10
           !ring-0
           border border-[rgba(146,180,255,.18)]
         "
@@ -91,7 +94,7 @@ export function ResultScreen({
           </h3>
 
           {/* ANSWERS */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2 md:gap-4">
             {answers.map((a) => {
               const src = champSquareUrlById(
                 resolveChampionId(a.champ)
@@ -135,7 +138,6 @@ export function ResultScreen({
                 border
                 text-md
                 flex items-center justify-center gap-2
-                text-gray-300
                 ${difficulty.color}
               `}
             >

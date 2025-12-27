@@ -48,7 +48,7 @@ export default function ChampOptions({
       )}
 
       <div className="inline-flex flex-row items-center mx-auto">
-        <div className="flex flex-row gap-4">
+        <div className="flex flex-row gap-2 md:gap-4">
           {answers.map((a) => {
             const src = champSquareUrlById(
               resolveChampionId(a)
@@ -115,7 +115,7 @@ export default function ChampOptions({
           })}
         </div>
 
-        <div className="relative ml-6">
+        <div className="relative ml-2 md:ml-6">
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-xs text-gray-400 font-bold whitespace-nowrap">
             Attempts: {attempts}
           </div>
