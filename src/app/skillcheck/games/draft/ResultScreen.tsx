@@ -24,7 +24,7 @@ export function ResultScreen({
 }: {
   answers: DraftAnswer[];
   avgAttempts: string;
-  onCreateDraft?: () => void;
+  onCreateDraft?: (initialStep: "setup" | "success") => void;
 }) {
   const correct = answers.find((a) => a.correct);
 
@@ -34,15 +34,14 @@ export function ResultScreen({
 
   const avg = Number(avgAttempts);
 
- const difficulty =
-  avg <= 1.4
-    ? { label: "Easy", color: "border-green-400/40 text-green-400" }
-  : avg <= 2.0
-    ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
-  : avg <= 2.6
-    ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
-    : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
-
+  const difficulty =
+    avg <= 1.4
+      ? { label: "Easy", color: "border-green-400/40 text-green-400" }
+      : avg <= 2.0
+      ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
+      : avg <= 2.6
+      ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
+      : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
 
   /* -----------------------------
      countdown (HH:MM:SS)
@@ -74,7 +73,7 @@ export function ResultScreen({
   }, []);
 
   return (
-<section className="relative z-10 w-full sm:max-w-4xl sm:mx-auto px-0 sm:px-6">
+    <section className="relative z-10 w-full sm:max-w-4xl sm:mx-auto px-0 sm:px-6">
       <GlassPanel
         className="
           mt-12
@@ -128,7 +127,7 @@ export function ResultScreen({
             })}
           </div>
 
-          {/* STATS (border-only, CTA width) */}
+          {/* STATS */}
           <div className="mt-12 flex justify-center">
             <div
               className={`
@@ -150,10 +149,22 @@ export function ResultScreen({
 
           {/* CTA */}
           {onCreateDraft && (
-            <div className="mt-12 flex justify-center">
+            <div className="mt-12 hidden sm:flex justify-center">
               <PrimaryCTA
-                onClick={onCreateDraft}
                 className="px-10 py-4 text-lg w-full max-w-[320px]"
+                onClick={async () => {
+                  const res = await fetch(
+                    "/api/skillcheck/db/draftExists"
+                  );
+
+                  const data = await res.json();
+
+                  if (data?.exists) {
+                    onCreateDraft("success");
+                  } else {
+                    onCreateDraft("setup");
+                  }
+                }}
               >
                 Make your own draft
               </PrimaryCTA>

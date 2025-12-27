@@ -17,9 +17,11 @@ function normalizeName(input: string) {
 export default function ChampSelectPanel({
   onHover,
   onSelect,
+  disabledChamps = [],
 }: {
   onHover: (champ: string | null) => void;
   onSelect: (champ: string | null) => void;
+  disabledChamps?: string[];
 }) {
   const [query, setQuery] = useState("");
   const [champions, setChampions] = useState<string[]>([]);
@@ -43,6 +45,16 @@ export default function ChampSelectPanel({
       mounted = false;
     };
   }, []);
+
+  const disabledSet = useMemo(
+    () =>
+      new Set(
+        disabledChamps.map((c) =>
+          normalizeName(c).toLowerCase()
+        )
+      ),
+    [disabledChamps]
+  );
 
   const filtered = useMemo(() => {
     const q = normalizeName(query).toLowerCase();
@@ -80,8 +92,8 @@ export default function ChampSelectPanel({
           no-scrollbar
         "
         style={{
-          scrollbarWidth: "none", // Firefox
-          msOverflowStyle: "none", // IE/Edge legacy
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
         {/* clear slot */}
@@ -111,18 +123,34 @@ export default function ChampSelectPanel({
           filtered.map((raw) => {
             const name = normalizeName(raw);
             const id = resolveChampionId(name);
+            const isDisabled = disabledSet.has(
+              name.toLowerCase()
+            );
 
             return (
               <button
                 key={name}
-                onMouseEnter={() => onHover(name)}
-                onMouseLeave={() => onHover(null)}
-                onClick={() => onSelect(name)}
-                className="
-                  w-16 h-16 rounded-lg overflow-hidden
-                  hover:scale-105 transition
-                "
-                title={name}
+                onMouseEnter={() =>
+                  !isDisabled && onHover(name)
+                }
+                onMouseLeave={() =>
+                  !isDisabled && onHover(null)
+                }
+                onClick={() => {
+                  if (!isDisabled) onSelect(name);
+                }}
+                disabled={isDisabled}
+                className={[
+                  "w-16 h-16 rounded-lg overflow-hidden transition",
+                  isDisabled
+                    ? "opacity-30 grayscale cursor-not-allowed"
+                    : "hover:scale-105",
+                ].join(" ")}
+                title={
+                  isDisabled
+                    ? "Already selected"
+                    : name
+                }
               >
                 <img
                   src={champSquareUrlById(id)}

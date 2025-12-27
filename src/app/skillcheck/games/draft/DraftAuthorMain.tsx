@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DraftOverlay } from "@/app/skillcheck/games/draft/DraftOverlay";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
+import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 import ChampSelectPanel from "./ChampSelectPanel";
-import AnswerAuthorPanel from "./AnswerAuthorPanel";
+import DraftSetupStep, {
+  DraftSetup,
+} from "./DraftSetupStep";
 
 type Role = "top" | "jng" | "mid" | "adc" | "sup";
 type Side = "blue" | "red";
@@ -19,84 +22,102 @@ type ActiveSlot = {
   index: number;
 } | null;
 
-type DraftAnswer = {
-  champ: string;
-  explanation: string;
-  correct?: true;
-};
+type Step = "setup" | "draft" | "success";
 
-export default function DraftAuthorMain() {
-  const [role] = useState<Role>("mid");       // gameplay only, ignored in authoring
-  const [userTeam] = useState<Side>("blue");  // gameplay only, ignored in authoring
+const EMPTY_TEAM: Pick[] = [
+  { role: "jng", champ: null },
+  { role: "adc", champ: null },
+  { role: "sup", champ: null },
+  { role: "mid", champ: null },
+  { role: "top", champ: null },
+];
 
-  const [blue, setBlue] = useState<Pick[]>([
-    { role: "jng", champ: null },
-    { role: "adc", champ: null },
-    { role: "sup", champ: null },
-    { role: "mid", champ: null },
-    { role: "top", champ: null },
-  ]);
+export default function DraftAuthorMain({
+  initialStep = "setup",
+}: {
+  initialStep?: Step;
+}) {
+  const [step, setStep] = useState<Step>(initialStep);
+  const [setup, setSetup] =
+    useState<DraftSetup | null>(null);
 
-  const [red, setRed] = useState<Pick[]>([
-    { role: "jng", champ: null },
-    { role: "adc", champ: null },
-    { role: "sup", champ: null },
-    { role: "mid", champ: null },
-    { role: "top", champ: null },
-  ]);
+  const role = setup?.role ?? "mid";
+  const userTeam = setup?.side ?? "blue";
 
-  // ✅ start at top-left
+  const [blue, setBlue] =
+    useState<Pick[]>(EMPTY_TEAM);
+  const [red, setRed] =
+    useState<Pick[]>(EMPTY_TEAM);
+
   const [activeSlot, setActiveSlot] =
-    useState<ActiveSlot>({
-      side: "blue",
-      index: 0,
-    });
+    useState<ActiveSlot>(null);
 
   const [previewChamp, setPreviewChamp] =
     useState<string | null>(null);
+
   const [locked, setLocked] = useState(false);
 
-  const [step, setStep] =
-    useState<"draft" | "answers">("draft");
+  /* reset draft when setup changes */
+  useEffect(() => {
+    if (!setup) return;
 
-  const [answers, setAnswers] =
-    useState<DraftAnswer[]>([
-      { champ: "", explanation: "", correct: true },
-      { champ: "", explanation: "" },
-      { champ: "", explanation: "" },
-    ]);
+    setBlue(EMPTY_TEAM);
+    setRed(EMPTY_TEAM);
+    setActiveSlot({ side: setup.side, index: 0 });
+    setLocked(false);
+  }, [setup?.side, setup?.role, setup?.mainChamp]);
 
-  /* -----------------------------
-     CHAMP ASSIGNMENT
-  ----------------------------- */
+  /* auto-fill solution champ */
+  useEffect(() => {
+    if (!setup) return;
+
+    const team = setup.side === "blue" ? blue : red;
+    const setTeam = setup.side === "blue" ? setBlue : setRed;
+
+    const index = team.findIndex(
+      (p) => p.role === setup.role
+    );
+
+    if (index === -1 || team[index].champ) return;
+
+    const next = [...team];
+    next[index] = {
+      ...next[index],
+      champ: setup.mainChamp,
+    };
+
+    setTeam(next);
+  }, [setup, blue, red]);
+
+  const usedChamps = [
+    setup?.mainChamp,
+    ...blue.map((p) => p.champ),
+    ...red.map((p) => p.champ),
+  ].filter(Boolean) as string[];
 
   function assignChampion(champ: string | null) {
-    if (!activeSlot || locked) return;
+    if (!activeSlot || locked || !setup) return;
 
     const { side, index } = activeSlot;
     const team = side === "blue" ? blue : red;
     const setTeam = side === "blue" ? setBlue : setRed;
 
-    const updated = [...team];
-    updated[index] = {
-      ...updated[index],
-      champ,
-    };
+    const isSolutionSlot =
+      side === setup.side &&
+      team[index].role === setup.role;
 
-    setTeam(updated);
+    if (isSolutionSlot) return;
+
+    const next = [...team];
+    next[index] = { ...next[index], champ };
+
+    setTeam(next);
     setPreviewChamp(null);
 
-    if (!champ) return;
-
-    // auto-advance within same side
-    if (index + 1 < team.length) {
+    if (champ && index + 1 < team.length) {
       setActiveSlot({ side, index: index + 1 });
     }
   }
-
-  /* -----------------------------
-     REORDERING (MUTATES ARRAY)
-  ----------------------------- */
 
   function moveRole(
     side: Side,
@@ -117,14 +138,47 @@ export default function DraftAuthorMain() {
     setActiveSlot({ side, index: next });
   }
 
+  /* --------------------------------
+     SUCCESS SHORT-CIRCUIT
+  -------------------------------- */
+
+  if (step === "success" && !setup) {
+    return (
+      <div className="flex items-center justify-center min-h-[70vh] text-center text-white">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2">
+            Draft already submitted 🎉
+          </h2>
+          <p className="text-white/70">
+            You can submit a new draft tomorrow.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* STEP 0 */
+  if (step === "setup") {
+    return (
+      <DraftSetupStep
+        value={setup}
+        onComplete={(data) => {
+          setSetup(data);
+          setStep("draft");
+        }}
+      />
+    );
+  }
+
+  /* STEP 1 + 2 */
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* DRAFT OVERLAY */}
       <DraftOverlay
         blue={blue}
         red={red}
         role={role}
         userTeam={userTeam}
+        solutionChamp={setup?.mainChamp ?? ""}
         previewChamp={previewChamp}
         locked={locked}
         authoring
@@ -134,68 +188,68 @@ export default function DraftAuthorMain() {
           !locked && setActiveSlot({ side, index })
         }
         center={
-          !locked && step === "draft" ? (
+          step === "draft" ? (
             <ChampSelectPanel
               onHover={setPreviewChamp}
               onSelect={assignChampion}
+              disabledChamps={usedChamps}
             />
-          ) : null
+          ) : (
+            <div className="text-center text-white">
+              <h2 className="text-2xl font-semibold mb-2">
+                Draft submitted 🎉
+              </h2>
+              <p className="text-white/70">
+                Your draft is now awaiting approval.
+              </p>
+            </div>
+          )
         }
       />
 
-{/* CONTROLS */}
-<div className="flex gap-4">
-  <PrimaryCTA
-    className="px-6 py-2 min-w-[140px]"
-    onClick={() => {
-      if (locked) {
-        setLocked(false);
-        setStep("draft");
-        setActiveSlot({ side: "blue", index: 0 });
-      } else {
-        setLocked(true);
-        setStep("answers");
-      }
-    }}
-  >
-    {locked ? "Unlock" : "Lock Draft"}
-  </PrimaryCTA>
-</div>
+      {step === "draft" && (
+        <div className="flex gap-4">
+          <OutlineCTA
+            className="px-8 py-3 text-lg"
+            onClick={() => {
+              setLocked(false);
+              setStep("setup");
+            }}
+          >
+            Back
+          </OutlineCTA>
 
-      {/* ANSWER AUTHORING */}
-      {step === "answers" && (
-        <AnswerAuthorPanel
-          value={answers}
-          onChange={setAnswers}
-          onSubmit={async () => {
-            const payload = {
-              role,
-              userTeam,
-              blue,
-              red,
-              answers,
-            };
+          <PrimaryCTA
+            className="px-8 py-3 text-lg"
+            onClick={async () => {
+              setLocked(true);
 
-            const res = await fetch(
-              "/api/skillcheck/db/draft",
-              {
+              await fetch("/api/skillcheck/db/draft", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify(payload),
-              }
-            );
+                body: JSON.stringify({
+                  role: setup!.role,
+                  userTeam: setup!.side,
+                  blue,
+                  red,
+                  answers: [
+                    {
+                      champ: setup!.mainChamp,
+                      explanation: "PLACEHOLDER",
+                      correct: true,
+                    },
+                  ],
+                }),
+              });
 
-            if (!res.ok) {
-              console.error("Failed to save draft");
-              return;
-            }
-
-            const data = await res.json();
-            console.log("Draft saved", data);
-          }}
-        />
+              setStep("success");
+            }}
+          >
+            Submit Draft
+          </PrimaryCTA>
+        </div>
       )}
     </div>
   );

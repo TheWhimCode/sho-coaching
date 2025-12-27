@@ -47,6 +47,8 @@ export default function SkillcheckClient({
 
   // AUTHORING MODE
   const [authoring, setAuthoring] = useState(false);
+  const [authoringStep, setAuthoringStep] =
+    useState<"setup" | "success">("setup");
 
   const resultRef = useRef<HTMLDivElement | null>(null);
   const hasScrolledRef = useRef(false);
@@ -56,7 +58,7 @@ export default function SkillcheckClient({
   ----------------------------- */
 
   const correctAnswer = useMemo(
-    () => draft.answers.find((a) => a.correct)?.champ ?? null,
+    () => draft.answers.find((a) => a.correct)?.champ ?? "",
     [draft.answers]
   );
 
@@ -187,13 +189,9 @@ export default function SkillcheckClient({
     hasScrolledRef.current = true;
 
     const timeout = setTimeout(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          resultRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        });
+      resultRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
       });
     }, 1500);
 
@@ -215,13 +213,14 @@ export default function SkillcheckClient({
         <Hero
           hero={
             authoring ? (
-              <DraftAuthorMain />
+              <DraftAuthorMain initialStep={authoringStep} />
             ) : (
               <DraftOverlay
                 blue={blue}
                 red={red}
                 role={draft.role}
                 userTeam={draft.userTeam}
+                solutionChamp={correctAnswer}
                 previewChamp={!completed ? selected : null}
                 locked={completed}
               />
@@ -235,7 +234,7 @@ export default function SkillcheckClient({
                   answers={answerChamps}
                   selected={selected}
                   locked={completed}
-                  correctAnswer={correctAnswer ?? ""}
+                  correctAnswer={correctAnswer}
                   attempts={attempts}
                   disabledAnswers={disabledAnswers}
                   lastWrong={lastWrong}
@@ -249,13 +248,11 @@ export default function SkillcheckClient({
                   <ResultScreen
                     answers={draft.answers}
                     avgAttempts={avgAttempts}
-                    onCreateDraft={() => {
+                    onCreateDraft={(step) => {
                       hasScrolledRef.current = false;
+                      setAuthoringStep(step);
                       setAuthoring(true);
-                      window.scrollTo({
-                        top: 0,
-                        behavior: "smooth",
-                      });
+                      window.scrollTo({ top: 0 });
                     }}
                   />
                 </div>

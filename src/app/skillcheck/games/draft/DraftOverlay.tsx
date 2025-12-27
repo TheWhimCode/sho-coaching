@@ -24,6 +24,7 @@ export function DraftOverlay({
   red,
   role,
   userTeam,
+  solutionChamp,
   previewChamp,
   locked,
   authoring = false,
@@ -36,6 +37,7 @@ export function DraftOverlay({
   red: Pick[];
   role: Role;
   userTeam: Side;
+  solutionChamp: string;
   previewChamp?: string | null;
   locked: boolean;
   authoring?: boolean;
@@ -54,6 +56,7 @@ export function DraftOverlay({
         side="blue"
         role={role}
         userTeam={userTeam}
+        solutionChamp={solutionChamp}
         previewChamp={previewChamp}
         locked={locked}
         authoring={authoring}
@@ -73,6 +76,7 @@ export function DraftOverlay({
         side="red"
         role={role}
         userTeam={userTeam}
+        solutionChamp={solutionChamp}
         previewChamp={previewChamp}
         locked={locked}
         authoring={authoring}
@@ -89,6 +93,7 @@ function Team({
   side,
   role,
   userTeam,
+  solutionChamp,
   previewChamp,
   locked,
   authoring,
@@ -100,6 +105,7 @@ function Team({
   side: Side;
   role: Role;
   userTeam: Side;
+  solutionChamp: string;
   previewChamp?: string | null;
   locked: boolean;
 
@@ -121,6 +127,11 @@ function Team({
         const isUserSlot =
           !authoring && side === userTeam && p.role === role;
 
+        const isSolutionSlot =
+          authoring &&
+          side === userTeam &&
+          p.role === role;
+
         const isActiveAuthorSlot =
           authoring &&
           activeSlot?.side === side &&
@@ -131,12 +142,14 @@ function Team({
           (authoring ? isActiveAuthorSlot : isUserSlot)
         );
 
-        const champToShow = isPreviewing
+        const champToShow = isSolutionSlot
+          ? solutionChamp
+          : isPreviewing
           ? previewChamp
           : p.champ;
 
         const state = authoring
-          ? p.champ
+          ? p.champ || isSolutionSlot
             ? "filled"
             : "empty"
           : getSlotState(
@@ -150,17 +163,20 @@ function Team({
             );
 
         const goldBorder =
-          "border-yellow-400 " + (!locked ? "animate-pulse " : "");
+          "border-yellow-400 " +
+          (!locked ? "animate-pulse " : "");
 
         return (
           <div
             key={`${side}-${i}`}
             className={
               "flex items-center gap-3 " +
-              (side === "red" ? "flex-row-reverse" : "")
+              (side === "red"
+                ? "flex-row-reverse"
+                : "")
             }
           >
-            {/* REORDER ARROWS */}
+            {/* REORDER ARROWS (ALWAYS ALLOWED IN AUTHORING) */}
             {authoring && onMoveRole && (
               <div className="flex flex-col items-center gap-[2px]">
                 <button
@@ -172,10 +188,6 @@ function Team({
                     hover:bg-black/90
                     disabled:opacity-20
                   "
-                  style={{
-                    boxShadow:
-                      "0 2px 4px rgba(0,0,0,0.9)",
-                  }}
                 >
                   ▲
                 </button>
@@ -188,10 +200,6 @@ function Team({
                     hover:bg-black/90
                     disabled:opacity-20
                   "
-                  style={{
-                    boxShadow:
-                      "0 2px 4px rgba(0,0,0,0.9)",
-                  }}
                 >
                   ▼
                 </button>
@@ -223,18 +231,27 @@ function Team({
             >
               <div
                 onClick={() => {
-                  if (authoring && onSlotClick && !locked) {
+                  if (
+                    authoring &&
+                    onSlotClick &&
+                    !locked &&
+                    !isSolutionSlot
+                  ) {
                     onSlotClick(side, i);
                   }
                 }}
-                className={
-                  "w-16 h-16 rounded-lg overflow-hidden bg-gray-900 border-2 cursor-pointer " +
-                  (authoring && isActiveAuthorSlot
-                    ? "border-yellow-300"
+                className={[
+                  "w-16 h-16 rounded-lg overflow-hidden bg-gray-900 border-2",
+                  isSolutionSlot
+                    ? side === "blue"
+                      ? "border-blue-500 cursor-default"
+                      : "border-red-500 cursor-default"
+                    : authoring && isActiveAuthorSlot
+                    ? "border-yellow-300 cursor-pointer"
                     : isUserSlot
                     ? goldBorder
-                    : slotStyles(state, side))
-                }
+                    : slotStyles(state, side),
+                ].join(" ")}
               >
                 <div className="relative w-full h-full">
                   {champToShow ? (
@@ -243,28 +260,10 @@ function Team({
                         resolveChampionId(champToShow)
                       )}
                       alt={champToShow}
-                      className={
-                        "w-full h-full object-cover " +
-                        (state === "hover" && !authoring
-                          ? "opacity-50"
-                          : "")
-                      }
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-800 opacity-40" />
-                  )}
-
-                  {state === "hover" && !authoring && (
-                    <div
-                      className="
-                        absolute inset-0
-                        flex items-center justify-center
-                        bg-black/40
-                        text-white/50 text-[8px] font-semibold tracking-wide
-                      "
-                    >
-                      HOVERING
-                    </div>
                   )}
                 </div>
               </div>

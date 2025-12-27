@@ -28,6 +28,8 @@ const ALIAS: ChampionAliasMap = {
   leesin: "LeeSin",
   aurelionsol: "AurelionSol",
   masteryi: "MasterYi",
+  twistedfate: "TwistedFate",
+  tahmkench: "TahmKench",
 };
 
 function pascalize(name: string) {

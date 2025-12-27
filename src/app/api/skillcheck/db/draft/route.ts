@@ -19,8 +19,10 @@ type DraftAnswer = {
 type CreateDraftInput = {
   role: Role;
   userTeam: Side;
+
   blue: Pick[];
   red: Pick[];
+
   answers: DraftAnswer[];
 };
 
@@ -35,6 +37,7 @@ function validateTeam(team: Pick[]) {
   if (team.length !== 5) {
     throw new Error("Team must have exactly 5 picks");
   }
+
   const roles = team.map((p) => p.role);
   if (new Set(roles).size !== 5) {
     throw new Error("Each role must appear exactly once");
@@ -53,6 +56,12 @@ function getSubmitIp(req: Request) {
     .digest("hex");
 }
 
+function extractAllChamps(blue: Pick[], red: Pick[]) {
+  return [...blue, ...red]
+    .map((p) => p.champ)
+    .filter(Boolean) as string[];
+}
+
 /* -----------------------------
    core logic
 ----------------------------- */
@@ -66,13 +75,53 @@ async function createDraft(
   validateTeam(blue);
   validateTeam(red);
 
-  if (!Array.isArray(answers) || answers.length !== 3) {
-    throw new Error("Exactly 3 answers are required");
+  /* -----------------------------
+     answers validation
+     (NEW: exactly ONE answer)
+  ----------------------------- */
+
+  if (!Array.isArray(answers) || answers.length !== 1) {
+    throw new Error("Exactly 1 answer is required");
   }
 
   if (answers.filter((a) => a.correct).length !== 1) {
     throw new Error("Exactly one correct answer is required");
   }
+
+  /* -----------------------------
+     solution slot validation
+     (implicit, matches current schema)
+  ----------------------------- */
+
+  const solutionTeam = userTeam === "blue" ? blue : red;
+
+  const solutionSlot = solutionTeam.find(
+    (p) => p.role === role
+  );
+
+  if (!solutionSlot) {
+    throw new Error("Solution slot not found");
+  }
+
+  if (!solutionSlot.champ) {
+    throw new Error(
+      "Solution slot must contain a champion"
+    );
+  }
+
+  /* -----------------------------
+     no duplicate champions
+  ----------------------------- */
+
+  const allChamps = extractAllChamps(blue, red);
+
+  if (new Set(allChamps).size !== allChamps.length) {
+    throw new Error("Duplicate champions are not allowed");
+  }
+
+  /* -----------------------------
+     rate limit (1 / day)
+  ----------------------------- */
 
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
@@ -87,6 +136,10 @@ async function createDraft(
   if (existing) {
     throw new Error("You can only submit one draft per day");
   }
+
+  /* -----------------------------
+     persist (matches schema)
+  ----------------------------- */
 
   return prisma.draft.create({
     data: {
