@@ -35,11 +35,11 @@ export function ResultScreen({
   const avg = Number(avgAttempts);
 
   const difficulty =
-    avg <= 1.4
+    avg <= 1.5
       ? { label: "Easy", color: "border-green-400/40 text-green-400" }
       : avg <= 2.0
       ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
-      : avg <= 2.6
+      : avg <= 2.5
       ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
       : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
 
