@@ -10,12 +10,14 @@ export function DraftSlot({
   state,
   side,
   highlight = false,
+  pulse = false,
   onClick,
 }: {
   champ?: string | null;
   state: SlotState;
   side?: "blue" | "red";
   highlight?: boolean;
+  pulse?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -27,7 +29,10 @@ export function DraftSlot({
         "bg-gray-900",
         "shadow-[0_10px_15px_rgba(0,0,0,0.9),0_4px_6px_rgba(0,0,0,0.8)]",
 
-        // base borders (NO opacity on container)
+        // optional attention animation (user choosing)
+        pulse && "animate-pulse",
+
+        // base borders (no container opacity)
         state === "empty" && "border-gray-700",
         state === "hover" && "border-gray-500",
         state === "blocked" && "border-gray-700",
