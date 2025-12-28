@@ -7,13 +7,13 @@ import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 import ChampSelectPanel from "./ChampSelectPanel";
 import DraftSetupStep, { DraftSetup } from "./DraftSetupStep";
 
-type Role = "top" | "jng" | "mid" | "adc" | "sup";
-type Side = "blue" | "red";
-
-type Pick = {
-  role: Role;
-  champ: string | null;
-};
+// ✅ unified draft facts
+import {
+  Role,
+  Side,
+  Pick,
+  getGlobalPick,
+} from "@/app/skillcheck/games/draft/draftCore";
 
 type ActiveSlot = {
   side: Side;
@@ -29,18 +29,6 @@ const EMPTY_TEAM: Pick[] = [
   { role: "mid", champ: null },
   { role: "top", champ: null },
 ];
-
-/**
- * True League pick order:
- * Blue: 1,4,5,8,9
- * Red : 2,3,6,7,10
- *
- * We'll use 0-based "global pick index" (0..9):
- * Blue indices: [0,3,4,7,8]
- * Red  indices: [1,2,5,6,9]
- */
-const BLUE_GLOBAL = [0, 3, 4, 7, 8] as const;
-const RED_GLOBAL = [1, 2, 5, 6, 9] as const;
 
 function otherSide(side: Side): Side {
   return side === "blue" ? "red" : "blue";
@@ -82,36 +70,28 @@ export default function DraftAuthorMain({
   const userGlobalPick = useMemo(() => {
     if (!setup) return -1;
     if (userIndex < 0 || userIndex > 4) return -1;
-    return setup.side === "blue" ? BLUE_GLOBAL[userIndex] : RED_GLOBAL[userIndex];
+    return getGlobalPick(setup.side, userIndex);
   }, [setup, userIndex]);
-
-  function slotToGlobalPick(side: Side, index: number) {
-    if (index < 0 || index > 4) return Infinity;
-    return side === "blue" ? BLUE_GLOBAL[index] : RED_GLOBAL[index];
-  }
 
   function isSolutionSlot(side: Side, index: number) {
     if (!setup) return false;
     const team = side === "blue" ? blue : red;
     return side === setup.side && team[index]?.role === setup.role;
   }
-const disabledSlots = useMemo(() => {
-  return {
-    blue: blue.map((_, i) =>
-      isEnemySlotLocked("blue", i)
-    ),
-    red: red.map((_, i) =>
-      isEnemySlotLocked("red", i)
-    ),
-  };
-}, [blue, red, setup, userGlobalPick]);
+
+  const disabledSlots = useMemo(() => {
+    return {
+      blue: blue.map((_, i) => isEnemySlotLocked("blue", i)),
+      red: red.map((_, i) => isEnemySlotLocked("red", i)),
+    };
+  }, [blue, red, setup, userGlobalPick]);
 
   function isEnemySlotLocked(side: Side, index: number) {
     if (!setup) return true;
-    if (side === setup.side) return false; // own team never locked by this rule
+    if (side === setup.side) return false;
     if (userGlobalPick < 0) return true;
 
-    const g = slotToGlobalPick(side, index);
+    const g = getGlobalPick(side, index);
     return g > userGlobalPick;
   }
 
@@ -132,20 +112,19 @@ const disabledSlots = useMemo(() => {
     return null;
   }
 
-function findNextSelectableSameSide(
-  from: NonNullable<ActiveSlot>
-): ActiveSlot | null {
-  const team = from.side === "blue" ? blue : red;
+  function findNextSelectableSameSide(
+    from: NonNullable<ActiveSlot>
+  ): ActiveSlot | null {
+    const team = from.side === "blue" ? blue : red;
 
-  for (let i = from.index + 1; i < team.length; i++) {
-    if (isSlotSelectable(from.side, i)) {
-      return { side: from.side, index: i };
+    for (let i = from.index + 1; i < team.length; i++) {
+      if (isSlotSelectable(from.side, i)) {
+        return { side: from.side, index: i };
+      }
     }
+
+    return null;
   }
-
-  return null;
-}
-
 
   /* --------------------------------------------------
      reset draft when setup changes
@@ -156,7 +135,6 @@ function findNextSelectableSameSide(
     setBlue(EMPTY_TEAM);
     setRed(EMPTY_TEAM);
 
-    // start at first selectable slot on user's team (skip solution slot if it's at index 0)
     setActiveSlot({ side: setup.side, index: 0 });
     setLocked(false);
   }, [setup?.side, setup?.role, setup?.mainChamp]);
@@ -181,7 +159,7 @@ function findNextSelectableSameSide(
   }, [setup, blue, red]);
 
   /* --------------------------------------------------
-     keep activeSlot valid (avoid auto-selecting locked/solution slots)
+     keep activeSlot valid
   -------------------------------------------------- */
   useEffect(() => {
     if (!setup) return;
@@ -189,7 +167,6 @@ function findNextSelectableSameSide(
 
     if (isSlotSelectable(activeSlot.side, activeSlot.index)) return;
 
-    // try next selectable same side, else first selectable on user's side, else null
     const next =
       findNextSelectableSameSide(activeSlot) ??
       findFirstSelectableOnSide(setup.side) ??
@@ -199,12 +176,10 @@ function findNextSelectableSameSide(
       setActiveSlot(next);
       setPreviewChamp(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setup, blue, red, activeSlot, locked]);
 
   /* --------------------------------------------------
      AUTO-CLEAR illegal enemy champs after reorder
-     (guarded: only sets when actually changes)
   -------------------------------------------------- */
   useEffect(() => {
     if (!setup) return;
@@ -232,7 +207,6 @@ function findNextSelectableSameSide(
 
     if (blueChanged) setBlue(nextBlue);
     if (redChanged) setRed(nextRed);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setup, userGlobalPick, blue, red]);
 
   const usedChamps = useMemo(() => {
@@ -261,10 +235,9 @@ function findNextSelectableSameSide(
 
     setPreviewChamp(null);
 
-    // Auto-advance ONLY within same side, and NEVER into a locked slot
     if (champ) {
       const nextSlot = findNextSelectableSameSide(activeSlot);
-      setActiveSlot(nextSlot); // can be null; that's fine
+      setActiveSlot(nextSlot);
     }
   }
 
@@ -280,7 +253,6 @@ function findNextSelectableSameSide(
 
     setTeam(updated);
 
-    // keep selection on moved row, but only if selectable
     const candidate: ActiveSlot = { side, index: next };
     setActiveSlot(isSlotSelectable(side, next) ? candidate : null);
   }
@@ -292,8 +264,12 @@ function findNextSelectableSameSide(
     return (
       <div className="flex items-center justify-center min-h-[70vh] text-center text-white">
         <div>
-          <h2 className="text-2xl font-semibold mb-2">Draft already submitted 🎉</h2>
-          <p className="text-white/70">You can submit a new draft tomorrow.</p>
+          <h2 className="text-2xl font-semibold mb-2">
+            Draft already submitted 🎉
+          </h2>
+          <p className="text-white/70">
+            You can submit a new draft tomorrow.
+          </p>
         </div>
       </div>
     );
@@ -325,6 +301,8 @@ function findNextSelectableSameSide(
         locked={locked}
         authoring
         activeSlot={activeSlot}
+          disabledSlots={disabledSlots}   // ← THIS WAS MISSING
+
         onMoveRole={moveRole}
         onSlotClick={(side, index) => {
           if (!isSlotSelectable(side, index)) return;

@@ -6,13 +6,14 @@ import {
   ROLE_ICONS,
 } from "@/lib/league/datadragon";
 
-type Role = "top" | "jng" | "mid" | "adc" | "sup";
-type Side = "blue" | "red";
+import {
+  getGlobalPick,
+  Role,
+  Side,
+  Pick,
+} from "@/app/skillcheck/games/draft/draftCore";
 
-type Pick = {
-  role: Role;
-  champ: string | null;
-};
+import { DraftSlot, SlotState } from "./DraftSlot";
 
 type ActiveSlot = {
   side: Side;
@@ -126,6 +127,11 @@ function Team({
     (p) => side === userTeam && p.role === role
   );
 
+  const userGlobalPick =
+    side === userTeam && userIndex >= 0
+      ? getGlobalPick(side, userIndex)
+      : -1;
+
   return (
     <div className="flex flex-col gap-3">
       {team.map((p, i) => {
@@ -143,7 +149,8 @@ function Team({
         const isOwnFutureSlot =
           authoring &&
           side === userTeam &&
-          i > userIndex;
+          userGlobalPick >= 0 &&
+          getGlobalPick(side, i) > userGlobalPick;
 
         const isPreviewing =
           !!previewChamp &&
@@ -153,7 +160,7 @@ function Team({
           ? previewChamp
           : p.champ;
 
-        const state = authoring
+        const rawState = authoring
           ? isDisabled
             ? "disabled"
             : isOwnFutureSlot && p.champ
@@ -171,8 +178,12 @@ function Team({
               userIndex
             );
 
-        const goldBorder =
-          "border-yellow-400 " + (!locked ? "animate-pulse " : "");
+        const slotState: SlotState =
+          rawState === "disabled"
+            ? "blocked"
+            : rawState === "active"
+            ? "solution"
+            : rawState;
 
         return (
           <div
@@ -227,78 +238,33 @@ function Team({
               />
             </div>
 
-            {/* PICK */}
-            <div
-              className="rounded-lg"
-              style={{
-                boxShadow:
-                  "0 10px 15px rgba(0,0,0,0.9), 0 4px 6px rgba(0,0,0,0.8)",
+            {/* SLOT */}
+            <DraftSlot
+              champ={
+                champToShow
+                  ? champSquareUrlById(
+                      resolveChampionId(champToShow)
+                    )
+                  : null
+              }
+              state={slotState}
+              highlight={
+                isUserSlot ||
+                (authoring && isActiveAuthorSlot)
+              }
+                side={side}          // ← THIS WAS MISSING
+
+              onClick={() => {
+                if (
+                  authoring &&
+                  onSlotClick &&
+                  !locked &&
+                  !isDisabled
+                ) {
+                  onSlotClick(side, i);
+                }
               }}
-            >
-              <div
-                onClick={() => {
-                  if (authoring && onSlotClick && !locked && !isDisabled) {
-                    onSlotClick(side, i);
-                  }
-                }}
-                className={[
-                  "w-16 h-16 rounded-lg overflow-hidden bg-gray-900 border-2 relative",
-                  authoring
-                    ? isDisabled
-                      ? "cursor-not-allowed " +
-                        slotStyles("disabled", side)
-                      : isActiveAuthorSlot
-                      ? "border-yellow-300 cursor-pointer"
-                      : "cursor-pointer " +
-                        slotStyles(state, side)
-                    : isUserSlot
-                    ? goldBorder
-                    : slotStyles(state, side),
-                ].join(" ")}
-              >
-                <div className="relative w-full h-full">
-                  {champToShow ? (
-                    <img
-                      src={champSquareUrlById(
-                        resolveChampionId(champToShow)
-                      )}
-                      alt={champToShow}
-                      className={[
-                        "w-full h-full object-cover",
-                        state === "hover"
-                          ? "opacity-50"
-                          : state === "disabled"
-                          ? "opacity-25"
-                          : "",
-                      ].join(" ")}
-                    />
-                  ) : (
-                    <div
-                      className={[
-                        "w-full h-full bg-gray-800",
-                        state === "disabled"
-                          ? "opacity-20"
-                          : "opacity-40",
-                      ].join(" ")}
-                    />
-                  )}
-
-                  {state === "hover" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white/50 text-[8px] font-semibold tracking-wide">
-                      HOVERING
-                    </div>
-                  )}
-
-                  {state === "disabled" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-                      <span className="text-white/70 text-xs font-semibold">
-                        ✕
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            />
           </div>
         );
       })}
@@ -328,23 +294,4 @@ function getSlotState(
 
   if (pick.champ) return "filled";
   return "empty";
-}
-
-function slotStyles(
-  state: "filled" | "active" | "hover" | "empty" | "disabled",
-  side: Side
-) {
-  switch (state) {
-    case "filled":
-      return side === "blue"
-        ? "border-blue-500"
-        : "border-red-500";
-    case "active":
-    case "hover":
-      return "border-gray-500";
-    case "disabled":
-      return "border-gray-700 opacity-90";
-    default:
-      return "border-gray-700 opacity-90";
-  }
 }
