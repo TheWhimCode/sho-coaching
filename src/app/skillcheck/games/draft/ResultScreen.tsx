@@ -43,7 +43,7 @@ export function ResultScreen({
       ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
       : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
 
-  /* -----------------------------
+  /* ----------------------------
      countdown (HH:MM:SS)
   ----------------------------- */
 
