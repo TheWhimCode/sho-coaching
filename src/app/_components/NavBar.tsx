@@ -10,6 +10,7 @@ import { FaXTwitter } from "react-icons/fa6"; // ✅ added
 
 const NAV = [
   { label: "Coaching", href: "/coaching" },
+  { label: "Skillcheck", href: "/skillcheck" },
   { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
 ];
 

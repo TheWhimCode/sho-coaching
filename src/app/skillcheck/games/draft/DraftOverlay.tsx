@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import {
   champSquareUrlById,
   resolveChampionId,
@@ -56,6 +58,23 @@ export function DraftOverlay({
 
   disabledSlots?: DisabledSlots;
 }) {
+  // ---- hydration gate ----
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  if (
+    !hydrated ||
+    blue.length === 0 ||
+    red.length === 0 ||
+    (locked && !solutionChamp)
+  ) {
+    return null; // or loading UI
+  }
+  // ------------------------
+
   return (
     <div className="flex justify-center my-6 gap-10">
       <Team
@@ -64,6 +83,7 @@ export function DraftOverlay({
         role={role}
         userTeam={userTeam}
         previewChamp={previewChamp}
+        solutionChamp={solutionChamp}
         locked={locked}
         authoring={authoring}
         activeSlot={activeSlot}
@@ -84,6 +104,7 @@ export function DraftOverlay({
         role={role}
         userTeam={userTeam}
         previewChamp={previewChamp}
+        solutionChamp={solutionChamp}
         locked={locked}
         authoring={authoring}
         activeSlot={activeSlot}
@@ -101,6 +122,7 @@ function Team({
   role,
   userTeam,
   previewChamp,
+  solutionChamp,
   locked,
   authoring,
   activeSlot,
@@ -113,6 +135,7 @@ function Team({
   role: Role;
   userTeam: Side;
   previewChamp?: string | null;
+  solutionChamp: string;
   locked: boolean;
 
   authoring?: boolean;
@@ -158,6 +181,11 @@ function Team({
 
         const champToShow = isPreviewing
           ? previewChamp
+          : !authoring &&
+            locked &&
+            isUserSlot &&
+            !p.champ
+          ? solutionChamp
           : p.champ;
 
         const rawState = authoring
@@ -184,6 +212,12 @@ function Team({
             : rawState === "active"
             ? "solution"
             : rawState;
+
+        const shouldPulse =
+          !locked &&
+          !authoring &&
+          isUserSlot &&
+          !p.champ;
 
         return (
           <div
@@ -248,12 +282,12 @@ function Team({
                   : null
               }
               state={slotState}
+              side={side}
               highlight={
                 isUserSlot ||
                 (authoring && isActiveAuthorSlot)
               }
-                side={side}          // ← THIS WAS MISSING
-
+              pulse={shouldPulse}
               onClick={() => {
                 if (
                   authoring &&
