@@ -39,6 +39,13 @@ async function cleanupUnpaidBookings() {
   return result.count;
 }
 
+/* ✅ NEW: cleanup rejected drafts */
+async function cleanupRejectedDrafts() {
+  await prisma.draft.deleteMany({
+    where: { status: "REJECTED" },
+  });
+}
+
 async function manageSlots() {
   const today = utcMidnight();
   const end = new Date(today);
@@ -60,7 +67,6 @@ async function manageSlots() {
   let created = 0;
 
   for (let day = new Date(today); day < end; day.setUTCDate(day.getUTCDate() + 1)) {
-    // ✅ engine decides availability windows
     const intervals = await getDayAvailability(day);
     if (!intervals) continue;
 
@@ -151,19 +157,17 @@ async function createRankSnapshots(origin: string) {
     await sleep(INTERVAL_MS);
   }
 
-  let inserted = 0;
   if (rows.length) {
-    const res = await prisma.rankSnapshot.createMany({
+    await prisma.rankSnapshot.createMany({
       data: rows,
       skipDuplicates: true,
     });
-    inserted = res.count;
   }
 
   return {
     studentsScanned: students.length,
     snapshotsAttempted: rows.length,
-    snapshotsInserted: inserted,
+    snapshotsInserted: rows.length,
     dayUTC: todayUtc.toISOString().slice(0, 10),
   };
 }
@@ -173,6 +177,7 @@ async function runAll(origin: string) {
 
   try {
     results.cleanup = { deleted: await cleanupUnpaidBookings() };
+    await cleanupRejectedDrafts(); // ✅ ONLY NEW CALL
   } catch (e: any) {
     results.errors.push(`cleanup: ${e?.message || e}`);
   }
@@ -188,7 +193,8 @@ async function runAll(origin: string) {
   } catch (e: any) {
     results.errors.push(`ranks: ${e?.message || e}`);
   }
-    try {
+
+  try {
     await assignDailyDraft();
   } catch (e: any) {
     results.errors.push(`dailyDraft: ${e?.message || e}`);
@@ -217,10 +223,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   return GET(req);
 }
+
 async function assignDailyDraft() {
   const draft = await prisma.draft.findFirst({
     where: { status: "APPROVED" },
-    orderBy: { usedLast: "asc" }, // nulls first = never used
+    orderBy: { usedLast: "asc" },
   });
 
   if (!draft) return;

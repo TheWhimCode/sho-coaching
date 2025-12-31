@@ -77,7 +77,6 @@ async function createDraft(
 
   /* -----------------------------
      answers validation
-     (NEW: exactly ONE answer)
   ----------------------------- */
 
   if (!Array.isArray(answers) || answers.length !== 1) {
@@ -90,7 +89,6 @@ async function createDraft(
 
   /* -----------------------------
      solution slot validation
-     (implicit, matches current schema)
   ----------------------------- */
 
   const solutionTeam = userTeam === "blue" ? blue : red;
@@ -138,7 +136,22 @@ async function createDraft(
   }
 
   /* -----------------------------
-     persist (matches schema)
+     REDACT SOLUTION CHAMP
+  ----------------------------- */
+
+  const redactSolution = (team: Pick[]) =>
+    team.map((p) =>
+      p.role === role ? { ...p, champ: null } : p
+    );
+
+  const safeBlue =
+    userTeam === "blue" ? redactSolution(blue) : blue;
+
+  const safeRed =
+    userTeam === "red" ? redactSolution(red) : red;
+
+  /* -----------------------------
+     persist
   ----------------------------- */
 
   return prisma.draft.create({
@@ -146,8 +159,8 @@ async function createDraft(
       submitIp,
       role,
       userTeam,
-      blue,
-      red,
+      blue: safeBlue,
+      red: safeRed,
       answers,
       status: "PENDING",
     },
