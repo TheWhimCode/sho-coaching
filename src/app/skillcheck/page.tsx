@@ -1,4 +1,7 @@
+
 // app/skillcheck/page.tsx
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import SkillcheckClient from "./SkillcheckClient";
 
