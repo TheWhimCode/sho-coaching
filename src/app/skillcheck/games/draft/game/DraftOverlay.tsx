@@ -6,7 +6,7 @@ import {
   champSquareUrlById,
   resolveChampionId,
   ROLE_ICONS,
-} from "@/lib/league/datadragon";
+} from "@/lib/datadragon";
 
 import {
   getGlobalPick,
@@ -58,7 +58,6 @@ export function DraftOverlay({
 
   disabledSlots?: DisabledSlots;
 }) {
-  // ---- hydration gate ----
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -71,9 +70,8 @@ export function DraftOverlay({
     red.length === 0 ||
     (locked && !solutionChamp)
   ) {
-    return null; // or loading UI
+    return null;
   }
-  // ------------------------
 
   return (
     <div className="flex justify-center my-6 gap-10">
@@ -114,6 +112,11 @@ export function DraftOverlay({
       />
     </div>
   );
+}
+
+function champUrlFromAny(input: string | null | undefined) {
+  if (!input) return null;
+  return champSquareUrlById(resolveChampionId(input));
 }
 
 function Team({
@@ -227,7 +230,6 @@ function Team({
               (side === "red" ? "flex-row-reverse" : "")
             }
           >
-            {/* REORDER ARROWS */}
             {authoring && onMoveRole && (
               <div className="flex flex-col items-center gap-[2px]">
                 <button
@@ -257,7 +259,6 @@ function Team({
               </div>
             )}
 
-            {/* ROLE ICON */}
             <div
               className="w-6 h-6 rounded"
               style={{
@@ -272,15 +273,8 @@ function Team({
               />
             </div>
 
-            {/* SLOT */}
             <DraftSlot
-              champ={
-                champToShow
-                  ? champSquareUrlById(
-                      resolveChampionId(champToShow)
-                    )
-                  : null
-              }
+              champ={champUrlFromAny(champToShow)}
               state={slotState}
               side={side}
               highlight={
@@ -305,8 +299,6 @@ function Team({
     </div>
   );
 }
-
-/* helpers */
 
 function getSlotState(
   pick: Pick,

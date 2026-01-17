@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DraftOverlay } from "@/app/skillcheck/games/draft/DraftOverlay";
+import { DraftOverlay } from "@/app/skillcheck/games/draft/game/DraftOverlay";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 import ChampSelectPanel from "./ChampSelectPanel";
@@ -301,7 +301,7 @@ export default function DraftAuthorMain({
         locked={locked}
         authoring
         activeSlot={activeSlot}
-          disabledSlots={disabledSlots}   // ← THIS WAS MISSING
+        disabledSlots={disabledSlots}   // ← THIS WAS MISSING
 
         onMoveRole={moveRole}
         onSlotClick={(side, index) => {

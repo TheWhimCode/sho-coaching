@@ -1,17 +1,30 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  champSquareUrlById,
-  resolveChampionId,
-  getAllChampions,
-} from "@/lib/datadragon";
+import { champSquareUrlById, getAllChampions } from "@/lib/datadragon";
 
 function normalizeName(input: string) {
-  return input
-    .replace(/[’‘]/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
+  return input.replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
+}
+
+type ChampionEntry = {
+  id: string; // DDragon ID for images (e.g. "MonkeyKing")
+  name: string; // Display name (e.g. "Wukong")
+};
+
+function isChampionEntryArray(x: unknown): x is ChampionEntry[] {
+  return (
+    Array.isArray(x) &&
+    x.length > 0 &&
+    typeof (x as any)[0] === "object" &&
+    (x as any)[0] !== null &&
+    typeof (x as any)[0].id === "string" &&
+    typeof (x as any)[0].name === "string"
+  );
+}
+
+function isStringArray(x: unknown): x is string[] {
+  return Array.isArray(x) && (x.length === 0 || typeof x[0] === "string");
 }
 
 export default function ChampSelectPanel({
@@ -24,16 +37,28 @@ export default function ChampSelectPanel({
   disabledChamps?: string[];
 }) {
   const [query, setQuery] = useState("");
-  const [champions, setChampions] = useState<string[]>([]);
+  const [champions, setChampions] = useState<ChampionEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
-    getAllChampions()
+    // Treat return type as unknown here so we can safely normalize either shape.
+    (getAllChampions() as unknown as Promise<unknown>)
       .then((list) => {
         if (!mounted) return;
-        setChampions(list);
+
+        let normalized: ChampionEntry[] = [];
+
+        if (isChampionEntryArray(list)) {
+          normalized = list;
+        } else if (isStringArray(list)) {
+          normalized = list.map((s) => ({ id: s, name: s }));
+        } else {
+          console.error("getAllChampions returned unexpected shape:", list);
+        }
+
+        setChampions(normalized);
         setLoading(false);
       })
       .catch((err) => {
@@ -47,12 +72,7 @@ export default function ChampSelectPanel({
   }, []);
 
   const disabledSet = useMemo(
-    () =>
-      new Set(
-        disabledChamps.map((c) =>
-          normalizeName(c).toLowerCase()
-        )
-      ),
+    () => new Set(disabledChamps.map((c) => normalizeName(c).toLowerCase())),
     [disabledChamps]
   );
 
@@ -61,7 +81,7 @@ export default function ChampSelectPanel({
     if (!q) return champions;
 
     return champions.filter((c) =>
-      normalizeName(c).toLowerCase().includes(q)
+      normalizeName(c.name).toLowerCase().includes(q)
     );
   }, [champions, query]);
 
@@ -120,25 +140,18 @@ export default function ChampSelectPanel({
         )}
 
         {!loading &&
-          filtered.map((raw) => {
-            const name = normalizeName(raw);
-            const id = resolveChampionId(name);
-            const isDisabled = disabledSet.has(
-              name.toLowerCase()
-            );
+          filtered.map(({ id, name: rawName }) => {
+            const name = normalizeName(rawName);
+            const isDisabled = disabledSet.has(name.toLowerCase());
 
             return (
               <button
-                key={name}
-                onMouseEnter={() =>
-                  !isDisabled && onHover(name)
-                }
-                onMouseLeave={() =>
-                  !isDisabled && onHover(null)
-                }
-                onClick={() => {
-                  if (!isDisabled) onSelect(name);
-                }}
+                key={id}
+onMouseEnter={() => !isDisabled && onHover(id)}
+onClick={() => {
+  if (!isDisabled) onSelect(id);
+}}
+
                 disabled={isDisabled}
                 className={[
                   "w-16 h-16 rounded-lg overflow-hidden transition",
@@ -146,11 +159,7 @@ export default function ChampSelectPanel({
                     ? "opacity-30 grayscale cursor-not-allowed"
                     : "hover:scale-105",
                 ].join(" ")}
-                title={
-                  isDisabled
-                    ? "Already selected"
-                    : name
-                }
+                title={isDisabled ? "Already selected" : name}
               >
                 <img
                   src={champSquareUrlById(id)}

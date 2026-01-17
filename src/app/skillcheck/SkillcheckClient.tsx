@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Hero from "@/app/skillcheck/layout/Hero";
-import { DraftOverlay } from "./games/draft/DraftOverlay";
-import ChampOptions from "./games/draft/ChampOptions";
-import { ResultScreen } from "./games/draft/ResultScreen";
-import DraftAuthorMain from "./games/draft/DraftAuthorMain";
+import { DraftOverlay } from "./games/draft/game/DraftOverlay";
+import ChampOptions from "./games/draft/game/ChampOptions";
+import { ResultScreen } from "./games/draft/game/ResultScreen";
+import DraftAuthorMain from "./games/draft/authoring/DraftAuthorMain";
 
 type Pick = {
   role: "top" | "jng" | "mid" | "adc" | "sup";

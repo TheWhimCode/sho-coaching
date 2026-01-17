@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DraftOverlay } from "@/app/skillcheck/games/draft/DraftOverlay";
-import AnswerAuthorPanel from "@/app/skillcheck/games/draft/AnswerAuthorPanel";
+import { DraftOverlay } from "@/app/skillcheck/games/draft/game/DraftOverlay";
+import AnswerAuthorPanel from "@/app/admin/skillcheck/drafts/AnswerAuthorPanel";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 
 type Answer = {

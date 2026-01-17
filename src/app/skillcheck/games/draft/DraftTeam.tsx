@@ -1,6 +1,6 @@
 // /draft/ui/DraftTeam.tsx
 
-import { DraftSlot, SlotState } from "./DraftSlot";
+import { DraftSlot, SlotState } from "./game/DraftSlot";
 
 export type TeamSlot = {
   champ?: string | null;

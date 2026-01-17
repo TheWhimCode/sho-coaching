@@ -8,6 +8,10 @@ export type DropdownItem<T extends string> = {
   icon?: string;
 };
 
+function asText(x: unknown) {
+  return typeof x === "string" ? x : String(x ?? "");
+}
+
 export default function SearchDropdown<T extends string>({
   items,
   value,
@@ -36,7 +40,7 @@ export default function SearchDropdown<T extends string>({
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     return items.filter((i) =>
-      i.label.toLowerCase().includes(q)
+      asText(i.label).toLowerCase().includes(q)
     );
   }, [items, query]);
 
@@ -54,12 +58,7 @@ export default function SearchDropdown<T extends string>({
           flex items-center gap-3
         "
       >
-        {selected?.icon && (
-          <img
-            src={selected.icon}
-            className="w-7 h-7"
-          />
-        )}
+        {selected?.icon && <img src={selected.icon} className="w-7 h-7" />}
 
         <span className="flex-1 text-left">
           {selected ? selected.label : placeholder}
@@ -106,22 +105,13 @@ export default function SearchDropdown<T extends string>({
                 text-left
               "
             >
-              {i.icon && (
-                <img
-                  src={i.icon}
-                  className="w-7 h-7"
-                />
-              )}
-              <span className="text-lg text-white">
-                {i.label}
-              </span>
+              {i.icon && <img src={i.icon} className="w-7 h-7" />}
+              <span className="text-lg text-white">{i.label}</span>
             </button>
           ))}
 
           {filtered.length === 0 && (
-            <div className="px-4 py-4 text-lg text-gray-400">
-              No results
-            </div>
+            <div className="px-4 py-4 text-lg text-gray-400">No results</div>
           )}
         </div>
       )}

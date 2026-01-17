@@ -2,34 +2,55 @@ import { currentPatch } from "./patch";
 import type { ChampionAliasMap } from "./types";
 
 const ALIAS: ChampionAliasMap = {
-  "dr. mundo": "DrMundo",
+  // spacing / punctuation / roman numerals / internal caps
   "dr mundo": "DrMundo",
+  "dr. mundo": "DrMundo",
   drmundo: "DrMundo",
   mundo: "DrMundo",
-  missfortune: "MissFortune",
+
   "master yi": "MasterYi",
-  "lee sin": "LeeSin",
+  masteryi: "MasterYi",
+
+  "jarvan iv": "JarvanIV",
   jarvaniv: "JarvanIV",
+
+  "aurelion sol": "AurelionSol",
+  aurelionsol: "AurelionSol",
+
   "twisted fate": "TwistedFate",
+  twistedfate: "TwistedFate",
+
   "tahm kench": "TahmKench",
+  tahmkench: "TahmKench",
+
   "cho'gath": "Chogath",
+  chogath: "Chogath",
+
   "vel'koz": "Velkoz",
+  velkoz: "Velkoz",
+
   "kha'zix": "Khazix",
+  khazix: "Khazix",
+
   "kai'sa": "Kaisa",
+  kaisa: "Kaisa",
+
   kogmaw: "KogMaw",
   xinzhao: "XinZhao",
-  "renata glasc": "Renata",
+
   monkeyking: "MonkeyKing",
+  wukong: "MonkeyKing",
+
   "nunu & willump": "Nunu",
   "nunu and willump": "Nunu",
+  nunu: "Nunu",
+
   reksai: "RekSai",
   belveth: "Belveth",
+  "bel'veth": "Belveth",
+
   ksante: "KSante",
   leesin: "LeeSin",
-  aurelionsol: "AurelionSol",
-  masteryi: "MasterYi",
-  twistedfate: "TwistedFate",
-  tahmkench: "TahmKench",
 };
 
 function pascalize(name: string) {
@@ -41,27 +62,34 @@ function pascalize(name: string) {
     .join("");
 }
 
-export function resolveChampionId(name: string) {
-  const s = (name || "").trim().toLowerCase();
-  return ALIAS[s] ?? pascalize(s);
-}
-
 export function champSquareUrlById(id: string, patch = currentPatch) {
   return `https://ddragon.leagueoflegends.com/cdn/${patch}/img/champion/${id}.png`;
+}
+
+export function resolveChampionId(input: string) {
+  const raw = (input || "").trim();
+  if (!raw) return "";
+
+  // Preserve correct casing if already a canonical DDragon id
+  if (/^[A-Z][A-Za-z0-9]*$/.test(raw)) return raw;
+
+  const s = raw
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  return ALIAS[s] ?? pascalize(s);
 }
 
 export function championAvatarByName(name: string, patch = currentPatch) {
   return champSquareUrlById(resolveChampionId(name), patch);
 }
 
-/* --------------------------------------------------
-   NEW: load all champions from Data Dragon
--------------------------------------------------- */
-
 export async function getAllChampions(
   patch = currentPatch,
   locale = "en_US"
-): Promise<string[]> {
+): Promise<{ id: string; name: string }[]> {
   const res = await fetch(
     `https://ddragon.leagueoflegends.com/cdn/${patch}/data/${locale}/champion.json`
   );
@@ -72,6 +100,8 @@ export async function getAllChampions(
 
   const data = await res.json();
 
-  // Object keys are already the correct canonical names
-  return Object.keys(data.data);
+  return Object.values(data.data).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+  }));
 }
