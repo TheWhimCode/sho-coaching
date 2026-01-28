@@ -4,6 +4,7 @@
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 const Hub = dynamic(() => import("./HUB/page"), { ssr: false });
 const Slots = dynamic(() => import("./availability/page"), { ssr: false });
@@ -13,7 +14,7 @@ const Students = dynamic(() => import("./students/page"), { ssr: false });
 const TABS = ["hub", "slots", "sessions", "students"] as const;
 type Tab = (typeof TABS)[number];
 
-export default function AdminPage() {
+function AdminInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -26,7 +27,6 @@ export default function AdminPage() {
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  // ---------- Desktop button ----------
   const TabButton = ({ id, label }: { id: Tab; label: string }) => {
     const active = tab === id;
     return (
@@ -46,7 +46,6 @@ export default function AdminPage() {
     );
   };
 
-  // ---------- Mobile button ----------
   const MobileTabButton = ({ id, icon }: { id: Tab; icon: string }) => {
     const active = tab === id;
     return (
@@ -67,7 +66,7 @@ export default function AdminPage() {
 
   return (
     <>
-      {/* ================= Desktop left dock ================= */}
+      {/* Desktop left dock */}
       <motion.div
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -79,7 +78,7 @@ export default function AdminPage() {
         <TabButton id="students" label="🎓 Students" />
       </motion.div>
 
-      {/* ================= Mobile bottom bar ================= */}
+      {/* Mobile bottom bar */}
       <motion.div
         initial={{ y: 12, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -93,7 +92,7 @@ export default function AdminPage() {
         </div>
       </motion.div>
 
-      {/* ================= Content ================= */}
+      {/* Content */}
       <div className="pt-6 pb-28 md:pb-0 md:pl-28">
         {tab === "hub" && <Hub />}
         {tab === "slots" && <Slots />}
@@ -101,5 +100,13 @@ export default function AdminPage() {
         {tab === "students" && <Students />}
       </div>
     </>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminInner />
+    </Suspense>
   );
 }
