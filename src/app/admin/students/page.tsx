@@ -275,7 +275,7 @@ export default function StudentsPage() {
           ) : topList.length === 0 ? (
             <div className="text-sm text-zinc-300">No students.</div>
           ) : (
-            <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid auto-rows-fr gap-2 md:gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {topList.map((s) => (
                 <li key={s.id}>
                   <StudentCard student={s} />

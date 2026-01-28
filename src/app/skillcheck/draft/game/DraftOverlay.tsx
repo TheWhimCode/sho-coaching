@@ -13,7 +13,7 @@ import {
   Role,
   Side,
   Pick,
-} from "@/app/skillcheck/games/draft/draftCore";
+} from "@/app/skillcheck/draft/draftCore";
 
 import { DraftSlot, SlotState } from "./DraftSlot";
 

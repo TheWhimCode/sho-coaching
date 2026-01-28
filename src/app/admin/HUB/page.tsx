@@ -126,10 +126,7 @@ useEffect(() => {
           <div className="h-1" />
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-xl font-semibold">Daily Hub</h1>
-            <div className="text-sm text-white/70">
-              Times shown in{" "}
-              <span className="text-white/90 font-medium">{TZ}</span>
-            </div>
+
           </div>
 
           {/* ===== sessions + movers ===== */}
@@ -162,11 +159,7 @@ useEffect(() => {
                   <h2 className="text-xs uppercase text-white/80">
                     Top Movers (last 7 days)
                   </h2>
-                  {!loadingMovers && (
-                    <span className="text-[11px] text-white/60">
-                      Top 3 by abs. Δ
-                    </span>
-                  )}
+
                 </div>
 
                 {loadingMovers ? (

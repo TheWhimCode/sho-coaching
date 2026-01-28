@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DraftGrid } from "@/app/skillcheck/games/draft/DraftGrid";
-import { TeamSlot } from "@/app/skillcheck/games/draft/DraftTeam";
+import { DraftGrid } from "@/app/skillcheck/draft/DraftGrid";
+import { TeamSlot } from "@/app/skillcheck/draft/DraftTeam";
 import AnswerAuthorPanel from "@/app/admin/skillcheck/drafts/AnswerAuthorPanel";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 

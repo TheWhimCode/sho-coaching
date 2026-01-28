@@ -98,9 +98,7 @@ export default function AdminSessionsPage() {
 
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold">Sessions</h1>
-            <div className="text-sm text-white/70">
-              Times shown in <span className="text-white/90 font-medium">{tz}</span>
-            </div>
+
           </div>
 
           {/* UPCOMING */}

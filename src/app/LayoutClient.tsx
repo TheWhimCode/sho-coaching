@@ -11,7 +11,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   const hideCheckout =
     p === "/checkout" ||
     (p.startsWith("/checkout/") && !p.startsWith("/checkout/success"));
-  const hideSkillcheckNavbar = p === "/skillcheck";
+const hideSkillcheckNavbar = p === "/skillcheck" || p.startsWith("/skillcheck/");
 
   const showNavBar = !(hideCoaching || hideCheckout || hideSkillcheckNavbar);
   const showFooter = !(hideCoaching || hideCheckout); // footer still shows on skillcheck
