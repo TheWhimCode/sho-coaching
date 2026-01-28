@@ -174,7 +174,6 @@ export default function SessionHero({
     (async () => {
       try {
 const start = new Date();
-start.setDate(start.getDate() + 1); // tomorrow, no policy
 
 const end = new Date(start);
 end.setDate(start.getDate() + 21);

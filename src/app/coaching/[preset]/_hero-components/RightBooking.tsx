@@ -46,9 +46,9 @@ export default function RightBookingPanel({
           {onCustomize && (
             <button
               onClick={onCustomize}
-              className="w-full rounded-xl px-5 py-3 text-base font-medium bg-white/10 hover:bg-white/15 ring-1 ring-white/15 transition"
+              className="w-full rounded-xl px-5 py-3 text-white/80 font-medium bg-white/10 hover:bg-white/15 ring-1 ring-white/15 transition"
             >
-              Customize
+              Customize Session
             </button>
           )}
         </div>
@@ -61,7 +61,8 @@ export default function RightBookingPanel({
           {/* Header moved here (remove it from AvailableSlots) */}
           <div className="whitespace-pre tabular-nums text-xs leading-none">
             <span style={{ color: "var(--color-lightblue)" }}>
-              Next available times — in your timezone
+Suggested times — in your timezone
+
             </span>
           </div>
 
@@ -77,7 +78,7 @@ export default function RightBookingPanel({
             />
           ) : (
             <div className="text-xs text-white/60">
-              No times found in the next 2 weeks.
+              Loading...
             </div>
           )}
         </div>

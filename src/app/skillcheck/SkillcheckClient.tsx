@@ -6,6 +6,7 @@ import { DraftOverlay } from "./games/draft/game/DraftOverlay";
 import ChampOptions from "./games/draft/game/ChampOptions";
 import { ResultScreen } from "./games/draft/game/ResultScreen";
 import DraftAuthorMain from "./games/draft/authoring/DraftAuthorMain";
+import SuccessOverlay from "./games/SuccessOverlay"; // ✅ NEW
 
 type Pick = {
   role: "top" | "jng" | "mid" | "adc" | "sup";
@@ -45,6 +46,9 @@ export default function SkillcheckClient({
   const [blue, setBlue] = useState<Pick[]>(draft.blue);
   const [red, setRed] = useState<Pick[]>(draft.red);
 
+  // ✅ NEW: success overlay state
+  const [showSuccess, setShowSuccess] = useState(false);
+
   // AUTHORING MODE
   const [authoring, setAuthoring] = useState(false);
   const [authoringStep, setAuthoringStep] =
@@ -57,9 +61,6 @@ export default function SkillcheckClient({
   // Time before showing ResultScreen + initiating scroll (same moment)
   const SHOW_AND_SCROLL_DELAY_MS = 2500;
 
-  // How much extra smoothness to request (browser-dependent, but helps a bit)
-  // If you want it slightly slower than default, increasing distance helps,
-  // but duration is not configurable with scrollIntoView.
   const SCROLL_BEHAVIOR: ScrollBehavior = "smooth";
 
   /* -----------------------------
@@ -108,26 +109,20 @@ export default function SkillcheckClient({
         }
       }
 
-      // On load, if already completed, start the SAME timer
-      // and reveal+scroll at the same moment.
-      if (s.completed) {
-        if (!hasScrolledRef.current) {
-          hasScrolledRef.current = true;
+      if (s.completed && !hasScrolledRef.current) {
+        hasScrolledRef.current = true;
 
-          setTimeout(() => {
-            setShowResult(true);
-
-            // 2 RAFs helps ensure layout has settled so "center" is actually center.
+        setTimeout(() => {
+          setShowResult(true);
+          requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                resultRef.current?.scrollIntoView({
-                  behavior: SCROLL_BEHAVIOR,
-                  block: "center",
-                });
+              resultRef.current?.scrollIntoView({
+                behavior: SCROLL_BEHAVIOR,
+                block: "center",
               });
             });
-          }, SHOW_AND_SCROLL_DELAY_MS);
-        }
+          });
+        }, SHOW_AND_SCROLL_DELAY_MS);
       }
     } catch {}
   }, [draft]);
@@ -173,12 +168,13 @@ export default function SkillcheckClient({
       setCompleted(true);
       setLastWrong(null);
 
-      // Same timing: reveal + scroll at the same moment after delay.
+      // ✅ NEW: trigger success overlay immediately
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 1800);
+
       hasScrolledRef.current = true;
       setTimeout(() => {
         setShowResult(true);
-
-        // 2 RAFs helps ensure layout has settled so "center" is actually center.
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             resultRef.current?.scrollIntoView({
@@ -220,6 +216,9 @@ export default function SkillcheckClient({
 
   return (
     <>
+      {/* ✅ NEW: success overlay */}
+      {showSuccess && <SuccessOverlay text="LOCKED IN!" />}
+
       <div
         aria-hidden
         className="fixed inset-0 z-0"
@@ -263,7 +262,6 @@ export default function SkillcheckClient({
                 />
               )}
 
-              {/* Always render the scroll anchor; ResultScreen appears inside later */}
               <div ref={resultRef}>
                 {showResult && (
                   <ResultScreen

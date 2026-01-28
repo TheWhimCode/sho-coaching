@@ -3,14 +3,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
 
-import { getBlockIdsByTime } from "@/engine/scheduling/startability/getBlockIdsByTime";
+import { getBlockIdsByTimeAdmin } from "@/engine/scheduling/startability/getBlockIdsByTimeAdmin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const Body = z.object({
-  id: z.string(),                 // Session ID
-  newStart: z.string().datetime(), // ISO string
+  id: z.string(),                  // Session ID
+  newStart: z.string().datetime(),  // ISO string (UTC)
   scheduledMinutes: z.number().int().positive().optional(),
 });
 
@@ -30,40 +30,49 @@ export async function POST(req: Request) {
   try {
     const { id, newStart, scheduledMinutes } = Body.parse(await req.json());
 
-    // 1) Update the session start time
     const newStartDate = new Date(newStart);
-    const session = await prisma.session.update({
+
+    // 1) Fetch current session (to get duration if not provided)
+    const current = await prisma.session.findUnique({
       where: { id },
-      data: { scheduledStart: newStartDate },
       select: { id: true, scheduledMinutes: true },
     });
 
-    // 2) Ask the ENGINE which slots must be blocked
-    const dur = scheduledMinutes ?? session.scheduledMinutes ?? 60;
+    if (!current) {
+      return NextResponse.json(
+        { error: "session_not_found" },
+        { status: 404 }
+      );
+    }
 
-    const blockIds = await getBlockIdsByTime(
+    const dur = scheduledMinutes ?? current.scheduledMinutes ?? 60;
+
+    // 2) Compute block IDs WITHOUT any scheduling restrictions (admin override)
+    const blockIds = await getBlockIdsByTimeAdmin(
       newStartDate,
       dur,
       prisma
     );
 
-    if (!blockIds || !blockIds.length) {
-      return NextResponse.json(
-        { error: "invalid_schedule" },
-        { status: 409 }
-      );
-    }
-
-    // 3) Apply the engine result
-    await prisma.slot.updateMany({
-      where: {
-        id: { in: blockIds },
-        status: SlotStatus.free,
-      },
-      data: { status: SlotStatus.blocked },
+    // 3) Always update the session time
+    await prisma.session.update({
+      where: { id },
+      data: { scheduledStart: newStartDate },
+      select: { id: true },
     });
 
-    return NextResponse.json({ ok: true });
+    // 4) Block slots if any exist (forced)
+    if (blockIds.length) {
+      await prisma.slot.updateMany({
+        where: { id: { in: blockIds } },
+        data: { status: SlotStatus.blocked },
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      blockedSlots: blockIds.length,
+    });
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message || String(err) },

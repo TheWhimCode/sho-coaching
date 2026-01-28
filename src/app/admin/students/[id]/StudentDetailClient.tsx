@@ -30,6 +30,7 @@ const SERVER_ALIAS: Record<string, string> = {
   tw: 'tw2', tw2: 'tw2',
   vn: 'vn2', vn2: 'vn2',
 };
+
 const normalizeServer = (s: string | null | undefined) => {
   const key = (s ?? '').trim().toLowerCase();
   return SERVER_ALIAS[key] || key || '';
@@ -37,7 +38,10 @@ const normalizeServer = (s: string | null | undefined) => {
 
 const debounce = <F extends (...a: any[]) => any>(fn: F, ms = 600) => {
   let t: any;
-  return (...a: Parameters<F>) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  return (...a: Parameters<F>) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...a), ms);
+  };
 };
 
 export default function StudentDetailClient() {
@@ -77,18 +81,25 @@ export default function StudentDetailClient() {
         setServer(normalizeServer(s.server));
         setPuuid(s.puuid ?? null);
       })
-      .catch((err) => { setError(err.message); setStudent(null); })
+      .catch((err) => {
+        setError(err.message);
+        setStudent(null);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
-  // sessions (fetch from /api/admin/bookings as you want)
-  useEffect(() => {
-    if (!id) return;
-    fetch(`/api/admin/bookings?studentId=${encodeURIComponent(id)}&take=10`, { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setSessions(j?.sessions ?? []))
-      .catch(() => setSessions([]));
-  }, [id]);
+useEffect(() => {
+  if (!id) return;
+
+  fetch(`/api/admin/sessions?range=all&limit=200`, { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((rows) => {
+      const all = Array.isArray(rows) ? rows : [];
+      const mine = all.filter((s) => String(s.studentId) === String(id));
+      setSessions(mine);
+    })
+    .catch(() => setSessions([]));
+}, [id]);
 
   // resolve (if needed) + fetch solo data (last 10 games for MatchHistory)
   useEffect(() => {
@@ -139,7 +150,7 @@ export default function StudentDetailClient() {
         }
       }
 
-      // NEW: get canonical riotTag by puuid (and persist if different)
+      // get canonical riotTag by puuid (and persist if different)
       try {
         if (usePuuid) {
           const res2 = await fetch(`/api/riot/resolve`, {
@@ -151,8 +162,7 @@ export default function StudentDetailClient() {
           const j2 = await res2.json().catch(() => ({}));
 
           const resolvedTag: string | undefined =
-            j2.riotTag ??
-            (j2.gameName && j2.tagLine ? `${j2.gameName}#${j2.tagLine}` : undefined);
+            j2.riotTag ?? (j2.gameName && j2.tagLine ? `${j2.gameName}#${j2.tagLine}` : undefined);
 
           if (resolvedTag && resolvedTag !== rt) {
             setRiotTag(resolvedTag);
@@ -198,13 +208,13 @@ export default function StudentDetailClient() {
 
     if (normalizedPatch.riotTag !== undefined) {
       setRiotTag((normalizedPatch.riotTag || '').trim());
-      setPuuid(null);    // re-resolve
+      setPuuid(null); // re-resolve
       setSolo(null);
     }
     if (normalizedPatch.server !== undefined) {
       const ns = normalizeServer(normalizedPatch.server);
       setServer(ns);
-      setPuuid(null);    // region may change; re-resolve
+      setPuuid(null); // region may change; re-resolve
       setSolo(null);
     }
 
@@ -221,26 +231,28 @@ export default function StudentDetailClient() {
     return idx >= 0 ? idx + 1 : 1;
   };
 
-  // server save for docs — FORCE title to sessionType
+  /**
+   * Save doc content.
+   * IMPORTANT: we include sessionId so the doc can be reliably linked to its Session.
+   * We do NOT persist any title (title is derived from Session.sessionType in the UI).
+   */
   const saveDoc = useMemo(
     () =>
-      debounce(async (studentId: string, number: number, content: string, _ignoredTitle: string) => {
-        const matching = sessions[number - 1]; // SessionNotes aligns #n to nth session
-        const titleToSave =
-          matching?.sessionType?.trim() ||
-          (matching ? `Session ${number}` : `Session ${number}`);
-
+      debounce(async (studentId: string, number: number, content: string, sessionId?: string) => {
         await fetch(`/api/session-docs/${encodeURIComponent(studentId)}?number=${number}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notes: { md: content, title: titleToSave } }),
+          body: JSON.stringify({
+            sessionId: sessionId ?? null,
+            notes: { md: content },
+          }),
         });
       }, 600),
-    [sessions]
+    []
   );
 
   if (loading) return <div className="px-6 pt-8 pb-6 text-sm text-zinc-400">Loading…</div>;
-  if (error)   return <div className="px-6 pt-8 pb-6 text-sm text-rose-400">{error}</div>;
+  if (error) return <div className="px-6 pt-8 pb-6 text-sm text-rose-400">{error}</div>;
   if (!student) return <div className="px-6 pt-8 pb-6 text-sm text-zinc-400">Student not found.</div>;
 
   const matches = solo?.matches ?? [];
@@ -285,16 +297,11 @@ export default function StudentDetailClient() {
               }}
               onChange={handleChange}
             />
-            {soloLoading ? (
-              <div className="mt-2 text-xs text-zinc-400">Loading SoloQ…</div>
-            ) : null}
-            {soloErr ? (
-              <div className="mt-2 text-xs text-amber-400">Solo: {soloErr}</div>
-            ) : null}
+            {soloLoading ? <div className="mt-2 text-xs text-zinc-400">Loading SoloQ…</div> : null}
+            {soloErr ? <div className="mt-2 text-xs text-amber-400">Solo: {soloErr}</div> : null}
           </GlassPanel>
 
           <GlassPanel className="p-6 md:p-8">
-            {/* Match history full width */}
             <MatchHistory matches={matches} puuid={puuid ?? undefined} />
           </GlassPanel>
 
@@ -307,8 +314,8 @@ export default function StudentDetailClient() {
                   student.id,
                   (s as any).number ?? numberFor(s.id),
                   s.content,
-                  // ignored by saveDoc; title is forced to sessionType
-                  s.title || `Session ${(s as any).number ?? ''}`
+                  // ✅ pass sessionId so server can link the doc properly
+                  (s as any).sessionId ?? s.id
                 )
               }
             />

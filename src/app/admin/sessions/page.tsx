@@ -52,7 +52,7 @@ export default function AdminSessionsPage() {
   // ------------------ reschedule handler ------------------
   async function onReschedule(id: string, newStartISO: string) {
     try {
-      const res = await fetch("/api/admin/sessions/reschedule", {
+      const res = await fetch("/api/admin/availability/reschedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, newStart: newStartISO }),

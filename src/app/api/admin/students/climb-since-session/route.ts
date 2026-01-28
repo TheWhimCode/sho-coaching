@@ -1,53 +1,94 @@
 // /api/climb-since-session?studentId=...
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 // Stable points mapping (tiers/divs baked into a single scale)
-const TIER_ORDER = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'] as const;
-const DIV_ORDER  = ['IV','III','II','I'] as const;
-const MASTER_BASE = TIER_ORDER.indexOf('MASTER') * 400; // 2800
-function rankToPoints(tier: string, division: string | null | undefined, lp: number) {
-  const t = (tier ?? '').toUpperCase();
-  if (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER') return MASTER_BASE + Math.max(0, lp);
-  const d  = (division ?? 'IV').toUpperCase();
-  const ti = Math.max(0, TIER_ORDER.indexOf(t as any));
+const TIER_ORDER = [
+  "IRON",
+  "BRONZE",
+  "SILVER",
+  "GOLD",
+  "PLATINUM",
+  "EMERALD",
+  "DIAMOND",
+  "MASTER",
+  "GRANDMASTER",
+  "CHALLENGER",
+] as const;
+const DIV_ORDER = ["IV", "III", "II", "I"] as const;
+const MASTER_BASE = TIER_ORDER.indexOf("MASTER") * 400; // 2800
+
+function rankToPoints(
+  tier: string,
+  division: string | null | undefined,
+  lp: number
+): number | null {
+  const t = (tier ?? "").toUpperCase();
+
+  // critical: don't map UNRANKED/unknown to IRON
+  if (!t || t === "UNRANKED") return null;
+
+  if (t === "MASTER" || t === "GRANDMASTER" || t === "CHALLENGER") {
+    return MASTER_BASE + Math.max(0, lp);
+  }
+
+  const ti = TIER_ORDER.indexOf(t as any);
+  if (ti < 0) return null;
+
+  const d = (division ?? "IV").toUpperCase();
   const di = Math.max(0, DIV_ORDER.indexOf(d as any));
   return ti * 400 + di * 100 + Math.max(0, lp);
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const studentId = searchParams.get('studentId');
-  if (!studentId) return NextResponse.json({ error: 'studentId required' }, { status: 400 });
+  const studentId = searchParams.get("studentId");
+  if (!studentId) {
+    return NextResponse.json({ error: "studentId required" }, { status: 400 });
+  }
 
   // 1) Load snapshots & sessions
   const [snapshots, sessions] = await Promise.all([
     prisma.rankSnapshot.findMany({
       where: { studentId },
-      orderBy: { capturedAt: 'asc' },
+      orderBy: { capturedAt: "asc" },
       select: { capturedAt: true, tier: true, division: true, lp: true },
     }),
     prisma.session.findMany({
       where: { studentId },
-      orderBy: [{ scheduledStart: 'asc' }, { id: 'asc' }], // deterministic if same start
+      orderBy: [{ scheduledStart: "asc" }, { id: "asc" }], // deterministic if same start
       select: { id: true, scheduledStart: true },
     }),
   ]);
 
   // Build chart series with points
-  const series = snapshots.map(r => {
-    const iso = r.capturedAt.toISOString();
-    return {
-      date: iso.slice(0, 10),   // for XAxis ticks/labels
-      dateTime: iso,            // full precision for comparisons
-      tier: r.tier,
-      division: r.division,
-      lp: r.lp,
-      points: rankToPoints(r.tier, r.division, r.lp),
-    };
-  });
+  // IMPORTANT: skip UNRANKED/unknown points entirely so they cannot distort chart range
+  // and cannot be rendered as "IRON IV 0".
+  const series = snapshots
+    .map((r) => {
+      const iso = r.capturedAt.toISOString();
+      const points = rankToPoints(r.tier, r.division, r.lp);
+      return {
+        date: iso.slice(0, 10), // for XAxis ticks/labels
+        dateTime: iso, // full precision for comparisons
+        tier: r.tier,
+        division: r.division,
+        lp: r.lp,
+        points,
+      };
+    })
+    .filter(
+      (x): x is {
+        date: string;
+        dateTime: string;
+        tier: string;
+        division: string | null;
+        lp: number;
+        points: number;
+      } => typeof x.points === "number" && Number.isFinite(x.points)
+    );
 
-  const sessionsPayload = sessions.map(s => ({
+  const sessionsPayload = sessions.map((s) => ({
     id: s.id,
     scheduledStart: s.scheduledStart.toISOString(),
     day: s.scheduledStart.toISOString().slice(0, 10),
@@ -65,11 +106,15 @@ export async function GET(req: NextRequest) {
   // Binary-search helpers over sorted series
   // last index STRICTLY BEFORE target datetime (baseline you asked for)
   function lastIdxBefore(isoDateTime: string): number {
-    let lo = 0, hi = series.length - 1, ans = -1;
+    let lo = 0,
+      hi = series.length - 1,
+      ans = -1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
-      if (series[mid].dateTime < isoDateTime) { ans = mid; lo = mid + 1; }
-      else hi = mid - 1;
+      if (series[mid].dateTime < isoDateTime) {
+        ans = mid;
+        lo = mid + 1;
+      } else hi = mid - 1;
     }
     return ans; // -1 => nothing before
   }
@@ -85,10 +130,10 @@ export async function GET(req: NextRequest) {
     baselinePoints?: number;
     windowEndDateTime?: string;
     windowEndPoints?: number;
-    deltaWindow?: number;     // snapshotBefore(nextSession) - snapshotBefore(session)
+    deltaWindow?: number; // snapshotBefore(nextSession) - snapshotBefore(session)
     latestDateTime?: string;
     latestPoints?: number;
-    deltaToLatest?: number;   // latest - baseline
+    deltaToLatest?: number; // latest - baseline
   };
 
   const climbsBySession: Climb[] = [];
@@ -103,7 +148,6 @@ export async function GET(req: NextRequest) {
     const baselineIdx = lastIdxBefore(startISO);
     if (baselineIdx === -1) {
       // No snapshot before this session -> cannot compute baseline as requested
-      // We return a stub entry so the client can render the marker but no deltas.
       climbsBySession.push({
         sessionId: cur.id,
         sessionStart: startISO,
@@ -151,9 +195,9 @@ export async function GET(req: NextRequest) {
       : null;
 
   return NextResponse.json({
-    series,             // snapshots with points for graphing
+    series, // snapshots with points for graphing
     sessions: sessionsPayload,
-    climbsBySession,    // per session: windowed & to-latest
-    overall,            // since first session (baseline = snap before first session)
+    climbsBySession, // per session: windowed & to-latest
+    overall, // since first session (baseline = snap before first session)
   });
 }

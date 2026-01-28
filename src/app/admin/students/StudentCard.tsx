@@ -1,16 +1,16 @@
-// components/StudentCard.tsx
 "use client";
 
 import Link from "next/link";
 import useSWR from "swr";
+import Image from "next/image";
+import { championAvatarByName } from "@/lib/league/datadragon";
 
 type Student = {
   id: string;
   name: string;
   discordName: string | null;
   riotTag: string | null;
-  server: string | null;
-  updatedAt: string;
+  allChampions: string[];
 };
 
 type ClimbSummaryResp = {
@@ -31,9 +31,7 @@ const climbSummaryFetcher = (url: string) =>
   fetch(url).then((r) => r.json() as Promise<ClimbSummaryResp>);
 
 // ------------------------------------------
-// LP badge that can show:
-//   - delta passed from Hub (7-day delta)
-//   - OR climb-summary fallback
+// LP badge
 // ------------------------------------------
 
 function LPBadge({
@@ -43,7 +41,6 @@ function LPBadge({
   studentId: string;
   overrideDelta?: number;
 }) {
-  // If the Hub passes a 7-day delta, use it immediately
   if (typeof overrideDelta === "number") {
     const delta = overrideDelta;
     const color =
@@ -63,7 +60,6 @@ function LPBadge({
     );
   }
 
-  // Otherwise, fallback to climb-summary (LP since first session)
   const { data } = useSWR<ClimbSummaryResp>(
     `/api/admin/students/climb-summary?studentId=${encodeURIComponent(
       studentId
@@ -95,6 +91,56 @@ function LPBadge({
 }
 
 // ------------------------------------------
+// Champion icons (right-aligned)
+// ------------------------------------------
+
+function ChampionsIcons({ champions }: { champions: string[] | null }) {
+  const list = Array.isArray(champions) ? champions : [];
+  if (list.length === 0) return null;
+
+  const max = 6;
+  const shown = list.slice(0, max);
+  const remaining = list.length - shown.length;
+
+  return (
+    <div className="ml-auto flex items-center gap-1 shrink-0">
+      {shown.map((champ) => {
+        const src = championAvatarByName(champ);
+        return (
+          <div
+            key={champ}
+            className="h-6 w-6 rounded-full overflow-hidden ring-1 ring-white/20 bg-zinc-900"
+            title={champ}
+          >
+            <Image
+              src={src}
+              alt={champ}
+              width={24}
+              height={24}
+              className="h-full w-full object-cover scale-[1.12]"
+              unoptimized
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src =
+                  "/images/coaching/reviews/placeholder-avatar.png";
+              }}
+            />
+          </div>
+        );
+      })}
+
+      {remaining > 0 && (
+        <span
+          className="ml-1 text-[11px] px-2 py-0.5 rounded-md font-medium tabular-nums text-zinc-300 bg-zinc-700/20 ring-1 ring-zinc-600/30"
+          title={`${remaining} more champions`}
+        >
+          +{remaining}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ------------------------------------------
 // Main Component
 // ------------------------------------------
 
@@ -103,43 +149,40 @@ export default function StudentCard({
   lpDelta,
 }: {
   student: Student;
-  lpDelta?: number; // new optional prop
+  lpDelta?: number;
 }) {
   return (
     <Link
       href={`/admin/students/${student.id}`}
-      className="block rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 hover:border-zinc-700 transition"
+      className="block h-full rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 hover:border-zinc-700 transition"
     >
-      <div className="flex items-center gap-2">
-        <div className="text-lg font-semibold tracking-tight">
-          {student.name}
+      <div className="flex h-full flex-col gap-2">
+        {/* Top row */}
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 text-lg font-semibold tracking-tight break-words">
+            {student.name}
+          </div>
+          <LPBadge studentId={student.id} overrideDelta={lpDelta} />
         </div>
-        <LPBadge studentId={student.id} overrideDelta={lpDelta} />
-      </div>
 
-      <div className="mt-1 text-xs text-zinc-300 flex flex-wrap gap-x-3 gap-y-1">
-        <span>
-          Discord:{" "}
-          <span className="text-zinc-100">
-            {student.discordName || "—"}
-          </span>
-        </span>
-        <span>
-          Riot:{" "}
-          <span className="text-zinc-100">
-            {student.riotTag || "—"}
-          </span>
-        </span>
-        <span>
-          Server:{" "}
-          <span className="text-zinc-100 uppercase">
-            {student.server || "—"}
-          </span>
-        </span>
-      </div>
+        {/* Info + champs row */}
+        <div className="flex items-start gap-2 text-xs text-zinc-300">
+          <div className="flex flex-col gap-0">
+            <div>
+              Discord:{" "}
+              <span className="text-zinc-100">
+                {student.discordName || "—"}
+              </span>
+            </div>
+            <div>
+              Riot:{" "}
+              <span className="text-zinc-100">{student.riotTag || "—"}</span>
+            </div>
+          </div>
 
-      <div className="mt-2 text-[11px] text-zinc-400">
-        Updated {new Date(student.updatedAt).toLocaleString()}
+          {/* right-hand side */}
+          <ChampionsIcons champions={student.allChampions} />
+        </div>
       </div>
     </Link>
   );

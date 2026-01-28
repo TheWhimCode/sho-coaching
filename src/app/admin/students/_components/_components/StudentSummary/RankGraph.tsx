@@ -29,19 +29,30 @@ const TIER_ORDER = [
 const DIV_ORDER = ['IV', 'III', 'II', 'I'] as const;
 const MASTER_BASE = TIER_ORDER.indexOf('MASTER') * 400; // 2800
 
+// If you want "season climb" later, set this to the season start day (YYYY-MM-DD).
+// This file does not display season delta yet, but having the constant here keeps it easy.
+const SEASON_START = '2026-01-01';
+
 function rankToPoints(
   tier: string,
   division: string | null | undefined,
   lp: number
-): number {
+): number | null {
   const t = (tier ?? '').toUpperCase();
+
+  // Important: don't treat UNRANKED/unknown as IRON.
+  // Returning null prevents the graph domain from expanding across all divisions.
+  if (!t || t === 'UNRANKED') return null;
+
   if (t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER') {
     // Master+: treat MASTER as base tier + LP
     return MASTER_BASE + Math.max(0, lp);
   }
 
+  const ti = TIER_ORDER.indexOf(t as any);
+  if (ti < 0) return null;
+
   const d = (division ?? 'IV').toUpperCase();
-  const ti = Math.max(0, TIER_ORDER.indexOf(t as any)); // tier index
   const di = Math.max(0, DIV_ORDER.indexOf(d as any)); // 0=IV, 3=I
 
   // Higher division = higher points (IV < III < II < I)
@@ -92,16 +103,24 @@ export default function RankGraph({ studentId }: { studentId: string }) {
     rows.sort((a, b) => a.date.localeCompare(b.date));
 
     const pts = rows
-      .map((d) => ({
-        date: d.date,
-        points: Number.isFinite(Number(d.points))
-          ? Number(d.points)
-          : rankToPoints(d.tier, d.division ?? 'IV', d.lp ?? 0),
-        tier: (d.tier ?? '').toUpperCase(),
-        division: (d.division ?? 'IV') as string | null,
-        lp: d.lp ?? 0,
-      }))
-      .filter((p) => Number.isFinite(p.points));
+      .map((d) => {
+        const computed =
+          Number.isFinite(Number(d.points))
+            ? Number(d.points)
+            : rankToPoints(d.tier, d.division ?? 'IV', d.lp ?? 0);
+
+        return {
+          date: d.date,
+          points: computed,
+          tier: (d.tier ?? '').toUpperCase(),
+          division: (d.division ?? 'IV') as string | null,
+          lp: d.lp ?? 0,
+        };
+      })
+      // filter out UNRANKED/unknown points so they don't distort domain/range
+      .filter((p): p is { date: string; points: number; tier: string; division: string | null; lp: number } => {
+        return typeof p.points === 'number' && Number.isFinite(p.points);
+      });
 
     // --- determine seen tier range ---
     let minSeen = Infinity;
@@ -140,6 +159,17 @@ export default function RankGraph({ studentId }: { studentId: string }) {
     }
 
     const sessionXs = (data?.sessions ?? []).map((s) => s.day);
+
+    // If you later want season climb without UNRANKED inflation:
+    // Use the first *ranked* point on/after SEASON_START as baseline.
+    // const seasonPts = pts.filter((p) => p.date >= SEASON_START);
+    // const seasonStartPoints = seasonPts[0]?.points ?? null;
+    // const seasonLatestPoints = seasonPts.at(-1)?.points ?? null;
+    // const seasonDelta =
+    //   seasonStartPoints != null && seasonLatestPoints != null
+    //     ? seasonLatestPoints - seasonStartPoints
+    //     : null;
+
     return { chartData: pts, yDomain, crestTiers, sessionXs };
   }, [data]);
 

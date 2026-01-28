@@ -41,7 +41,7 @@ export default function NavBar({ className = "" }: { className?: string }) {
       {/* LOGO */}
       <Link
         href="/"
-        className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 z-20 flex items-center"
+className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 flex items-center"
       >
         <Image
           src="/images/Logo_blue.png"

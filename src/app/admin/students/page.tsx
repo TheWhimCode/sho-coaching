@@ -12,13 +12,31 @@ type Student = {
   server: string | null;
   createdAt: string;
   updatedAt: string;
+  latestSessionStart: string | null;
+  allChampions: string[]; // ✅
 };
+
+function ymKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(ym: string) {
+  const [y, m] = ym.split("-").map((v) => Number(v));
+  const d = new Date(y, (m ?? 1) - 1, 1);
+  return d.toLocaleString(undefined, { month: "long", year: "numeric" });
+}
 
 export default function StudentsPage() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
   const loadedOnce = useRef(false);
+
+  // --- month state (bottom selector) ---
+  const now = new Date();
+  const curYM = ymKey(now);
+  const lastYM = ymKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  const [activeOlderMonth, setActiveOlderMonth] = useState<string | null>(null);
 
   // --- Add Student overlay state ---
   const [showAdd, setShowAdd] = useState(false);
@@ -81,6 +99,8 @@ export default function StudentsPage() {
           typeof j.updatedAt === "string"
             ? j.updatedAt
             : new Date(j.updatedAt).toISOString(),
+        latestSessionStart: j.latestSessionStart ?? null,
+        allChampions: Array.isArray(j.allChampions) ? j.allChampions : [],
       };
 
       setStudents((prev) =>
@@ -130,18 +150,19 @@ export default function StudentsPage() {
             typeof s.updatedAt === "string"
               ? s.updatedAt
               : new Date(s.updatedAt).toISOString(),
+          latestSessionStart: s.latestSessionStart ?? null,
+          allChampions: Array.isArray(s.allChampions) ? s.allChampions : [],
         })) as Student[];
 
         setStudents(list);
-        loadedOnce.current = true; // only mark done if successful
+        loadedOnce.current = true;
       } catch (e: any) {
         if (e?.name !== "AbortError") {
           console.error("students fetch failed:", e);
           setStudents([]);
-          loadedOnce.current = true; // mark done for real errors
+          loadedOnce.current = true;
         }
       } finally {
-        // always stop loading even if aborted
         setLoading(false);
       }
     })();
@@ -149,15 +170,59 @@ export default function StudentsPage() {
     return () => ac.abort();
   }, []);
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return students;
-    return students.filter((x) =>
-      [x.name, x.discordName ?? "", x.riotTag ?? "", x.server ?? ""].some((v) =>
-        v.toLowerCase().includes(s)
-      )
+  // --- Older months list (Oct 2025 -> older than last month) ---
+  const olderMonths = useMemo(() => {
+    const start = new Date(2025, 9, 1); // Oct 2025
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const out: string[] = [];
+    const d = new Date(lastMonthStart);
+    d.setMonth(d.getMonth() - 1); // start at month before last month
+
+    while (d >= start) {
+      out.push(ymKey(d));
+      d.setMonth(d.getMonth() - 1);
+    }
+    return out; // newest -> oldest
+  }, [curYM, lastYM]);
+
+  useEffect(() => {
+    if (activeOlderMonth && !olderMonths.includes(activeOlderMonth)) {
+      setActiveOlderMonth(null);
+    }
+  }, [activeOlderMonth, olderMonths]);
+
+  const matchesSearch = useCallback((x: Student, s: string) => {
+    return [x.name, x.discordName ?? "", x.riotTag ?? "", x.server ?? ""].some(
+      (v) => v.toLowerCase().includes(s)
     );
-  }, [q, students]);
+  }, []);
+
+  // Top list: ALWAYS current + last month (unless searching, then show search results)
+  const topList = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (s) return students.filter((x) => matchesSearch(x, s));
+
+    const allowed = new Set<string>([curYM, lastYM]);
+    return students.filter((x) => {
+      if (!x.latestSessionStart) return false;
+      const d = new Date(x.latestSessionStart);
+      if (Number.isNaN(d.getTime())) return false;
+      return allowed.has(ymKey(d));
+    });
+  }, [q, students, curYM, lastYM, matchesSearch]);
+
+  // Bottom list: cards for selected older month (disabled during search)
+  const olderList = useMemo(() => {
+    if (q.trim()) return [];
+    if (!activeOlderMonth) return [];
+    return students.filter((x) => {
+      if (!x.latestSessionStart) return false;
+      const d = new Date(x.latestSessionStart);
+      if (Number.isNaN(d.getTime())) return false;
+      return ymKey(d) === activeOlderMonth;
+    });
+  }, [q, students, activeOlderMonth]);
 
   return (
     <main className="relative min-h-screen text-white overflow-x-clip">
@@ -207,16 +272,66 @@ export default function StudentsPage() {
 
           {loading ? (
             <div className="text-sm text-zinc-300">Loading…</div>
-          ) : filtered.length === 0 ? (
+          ) : topList.length === 0 ? (
             <div className="text-sm text-zinc-300">No students.</div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((s) => (
+            <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {topList.map((s) => (
                 <li key={s.id}>
                   <StudentCard student={s} />
                 </li>
               ))}
             </ul>
+          )}
+
+          {/* Older months selector (bottom) - hidden while searching */}
+          {!q.trim() && olderMonths.length > 0 && (
+            <div className="pt-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+
+                
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {olderMonths.map((m) => {
+                  const active = m === activeOlderMonth;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setActiveOlderMonth(active ? null : m)}
+                      className={`text-xs px-3 py-1 rounded-lg ring-1 transition ${
+                        active
+                          ? "bg-blue-600/80 ring-blue-400/40"
+                          : "bg-zinc-800/60 ring-white/10 hover:bg-zinc-700/60"
+                      }`}
+                    >
+                      {monthLabel(m)}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Older month cards show BELOW selector */}
+              {activeOlderMonth && (
+                <div className="pt-2 space-y-3">
+                  <div className="text-xs text-zinc-400">
+                    
+                  </div>
+
+                  {olderList.length === 0 ? (
+                    <div className="text-sm text-zinc-300">No students.</div>
+                  ) : (
+                    <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {olderList.map((s) => (
+                        <li key={s.id}>
+                          <StudentCard student={s} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

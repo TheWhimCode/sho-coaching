@@ -19,6 +19,7 @@ model Slot {
   status    SlotStatus @default(free)
   session   Session?   @relation("SlotSession")
 
+
   @@index([startTime])
   @@index([status, startTime, holdUntil])
   @@index([holdKey, holdUntil])
@@ -67,6 +68,8 @@ model Session {
   studentId        String?
   discordId        String?
   discordName      String?
+    champions String[] // Add this line
+
 
   reminderSent Boolean @default(false)
   followupSent Boolean @default(false)

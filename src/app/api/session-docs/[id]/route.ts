@@ -20,16 +20,20 @@ const toJson = (v: unknown): Prisma.InputJsonValue => {
 
 // GET /api/session-docs/:studentId?number=1
 export async function GET(req: Request, ctx: Ctx) {
-  const { id: studentId } = await ctx.params; // ✅ await params
+  const { id: studentId } = await ctx.params;
   const sp = new URL(req.url).searchParams;
   const number = parseNumber(sp.get('number'));
+
   if (!studentId || !number) {
-    return NextResponse.json({ error: 'studentId (path) and number (query) are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'studentId (path) and number (query) are required' },
+      { status: 400 }
+    );
   }
 
   const doc = await prisma.sessionDoc.findUnique({
     where: { studentId_number: { studentId, number } },
-    select: { id: true, studentId: true, number: true, notes: true, updatedAt: true },
+    select: { id: true, studentId: true, number: true, notes: true, updatedAt: true, sessionId: true },
   });
 
   if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -37,9 +41,9 @@ export async function GET(req: Request, ctx: Ctx) {
 }
 
 // PATCH /api/session-docs/:studentId?number=1
-// body: { notes?: string|{ md?: string; title?: string }, number?: number }
+// body: { notes?: string|{ md?: string; title?: string; [k: string]: any }, content?: any, number?: number, sessionId?: string|null }
 export async function PATCH(req: Request, ctx: Ctx) {
-  const { id: studentId } = await ctx.params; // ✅ await params
+  const { id: studentId } = await ctx.params;
   const sp = new URL(req.url).searchParams;
   const numberFromQuery = parseNumber(sp.get('number'));
 
@@ -48,24 +52,59 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const number = numberFromQuery ?? numberFromBody;
 
   if (!studentId || !number) {
-    return NextResponse.json({ error: 'studentId (path) and number (query or body) are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'studentId (path) and number (query or body) are required' },
+      { status: 400 }
+    );
   }
 
+  // Optional: allow linking doc to session
+  const sessionId: string | null | undefined =
+    typeof body?.sessionId === 'string' ? body.sessionId : body?.sessionId === null ? null : undefined;
+
   // Accept string or object; try to parse JSON-looking strings
-  let notes: unknown = body?.notes ?? body?.content ?? {};
-  if (typeof notes === 'string') {
-    const t = notes.trim();
+  let incomingNotes: any = body?.notes ?? body?.content ?? {};
+  if (typeof incomingNotes === 'string') {
+    const t = incomingNotes.trim();
     if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
-      try { notes = JSON.parse(t); } catch { /* keep as string */ }
+      try {
+        incomingNotes = JSON.parse(t);
+      } catch {
+        // treat as raw md
+        incomingNotes = { md: incomingNotes };
+      }
+    } else {
+      // treat as raw md
+      incomingNotes = { md: incomingNotes };
     }
   }
-  const notesJson: Prisma.InputJsonValue = toJson(notes);
+
+  // Merge with existing notes so partial updates (e.g. only md) don't wipe other keys (e.g. title)
+  const existing = await prisma.sessionDoc.findUnique({
+    where: { studentId_number: { studentId, number } },
+    select: { notes: true, sessionId: true },
+  });
+
+  const existingNotes =
+    existing?.notes && typeof existing.notes === 'object' && !Array.isArray(existing.notes)
+      ? (existing.notes as any)
+      : {};
+
+  const mergedNotes = toJson({ ...existingNotes, ...(incomingNotes ?? {}) });
 
   const doc = await prisma.sessionDoc.upsert({
     where: { studentId_number: { studentId, number } },
-    update: { notes: notesJson },
-    create: { studentId, number, notes: notesJson },
-    select: { id: true, studentId: true, number: true, notes: true, updatedAt: true },
+    update: {
+      notes: mergedNotes,
+      ...(sessionId !== undefined ? { sessionId } : {}),
+    },
+    create: {
+      studentId,
+      number,
+      notes: mergedNotes,
+      ...(sessionId !== undefined ? { sessionId } : {}),
+    },
+    select: { id: true, studentId: true, number: true, notes: true, updatedAt: true, sessionId: true },
   });
 
   return NextResponse.json({ doc });

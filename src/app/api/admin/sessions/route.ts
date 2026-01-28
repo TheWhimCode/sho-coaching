@@ -1,4 +1,4 @@
-// src/app/api/admin/bookings/route.ts
+// src/app/api/admin/sessions/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -32,6 +32,7 @@ const rows = await prisma.session.findMany({
     liveBlocks: true,
     notes: true,
     scheduledStart: true,
+    champions: true, // ✅ ADD THIS
 
     studentId: true,                // ⬅ NEW
     student: {                      // ⬅ NEW

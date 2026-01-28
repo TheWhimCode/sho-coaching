@@ -10,9 +10,11 @@ export async function GET(req: Request) {
 
   const docs = await prisma.sessionDoc.findMany({
     where: { studentId },
-    select: { id: true, number: true },
+    // include sessionId so the client can reliably link doc -> session
+    select: { id: true, number: true, sessionId: true },
     orderBy: { number: 'asc' },
   });
+
   return NextResponse.json({ docs });
 }
 
@@ -31,11 +33,22 @@ export async function POST(req: Request) {
 
   if (!studentId) return NextResponse.json({ error: 'studentId required' }, { status: 400 });
 
+  const sessionId: string | null | undefined =
+    typeof body?.sessionId === 'string' ? body.sessionId : body?.sessionId === null ? null : undefined;
+
   let notes: unknown = body?.notes ?? {};
   if (typeof notes === 'string') {
     const t = notes.trim();
     if ((t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'))) {
-      try { notes = JSON.parse(t); } catch {}
+      try {
+        notes = JSON.parse(t);
+      } catch {
+        // treat as raw md
+        notes = { md: notes };
+      }
+    } else {
+      // treat as raw md
+      notes = { md: notes };
     }
   }
   const notesJson: Prisma.InputJsonValue = toJson(notes);
@@ -49,8 +62,13 @@ export async function POST(req: Request) {
   }
 
   const doc = await prisma.sessionDoc.create({
-    data: { studentId, number: number!, notes: notesJson },
-    select: { id: true, number: true, notes: true },
+    data: {
+      studentId,
+      number: number!,
+      notes: notesJson,
+      ...(sessionId !== undefined ? { sessionId } : {}),
+    },
+    select: { id: true, number: true, notes: true, sessionId: true },
   });
 
   return NextResponse.json({ doc });
