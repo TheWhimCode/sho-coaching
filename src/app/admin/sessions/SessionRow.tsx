@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { SessionData } from "./SessionData";
 import { colorsByPreset } from "@/engine/session";
@@ -14,6 +14,18 @@ function formatSmartDate(iso: string) {
   const day = d.getDate();
   const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return `${month} ${day} • ${time}`;
+}
+
+/**
+ * Convert an ISO (UTC) string to a datetime-local input value in *local time*
+ * Format required: YYYY-MM-DDTHH:mm (no timezone)
+ */
+function toLocalInputValue(isoUTC: string) {
+  const d = new Date(isoUTC);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
 }
 
 function presetFromSessionType(
@@ -50,9 +62,18 @@ type Props = {
 export default function SessionRowItem({ r, onReschedule }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [tempWhen, setTempWhen] = useState(
-    new Date(r.scheduledStart).toISOString().slice(0, 16)
+
+  // IMPORTANT:
+  // datetime-local expects a local timestamp string (no timezone).
+  // r.scheduledStart is stored as UTC ISO; convert it to local for the input value.
+  const [tempWhen, setTempWhen] = useState(() =>
+    toLocalInputValue(r.scheduledStart)
   );
+
+  // Keep the input in sync if the row updates (e.g. after reschedule)
+  useEffect(() => {
+    setTempWhen(toLocalInputValue(r.scheduledStart));
+  }, [r.scheduledStart]);
 
   const [cursorPopup, setCursorPopup] = useState<{ x: number; y: number } | null>(null);
 
@@ -71,7 +92,11 @@ export default function SessionRowItem({ r, onReschedule }: Props) {
 
   async function handleReschedule() {
     if (!onReschedule) return;
-    await onReschedule(r.id, new Date(tempWhen).toISOString());
+
+    // tempWhen is local (YYYY-MM-DDTHH:mm). Convert local -> UTC ISO before sending to DB.
+    const utcISO = new Date(tempWhen).toISOString();
+
+    await onReschedule(r.id, utcISO);
     setEditing(false);
   }
 
@@ -152,8 +177,8 @@ export default function SessionRowItem({ r, onReschedule }: Props) {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-window.open(`/admin/students/${r.studentId}`, "_blank", "noopener,noreferrer");
-                  
+                  window.open(`/admin/students/${r.studentId}`, "_blank", "noopener,noreferrer");
+
                 }}
                 className="font-semibold text-left text-white hover:text-blue-400 hover:underline transition"
               >
