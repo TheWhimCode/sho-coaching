@@ -1,47 +1,38 @@
+// app/skillcheck/components/Resultscreen.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
-import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
-import {
-  champSquareUrlById,
-  resolveChampionId,
-} from "@/lib/league/datadragon";
-
-type DraftAnswer = {
-  champ: string;
-  explanation: string;
-  correct?: true;
-};
 
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
 
-export function ResultScreen({
-  answers,
+export default function ResultsScreen({
   avgAttempts,
-  onCreateDraft,
+  header,
+  children,
+  cta,
 }: {
-  answers: DraftAnswer[];
   avgAttempts: string;
-  onCreateDraft?: (initialStep: "setup" | "success") => void;
+  header?: ReactNode;
+  children?: ReactNode;
+  cta?: ReactNode;
 }) {
-  const correct = answers.find((a) => a.correct);
-
   /* -----------------------------
      difficulty
   ----------------------------- */
 
-  const avg = Number(avgAttempts);
+  const difficulty = useMemo(() => {
+    const avg = Number(avgAttempts);
 
-  const difficulty =
-    avg <= 1.5
+    return avg <= 1.5
       ? { label: "Easy", color: "border-green-400/40 text-green-400" }
       : avg <= 2.0
       ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
       : avg <= 2.5
       ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
       : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
+  }, [avgAttempts]);
 
   /* -----------------------------
      countdown (HH:MM:SS)
@@ -84,50 +75,20 @@ export function ResultScreen({
         "
       >
         <div className="max-w-4xl mx-auto flex flex-col">
-          {/* HEADER */}
-          <h3
-            className="text-3xl md:text-4xl font-semibold text-white mb-4"
-            style={{ textShadow: HEAVY_TEXT_SHADOW }}
-          >
-            Why {correct?.champ}?
-          </h3>
+          {/* HEADER (provided by game) */}
+          {header && (
+            <div
+              className="text-3xl md:text-4xl font-semibold text-white mb-4"
+              style={{ textShadow: HEAVY_TEXT_SHADOW }}
+            >
+              {header}
+            </div>
+          )}
 
-          {/* ANSWERS */}
-          <div className="flex flex-col gap-2 md:gap-4">
-            {answers.map((a) => {
-              const src = champSquareUrlById(
-                resolveChampionId(a.champ)
-              );
+          {/* MAIN CONTENT (provided by game) */}
+          {children}
 
-              return (
-                <div
-                  key={a.champ}
-                  className={[
-                    "flex items-center gap-4 p-4 rounded-lg transition-colors",
-                    a.correct
-                      ? "bg-white/10 ring-1 ring-green-400/40"
-                      : "bg-white/5",
-                  ].join(" ")}
-                >
-                  <img
-                    src={src}
-                    alt={a.champ}
-                    className="
-                      w-14 h-14 rounded-lg
-                      object-cover
-                      flex-shrink-0
-                    "
-                  />
-
-                  <p className="text-md text-gray-200 leading-relaxed">
-                    {a.explanation}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* STATS */}
+          {/* STATS (always) */}
           <div className="mt-12 flex justify-center">
             <div
               className={`
@@ -147,34 +108,13 @@ export function ResultScreen({
             </div>
           </div>
 
-          {/* CTA */}
-          {onCreateDraft && (
-            <div className="mt-12 hidden sm:flex justify-center">
-              <PrimaryCTA
-                className="px-10 py-4 text-lg w-full max-w-[320px]"
-                onClick={async () => {
-                  const res = await fetch(
-                    "/api/skillcheck/db/draftExists"
-                  );
+          {/* CTA (provided by game) */}
+          {cta && <div className="mt-12 hidden sm:flex justify-center">{cta}</div>}
 
-                  const data = await res.json();
-
-                  if (data?.exists) {
-                    onCreateDraft("success");
-                  } else {
-                    onCreateDraft("setup");
-                  }
-                }}
-              >
-                Make your own draft
-              </PrimaryCTA>
-            </div>
-          )}
-
-          {/* COUNTDOWN */}
+          {/* COUNTDOWN (always) */}
           <div className="mt-12 text-center">
             <div className="text-md uppercase tracking-wide text-gray-400 mb-2">
-              Come back tomorrow for a new draft
+              Come back tomorrow for another puzzle
             </div>
 
             <div

@@ -1,3 +1,4 @@
+// app/skillcheck/cooldowns/components/CooldownOptions.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -23,12 +24,20 @@ type Tier =
   | "way"
   | "noclue";
 
+/* ---------- parsing ---------- */
+
 function parseSeconds(input: string): number | null {
-  const m = input.match(/-?\d+/);
+  // allow decimals: 14.5 / 14,5
+  const m = input.trim().match(/-?\d+(?:[.,]\d+)?/);
   if (!m) return null;
-  const n = Number(m[0]);
+
+  const normalized = m[0].replace(",", ".");
+  const n = Number(normalized);
+
   if (!Number.isFinite(n)) return null;
-  return Math.round(n);
+
+  // LoL cooldowns use at most 1 decimal → clamp safely
+  return Math.round(n * 10) / 10;
 }
 
 function toRgba(rgb: [number, number, number], a: number) {
@@ -110,7 +119,6 @@ function feedbackVisual(direction: Direction, rel: number) {
 /* ---------- Question rendering ---------- */
 
 function renderQuestionWithGradientAbility(question: string) {
-  // ✅ works for ANY rank number
   const m = question.match(
     /^Guess the cooldown of (.+) at rank (\d+)\?$/i
   );
@@ -174,9 +182,11 @@ export default function CooldownGuessOptions({
     const delta = Math.abs(inputNumber - trueCooldown);
     const rel = trueCooldown > 0 ? delta / trueCooldown : 0;
 
+    const EPS = 1e-6;
+
     let direction: Direction = "correct";
-    if (inputNumber < trueCooldown) direction = "low";
-    if (inputNumber > trueCooldown) direction = "high";
+    if (inputNumber < trueCooldown - EPS) direction = "low";
+    if (inputNumber > trueCooldown + EPS) direction = "high";
 
     setAttempts((prev) => [...prev, { guess: inputNumber, direction, rel }]);
     setPulseKey((k) => k + 1);

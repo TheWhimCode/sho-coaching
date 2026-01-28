@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Hero from "@/app/skillcheck/layout/Hero";
 import { DraftOverlay } from "@/app/skillcheck/draft/game/DraftOverlay";
 import ChampOptions from "@/app/skillcheck/draft/game/ChampOptions";
-import { ResultScreen } from "@/app/skillcheck/draft/game/ResultScreen";
+import { ResultScreen } from "@/app/skillcheck/draft/game/DraftResult";
 import DraftAuthorMain from "@/app/skillcheck/draft/authoring/DraftAuthorMain";
 import SuccessOverlay from "@/app/skillcheck/games/SuccessOverlay";
 
