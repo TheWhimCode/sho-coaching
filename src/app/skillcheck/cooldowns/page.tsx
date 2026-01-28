@@ -1,4 +1,9 @@
 // app/skillcheck/cooldowns/page.tsx
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 import CooldownsClient from "./CooldownsClient";
 import { cooldownAbilities } from "./components/cooldownAbilities";
 import { fetchChampionSpellsById } from "@/lib/datadragon/championspells";
@@ -24,15 +29,17 @@ export default async function CooldownsPage() {
 
   const { data, version } = await fetchChampionSpellsById(champ.id);
 
-  // Data Dragon spells are in order Q/W/E/R:
+  // Q/W/E/R are always in this order in Data Dragon
   const idx = key === "Q" ? 0 : key === "W" ? 1 : key === "E" ? 2 : 3;
   const activeSpell = data.spells[idx];
 
   return (
     <CooldownsClient
-      champion={{ id: champ.id, icon: champSquareUrlById(champ.id, version) }}
+      champion={{
+        id: champ.id,
+        icon: champSquareUrlById(champ.id, version),
+      }}
       spells={data.spells}
-      // add this prop in CooldownsClient so it uses it instead of hardcoding "R"
       initialActiveSpellId={activeSpell.id}
     />
   );
