@@ -50,8 +50,17 @@ export default function SkillcheckClient({
   const [authoringStep, setAuthoringStep] =
     useState<"setup" | "success">("setup");
 
+  // Persistent scroll anchor in the DOM.
   const resultRef = useRef<HTMLDivElement | null>(null);
   const hasScrolledRef = useRef(false);
+
+  // Time before showing ResultScreen + initiating scroll (same moment)
+  const SHOW_AND_SCROLL_DELAY_MS = 2500;
+
+  // How much extra smoothness to request (browser-dependent, but helps a bit)
+  // If you want it slightly slower than default, increasing distance helps,
+  // but duration is not configurable with scrollIntoView.
+  const SCROLL_BEHAVIOR: ScrollBehavior = "smooth";
 
   /* -----------------------------
      derived data
@@ -83,18 +92,12 @@ export default function SkillcheckClient({
       setDisabledAnswers(s.disabledAnswers ?? []);
       setCompleted(!!s.completed);
 
-      if (s.completed) {
-        setShowResult(true);
-      }
-
       if (s.completed && s.placedChamp) {
         const isBlue = draft.userTeam === "blue";
         const team = isBlue ? draft.blue : draft.red;
         const setTeam = isBlue ? setBlue : setRed;
 
-        const slotIndex = team.findIndex(
-          (p) => p.role === draft.role
-        );
+        const slotIndex = team.findIndex((p) => p.role === draft.role);
         if (slotIndex !== -1) {
           const updated = [...team];
           updated[slotIndex] = {
@@ -102,6 +105,28 @@ export default function SkillcheckClient({
             champ: s.placedChamp,
           };
           setTeam(updated);
+        }
+      }
+
+      // On load, if already completed, start the SAME timer
+      // and reveal+scroll at the same moment.
+      if (s.completed) {
+        if (!hasScrolledRef.current) {
+          hasScrolledRef.current = true;
+
+          setTimeout(() => {
+            setShowResult(true);
+
+            // 2 RAFs helps ensure layout has settled so "center" is actually center.
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                resultRef.current?.scrollIntoView({
+                  behavior: SCROLL_BEHAVIOR,
+                  block: "center",
+                });
+              });
+            });
+          }, SHOW_AND_SCROLL_DELAY_MS);
         }
       }
     } catch {}
@@ -147,7 +172,22 @@ export default function SkillcheckClient({
 
       setCompleted(true);
       setLastWrong(null);
-      setTimeout(() => setShowResult(true), 1500);
+
+      // Same timing: reveal + scroll at the same moment after delay.
+      hasScrolledRef.current = true;
+      setTimeout(() => {
+        setShowResult(true);
+
+        // 2 RAFs helps ensure layout has settled so "center" is actually center.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resultRef.current?.scrollIntoView({
+              behavior: SCROLL_BEHAVIOR,
+              block: "center",
+            });
+          });
+        });
+      }, SHOW_AND_SCROLL_DELAY_MS);
 
       localStorage.setItem(
         `skillcheck:${draft.id}`,
@@ -177,26 +217,6 @@ export default function SkillcheckClient({
       })
     );
   }
-
-  /* -----------------------------
-     scroll result into view (once)
-  ----------------------------- */
-
-  useEffect(() => {
-    if (!showResult || !resultRef.current) return;
-    if (hasScrolledRef.current) return;
-
-    hasScrolledRef.current = true;
-
-    const timeout = setTimeout(() => {
-      resultRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 1500);
-
-    return () => clearTimeout(timeout);
-  }, [showResult]);
 
   return (
     <>
@@ -243,8 +263,9 @@ export default function SkillcheckClient({
                 />
               )}
 
-              {showResult && (
-                <div ref={resultRef}>
+              {/* Always render the scroll anchor; ResultScreen appears inside later */}
+              <div ref={resultRef}>
+                {showResult && (
                   <ResultScreen
                     answers={draft.answers}
                     avgAttempts={avgAttempts}
@@ -255,8 +276,8 @@ export default function SkillcheckClient({
                       window.scrollTo({ top: 0 });
                     }}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </>
           }
         />

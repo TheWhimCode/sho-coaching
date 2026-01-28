@@ -1,9 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { DraftOverlay } from "@/app/skillcheck/games/draft/game/DraftOverlay";
+import { DraftGrid } from "@/app/skillcheck/games/draft/DraftGrid";
+import { TeamSlot } from "@/app/skillcheck/games/draft/DraftTeam";
 import AnswerAuthorPanel from "@/app/admin/skillcheck/drafts/AnswerAuthorPanel";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
+
+import {
+  champSquareUrlById,
+  resolveChampionId,
+} from "@/lib/datadragon";
 
 type Answer = {
   champ: string;
@@ -11,21 +17,62 @@ type Answer = {
   correct?: true;
 };
 
-function buildInitialAnswers(solutionChamp: string): Answer[] {
-  const index = Math.floor(Math.random() * 3);
+function champUrl(input: string | null | undefined) {
+  if (!input) return null;
+  return champSquareUrlById(resolveChampionId(input));
+}
 
-  const answers: Answer[] = Array.from({ length: 3 }, () => ({
+/* -------------------------------------------
+   Build answers with DB-correct answer prefilled
+-------------------------------------------- */
+function buildInitialAnswersFromDraft(draft: any): Answer[] {
+  const correctFromDb =
+    draft.answers?.find((a: any) => a.correct)?.champ ??
+    null;
+
+  const size = 3;
+  const answers: Answer[] = Array.from({ length: size }, () => ({
     champ: "",
     explanation: "",
   }));
 
+  if (!correctFromDb) {
+    // no correct answer yet → leave all empty
+    return answers;
+  }
+
+  const index = Math.floor(Math.random() * size);
+
   answers[index] = {
-    champ: solutionChamp,
-    explanation: "",
+    champ: correctFromDb,
+    explanation:
+      draft.answers?.find((a: any) => a.correct)?.explanation ?? "",
     correct: true,
   };
 
   return answers;
+}
+
+/* -------------------------------------------
+   Draft preview helpers
+-------------------------------------------- */
+function buildTeamSlots(
+  team: any[],
+  solutionRole: string,
+  isUserTeam: boolean
+): TeamSlot[] {
+  return team.map((p: any) => {
+    const isSolution = isUserTeam && p.role === solutionRole;
+
+    return {
+      champ: champUrl(p.champ),
+      state: isSolution
+        ? "solution"
+        : p.champ
+        ? "filled"
+        : "empty",
+    };
+  });
 }
 
 export default function DraftReviewCard({
@@ -35,17 +82,20 @@ export default function DraftReviewCard({
   draft: any;
   onDone: () => void;
 }) {
-  const solutionTeam =
-    draft.userTeam === "blue" ? draft.blue : draft.red;
-
-  const solutionSlot = solutionTeam.find(
-    (p: any) => p.role === draft.role
+  const [answers, setAnswers] = useState<Answer[]>(() =>
+    buildInitialAnswersFromDraft(draft)
   );
 
-  const solutionChamp = solutionSlot?.champ;
+  const blueSlots = buildTeamSlots(
+    draft.blue,
+    draft.role,
+    draft.userTeam === "blue"
+  );
 
-  const [answers, setAnswers] = useState<Answer[]>(() =>
-    buildInitialAnswers(solutionChamp)
+  const redSlots = buildTeamSlots(
+    draft.red,
+    draft.role,
+    draft.userTeam === "red"
   );
 
   async function submit(status: "APPROVED" | "REJECTED") {
@@ -65,14 +115,7 @@ export default function DraftReviewCard({
   return (
     <div className="p-6 rounded-xl bg-white/5 border border-white/10">
       {/* DRAFT PREVIEW */}
-      <DraftOverlay
-        blue={draft.blue}
-        red={draft.red}
-        role={draft.role}
-        userTeam={draft.userTeam}
-        solutionChamp={solutionChamp}
-        locked
-      />
+      <DraftGrid blue={blueSlots} red={redSlots} />
 
       {/* ANSWERS */}
       <AnswerAuthorPanel
