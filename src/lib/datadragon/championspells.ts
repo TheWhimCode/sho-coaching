@@ -34,6 +34,7 @@ export async function fetchChampionSpellsById(
     // cache in Next.js data cache
     next: { revalidate: 60 * 60 * 24 },
   });
+console.log("Fetching champ:", championId);
 
   if (!res.ok) throw new Error(`Failed to load champ detail: ${championId}`);
 

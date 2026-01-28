@@ -20,10 +20,16 @@ export default function CooldownsHero({
   champion,
   spells,
   activeSpellId,
+  askedKey,
+  askedRank,
+  askedMaxRank,
 }: {
   champion: { id: string; name?: string; icon: string };
   spells: CooldownsSpell[];
   activeSpellId: string;
+  askedKey?: SpellKey;
+  askedRank?: number;
+  askedMaxRank?: number;
 }) {
   const champName = champion.name ?? champion.id;
 
@@ -47,7 +53,6 @@ export default function CooldownsHero({
 
   return (
     <div className="w-full flex flex-col items-center gap-4">
-      {/* Header row: champ icon + name */}
       <div className="flex items-center gap-4">
         <img
           src={champion.icon}
@@ -64,14 +69,16 @@ export default function CooldownsHero({
         </div>
       </div>
 
-      {/* Spell panels (now delegated to SpellPanelList) */}
       <div className="w-full">
         <SpellPanelList
           spells={spellPanelSpells}
           selectedKey={selectedKey}
-          // Keep header inside hero above; don’t repeat title/subtitle here
           title=""
           subtitle={undefined}
+          // ✅ pips only on the asked spell icon
+          askedKey={askedKey}
+          askedRank={askedRank}
+          askedMaxRank={askedMaxRank}
         />
       </div>
     </div>

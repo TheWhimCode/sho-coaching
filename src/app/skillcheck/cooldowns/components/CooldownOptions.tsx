@@ -31,24 +31,20 @@ function parseSeconds(input: string): number | null {
   return Math.round(n);
 }
 
-function mix(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
 function toRgba(rgb: [number, number, number], a: number) {
   const [r, g, b] = rgb;
   return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
 }
 
-/* ---------- Tier system (single source of truth) ---------- */
+/* ---------- Tier system ---------- */
 
 function tierFromRel(rel: number): Tier {
   if (rel === 0) return "perfect";
-  if (rel > 0.3) return "noclue";
+  if (rel > 0.4) return "noclue";
   if (rel <= 0.05) return "almost";
   if (rel <= 0.1) return "slight";
   if (rel <= 0.15) return "close";
-  if (rel <= 0.25) return "getting";
+  if (rel <= 0.3) return "getting";
   return "way";
 }
 
@@ -81,22 +77,21 @@ function labelFor(direction: Direction, rel: number) {
 }
 
 function tierColor(tier: Tier): [number, number, number] {
-  // Symmetric colors (same for too high / too low)
   switch (tier) {
     case "perfect":
-      return [34, 197, 94]; // green
+      return [34, 197, 94];
     case "almost":
-      return [99, 197, 34]; // light green
+      return [99, 197, 34];
     case "slight":
-      return [189, 197, 34]; // yellow
+      return [189, 197, 34];
     case "close":
-      return [232, 195, 35]; // orange
+      return [232, 195, 35];
     case "getting":
-      return [251, 146, 60]; // deep orange244, 187, 68
+      return [251, 146, 60];
     case "way":
-      return [197, 34, 34]; // red
+      return [197, 34, 34];
     case "noclue":
-      return [0, 0, 0]; // dark red
+      return [0, 0, 0];
   }
 }
 
@@ -104,24 +99,25 @@ function feedbackVisual(direction: Direction, rel: number) {
   const tier = tierFromRel(rel);
   const rgb = tierColor(tier);
 
-  const bg = toRgba(rgb, tier === "noclue" ? 0.9 : 0.8);
-  const glow = toRgba(rgb, tier === "noclue" ? 0.55 : 0.7);
-
   return {
-    bg,
-    glow,
+    bg: toRgba(rgb, tier === "noclue" ? 0.9 : 0.8),
+    glow: toRgba(rgb, tier === "noclue" ? 0.55 : 0.7),
     text: labelFor(direction, rel),
     textAlpha: 1,
   };
 }
 
-/* ---------- UI ---------- */
+/* ---------- Question rendering ---------- */
 
 function renderQuestionWithGradientAbility(question: string) {
-  const m = question.match(/^Guess the cooldown of (.+) at rank 1\?$/i);
+  // ✅ works for ANY rank number
+  const m = question.match(
+    /^Guess the cooldown of (.+) at rank (\d+)\?$/i
+  );
   if (!m) return <>{question}</>;
 
-  const ability = m[1] ?? "";
+  const ability = m[1];
+  const rank = m[2];
 
   return (
     <>
@@ -129,15 +125,19 @@ function renderQuestionWithGradientAbility(question: string) {
         Guess the cooldown of{" "}
       </span>
 
-<span className="bg-clip-text text-transparent bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00] saturate-180">
-  {ability}
-</span>
+      <span className="bg-clip-text text-transparent bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00] saturate-180">
+        {ability}
+      </span>
 
-
-      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}> at rank 1</span>
+      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}>
+        {" "}
+        at rank {rank}?
+      </span>
     </>
   );
 }
+
+/* ---------- Component ---------- */
 
 export default function CooldownGuessOptions({
   question,
@@ -151,11 +151,11 @@ export default function CooldownGuessOptions({
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [solved, setSolved] = useState(false);
+  const [pulseKey, setPulseKey] = useState(0);
 
   const guessesCount = attempts.length;
   const last = attempts[attempts.length - 1];
   const inputNumber = useMemo(() => parseSeconds(input), [input]);
-  const [pulseKey, setPulseKey] = useState(0);
 
   const indicator = useMemo(() => {
     if (!last) return null;
@@ -169,8 +169,7 @@ export default function CooldownGuessOptions({
   }
 
   function submitGuess() {
-    if (solved) return;
-    if (inputNumber === null) return;
+    if (solved || inputNumber === null) return;
 
     const delta = Math.abs(inputNumber - trueCooldown);
     const rel = trueCooldown > 0 ? delta / trueCooldown : 0;
@@ -196,7 +195,7 @@ export default function CooldownGuessOptions({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [solved, inputNumber, trueCooldown, guessesCount]);
+  }, [submitGuess]);
 
   return (
     <div className="flex flex-col gap-6">

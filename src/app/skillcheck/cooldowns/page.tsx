@@ -1,5 +1,3 @@
-// app/skillcheck/cooldowns/page.tsx
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
@@ -29,18 +27,19 @@ export default async function CooldownsPage() {
 
   const { data, version } = await fetchChampionSpellsById(champ.id);
 
-  // Q/W/E/R are always in this order in Data Dragon
   const idx = key === "Q" ? 0 : key === "W" ? 1 : key === "E" ? 2 : 3;
   const activeSpell = data.spells[idx];
 
+  // ✅ pick rank on the server (1..maxRank)
+  const maxRank = activeSpell.cooldowns?.length ?? 0;
+  const askedRank = maxRank > 0 ? pick(Array.from({ length: maxRank }, (_, i) => i + 1)) : 1;
+
   return (
     <CooldownsClient
-      champion={{
-        id: champ.id,
-        icon: champSquareUrlById(champ.id, version),
-      }}
+      champion={{ id: champ.id, icon: champSquareUrlById(champ.id, version) }}
       spells={data.spells}
       initialActiveSpellId={activeSpell.id}
+      askedRank={askedRank}
     />
   );
 }

@@ -24,32 +24,42 @@ export default function CooldownsClient({
   champion,
   spells,
   initialActiveSpellId,
+  askedRank,
 }: {
   champion: { id: string; name?: string; icon: string };
   spells: Spell[];
   initialActiveSpellId?: string;
+  askedRank?: number; // ✅ comes from server
 }) {
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Determine which spell is being asked
   const activeSpell = useMemo(() => {
-    // 1️⃣ prefer server-chosen spell
     if (initialActiveSpellId) {
       const found = spells.find((s) => s.id === initialActiveSpellId);
       if (found) return found;
     }
-
-    // 2️⃣ fallback: any R
-    const r = spells.find((s) => s.key === "R");
-    if (r) return r;
-
-    // 3️⃣ absolute fallback
-    return spells[0];
+    return spells.find((s) => s.key === "R") ?? spells[0];
   }, [spells, initialActiveSpellId]);
 
-  // Rank 1 only
-  const trueCooldownRank1 = activeSpell.cooldowns?.[0] ?? 0;
+  // Use server-provided rank (no randomness here!)
+  const { rank, maxRank, trueCooldown } = useMemo(() => {
+    const cooldowns = activeSpell.cooldowns ?? [];
+    const maxRank = Math.max(1, cooldowns.length);
 
-  const question = `Guess the cooldown of ${activeSpell.name} at rank 1?`;
+    const safeRank =
+      typeof askedRank === "number"
+        ? Math.min(Math.max(1, askedRank), maxRank)
+        : 1;
+
+    return {
+      rank: safeRank,
+      maxRank,
+      trueCooldown: cooldowns[safeRank - 1] ?? 0,
+    };
+  }, [activeSpell, askedRank]);
+
+  const question = `Guess the cooldown of ${activeSpell.name} at rank ${rank}?`;
 
   return (
     <>
@@ -61,12 +71,16 @@ export default function CooldownsClient({
             champion={champion}
             spells={spells as CooldownsSpell[]}
             activeSpellId={activeSpell.id}
+            // ✅ pips info
+            askedKey={activeSpell.key}
+            askedRank={rank}
+            askedMaxRank={maxRank}
           />
         }
         content={
           <CooldownGuessOptions
             question={question}
-            trueCooldown={trueCooldownRank1}
+            trueCooldown={trueCooldown}
             onSolved={() => {
               setShowSuccess(true);
               setTimeout(() => setShowSuccess(false), 1500);

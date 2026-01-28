@@ -21,15 +21,62 @@ function stripHtml(html: string) {
     .trim();
 }
 
+function PipRow({ current, total }: { current: number; total: number }) {
+  const safeTotal = Math.max(1, total);
+  const safeCurrent = Math.min(Math.max(1, current), safeTotal);
+
+  return (
+    // ↑ make sure this sits ABOVE the key badge and the image
+    <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 z-50 pointer-events-none">
+      {/* Visibility wrapper: subtle black overlay behind pips */}
+      <div className="rounded-md bg-black/95 border border-neutral-400/40 px-1 py-[1px] shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
+        <div className="flex gap-[2px]">
+          {Array.from({ length: safeTotal }).map((_, i) => {
+            const filled = i < safeCurrent;
+
+            return (
+              <span
+                key={i}
+                className={[
+                  "block w-[4px] h-[7px] rounded-full",
+                  filled
+                    ? [
+                        "bg-[#69A8FF]",
+                        // subtle glow for filled pips
+                        "shadow-[0_1px_3px_rgba(0,0,0,0.6),0_0_10px_rgba(105,168,255,0.55)]",
+                      ].join(" ")
+                    : [
+                        // empty: border only, no fill
+                        "bg-white/30",
+                        "border border-black/30",
+                        "shadow-[0_1px_3px_rgba(0,0,0,0.6)]",
+                      ].join(" "),
+                ].join(" ")}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SpellPanelList({
   spells,
   selectedKey,
+  askedKey,
+  askedRank,
+  askedMaxRank,
   className,
   title = "Abilities",
   subtitle,
 }: {
   spells: SpellPanelSpell[];
   selectedKey: SpellKey;
+  // NEW: pips only for the ability being asked
+  askedKey?: SpellKey;
+  askedRank?: number; // 1-based
+  askedMaxRank?: number; // e.g. 3 / 5 / 6
   className?: string;
   title?: string;
   subtitle?: string;
@@ -42,13 +89,9 @@ export default function SpellPanelList({
     <div className={className}>
       {/* Header */}
       <div className="mb-2">
-        <div className="text-xl font-semibold leading-tight">
-          {title}
-        </div>
+        <div className="text-xl font-semibold leading-tight">{title}</div>
         {subtitle && (
-          <div className="text-sm opacity-70 leading-tight">
-            {subtitle}
-          </div>
+          <div className="text-sm opacity-70 leading-tight">{subtitle}</div>
         )}
       </div>
 
@@ -56,6 +99,8 @@ export default function SpellPanelList({
       <div className="flex flex-col gap-3">
         {ordered.map((s) => {
           const isSelected = s.key === selectedKey;
+          const isAsked = askedKey ? s.key === askedKey : isSelected;
+
           const raw = s.tooltip || s.description || "";
           const text = raw ? stripHtml(raw) : "";
 
@@ -64,9 +109,7 @@ export default function SpellPanelList({
               key={s.id}
               className={[
                 "rounded-2xl border overflow-hidden transition",
-                isSelected
-                  ? "border-yellow-400/40"
-                  : "border-white/10 opacity-70",
+                isSelected ? "border-yellow-400/40" : "border-white/10 opacity-70",
               ].join(" ")}
             >
               {/* Gradient highlight for selected */}
@@ -81,7 +124,7 @@ export default function SpellPanelList({
                 {/* IMPORTANT: items-start, not items-center */}
                 <div className="flex gap-4 items-start">
                   {/* Icon */}
-                  <div className="relative shrink-0 mt-[2px]">
+                  <div className="relative shrink-0 mt-[2px] isolate">
                     <img
                       src={s.icon}
                       alt={`${s.key} ${s.name}`}
@@ -90,9 +133,19 @@ export default function SpellPanelList({
                         isSelected ? "" : "grayscale",
                       ].join(" ")}
                     />
-                    <div className="absolute -bottom-2 -right-2 rounded-lg px-2 py-1 text-xs font-bold bg-black/70 border border-white/10">
+
+                    {/* Key badge */}
+                    <div className="absolute -bottom-2 -right-2 z-30 rounded-lg px-2 py-1 text-xs font-bold bg-black/70 border border-white/10">
                       {s.key}
                     </div>
+
+                    {/* Pips ONLY for the asked ability (must be above the key badge) */}
+                    {isAsked &&
+                      typeof askedRank === "number" &&
+                      typeof askedMaxRank === "number" &&
+                      askedMaxRank > 0 && (
+                        <PipRow current={askedRank} total={askedMaxRank} />
+                      )}
                   </div>
 
                   {/* Text */}
