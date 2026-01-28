@@ -14,6 +14,9 @@ type Student = {
   server: string | null;
   createdAt: string;
   updatedAt: string;
+    // required by StudentCard now:
+  latestSessionStart: string | null;
+  allChampions: string[];
 };
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -28,54 +31,60 @@ const [movers, setMovers] = useState<{ student: Student; delta: number }[]>([]);
   const [loadingMovers, setLoadingMovers] = useState(true);
 
   // ---- Fetch upcoming sessions ----
-  useEffect(() => {
-    let on = true;
+useEffect(() => {
+  let on = true;
 
-    (async () => {
-      try {
-        setLoadingBookings(true);
-        const res = await fetch(`/api/admin/sessions?range=upcoming`, {
-          cache: "no-store",
-        });
+  (async () => {
+    try {
+      setLoadingMovers(true);
 
-        if (!res.ok) throw new Error(await res.text());
-        const data = (await res.json()) as SessionData[];
+      const res = await fetch("/api/admin/students/top-movers?days=7", {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(await res.text());
 
-        if (on) setBookings(data);
-      } finally {
-        if (on) setLoadingBookings(false);
-      }
-    })();
+      const j = await res.json();
 
-    return () => {
-      on = false;
-    };
-  }, []);
+      // supports either { students: [...] } or direct array
+      const raw = Array.isArray(j) ? j : (j.students ?? []);
 
-  // ---- Fetch top movers (via optimized backend route) ----
-  useEffect(() => {
-    let on = true;
+      const normalized = raw.map((x: any) => {
+        const s = x.student ?? x;     // supports either {student, delta} or student-only
+        const delta = Number(x.delta ?? 0);
 
-    (async () => {
-      try {
-        setLoadingMovers(true);
+        const student: Student = {
+          id: String(s.id),
+          name: String(s.name ?? ""),
+          discordName: s.discordName ?? null,
+          riotTag: s.riotTag ?? null,
+          server: s.server ?? null,
+          createdAt:
+            typeof s.createdAt === "string"
+              ? s.createdAt
+              : new Date(s.createdAt).toISOString(),
+          updatedAt:
+            typeof s.updatedAt === "string"
+              ? s.updatedAt
+              : new Date(s.updatedAt).toISOString(),
 
-        const res = await fetch("/api/admin/students/top-movers?days=7", {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(await res.text());
+          latestSessionStart: s.latestSessionStart ?? null,
+          allChampions: Array.isArray(s.allChampions) ? s.allChampions : [],
+        };
 
-        const data = await res.json(); // expecting array of 3 students
-        if (on) setMovers(data.students ?? []);
-      } finally {
-        if (on) setLoadingMovers(false);
-      }
-    })();
+        return { student, delta };
+      });
 
-    return () => {
-      on = false;
-    };
-  }, []);
+      if (on) setMovers(normalized);
+    } finally {
+      if (on) setLoadingMovers(false);
+    }
+  })();
+
+  return () => {
+    on = false;
+  };
+}, []);
+
 
   const nextThree = useMemo(() => {
     return [...bookings]
