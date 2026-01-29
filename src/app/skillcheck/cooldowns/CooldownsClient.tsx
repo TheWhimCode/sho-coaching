@@ -2,7 +2,7 @@
 "use client";
 
 import Hero from "@/app/skillcheck/layout/Hero";
-import SuccessOverlay from "@/app/skillcheck/games/SuccessOverlay";
+import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
 import { useEffect, useMemo, useRef, useState } from "react";
 import CooldownsHero, {
   type CooldownsSpell,

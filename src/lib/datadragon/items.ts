@@ -2,37 +2,88 @@ import { currentPatch } from "./patch";
 
 /* ---------------------------- Types ---------------------------- */
 
-export type DDragonItem = {
+export type CDragonItem = {
+  id: number;
   name: string;
   description: string;
-  gold: { base: number; total: number };
-  from?: string[];
-  into?: string[];
-  tags?: string[];
-  icon?: string;
+  from?: number[];
+  to?: number[];
+  categories?: string[];
+  iconPath?: string;
+
+  inStore?: boolean;
+  displayInItemSets?: boolean;
+
+  requiredChampion?: string;
+  requiredAlly?: string;
+  requiredBuffCurrencyName?: string;
+
+  specialRecipe?: number;
+  price?: number;
+  priceTotal?: number;
 };
 
-let itemsInit: Promise<void> | null = null;
-let items: Record<string, DDragonItem> = {};
 
-/* --------------------- Load item.json once --------------------- */
+/* ------------------------- Patch utils ------------------------- */
+
+function normalizeCDragonPatch(patch: string) {
+  const p = patch.split(".");
+  return p.length >= 2 ? `${p[0]}.${p[1]}` : patch;
+}
+
+/* ------------------------- State ------------------------- */
+
+let itemsInit: Promise<void> | null = null;
+let items: Record<string, CDragonItem> = {};
+
+/* --------------------- Load items.json once --------------------- */
 
 export function ensureItemsData(locale: string = "en_US") {
   if (itemsInit) return itemsInit;
 
-  itemsInit = fetch(
-    `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/item.json`
-  )
-    .then(r => r.json())
-    .then(j => {
-      items = j.data ?? {};
-    })
-    .catch(() => {});
+  const patch = normalizeCDragonPatch(currentPatch);
+
+  const urlFor = (p: string) =>
+    `https://raw.communitydragon.org/${p}/plugins/rcp-be-lol-game-data/global/default/v1/items.json`;
+
+  itemsInit = (async () => {
+    const urls = [urlFor(patch), urlFor("latest")];
+    let lastError: unknown = null;
+
+    for (const url of urls) {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
+
+        const arr = (await r.json()) as CDragonItem[];
+        const map: Record<string, CDragonItem> = {};
+
+        for (const it of arr ?? []) {
+          map[String(it.id)] = it;
+        }
+
+        if (Object.keys(map).length === 0) {
+          throw new Error("Empty items payload");
+        }
+
+        items = map;
+        return;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw lastError ?? new Error("Failed to load CommunityDragon items");
+  })();
 
   return itemsInit;
 }
 
-/* ----------------------- Basic helpers ------------------------- */
+/* ----------------------- Accessors ------------------------- */
+
+export function getAllItems() {
+  return items;
+}
 
 export function getItem(id: string) {
   return items[id] ?? null;
@@ -43,71 +94,59 @@ export function getItemName(id: string) {
 }
 
 export function getItemTotalCost(id: string) {
-  return getItem(id)?.gold.total ?? 0;
+  return getItem(id)?.priceTotal ?? 0;
 }
 
 export function getItemBaseCost(id: string) {
-  return getItem(id)?.gold.base ?? 0;
+  return getItem(id)?.price ?? 0;
 }
 
-export function itemIconUrl(id: string, patch = currentPatch) {
-  return `https://ddragon.leagueoflegends.com/cdn/${patch}/img/item/${id}.png`;
-}
+/* ----------------------- Icons ------------------------- */
 
-export function getItemComponents(id: string) {
-  return getItem(id)?.from ?? [];
+function iconFileName(iconPath?: string) {
+  return (iconPath ?? "").split("/").pop()?.toLowerCase() ?? "";
 }
-
-export function getItemTier(id: string): "legendary" | "epic" | "basic" | "unknown" {
-  const tags = getItem(id)?.tags ?? [];
-  if (tags.includes("Legendary")) return "legendary";
-  if (tags.includes("Epic")) return "epic";
-  if (tags.includes("Basic")) return "basic";
-  return "unknown";
-}
-
-/* -------------------- Full recursive item tree -------------------- */
 
 /**
- * Returns a **full breakdown** of an item:
- * - its name, cost, id
- * - its direct components
- * - and recursively, their components
+ * PURE helper — does NOT depend on module state.
+ * This is the one your page should use.
  */
-export type ItemTreeNode = {
-  id: string;
-  name: string;
-  cost: number;
-  tier: string;
-  icon: string;
-  components: ItemTreeNode[];
-};
+export function itemIconUrlFromPath(iconPath?: string, patch: string = "latest") {
+  const file = (iconPath ?? "").split("/").pop()?.toLowerCase() ?? "";
+  if (!file) return "";
 
-export function getItemTree(id: string, seen = new Set<string>()): ItemTreeNode {
-  if (seen.has(id)) {
-    return {
-      id,
-      name: getItemName(id),
-      cost: getItemTotalCost(id),
-      tier: getItemTier(id),
-      icon: itemIconUrl(id),
-      components: []
-    };
-  }
-  seen.add(id);
+  // ✅ encode the filename to avoid issues with special characters
+  const safeFile = encodeURIComponent(file);
 
-  const item = getItem(id);
+  return `https://raw.communitydragon.org/${patch}/plugins/rcp-be-lol-game-data/global/default/assets/items/icons2d/${safeFile}`;
+}
 
-  const components = (item?.from ?? []).map(cid =>
-    getItemTree(cid, seen)
-  );
+/**
+ * Legacy helper (state-based). Still exported in case something else uses it.
+ */
+export function itemIconUrl(id: string, patch: string = "latest") {
+  return itemIconUrlFromPath(getItem(id)?.iconPath, patch);
+}
 
-  return {
-    id,
-    name: item?.name ?? "",
-    cost: item?.gold.total ?? 0,
-    tier: getItemTier(id),
-    icon: itemIconUrl(id),
-    components
-  };
+/* ----------------------- Components ------------------------- */
+
+export function getItemComponents(id: string) {
+  return (getItem(id)?.from ?? []).map(String);
+}
+
+/* ----------------------- Tier heuristic ------------------------- */
+
+export function getItemTier(
+  id: string
+): "legendary" | "epic" | "basic" | "unknown" {
+  const cats = getItem(id)?.categories ?? [];
+  if (cats.includes("Legendary")) return "legendary";
+  if (cats.includes("Epic")) return "epic";
+  if (
+    cats.includes("Boots") ||
+    cats.includes("Lane") ||
+    cats.includes("Jungle")
+  )
+    return "basic";
+  return "unknown";
 }

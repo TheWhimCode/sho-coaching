@@ -6,10 +6,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Skillcheck",
-  description: "Expand your League of Legends knowledge",
+  description: "Challenge and expand your League of Legends knowledge",
   openGraph: {
     title: "Skillcheck",
-    description: "Expand your League of Legends knowledge",
+    description: "Challenge and expand your League of Legends knowledge",
     type: "website",
   },
 };

@@ -5,7 +5,7 @@ import Hero from "@/app/skillcheck/layout/Hero";
 import {
   Swords,
   Hourglass,
-  Backpack,
+  Gem,
   Sparkles,
   Hand,
 } from "lucide-react";
@@ -32,8 +32,8 @@ const modes = [
     key: "items",
     label: "Items",
     href: "/skillcheck/items",
-    icon: Backpack,
-    desc: "Coming soon",
+    icon: Gem,
+    desc: "How much do you need for your spike?",
     available: false,
   },
   {

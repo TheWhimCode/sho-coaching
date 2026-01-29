@@ -7,7 +7,7 @@ import { DraftOverlay } from "@/app/skillcheck/draft/game/DraftOverlay";
 import ChampOptions from "@/app/skillcheck/draft/game/ChampOptions";
 import { ResultScreen } from "@/app/skillcheck/draft/game/DraftResult";
 import DraftAuthorMain from "@/app/skillcheck/draft/authoring/DraftAuthorMain";
-import SuccessOverlay from "@/app/skillcheck/games/SuccessOverlay";
+import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
 
 type Pick = {
   role: "top" | "jng" | "mid" | "adc" | "sup";

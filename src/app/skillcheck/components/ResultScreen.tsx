@@ -4,7 +4,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 import Link from "next/link";
-import { Swords, Hourglass } from "lucide-react";
+import { Swords, Hourglass, Gem } from "lucide-react";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 
 const HEAVY_TEXT_SHADOW =
@@ -152,6 +152,21 @@ export default function ResultsScreen({
       "
     >
       <Hourglass className="h-5 w-5 opacity-90" />
+    </Link>
+        <Link
+      href="/skillcheck/items"
+      aria-label="Items"
+      title="Items"
+      className="
+        inline-flex h-16 w-16 items-center justify-center
+        rounded-xl
+        border border-white/15
+        bg-slate-900/60 hover:bg-slate-800/70
+        text-white/90 hover:text-white
+        transition
+      "
+    >
+      <Gem className="h-5 w-5 opacity-90" />
     </Link>
   </div>
 </div>
