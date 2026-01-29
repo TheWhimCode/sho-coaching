@@ -1,7 +1,7 @@
 "use client";
 
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
-import ResultsScreen from "@/app/skillcheck/components/ResultScreen";
+import ResultsScreen, { DifficultyUI } from "@/app/skillcheck/components/ResultScreen";
 import { champSquareUrlById, resolveChampionId } from "@/lib/league/datadragon";
 
 type DraftAnswer = {
@@ -9,6 +9,23 @@ type DraftAnswer = {
   explanation: string;
   correct?: true;
 };
+
+function getDraftDifficulty(avgAttempts: string): DifficultyUI {
+  const avg = Number(avgAttempts);
+
+  // optional safety: handle NaN
+  if (!Number.isFinite(avg)) {
+    return { label: "—", color: "border-white/20 text-white/60" };
+  }
+
+  return avg <= 1.5
+    ? { label: "Easy", color: "border-green-400/40 text-green-400" }
+    : avg <= 2.0
+    ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
+    : avg <= 2.5
+    ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
+    : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
+}
 
 export function ResultScreen({
   answers,
@@ -20,10 +37,12 @@ export function ResultScreen({
   onCreateDraft?: (initialStep: "setup" | "success") => void;
 }) {
   const correct = answers.find((a) => a.correct);
+  const difficulty = getDraftDifficulty(avgAttempts);
 
   return (
     <ResultsScreen
       avgAttempts={avgAttempts}
+      difficulty={difficulty}
       header={
         <>
           Why <span className="whitespace-nowrap">{correct?.champ}</span>?

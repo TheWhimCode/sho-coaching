@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CaretDoubleDown } from "@phosphor-icons/react";
 
 type Props = {
@@ -27,14 +27,30 @@ export default function NeedMoreInfo({
     return () => clearTimeout(t);
   }, [delayMs]);
 
-  // match NavBar fade behavior: same formula, no rAF, same transition feel
+  // match NavBar fade behavior, but use OverlayScrollbars viewport if present
   useEffect(() => {
+    const root = document.getElementById("scroll-root");
+    const viewport = root?.querySelector<HTMLElement>(
+      "[data-overlayscrollbars-viewport]"
+    );
+
+    const scroller: HTMLElement | Window = viewport ?? window;
+
     const onScroll = () => {
-      const y = typeof window !== "undefined" ? window.scrollY : 0;
+      const y =
+        scroller === window
+          ? window.scrollY || 0
+          : (scroller as HTMLElement).scrollTop || 0;
+
       setOpacity(Math.max(0, Math.min(1, 1 - y / fadeMaxScroll)));
     };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    onScroll(); // initial sync
+
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+    };
   }, [fadeMaxScroll]);
 
   return (
@@ -46,7 +62,6 @@ export default function NeedMoreInfo({
       className={[
         "fixed bottom-6 right-6 z-50 select-none pointer-events-none",
         "flex items-center gap-2.5",
-        // match NavBar transition
         "transition-[opacity] duration-75",
         className,
       ].join(" ")}

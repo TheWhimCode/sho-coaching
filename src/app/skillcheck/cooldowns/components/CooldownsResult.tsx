@@ -2,7 +2,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import ResultsScreen from "@/app/skillcheck/components/ResultScreen";
+import ResultsScreen, {
+  DifficultyUI,
+} from "@/app/skillcheck/components/ResultScreen";
 import type { SpellKey } from "./SpellPanelList";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 
@@ -23,6 +25,24 @@ type Attempt = {
   direction: Direction;
   rel: number;
 };
+
+function getCooldownsDifficulty(avgAttempts: string): DifficultyUI {
+  const avg = Number(avgAttempts);
+
+  // optional safety: handle NaN / invalid strings
+  if (!Number.isFinite(avg)) {
+    return { label: "—", color: "border-white/20 text-white/60" };
+  }
+
+  // TEMP: same thresholds as before (you’ll tune later)
+  return avg <= 1.5
+    ? { label: "Easy", color: "border-green-400/40 text-green-400" }
+    : avg <= 2.0
+    ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
+    : avg <= 2.5
+    ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
+    : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
+}
 
 export default function CooldownsResult({
   champion,
@@ -80,9 +100,15 @@ export default function CooldownsResult({
     return direction === "low" ? "⬆️" : direction === "high" ? "⬇️" : "✅";
   }
 
+  const difficulty = useMemo(
+    () => getCooldownsDifficulty(avgAttempts),
+    [avgAttempts]
+  );
+
   return (
     <ResultsScreen
       avgAttempts={avgAttempts}
+      difficulty={difficulty}
       header={
         <div className="relative py-6 md:py-8">
           {/* ability icon with circular fade */}
@@ -131,68 +157,63 @@ export default function CooldownsResult({
         />
       </div>
 
-{/* ✅ YOUR GUESSES (section separators only) */}
-{attempts.length > 0 && (
-  <div className="mt-10">
-    {/* top divider */}
-                  <DividerWithLogo className="py-4" />
+      {/* ✅ YOUR GUESSES (section separators only) */}
+      {attempts.length > 0 && (
+        <div className="mt-10">
+          {/* top divider */}
+          <DividerWithLogo className="py-4" />
 
-    <div className="py-6">
-      <div className="flex items-baseline justify-between">
-        <div className="text-lg uppercase tracking-wide text-gray-400 mb-2">
-          Your attempts
-        </div>
-        <div className="text-xs md:text-sm text-white/45">
-          {attempts.length} total
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-3">
-        {attempts.map((a, i) => {
-          const ok = a.direction === "correct";
-          return (
-            <div
-              key={i}
-              className={[
-                "flex items-center gap-3",
-                "rounded-xl px-4 py-3",
-                "border border-white/5",
-                "text-base md:text-lg font-semibold",
-                ok ? "text-emerald-200" : "text-white/90",
-              ].join(" ")}
-            >
-              <span className="text-white/65 font-black tabular-nums">
-                #{i + 1}
-              </span>
-
-              <span className="font-black tabular-nums">
-                {fmtGuess(a.guess)}s
-              </span>
-
-              <span
-                className={[
-                  "inline-flex items-center justify-center",
-                  "h-7 min-w-7 px-2 rounded-lg",
-                  "text-sm font-black",
-                  ok
-                    ? "bg-emerald-500/15 text-emerald-200 border border-emerald-400/20"
-                    : "bg-white/5 text-white/70 border border-white/10",
-                ].join(" ")}
-              >
-                {arrow(a.direction)}
-              </span>
-              
+          <div className="py-6">
+            <div className="flex items-baseline justify-between">
+              <div className="text-lg uppercase tracking-wide text-gray-400 mb-2">
+                Your attempts
+              </div>
+              <div className="text-xs md:text-sm text-white/45">
+                {attempts.length} total
+              </div>
             </div>
-            
-          );
-          
-        })}
-      </div>
-    </div>
 
-  </div>
-)}
+            <div className="mt-4 flex flex-wrap gap-3">
+              {attempts.map((a, i) => {
+                const ok = a.direction === "correct";
+                return (
+                  <div
+                    key={i}
+                    className={[
+                      "flex items-center gap-3",
+                      "rounded-xl px-4 py-3",
+                      "border border-white/5",
+                      "text-base md:text-lg font-semibold",
+                      ok ? "text-emerald-200" : "text-white/90",
+                    ].join(" ")}
+                  >
+                    <span className="text-white/65 font-black tabular-nums">
+                      #{i + 1}
+                    </span>
 
+                    <span className="font-black tabular-nums">
+                      {fmtGuess(a.guess)}s
+                    </span>
+
+                    <span
+                      className={[
+                        "inline-flex items-center justify-center",
+                        "h-7 min-w-7 px-2 rounded-lg",
+                        "text-sm font-black",
+                        ok
+                          ? "bg-emerald-500/15 text-emerald-200 border border-emerald-400/20"
+                          : "bg-white/5 text-white/70 border border-white/10",
+                      ].join(" ")}
+                    >
+                      {arrow(a.direction)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </ResultsScreen>
   );
 }

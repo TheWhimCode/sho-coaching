@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { FaDiscord, FaTiktok, FaYoutube } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6"; // ✅ added
+import { FaXTwitter } from "react-icons/fa6";
 
 const NAV = [
   { label: "Coaching", href: "/coaching" },
@@ -26,22 +26,40 @@ export default function NavBar({ className = "" }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [opacity, setOpacity] = useState(1);
 
-  useEffect(() => {
-    const maxScroll = 100;
-    const onScroll = () => {
-      const y = window.scrollY;
-      setOpacity(Math.max(0, Math.min(1, 1 - y / maxScroll)));
-    };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+useEffect(() => {
+  const maxScroll = 100;
+
+  const root = document.getElementById("scroll-root");
+  const viewport = root?.querySelector<HTMLElement>(
+    "[data-overlayscrollbars-viewport]"
+  );
+
+  const scroller = viewport ?? window;
+
+  const onScroll = () => {
+    const y =
+      scroller === window
+        ? window.scrollY
+        : (scroller as HTMLElement).scrollTop;
+
+    setOpacity(Math.max(0, Math.min(1, 1 - y / maxScroll)));
+  };
+
+  scroller.addEventListener("scroll", onScroll, { passive: true });
+  onScroll(); // initial sync
+
+  return () => {
+    scroller.removeEventListener("scroll", onScroll);
+  };
+}, []);
+
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-40 ${className}`}>
       {/* LOGO */}
       <Link
         href="/"
-className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 flex items-center"
+        className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 flex items-center"
       >
         <Image
           src="/images/Logo_blue.png"
@@ -59,7 +77,7 @@ className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 flex 
         <div className="absolute inset-0 -z-10 bg-[#0B0F1A]/30 backdrop-blur-md border-b border-white/10" />
 
         <nav className="w-full">
-          <div className="relative h-16 md:h-20 flex items-center pl-14 md:pl-20 pr-4 md:pr-6">
+          <div className="relative h-16 md:h-20 flex items-center pl-14 md:pl-20 pr-4 md:pr-8">
             {/* LEFT: title */}
             <span className="text-lg md:text-xl font-semibold tracking-tight">
               Sho Coaching
@@ -136,7 +154,6 @@ className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 flex 
                 >
                   <FaTiktok className="h-5 w-5" />
                 </Link>
-                {/* ✅ Added Twitter */}
                 <Link
                   href="https://x.com/Shoaching"
                   target="_blank"
@@ -225,7 +242,6 @@ className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 flex 
                   >
                     <FaDiscord className="h-5 w-5" />
                   </Link>
-                  {/* ✅ Added Twitter mobile */}
                   <Link
                     href="https://x.com/Shoaching"
                     target="_blank"

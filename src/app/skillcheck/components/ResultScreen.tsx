@@ -1,39 +1,30 @@
 // app/skillcheck/components/Resultscreen.tsx
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
 
+export type DifficultyUI = {
+  label: string;
+  color: string; // tailwind classes
+};
+
 export default function ResultsScreen({
   avgAttempts,
+  difficulty,
   header,
   children,
   cta,
 }: {
   avgAttempts: string;
+  difficulty: DifficultyUI;
   header?: ReactNode;
   children?: ReactNode;
   cta?: ReactNode;
 }) {
-  /* -----------------------------
-     difficulty
-  ----------------------------- */
-
-  const difficulty = useMemo(() => {
-    const avg = Number(avgAttempts);
-
-    return avg <= 1.5
-      ? { label: "Easy", color: "border-green-400/40 text-green-400" }
-      : avg <= 2.0
-      ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
-      : avg <= 2.5
-      ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
-      : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
-  }, [avgAttempts]);
-
   /* -----------------------------
      countdown (HH:MM:SS)
   ----------------------------- */

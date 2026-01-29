@@ -20,8 +20,11 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   return (
     <>
       <ScrollbarInit />
-      {showNavBar && <NavBar />}
-      {showNavBar && <div className="h-16 md:h-20" />}
+
+      <div className={showNavBar ? "" : "hidden"}>
+        <NavBar />
+      </div>
+      <div className={showNavBar ? "h-16 md:h-20" : "h-0"} />
 
       <main>{children}</main>
 
