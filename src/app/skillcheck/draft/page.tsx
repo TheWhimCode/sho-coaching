@@ -1,8 +1,22 @@
 // app/skillcheck/draft/page.tsx
-export const dynamic = "force-dynamic";
-
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import DraftClient from "./DraftClient";
+
+export const dynamic = "force-dynamic";
+
+const description =
+  "Can you solve todays draft?";
+
+export const metadata: Metadata = {
+  title: "Skillcheck — Draft",
+  description,
+  openGraph: {
+    title: "Skillcheck — Draft",
+    description,
+    type: "website",
+  },
+};
 
 type Pick = {
   role: "top" | "jng" | "mid" | "adc" | "sup";
@@ -27,7 +41,7 @@ type DraftType = {
 export default async function DraftPage() {
   const raw = await prisma.draft.findFirst({
     where: { status: "APPROVED" },
-    orderBy: { usedLast: "desc" }, // today’s draft
+    orderBy: { usedLast: "desc" },
   });
 
   if (!raw) return null;

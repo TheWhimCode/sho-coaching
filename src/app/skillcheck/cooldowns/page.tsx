@@ -1,12 +1,27 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
-
+// app/skillcheck/cooldowns/page.tsx
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import CooldownsClient from "./CooldownsClient";
 import { cooldownAbilities } from "./components/cooldownAbilities";
 import { fetchChampionSpellsById } from "@/lib/datadragon/championspells";
 import { champSquareUrlById } from "@/lib/datadragon";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const description =
+  "Guess todays cooldown for a champion ability.";
+
+export const metadata: Metadata = {
+  title: "Skillcheck — Cooldowns",
+  description,
+  openGraph: {
+    title: "Skillcheck — Cooldowns",
+    description,
+    type: "website",
+  },
+};
 
 const KEYS = ["Q", "W", "E", "R"] as const;
 type SpellKey = (typeof KEYS)[number];
@@ -16,9 +31,10 @@ type SpellKey = (typeof KEYS)[number];
 ----------------------------- */
 
 function ymdUTC(d = new Date()) {
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
-    d.getUTCDate()
-  ).padStart(2, "0")}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
 function hash32(s: string) {
@@ -42,30 +58,32 @@ export default async function CooldownsPage() {
     }))
     .filter((x) => x.keys.length > 0);
 
-  // 🔑 global daily seed (same for everyone)
   const dayKey = ymdUTC(new Date());
 
-  // champion
   const champSeed = hash32(`cooldowns:${dayKey}`);
   const champ = pickSeeded(eligibleChamps, champSeed);
 
-  // spell key
   const spellSeed = hash32(`cooldowns:${dayKey}:${champ.id}`);
   const spellKey = pickSeeded(champ.keys, spellSeed);
 
   const { data, version } = await fetchChampionSpellsById(champ.id);
 
   const idx =
-    spellKey === "Q" ? 0 : spellKey === "W" ? 1 : spellKey === "E" ? 2 : 3;
+    spellKey === "Q"
+      ? 0
+      : spellKey === "W"
+      ? 1
+      : spellKey === "E"
+      ? 2
+      : 3;
+
   const activeSpell = data.spells[idx];
 
-  // rank (1..maxRank)
   const maxRank = activeSpell.cooldowns?.length ?? 1;
   const rankArr = Array.from({ length: maxRank }, (_, i) => i + 1);
   const rankSeed = hash32(`cooldowns:${dayKey}:${champ.id}:${spellKey}`);
   const askedRank = pickSeeded(rankArr, rankSeed);
 
-  // global avg attempts for THIS (champ + spellKey + rank)
   const stat = await prisma.cooldownStat.findUnique({
     where: {
       championId_spellKey_rank: {
@@ -82,14 +100,15 @@ export default async function CooldownsPage() {
       ? (stat.attempts / stat.correctAttempts).toFixed(2)
       : "–";
 
-  // champion metadata
   const champMetaRes = await fetch(
     `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`,
     { cache: "no-store" }
   );
+
   if (!champMetaRes.ok) {
     throw new Error("Failed to load champion metadata");
   }
+
   const champMetaJson = await champMetaRes.json();
   const champMeta = champMetaJson.data?.[champ.id];
 
