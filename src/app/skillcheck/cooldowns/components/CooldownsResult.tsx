@@ -29,17 +29,15 @@ type Attempt = {
 function getCooldownsDifficulty(avgAttempts: string): DifficultyUI {
   const avg = Number(avgAttempts);
 
-  // optional safety: handle NaN / invalid strings
   if (!Number.isFinite(avg)) {
     return { label: "—", color: "border-white/20 text-white/60" };
   }
 
-  // TEMP: same thresholds as before (you’ll tune later)
-  return avg <= 1.5
+  return avg <= 3.0
     ? { label: "Easy", color: "border-green-400/40 text-green-400" }
-    : avg <= 2.0
+    : avg <= 5.0
     ? { label: "Tricky", color: "border-blue-500/40 text-blue-500" }
-    : avg <= 2.5
+    : avg <= 7.0
     ? { label: "Hard", color: "border-orange-400/40 text-orange-400" }
     : { label: "Nightmare", color: "border-red-700/50 text-red-700" };
 }
@@ -49,13 +47,13 @@ export default function CooldownsResult({
   spell,
   rank,
   avgAttempts,
-  storageKey, // ✅ NEW
+  storageKey,
 }: {
   champion: { id: string; name?: string; icon: string };
   spell: Spell;
-  rank: number; // 1-based
-  avgAttempts: string; // ✅ global avg passed from page/client
-  storageKey: string; // ✅ NEW (read "your guesses" from localStorage)
+  rank: number;
+  avgAttempts: string;
+  storageKey: string;
 }) {
   const champName = champion.name ?? champion.id;
 
@@ -76,9 +74,6 @@ export default function CooldownsResult({
       .join(" / ");
   }, [spell.cooldowns, safeRank]);
 
-  /* -----------------------------
-     read attempts from localStorage
-  ----------------------------- */
   const [attempts, setAttempts] = useState<Attempt[]>([]);
 
   useEffect(() => {
@@ -111,7 +106,6 @@ export default function CooldownsResult({
       difficulty={difficulty}
       header={
         <div className="relative py-6 md:py-8">
-          {/* ability icon with circular fade */}
           <img
             src={spell.icon}
             alt=""
@@ -119,6 +113,7 @@ export default function CooldownsResult({
             className="
               absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
               w-24 h-24 md:w-32 md:h-32
+              saturate-150
               object-cover
               pointer-events-none
               select-none
@@ -131,7 +126,6 @@ export default function CooldownsResult({
             }}
           />
 
-          {/* header row */}
           <div className="relative flex justify-center">
             <div className="text-center text-3xl md:text-4xl font-semibold leading-tight">
               <span className="opacity-90">{champName}</span>
@@ -143,7 +137,6 @@ export default function CooldownsResult({
         </div>
       }
     >
-      {/* single centered cooldown line */}
       <div className="mt-8 flex justify-center">
         <div
           className="
@@ -157,10 +150,8 @@ export default function CooldownsResult({
         />
       </div>
 
-      {/* ✅ YOUR GUESSES (section separators only) */}
       {attempts.length > 0 && (
         <div className="mt-10">
-          {/* top divider */}
           <DividerWithLogo className="py-4" />
 
           <div className="py-6">
@@ -195,16 +186,8 @@ export default function CooldownsResult({
                       {fmtGuess(a.guess)}s
                     </span>
 
-                    <span
-                      className={[
-                        "inline-flex items-center justify-center",
-                        "h-7 min-w-7 px-2 rounded-lg",
-                        "text-sm font-black",
-                        ok
-                          ? "bg-emerald-500/15 text-emerald-200 border border-emerald-400/20"
-                          : "bg-white/5 text-white/70 border border-white/10",
-                      ].join(" ")}
-                    >
+                    {/* plain emoji, no box */}
+                    <span className="text-lg">
                       {arrow(a.direction)}
                     </span>
                   </div>

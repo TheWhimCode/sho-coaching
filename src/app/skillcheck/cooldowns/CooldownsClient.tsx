@@ -77,31 +77,39 @@ export default function CooldownsClient({
     [champion.id, activeSpell.id, rank]
   );
 
-  useEffect(() => {
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return;
+useEffect(() => {
+  const raw = localStorage.getItem(storageKey);
+  if (!raw) return;
 
-    try {
-      const s = JSON.parse(raw);
-      setCompleted(!!s.completed);
+  try {
+    const s = JSON.parse(raw);
+    const isCompleted = !!s.completed;
 
-      if (s.completed && !hasScrolledRef.current) {
-        hasScrolledRef.current = true;
+    setCompleted(isCompleted);
 
-        setTimeout(() => {
-          setShowResult(true);
+    // ✅ NEW: replay success animation on every page load if already solved
+    if (isCompleted) {
+      setShowSuccess(true);
+    }
+
+    if (isCompleted && !hasScrolledRef.current) {
+      hasScrolledRef.current = true;
+
+      setTimeout(() => {
+        setShowResult(true);
+        requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resultRef.current?.scrollIntoView({
-                behavior: SCROLL_BEHAVIOR,
-                block: "center",
-              });
+            resultRef.current?.scrollIntoView({
+              behavior: SCROLL_BEHAVIOR,
+              block: "center",
             });
           });
-        }, SHOW_AND_SCROLL_DELAY_MS);
-      }
-    } catch {}
-  }, [storageKey]);
+        });
+      }, SHOW_AND_SCROLL_DELAY_MS);
+    }
+  } catch {}
+}, [storageKey]);
+
 
   function revealAndScrollToResult() {
     if (hasScrolledRef.current) return;

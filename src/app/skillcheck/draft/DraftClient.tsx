@@ -60,7 +60,6 @@ export default function DraftClient({
 
   // Time before showing ResultScreen + initiating scroll (same moment)
   const SHOW_AND_SCROLL_DELAY_MS = 2500;
-
   const SCROLL_BEHAVIOR: ScrollBehavior = "smooth";
 
   /* -----------------------------
@@ -91,9 +90,15 @@ export default function DraftClient({
 
       setAttempts(s.attempts ?? 0);
       setDisabledAnswers(s.disabledAnswers ?? []);
-      setCompleted(!!s.completed);
+      const isCompleted = !!s.completed;
+      setCompleted(isCompleted);
 
-      if (s.completed && s.placedChamp) {
+      // ✅ NEW: replay success animation on reload if already completed
+      if (isCompleted) {
+        setShowSuccess(true);
+      }
+
+      if (isCompleted && s.placedChamp) {
         const isBlue = draft.userTeam === "blue";
         const team = isBlue ? draft.blue : draft.red;
         const setTeam = isBlue ? setBlue : setRed;
@@ -109,7 +114,7 @@ export default function DraftClient({
         }
       }
 
-      if (s.completed && !hasScrolledRef.current) {
+      if (isCompleted && !hasScrolledRef.current) {
         hasScrolledRef.current = true;
 
         setTimeout(() => {
@@ -218,8 +223,6 @@ export default function DraftClient({
     <>
       {showSuccess && <SuccessOverlay text="LOCKED IN!" />}
 
-   
-  
       <div className="relative z-10">
         <Hero
           hero={

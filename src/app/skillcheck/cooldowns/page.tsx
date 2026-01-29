@@ -11,8 +11,27 @@ import { champSquareUrlById } from "@/lib/datadragon";
 const KEYS = ["Q", "W", "E", "R"] as const;
 type SpellKey = (typeof KEYS)[number];
 
-function pick<T>(arr: T[]) {
-  return arr[Math.floor(Math.random() * arr.length)];
+/* -----------------------------
+   deterministic helpers
+----------------------------- */
+
+function ymdUTC(d = new Date()) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate()
+  ).padStart(2, "0")}`;
+}
+
+function hash32(s: string) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function pickSeeded<T>(arr: T[], seed: number) {
+  return arr[seed % arr.length];
 }
 
 export default async function CooldownsPage() {
@@ -23,8 +42,16 @@ export default async function CooldownsPage() {
     }))
     .filter((x) => x.keys.length > 0);
 
-  const champ = pick(eligibleChamps);
-  const spellKey = pick(champ.keys);
+  // 🔑 global daily seed (same for everyone)
+  const dayKey = ymdUTC(new Date());
+
+  // champion
+  const champSeed = hash32(`cooldowns:${dayKey}`);
+  const champ = pickSeeded(eligibleChamps, champSeed);
+
+  // spell key
+  const spellSeed = hash32(`cooldowns:${dayKey}:${champ.id}`);
+  const spellKey = pickSeeded(champ.keys, spellSeed);
 
   const { data, version } = await fetchChampionSpellsById(champ.id);
 
@@ -32,10 +59,11 @@ export default async function CooldownsPage() {
     spellKey === "Q" ? 0 : spellKey === "W" ? 1 : spellKey === "E" ? 2 : 3;
   const activeSpell = data.spells[idx];
 
-  // pick rank on the server (1..maxRank)
-  const maxRank = activeSpell.cooldowns?.length ?? 0;
-  const askedRank =
-    maxRank > 0 ? pick(Array.from({ length: maxRank }, (_, i) => i + 1)) : 1;
+  // rank (1..maxRank)
+  const maxRank = activeSpell.cooldowns?.length ?? 1;
+  const rankArr = Array.from({ length: maxRank }, (_, i) => i + 1);
+  const rankSeed = hash32(`cooldowns:${dayKey}:${champ.id}:${spellKey}`);
+  const askedRank = pickSeeded(rankArr, rankSeed);
 
   // global avg attempts for THIS (champ + spellKey + rank)
   const stat = await prisma.cooldownStat.findUnique({
@@ -54,7 +82,7 @@ export default async function CooldownsPage() {
       ? (stat.attempts / stat.correctAttempts).toFixed(2)
       : "–";
 
-  // ✅ Fetch champion name + title from DDragon champion list JSON
+  // champion metadata
   const champMetaRes = await fetch(
     `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion.json`,
     { cache: "no-store" }

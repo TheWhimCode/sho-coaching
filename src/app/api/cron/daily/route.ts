@@ -39,13 +39,6 @@ async function cleanupUnpaidBookings() {
   return result.count;
 }
 
-/* ✅ NEW: cleanup rejected drafts */
-async function cleanupRejectedDrafts() {
-  await prisma.draft.deleteMany({
-    where: { status: "REJECTED" },
-  });
-}
-
 async function manageSlots() {
   const today = utcMidnight();
   const end = new Date(today);
@@ -177,7 +170,6 @@ async function runAll(origin: string) {
 
   try {
     results.cleanup = { deleted: await cleanupUnpaidBookings() };
-    await cleanupRejectedDrafts(); // ✅ ONLY NEW CALL
   } catch (e: any) {
     results.errors.push(`cleanup: ${e?.message || e}`);
   }
@@ -192,12 +184,6 @@ async function runAll(origin: string) {
     results.ranks = await createRankSnapshots(origin);
   } catch (e: any) {
     results.errors.push(`ranks: ${e?.message || e}`);
-  }
-
-  try {
-    await assignDailyDraft();
-  } catch (e: any) {
-    results.errors.push(`dailyDraft: ${e?.message || e}`);
   }
 
   return results;
@@ -222,18 +208,4 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return GET(req);
-}
-
-async function assignDailyDraft() {
-  const draft = await prisma.draft.findFirst({
-    where: { status: "APPROVED" },
-    orderBy: { usedLast: "asc" },
-  });
-
-  if (!draft) return;
-
-  await prisma.draft.update({
-    where: { id: draft.id },
-    data: { usedLast: new Date() },
-  });
 }

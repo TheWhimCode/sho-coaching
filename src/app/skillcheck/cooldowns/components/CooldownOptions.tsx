@@ -1,4 +1,3 @@
-// app/skillcheck/cooldowns/components/CooldownOptions.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -125,7 +124,9 @@ function renderQuestionWithGradientAbility(question: string) {
 
   return (
     <>
-      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}>Guess the cooldown of </span>
+      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}>
+        Guess the cooldown of{" "}
+      </span>
       <span className="bg-clip-text text-transparent bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00] saturate-180">
         {ability}
       </span>
@@ -167,13 +168,33 @@ export default function CooldownOptions({
     return feedbackVisual(last.direction, last.rel);
   }, [last]);
 
-  function writeStorage(patch: Partial<{ attempts: Attempt[]; completed: boolean }>) {
+  function writeStorage(
+    patch: Partial<{ attempts: Attempt[]; completed: boolean }>
+  ) {
     try {
       const raw = localStorage.getItem(storageKey);
       const s = raw ? JSON.parse(raw) : {};
       localStorage.setItem(storageKey, JSON.stringify({ ...s, ...patch }));
     } catch {}
   }
+
+  // ✅ NEW: restore attempts + solved state after reload (and whenever storageKey changes)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+
+      const s = JSON.parse(raw);
+
+      if (Array.isArray(s.attempts)) {
+        setAttempts(s.attempts);
+      }
+
+      if (typeof s.completed === "boolean") {
+        setSolved(s.completed);
+      }
+    } catch {}
+  }, [storageKey]);
 
   function submitGuess() {
     if (solved || inputNumber === null) return;
