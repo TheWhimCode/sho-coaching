@@ -102,7 +102,7 @@ export default function ResultsScreen({
             </div>
           </div>
 
-          <DividerWithLogo className="py-12" />
+          <DividerWithLogo className="py-8" />
 
           {/* CTA (provided by game) */}
           {cta && <div className="hidden sm:flex justify-center">{cta}</div>}

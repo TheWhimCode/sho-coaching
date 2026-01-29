@@ -150,9 +150,9 @@ export default function CooldownsResult({
       </div>
 
       {attempts.length > 0 && (
-        <div className="mt-10">
+        <div className="mt-12">
 
-          <div className="py-6">
+          <div className="px-4 md:px">
             <div className="flex items-baseline justify-between">
               <div className="text-lg uppercase tracking-wide text-gray-400 mb-2">
                 Your attempts
@@ -162,7 +162,7 @@ export default function CooldownsResult({
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="mt-2 flex flex-wrap gap-3">
               {attempts.map((a, i) => {
                 const ok = a.direction === "correct";
                 return (

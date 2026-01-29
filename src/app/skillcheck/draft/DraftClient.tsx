@@ -221,7 +221,7 @@ export default function DraftClient({
 
   return (
     <>
-      {showSuccess && <SuccessOverlay text="LOCKED IN!" />}
+      {showSuccess && <SuccessOverlay text="CORRECT!" />}
 
       <div className="relative z-10">
         <Hero
