@@ -6,7 +6,6 @@ import ResultsScreen, {
   DifficultyUI,
 } from "@/app/skillcheck/components/ResultScreen";
 import type { SpellKey } from "./SpellPanelList";
-import DividerWithLogo from "@/app/_components/small/Divider-logo";
 
 type Spell = {
   id: string;
@@ -152,7 +151,6 @@ export default function CooldownsResult({
 
       {attempts.length > 0 && (
         <div className="mt-10">
-          <DividerWithLogo className="py-4" />
 
           <div className="py-6">
             <div className="flex items-baseline justify-between">
