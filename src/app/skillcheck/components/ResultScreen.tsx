@@ -158,7 +158,7 @@ export default function ResultsScreen({
 
 
           {/* COUNTDOWN (always) */}
-          <div className="mt-12 text-center">
+          <div className="mt-8 text-center">
             <div className="text-lg uppercase tracking-wide text-gray-400 mb-2">
               Come back tomorrow for another puzzle
             </div>

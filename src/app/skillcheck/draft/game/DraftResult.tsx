@@ -50,7 +50,7 @@ export function ResultScreen({
       }
       cta={
         onCreateDraft ? (
-              <div className="mb-12">
+              <div className="mb-8">
 
           <PrimaryCTA
             className="px-10 py-4 text-lg w-full max-w-[320px]"
