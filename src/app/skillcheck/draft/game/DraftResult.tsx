@@ -50,6 +50,8 @@ export function ResultScreen({
       }
       cta={
         onCreateDraft ? (
+              <div className="mb-12">
+
           <PrimaryCTA
             className="px-10 py-4 text-lg w-full max-w-[320px]"
             onClick={async () => {
@@ -62,6 +64,8 @@ export function ResultScreen({
           >
             Make your own draft
           </PrimaryCTA>
+              </div>
+
         ) : null
       }
     >

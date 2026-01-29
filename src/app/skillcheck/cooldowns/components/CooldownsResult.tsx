@@ -127,9 +127,9 @@ export default function CooldownsResult({
 
           <div className="relative flex justify-center">
             <div className="text-center text-3xl md:text-4xl font-semibold leading-tight">
-              <span className="opacity-90">{champName}</span>
+              <span className="opacity-90">{champName}</span>{" "}
+              <span className="font-black">{spell.key}</span>
               <span className="mx-2">—</span>
-              <span className="font-black">{spell.key}</span>{" "}
               <span className="opacity-95">{spell.name}</span>
             </div>
           </div>

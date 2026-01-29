@@ -101,49 +101,65 @@ export default function ResultsScreen({
               <span className="font-black">{difficulty.label}</span>
             </div>
           </div>
+
           <DividerWithLogo className="py-12" />
 
           {/* CTA (provided by game) */}
-          {cta && <div className=" hidden sm:flex justify-center">{cta}</div>}
+          {cta && <div className="hidden sm:flex justify-center">{cta}</div>}
 
-          {/* ICON LINKS (new) */}
-          <div className="mt-12 flex justify-center gap-3">
-            <Link
-              href="/skillcheck/draft"
-              aria-label="Draft"
-              title="Draft"
-              className="
-                inline-flex h-16 w-16 items-center justify-center
-                rounded-xl
-                border border-white/15
-                bg-slate-900/60 hover:bg-slate-800/70
-                text-white/90 hover:text-white
-                transition
-              "
-            >
-              <Swords className="h-5 w-5 opacity-90" />
-            </Link>
+{/* ICON LINKS */}
+<div className=" flex justify-center">
+  <div className="relative flex gap-3">
+    {/* label (does not affect layout/centering) */}
+    <span
+      className="
+        absolute right-full mr-4
+        top-1/2 -translate-y-1/2
+        text-sm  tracking-wide
+        text-neutral-400 whitespace-nowrap
+      "
+    >
+      Other modes
+    </span>
 
-            <Link
-              href="/skillcheck/cooldowns"
-              aria-label="Cooldowns"
-              title="Cooldowns"
-              className="
-                inline-flex h-16 w-16 items-center justify-center
-                rounded-xl
-                border border-white/15
-                bg-slate-900/60 hover:bg-slate-800/70
-                text-white/90 hover:text-white
-                transition
-              "
-            >
-              <Hourglass className="h-5 w-5 opacity-90" />
-            </Link>
-          </div>
+    <Link
+      href="/skillcheck/draft"
+      aria-label="Draft"
+      title="Draft"
+      className="
+        inline-flex h-16 w-16 items-center justify-center
+        rounded-xl
+        border border-white/15
+        bg-slate-900/60 hover:bg-slate-800/70
+        text-white/90 hover:text-white
+        transition
+      "
+    >
+      <Swords className="h-5 w-5 opacity-90" />
+    </Link>
+
+    <Link
+      href="/skillcheck/cooldowns"
+      aria-label="Cooldowns"
+      title="Cooldowns"
+      className="
+        inline-flex h-16 w-16 items-center justify-center
+        rounded-xl
+        border border-white/15
+        bg-slate-900/60 hover:bg-slate-800/70
+        text-white/90 hover:text-white
+        transition
+      "
+    >
+      <Hourglass className="h-5 w-5 opacity-90" />
+    </Link>
+  </div>
+</div>
+
 
           {/* COUNTDOWN (always) */}
           <div className="mt-12 text-center">
-            <div className="text-md uppercase tracking-wide text-gray-400 mb-2">
+            <div className="text-lg uppercase tracking-wide text-gray-400 mb-2">
               Come back tomorrow for another puzzle
             </div>
 
