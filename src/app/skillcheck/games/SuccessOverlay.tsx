@@ -15,15 +15,37 @@ function clamp(n: number, min: number, max: number) {
 // - little emote spam bubbles
 // - auto-cleans itself; parent controls mount/unmount
 export default function SuccessOverlay({
-  durationMs = 1800,
+  durationMs = 1900,
   intensity = 1,
   text = "SUCCESS!",
+  onDone,
 }: {
   durationMs?: number;
   intensity?: number; // 0.5..2 feels good
   text?: string;
+  onDone?: () => void;
 }) {
   const [phase, setPhase] = useState<"in" | "out">("in");
+
+  // ---- tuning knobs ----
+  const FADE_MS = 900;       // how long the fade-out takes
+  const ENTER_ANIM_MS = 450; // when fade is allowed to start
+  // ----------------------
+
+const ringPos = useMemo(() => {
+  const baseX = 50;
+  const baseY = 45;
+
+  const rangeX = 12;
+  const rangeY = 10;
+
+  return {
+    x: clamp(baseX + rand(-rangeX, rangeX), 10, 90),
+    y: clamp(baseY + rand(-rangeY, rangeY), 10, 90),
+  };
+}, []);
+
+
 
   // Generate particles once per mount
   const particles = useMemo(() => {
@@ -56,7 +78,6 @@ export default function SuccessOverlay({
   }, [intensity]);
 
   const emotes = useMemo(() => {
-    // keep it emoji-safe (no custom images needed)
     const pool = ["✨", "🔥", "💥", "⭐", "🎉", "⚡", "🏆", "👑"];
     const count = Math.round(clamp(10 * intensity, 6, 18));
     return Array.from({ length: count }).map((_, i) => {
@@ -71,20 +92,28 @@ export default function SuccessOverlay({
   }, [intensity]);
 
   useEffect(() => {
-    // Begin fade-out slightly before unmount would normally happen
-    const outAt = Math.max(0, durationMs - 350);
-    const t = window.setTimeout(() => setPhase("out"), outAt);
-    return () => window.clearTimeout(t);
-  }, [durationMs]);
+    const latestOutAt = Math.max(0, durationMs - FADE_MS);
+    const outAt = Math.max(ENTER_ANIM_MS, latestOutAt);
+    const doneAt = outAt + FADE_MS;
+
+    const tOut = window.setTimeout(() => setPhase("out"), outAt);
+    const tDone = window.setTimeout(() => onDone?.(), doneAt);
+
+    return () => {
+      window.clearTimeout(tOut);
+      window.clearTimeout(tDone);
+    };
+  }, [durationMs, onDone]);
 
   return (
     <div
       aria-hidden
       className={[
         "fixed inset-0 z-50 pointer-events-none",
-        "transition-opacity duration-300",
+        "transition-opacity ease-out",
         phase === "out" ? "opacity-0" : "opacity-100",
       ].join(" ")}
+      style={{ transitionDuration: `${FADE_MS}ms` }}
     >
       {/* Screen flash */}
       <div
@@ -95,28 +124,39 @@ export default function SuccessOverlay({
           animation: "so_flash 520ms ease-out both",
         }}
       />
-
-      {/* Big glow ring */}
-      <div
-        className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2"
-        style={{
-          width: 520,
-          height: 520,
-          borderRadius: 9999,
-          boxShadow:
-            "0 0 60px rgba(90,200,255,0.35), 0 0 120px rgba(255,220,120,0.22), inset 0 0 40px rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.10)",
-          background:
-            "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06), transparent 62%)",
-          animation: "so_pop 650ms cubic-bezier(.2,.9,.2,1) both",
-        }}
-      />
+<div
+  className={[
+    "absolute",
+    "transition-opacity ease-out",
+    phase === "out" ? "opacity-0" : "opacity-100",
+  ].join(" ")}
+  style={{
+    left: `${ringPos.x}%`,
+    top: `${ringPos.y}%`,
+    transform: "translate(-50%, -50%)",
+    transitionDuration: `${FADE_MS}ms`,
+    width: 520,
+    height: 520,
+    borderRadius: 9999,
+    boxShadow:
+      "0 0 60px rgba(90,200,255,0.35), 0 0 120px rgba(255,220,120,0.22), inset 0 0 40px rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    background:
+      "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06), transparent 62%)",
+    animation: "so_pop 650ms cubic-bezier(.2,.9,.2,1) both",
+  }}
+/>
 
       {/* Success text */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div
-          className="px-6 py-3 rounded-2xl"
+          className={[
+            "px-6 py-3 rounded-2xl",
+            "transition-opacity ease-out",
+            phase === "out" ? "opacity-0" : "opacity-100",
+          ].join(" ")}
           style={{
+            transitionDuration: `${FADE_MS}ms`,
             background: "rgba(0,0,0,0.45)",
             border: "1px solid rgba(255,255,255,0.10)",
             boxShadow:
@@ -154,7 +194,6 @@ export default function SuccessOverlay({
                 "linear-gradient(90deg, rgba(120,220,255,1), rgba(255,230,150,1))",
               transform: "translate3d(0,0,0) rotate(0deg) scale(0.9)",
               animation: `so_particle ${p.dur}ms ease-out ${p.delay}ms both`,
-              // custom per-particle variables used by keyframes
               // @ts-expect-error CSS vars
               "--dx": `${p.driftX}vw`,
               "--dy": `${p.driftY}vh`,
@@ -190,15 +229,9 @@ export default function SuccessOverlay({
 
       <style jsx global>{`
         @keyframes so_flash {
-          0% {
-            opacity: 0;
-          }
-          15% {
-            opacity: 1;
-          }
-          100% {
-            opacity: 0.55;
-          }
+          0% { opacity: 0; }
+          15% { opacity: 1; }
+          100% { opacity: 0.55; }
         }
 
         @keyframes so_pop {
@@ -206,9 +239,7 @@ export default function SuccessOverlay({
             transform: translate(-50%, -50%) scale(0.65);
             opacity: 0;
           }
-          25% {
-            opacity: 1;
-          }
+          25% { opacity: 1; }
           100% {
             transform: translate(-50%, -50%) scale(1);
             opacity: 1;
@@ -220,9 +251,7 @@ export default function SuccessOverlay({
             transform: translateY(10px) scale(0.92);
             opacity: 0;
           }
-          35% {
-            opacity: 1;
-          }
+          35% { opacity: 1; }
           100% {
             transform: translateY(-8px) scale(1);
             opacity: 1;
@@ -234,13 +263,11 @@ export default function SuccessOverlay({
             opacity: 0;
             transform: translate3d(0, 0, 0) rotate(0deg) scale(0.9);
           }
-          10% {
-            opacity: 1;
-          }
+          10% { opacity: 1; }
           100% {
             opacity: 0;
-            transform: translate3d(var(--dx), var(--dy), 0) rotate(var(--rot))
-              scale(var(--s));
+            transform: translate3d(var(--dx), var(--dy), 0)
+              rotate(var(--rot)) scale(var(--s));
           }
         }
 
@@ -249,9 +276,7 @@ export default function SuccessOverlay({
             opacity: 0;
             transform: translate3d(0, 0, 0) scale(0.9);
           }
-          12% {
-            opacity: 1;
-          }
+          12% { opacity: 1; }
           100% {
             opacity: 0;
             transform: translate3d(0, calc(-1 * var(--rise)), 0) scale(1.15);

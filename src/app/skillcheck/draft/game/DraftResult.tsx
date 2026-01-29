@@ -34,7 +34,7 @@ export function ResultScreen({
           <PrimaryCTA
             className="px-10 py-4 text-lg w-full max-w-[320px]"
             onClick={async () => {
-              const res = await fetch("/api/skillcheck/db/draftExists");
+              const res = await fetch("/api/skillcheck/draft/draftExists");
               const data = await res.json();
 
               if (data?.exists) onCreateDraft("success");

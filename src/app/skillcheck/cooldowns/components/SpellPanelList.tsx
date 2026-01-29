@@ -38,7 +38,7 @@ function PipRow({ current, total }: { current: number; total: number }) {
               <span
                 key={i}
                 className={[
-                  "block w-[4px] h-[7px] rounded-full",
+                  "block w-[5px] h-[6px] rounded-full",
                   filled
                     ? [
                         "bg-[#69A8FF]",
@@ -109,20 +109,21 @@ export default function SpellPanelList({
               key={s.id}
               className={[
                 "rounded-2xl border overflow-hidden transition",
-                isSelected ? "border-yellow-400/40" : "border-white/10 opacity-70",
+                isSelected ? "border-orange-400/30" : "border-white/10 opacity-70",
               ].join(" ")}
             >
               {/* Gradient highlight for selected */}
               <div
                 className={[
                   "p-4 md:p-5",
-                  isSelected
-                    ? "bg-[radial-gradient(circle_at_20%_30%,rgba(255,220,120,0.22),transparent_55%),radial-gradient(circle_at_80%_70%,rgba(0,130,255,0.18),transparent_60%)]"
-                    : "bg-white/5",
+isSelected
+  ? "bg-[linear-gradient(135deg,rgba(17,76,187,0.34),rgba(255,140,0,0.16)),radial-gradient(circle_at_22%_30%,rgba(14,70,140,0.18),transparent_62%),radial-gradient(circle_at_78%_72%,rgba(255,140,0,0.08),transparent_70%)]"
+  : "bg-white/5",
+
                 ].join(" ")}
               >
                 {/* IMPORTANT: items-start, not items-center */}
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-4 items-center">
                   {/* Icon */}
                   <div className="relative shrink-0 mt-[2px] isolate">
                     <img

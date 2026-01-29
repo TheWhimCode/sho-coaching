@@ -6,15 +6,27 @@ import "overlayscrollbars/styles/overlayscrollbars.css";
 
 export default function ScrollbarInit() {
   useEffect(() => {
-    const root = document.documentElement; // ⭐ attach to <html>
+    const scrollRoot = document.getElementById("scroll-root");
+    
+    if (!scrollRoot) return;
 
-    OverlayScrollbars(root, {
+    const instance = OverlayScrollbars(scrollRoot, {
       scrollbars: {
         theme: "os-theme-custom",
-        autoHide: "leave",
-        visibility: "auto",
+        autoHide: "never",
+        visibility: "visible",
       },
     });
+
+    // Add smooth scrolling behavior
+    const viewport = instance.elements().viewport;
+    if (viewport) {
+      viewport.style.scrollBehavior = "smooth";
+    }
+
+    return () => {
+      instance?.destroy();
+    };
   }, []);
 
   return null;

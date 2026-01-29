@@ -1,9 +1,10 @@
 // app/skillcheck/cooldowns/components/CooldownsResult.tsx
 "use client";
 
-import { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ResultsScreen from "@/app/skillcheck/components/ResultScreen";
 import type { SpellKey } from "./SpellPanelList";
+import DividerWithLogo from "@/app/_components/small/Divider-logo";
 
 type Spell = {
   id: string;
@@ -15,14 +16,26 @@ type Spell = {
   description?: string;
 };
 
+type Direction = "low" | "high" | "correct";
+
+type Attempt = {
+  guess: number;
+  direction: Direction;
+  rel: number;
+};
+
 export default function CooldownsResult({
   champion,
   spell,
   rank,
+  avgAttempts,
+  storageKey, // ✅ NEW
 }: {
   champion: { id: string; name?: string; icon: string };
   spell: Spell;
   rank: number; // 1-based
+  avgAttempts: string; // ✅ global avg passed from page/client
+  storageKey: string; // ✅ NEW (read "your guesses" from localStorage)
 }) {
   const champName = champion.name ?? champion.id;
 
@@ -43,7 +56,29 @@ export default function CooldownsResult({
       .join(" / ");
   }, [spell.cooldowns, safeRank]);
 
-  const avgAttempts = "—";
+  /* -----------------------------
+     read attempts from localStorage
+  ----------------------------- */
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+
+      const s = JSON.parse(raw);
+      const arr = Array.isArray(s?.attempts) ? (s.attempts as Attempt[]) : [];
+      setAttempts(arr);
+    } catch {}
+  }, [storageKey]);
+
+  function fmtGuess(n: number) {
+    return Number.isInteger(n) ? `${n}` : n.toFixed(1);
+  }
+
+  function arrow(direction: Direction) {
+    return direction === "low" ? "⬆️" : direction === "high" ? "⬇️" : "✅";
+  }
 
   return (
     <ResultsScreen
@@ -74,7 +109,7 @@ export default function CooldownsResult({
           <div className="relative flex justify-center">
             <div className="text-center text-3xl md:text-4xl font-semibold leading-tight">
               <span className="opacity-90">{champName}</span>
-              <span className="mx-2 opacity-60">—</span>
+              <span className="mx-2">—</span>
               <span className="font-black">{spell.key}</span>{" "}
               <span className="opacity-95">{spell.name}</span>
             </div>
@@ -95,6 +130,69 @@ export default function CooldownsResult({
           dangerouslySetInnerHTML={{ __html: cooldownText }}
         />
       </div>
+
+{/* ✅ YOUR GUESSES (section separators only) */}
+{attempts.length > 0 && (
+  <div className="mt-10">
+    {/* top divider */}
+                  <DividerWithLogo className="py-4" />
+
+    <div className="py-6">
+      <div className="flex items-baseline justify-between">
+        <div className="text-lg uppercase tracking-wide text-gray-400 mb-2">
+          Your attempts
+        </div>
+        <div className="text-xs md:text-sm text-white/45">
+          {attempts.length} total
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-3">
+        {attempts.map((a, i) => {
+          const ok = a.direction === "correct";
+          return (
+            <div
+              key={i}
+              className={[
+                "flex items-center gap-3",
+                "rounded-xl px-4 py-3",
+                "border border-white/5",
+                "text-base md:text-lg font-semibold",
+                ok ? "text-emerald-200" : "text-white/90",
+              ].join(" ")}
+            >
+              <span className="text-white/65 font-black tabular-nums">
+                #{i + 1}
+              </span>
+
+              <span className="font-black tabular-nums">
+                {fmtGuess(a.guess)}s
+              </span>
+
+              <span
+                className={[
+                  "inline-flex items-center justify-center",
+                  "h-7 min-w-7 px-2 rounded-lg",
+                  "text-sm font-black",
+                  ok
+                    ? "bg-emerald-500/15 text-emerald-200 border border-emerald-400/20"
+                    : "bg-white/5 text-white/70 border border-white/10",
+                ].join(" ")}
+              >
+                {arrow(a.direction)}
+              </span>
+              
+            </div>
+            
+          );
+          
+        })}
+      </div>
+    </div>
+
+  </div>
+)}
+
     </ResultsScreen>
   );
 }

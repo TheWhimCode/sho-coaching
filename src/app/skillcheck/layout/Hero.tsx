@@ -37,7 +37,7 @@ export default function Hero({
         />
 
         {/* Hero content */}
-        <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center p-4">
+        <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center p-2 md:p-4">
           {hero}
         </div>
       </section>

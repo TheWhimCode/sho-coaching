@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CooldownsHero, {
   type CooldownsSpell,
 } from "@/app/skillcheck/cooldowns/components/CooldownsHero";
-import CooldownGuessOptions from "@/app/skillcheck/cooldowns/components/CooldownOptions";
+import CooldownOptions from "@/app/skillcheck/cooldowns/components/CooldownOptions";
 import CooldownResult from "./components/CooldownsResult";
 
 type SpellKey = "Q" | "W" | "E" | "R";
@@ -27,28 +27,25 @@ export default function CooldownsClient({
   spells,
   initialActiveSpellId,
   askedRank,
+  avgAttempts,
 }: {
-  champion: { id: string; name?: string; icon: string };
+  champion: { id: string; name?: string; title?: string; icon: string };
   spells: Spell[];
   initialActiveSpellId?: string;
-  askedRank?: number; // comes from server
+  askedRank?: number;
+  avgAttempts: string;
 }) {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [showResult, setShowResult] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  // Persistent scroll anchor in the DOM.
   const resultRef = useRef<HTMLDivElement | null>(null);
   const hasScrolledRef = useRef(false);
 
-  // Time before showing Result + initiating scroll (same moment)
   const SHOW_AND_SCROLL_DELAY_MS = 2500;
   const SCROLL_BEHAVIOR: ScrollBehavior = "smooth";
 
-  /* -----------------------------
-     determine active spell
-  ----------------------------- */
   const activeSpell = useMemo(() => {
     if (initialActiveSpellId) {
       const found = spells.find((s) => s.id === initialActiveSpellId);
@@ -57,9 +54,6 @@ export default function CooldownsClient({
     return spells.find((s) => s.key === "R") ?? spells[0];
   }, [spells, initialActiveSpellId]);
 
-  /* -----------------------------
-     rank + true cooldown
-  ----------------------------- */
   const { rank, maxRank, trueCooldown } = useMemo(() => {
     const cooldowns = activeSpell.cooldowns ?? [];
     const maxRank = Math.max(1, cooldowns.length);
@@ -78,17 +72,11 @@ export default function CooldownsClient({
 
   const question = `Guess the cooldown of ${activeSpell.name} at rank ${rank}?`;
 
-  /* -----------------------------
-     localStorage key
-  ----------------------------- */
   const storageKey = useMemo(
     () => `skillcheck:cooldowns:${champion.id}:${activeSpell.id}:${rank}`,
     [champion.id, activeSpell.id, rank]
   );
 
-  /* -----------------------------
-     load localStorage state
-  ----------------------------- */
   useEffect(() => {
     const raw = localStorage.getItem(storageKey);
     if (!raw) return;
@@ -134,7 +122,13 @@ export default function CooldownsClient({
 
   return (
     <>
-      {showSuccess && <SuccessOverlay text="LOCKED IN!" />}
+      {showSuccess && (
+        <SuccessOverlay
+          durationMs={1900}
+          text={`${trueCooldown}s`}
+          onDone={() => setShowSuccess(false)}
+        />
+      )}
 
       <Hero
         hero={
@@ -149,22 +143,34 @@ export default function CooldownsClient({
         }
         content={
           <>
-            {/* IMPORTANT: always render, never conditional */}
-            <CooldownGuessOptions
+            <CooldownOptions
               question={question}
               trueCooldown={trueCooldown}
+              championId={champion.id}
+              spellKey={activeSpell.key}
+              rank={rank}
+              storageKey={storageKey}
               onSolved={() => {
                 if (completed) return;
 
                 setCompleted(true);
 
                 setShowSuccess(true);
-                setTimeout(() => setShowSuccess(false), 1500);
+                // ❌ removed: setTimeout(() => setShowSuccess(false), 1500);
 
-                localStorage.setItem(
-                  storageKey,
-                  JSON.stringify({ completed: true })
-                );
+                try {
+                  const raw = localStorage.getItem(storageKey);
+                  const s = raw ? JSON.parse(raw) : {};
+                  localStorage.setItem(
+                    storageKey,
+                    JSON.stringify({ ...s, completed: true })
+                  );
+                } catch {
+                  localStorage.setItem(
+                    storageKey,
+                    JSON.stringify({ completed: true })
+                  );
+                }
 
                 revealAndScrollToResult();
               }}
@@ -176,6 +182,8 @@ export default function CooldownsClient({
                   champion={champion}
                   spell={activeSpell}
                   rank={rank}
+                  avgAttempts={avgAttempts}
+                  storageKey={storageKey}
                 />
               )}
             </div>

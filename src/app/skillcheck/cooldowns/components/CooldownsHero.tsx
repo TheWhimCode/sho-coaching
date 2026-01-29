@@ -16,6 +16,13 @@ export type CooldownsSpell = {
   description?: string;
 };
 
+export type ChampionHero = {
+  id: string;
+  name?: string;
+  title?: string;
+  icon: string;
+};
+
 export default function CooldownsHero({
   champion,
   spells,
@@ -24,7 +31,7 @@ export default function CooldownsHero({
   askedRank,
   askedMaxRank,
 }: {
-  champion: { id: string; name?: string; icon: string };
+  champion: ChampionHero;
   spells: CooldownsSpell[];
   activeSpellId: string;
   askedKey?: SpellKey;
@@ -52,30 +59,42 @@ export default function CooldownsHero({
   );
 
   return (
-    <div className="w-full flex flex-col items-center gap-4">
-      <div className="flex items-center gap-4">
-        <img
-          src={champion.icon}
-          alt={champName}
-          className="w-16 h-16 md:w-20 md:h-20 rounded-xl ring-1 ring-white/10"
-        />
+    <div className="w-full flex flex-col items-center gap-6">
+      {/* Champion identity */}
+      <div className="flex items-center gap-5">
+        {/* Framed icon */}
+        <div className="relative">
+          <div className="absolute -inset-1 rounded-2xl bg-white/10 blur-sm" />
+          <div className="relative rounded-2xl border border-white/15 bg-white/5 p-1 shadow-lg">
+            <img
+              src={champion.icon}
+              alt={champName}
+              className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover"
+            />
+          </div>
+        </div>
+
+        {/* Name + title */}
         <div className="flex flex-col">
-          <div className="text-2xl md:text-3xl font-semibold leading-tight">
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight">
             {champName}
-          </div>
-          <div className="text-sm md:text-base opacity-80 leading-tight">
-            Cooldowns — choose the correct scaling
-          </div>
+          </h1>
+
+          {champion.title && (
+            <div className="text-md md:text-xl text-white/70 tracking-wide">
+              {champion.title}
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Spells */}
       <div className="w-full">
         <SpellPanelList
           spells={spellPanelSpells}
           selectedKey={selectedKey}
           title=""
           subtitle={undefined}
-          // ✅ pips only on the asked spell icon
           askedKey={askedKey}
           askedRank={askedRank}
           askedMaxRank={askedMaxRank}

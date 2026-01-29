@@ -12,26 +12,11 @@ import ClipsMobile from "@/app/coaching/_coaching-components/clipsmobile";
 import Tagline from "@/app/coaching/_coaching-components/tagline";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
-import SmoothScroll from "@/app/_components/extensions/SmoothScroll";
-import Lenis from "@studio-freight/lenis";
 
 export default function CoachingPageClient() {
-  const lenisRef = React.useRef<Lenis | null>(null);
-
-  React.useEffect(() => {
-    document.addEventListener("lenis", (e: any) => {
-      lenisRef.current = e.detail;
-    });
-  }, []);
-
   const handleScrollToFollowup = React.useCallback(() => {
     const el = document.getElementById("followup");
-    if (el && lenisRef.current) {
-      lenisRef.current.scrollTo(el, {
-        offset: -80,
-        duration: 1.2,
-      });
-    } else if (el) {
+    if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
@@ -40,8 +25,6 @@ export default function CoachingPageClient() {
 
   return (
     <>
-      <SmoothScroll />
-
       <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
 
       <div className="relative z-10 text-white overflow-x-clip">

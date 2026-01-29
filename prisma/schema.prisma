@@ -6,6 +6,8 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
+  schemas   = ["public", "skillcheck"]
+
 }
 
 model Slot {
@@ -23,6 +25,8 @@ model Slot {
   @@index([startTime])
   @@index([status, startTime, holdUntil])
   @@index([holdKey, holdUntil])
+  @@schema("public")
+
 }
 
 model AvailabilityRule {
@@ -32,6 +36,8 @@ model AvailabilityRule {
   closeMinute   Int
   effectiveFrom DateTime @default(now())
   createdAt     DateTime @default(now())
+  @@schema("public")
+
 }
 
 model AvailabilityException {
@@ -42,6 +48,8 @@ model AvailabilityException {
   blocked     Boolean  @default(false)
 
   @@index([date])
+  @@schema("public")
+
 }
 
 model Session {
@@ -68,7 +76,7 @@ model Session {
   studentId        String?
   discordId        String?
   discordName      String?
-    champions String[] // Add this line
+  champions String[] // Add this line
 
 
   reminderSent Boolean @default(false)
@@ -91,6 +99,8 @@ model Session {
   @@index([riotTag])
   @@index([discordId])
   @@index([studentId])
+  @@schema("public")
+
 }
 
 model PendingConfirmationDM {
@@ -99,6 +109,8 @@ model PendingConfirmationDM {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@schema("public")
+
 }
 
 model SessionAsset {
@@ -113,6 +125,8 @@ model SessionAsset {
   @@unique([sessionId, assetId])
   @@index([sessionId])
   @@index([assetId])
+  @@schema("public")
+
 }
 
 model ProcessedEvent {
@@ -120,6 +134,8 @@ model ProcessedEvent {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@schema("public")
+
 }
 
 model WebhookEvent {
@@ -129,6 +145,8 @@ model WebhookEvent {
   createdAt DateTime @default(now())
 
   @@index([type, createdAt])
+  @@schema("public")
+
 }
 
 model Student {
@@ -148,6 +166,8 @@ model Student {
   coupons       Coupon[]
 
   @@index([puuid])
+  @@schema("public")
+
 }
 
 model AssetLibrary {
@@ -161,6 +181,8 @@ model AssetLibrary {
   createdAt     DateTime       @default(now())
   students      StudentAsset[]
   sessionAssets SessionAsset[]
+  @@schema("public")
+
 }
 
 model StudentAsset {
@@ -174,6 +196,8 @@ model StudentAsset {
   @@unique([studentId, assetId])
   @@index([studentId])
   @@index([assetId])
+  @@schema("public")
+
 }
 
 model RankSnapshot {
@@ -187,6 +211,8 @@ model RankSnapshot {
 
   @@index([studentId, capturedAt])
   @@index([capturedAt])
+  @@schema("public")
+
 }
 
 model SessionDoc {
@@ -203,12 +229,16 @@ model SessionDoc {
   @@unique([studentId, number])
   @@index([studentId])
   @@index([sessionId])
+  @@schema("public")
+
 }
 
 enum SlotStatus {
   free
   taken
   blocked
+  @@schema("public")
+
 }
 
 model Coupon {
@@ -222,6 +252,8 @@ model Coupon {
   student Student @relation(fields: [studentId], references: [id])
 
   @@index([studentId])
+  @@schema("public")
+
 }
 model Draft {
   id        String   @id @default(cuid())
@@ -243,6 +275,8 @@ model Draft {
   status     DraftStatus @default(PENDING)
   createdAt  DateTime    @default(now())
   submitIp String?
+  @@schema("public")
+
 }
 
 
@@ -251,4 +285,23 @@ enum DraftStatus {
   PENDING
   APPROVED
   REJECTED
+  @@schema("public")
+
+}
+model CooldownStat {
+  id              String   @id @default(cuid())
+
+  championId      String
+  spellKey        String
+  rank            Int
+
+  attempts        Int      @default(0)
+  correctAttempts Int      @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([championId, spellKey, rank])
+  @@index([championId])
+  @@schema("skillcheck")
 }

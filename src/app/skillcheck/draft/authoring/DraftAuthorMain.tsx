@@ -335,7 +335,7 @@ export default function DraftAuthorMain({
 
             setLocked(true);
 
-            await fetch("/api/skillcheck/db/draft", {
+            await fetch("/api/skillcheck/draft/db", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

@@ -103,5 +103,8 @@ export async function getAllChampions(
   return Object.values(data.data).map((c: any) => ({
     id: c.id,
     name: c.name,
+    title: c.title, // ✅ "the Nine-Tailed Fox"
+    icon: champSquareUrlById(c.id, patch), // ✅ square portrait
+
   }));
 }

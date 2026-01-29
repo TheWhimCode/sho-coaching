@@ -139,7 +139,7 @@ export default function DraftClient({
   function handleLockIn() {
     if (!selected || completed || !correctAnswer) return;
 
-    fetch("/api/skillcheck/attempt", {
+    fetch("/api/skillcheck/draft/attempt", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

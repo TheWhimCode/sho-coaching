@@ -1,7 +1,7 @@
 // app/skillcheck/cooldowns/components/CooldownOptions.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 
 const HEAVY_TEXT_SHADOW =
@@ -27,7 +27,6 @@ type Tier =
 /* ---------- parsing ---------- */
 
 function parseSeconds(input: string): number | null {
-  // allow decimals: 14.5 / 14,5
   const m = input.trim().match(/-?\d+(?:[.,]\d+)?/);
   if (!m) return null;
 
@@ -36,7 +35,6 @@ function parseSeconds(input: string): number | null {
 
   if (!Number.isFinite(n)) return null;
 
-  // LoL cooldowns use at most 1 decimal → clamp safely
   return Math.round(n * 10) / 10;
 }
 
@@ -119,9 +117,7 @@ function feedbackVisual(direction: Direction, rel: number) {
 /* ---------- Question rendering ---------- */
 
 function renderQuestionWithGradientAbility(question: string) {
-  const m = question.match(
-    /^Guess the cooldown of (.+) at rank (\d+)\?$/i
-  );
+  const m = question.match(/^Guess the cooldown of (.+) at rank (\d+)\?$/i);
   if (!m) return <>{question}</>;
 
   const ability = m[1];
@@ -129,32 +125,33 @@ function renderQuestionWithGradientAbility(question: string) {
 
   return (
     <>
-      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}>
-        Guess the cooldown of{" "}
-      </span>
-
+      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}>Guess the cooldown of </span>
       <span className="bg-clip-text text-transparent bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00] saturate-180">
         {ability}
       </span>
-
-      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}>
-        {" "}
-        at rank {rank}?
-      </span>
+      <span style={{ textShadow: HEAVY_TEXT_SHADOW }}> at rank {rank}?</span>
     </>
   );
 }
 
 /* ---------- Component ---------- */
 
-export default function CooldownGuessOptions({
+export default function CooldownOptions({
   question,
   trueCooldown,
   onSolved,
+  championId,
+  spellKey,
+  rank,
+  storageKey,
 }: {
   question: string;
   trueCooldown: number;
   onSolved?: (guesses: number) => void;
+  championId: string;
+  spellKey: "Q" | "W" | "E" | "R";
+  rank: number;
+  storageKey: string;
 }) {
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState<Attempt[]>([]);
@@ -170,10 +167,12 @@ export default function CooldownGuessOptions({
     return feedbackVisual(last.direction, last.rel);
   }, [last]);
 
-  function resetRound() {
-    setInput("");
-    setAttempts([]);
-    setSolved(false);
+  function writeStorage(patch: Partial<{ attempts: Attempt[]; completed: boolean }>) {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const s = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(storageKey, JSON.stringify({ ...s, ...patch }));
+    } catch {}
   }
 
   function submitGuess() {
@@ -182,17 +181,34 @@ export default function CooldownGuessOptions({
     const delta = Math.abs(inputNumber - trueCooldown);
     const rel = trueCooldown > 0 ? delta / trueCooldown : 0;
 
-    const EPS = 1e-6;
-
     let direction: Direction = "correct";
-    if (inputNumber < trueCooldown - EPS) direction = "low";
-    if (inputNumber > trueCooldown + EPS) direction = "high";
+    if (inputNumber < trueCooldown) direction = "low";
+    if (inputNumber > trueCooldown) direction = "high";
 
-    setAttempts((prev) => [...prev, { guess: inputNumber, direction, rel }]);
+    fetch("/api/skillcheck/cooldowns/attempt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        championId,
+        spellKey,
+        rank,
+        correct: direction === "correct",
+      }),
+    }).catch(() => {});
+
+    const nextAttempt: Attempt = { guess: inputNumber, direction, rel };
+
+    setAttempts((prev) => {
+      const next = [...prev, nextAttempt];
+      writeStorage({ attempts: next });
+      return next;
+    });
+
     setPulseKey((k) => k + 1);
 
     if (direction === "correct") {
       setSolved(true);
+      writeStorage({ completed: true });
       onSolved?.(guessesCount + 1);
     }
 
@@ -205,25 +221,25 @@ export default function CooldownGuessOptions({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [submitGuess]);
+  }, [inputNumber, solved, trueCooldown, guessesCount]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 px-2 md:px-0">
       <div className="w-full text-center">
         <h2 className="text-3xl font-semibold text-gray-200">
           {renderQuestionWithGradientAbility(question)}
         </h2>
       </div>
 
-      <div className="w-full flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-center">
-        <div className="flex-1 max-w-md">
+      <div className="w-full flex flex-nowrap gap-3 items-center justify-center">
+        <div className="flex-1 min-w-0 max-w-md">
           <div className="w-full flex rounded-xl border border-white/10 overflow-hidden">
-            <div className="flex-[2]">
+            <div className="flex-[2] min-w-0">
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={solved}
-                placeholder={solved ? "Solved" : "Enter cooldown (seconds)"}
+                placeholder={solved ? "Solved" : "Enter cooldown"}
                 className="w-full bg-transparent text-white outline-none px-4 py-4"
               />
             </div>
@@ -239,10 +255,7 @@ export default function CooldownGuessOptions({
               }}
             >
               {indicator && (
-                <div
-                  className="px-2 text-center text-md font-bold leading-tight text-white"
-                  style={{ opacity: indicator.textAlpha }}
-                >
+                <div className="px-2 text-center text-md font-bold text-white">
                   {indicator.text}
                 </div>
               )}
@@ -250,27 +263,18 @@ export default function CooldownGuessOptions({
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-xs text-gray-400 font-bold whitespace-nowrap">
             Attempts: {guessesCount}
           </div>
 
-          {solved ? (
-            <PrimaryCTA
-              onClick={resetRound}
-              className="px-6 py-2 min-w-[130px] h-[42px]"
-            >
-              Play again
-            </PrimaryCTA>
-          ) : (
-            <PrimaryCTA
-              className="px-6 py-2 min-w-[130px] h-[42px]"
-              disabled={inputNumber === null}
-              onClick={submitGuess}
-            >
-              Lock In
-            </PrimaryCTA>
-          )}
+          <PrimaryCTA
+            className="px-6 py-2 min-w-[130px] h-[42px]"
+            disabled={solved || inputNumber === null}
+            onClick={submitGuess}
+          >
+            Lock In
+          </PrimaryCTA>
         </div>
       </div>
     </div>
