@@ -44,19 +44,14 @@ export function isEligibleTarget(it: CDragonItem) {
 /* ---------------------------------
    component multiset (TREE CUT)
    - never returns a node + its descendant
-   - allows intermediate components (Warhammer, Codex, etc.)
+   - allows intermediate components
+   - ✅ deterministic if rng is provided
 ---------------------------------- */
 
 function canExpand(it?: CDragonItem) {
   return !!it?.from?.length;
 }
 
-/**
- * Returns a multiset representing a "cut" of the recipe tree.
- * Guarantees: you will NOT get both an item and any of its recipe-descendants.
- *
- * Example: if Warhammer is present, Long Sword (inside Warhammer) will not be.
- */
 export function componentCounts(
   data: Record<string, CDragonItem>,
   itemId: string,
@@ -64,6 +59,7 @@ export function componentCounts(
   opts?: {
     targetNodes?: number;
     expandChanceByDepth?: (depth: number) => number;
+    rng?: () => number; // ✅ seeded RNG
   }
 ): Map<string, number> {
   const targetNodes = opts?.targetNodes ?? 6;
@@ -71,22 +67,23 @@ export function componentCounts(
     opts?.expandChanceByDepth ??
     ((d) => (d === 0 ? 1 : d === 1 ? 0.6 : d === 2 ? 0.35 : 0.15));
 
+  const rng = opts?.rng ?? Math.random; // fallback keeps old behavior
+
   // ---- Step 1: force root expansion exactly 1 level ----
   const root = data[itemId];
   const rootFrom = root?.from ?? [];
 
-  // If somehow no recipe, just return itself
   if (!rootFrom.length) {
     out.set(itemId, (out.get(itemId) ?? 0) + 1);
     return out;
   }
 
-  // We start the pool as the direct components (depth = 1)
+  // Start pool as direct components (depth = 1)
   const pool: { id: string; depth: number; frozen?: boolean }[] = rootFrom.map(
     (c, idx) => ({
       id: String(c),
       depth: 1,
-      // ---- Step 2: freeze the FIRST component so it never expands ----
+      // freeze FIRST component so it never expands
       frozen: idx === 0,
     })
   );
@@ -94,10 +91,10 @@ export function componentCounts(
   function canExpandNode(n: { id: string; frozen?: boolean }) {
     if (n.frozen) return false;
     const it = data[n.id];
-    return !!it?.from?.length;
+    return canExpand(it);
   }
 
-  // ---- Step 3: expand other components optionally ----
+  // ---- Step 2: expand other components deterministically ----
   while (pool.length < targetNodes) {
     const expandableIdxs = pool
       .map((n, i) => (canExpandNode(n) ? i : -1))
@@ -105,13 +102,14 @@ export function componentCounts(
 
     if (expandableIdxs.length === 0) break;
 
-    const idx = expandableIdxs[Math.floor(Math.random() * expandableIdxs.length)];
+    const idx =
+      expandableIdxs[Math.floor(rng() * expandableIdxs.length)];
     const node = pool[idx];
     const it = data[node.id];
     if (!it?.from?.length) break;
 
     const p = expandChanceByDepth(node.depth);
-    if (Math.random() > p) break;
+    if (rng() > p) break;
 
     // expand: remove parent, add direct recipe components
     pool.splice(idx, 1);
@@ -129,7 +127,6 @@ export function componentCounts(
 
   return out;
 }
-
 
 /* ---------------------------------
    crafting solver
@@ -192,7 +189,7 @@ function craftOutcomes(
     cur = next;
   }
 
-  // add combine cost (CDragon: price acts like combine cost)
+  // add combine cost
   for (const [m, c] of cur) {
     minInto(res, m, c + (it.price ?? 0));
   }

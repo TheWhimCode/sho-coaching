@@ -99,9 +99,10 @@ export default async function ItemsPage() {
   -------------------------- */
   const pool = new Map<string, number>();
 
-  for (const [id, n] of componentCounts(data, targetId)) {
-    pool.set(id, (pool.get(id) ?? 0) + n);
-  }
+for (const [id, n] of componentCounts(data, targetId, new Map(), { rng })) {
+  pool.set(id, (pool.get(id) ?? 0) + n);
+}
+
 
   const bag: string[] = [];
   for (const [id, n] of pool) {
