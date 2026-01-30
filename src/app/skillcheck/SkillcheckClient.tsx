@@ -34,7 +34,7 @@ const modes = [
     href: "/skillcheck/items",
     icon: Gem,
     desc: "How much do you need for your spike?",
-    available: false,
+    available: true,
   },
   {
     key: "runes",
