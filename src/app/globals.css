@@ -362,3 +362,13 @@ html, body {
 .os-theme-custom.os-scrollbar > .os-scrollbar-track > .os-scrollbar-handle:hover {
   opacity: 0.85;
 }
+/* Hide native scrollbars while still allowing scrolling */
+#scroll-root.os-loading {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/old Edge */
+}
+
+#scroll-root.os-loading::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

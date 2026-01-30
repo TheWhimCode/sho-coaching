@@ -15,7 +15,7 @@ export default function Hero({
     <div className="w-full flex flex-col">
       {/* HERO AREA */}
       <section
-        className="relative w-full min-h-[70vh] flex items-center justify-center pt-6 md:pt-12 pb-6 md:pb-12"
+        className="relative w-full min-h-[70vh] flex items-center justify-center pt-6 md:pt-12 pb-6 md:pb-12 -mt-16 md:-mt-20 pt-[calc(1.5rem+4rem)] md:pt-[calc(3rem+5rem)]"
         style={{
           backgroundImage: "url('/skillcheck/background.jpg')",
           backgroundSize: "cover",
@@ -24,15 +24,14 @@ export default function Hero({
         }}
       >
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none" />
 
         {/* Bottom fade */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
-            boxShadow:
-              "inset 0 -28px 18px -4px rgba(0,0,0,0.75)",
+            boxShadow: "inset 0 -28px 18px -4px rgba(0,0,0,0.75)",
           }}
         />
 
@@ -44,11 +43,8 @@ export default function Hero({
 
       {/* BELOW-HERO CONTENT */}
       {content && (
-        <section
-          ref={resultRef}
-          className="w-full py-6 text-white"
-        >
-<div className="w-full sm:max-w-4xl sm:mx-auto px-0 sm:px-6 flex flex-col gap-6">
+        <section ref={resultRef} className="w-full py-6 text-white">
+          <div className="w-full sm:max-w-4xl sm:mx-auto px-0 sm:px-6 flex flex-col gap-6">
             {content}
           </div>
         </section>

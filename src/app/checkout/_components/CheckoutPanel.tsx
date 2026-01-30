@@ -323,7 +323,7 @@ export default function CheckoutPanel(props: Parameters<
       >
         <div
           className="
-            relative flex flex-col h-full overflow-y-auto overscroll-y-contain scrollbar-none
+            relative flex flex-col h-full overflow-y-auto overflow-x-hidden overscroll-y-contain scrollbar-none
             bg-[linear-gradient(135deg,#11182a_0%,#0e1526_45%,#0c1322_100%)]
             md:rounded-2xl md:border md:border-[rgba(146,180,255,0.12)]
             md:ring-1 md:ring-[rgba(146,180,255,0.14)]

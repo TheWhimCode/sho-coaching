@@ -61,25 +61,22 @@ return {
     )
   );
 
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
+useEffect(() => {
+  const html = document.documentElement;
+  const body = document.body;
 
-    let raf1 = 0, raf2 = 0;
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        html.classList.add("no-scrollbar");
-        body.classList.add("no-scrollbar");
-      });
-    });
+  // Delay until after navigation completes and DOM settles
+  const timeoutId = setTimeout(() => {
+    html.classList.add("no-scrollbar");
+    body.classList.add("no-scrollbar");
+  }, 100);
 
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-      html.classList.remove("no-scrollbar");
-      body.classList.remove("no-scrollbar");
-    };
-  }, []);
+  return () => {
+    clearTimeout(timeoutId);
+    html.classList.remove("no-scrollbar");
+    body.classList.remove("no-scrollbar");
+  };
+}, []);
 
   useEffect(() => {
     const body = document.body;

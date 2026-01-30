@@ -8,7 +8,7 @@ export default function SkillcheckLayout({
       {/* Ambient page background */}
       <div
         aria-hidden
-        className="fixed inset-0 z-0"
+        className="fixed inset-0 z-0 pointer-events-none"
         style={{
           background:
             "radial-gradient(circle at 22% 70%, rgba(0,130,255,0.22), transparent 58%), radial-gradient(circle at 78% 80%, rgba(255,100,30,0.18), transparent 58%)",

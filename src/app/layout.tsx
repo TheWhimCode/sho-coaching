@@ -15,9 +15,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}>
-        <div id="scroll-root" className="h-dvh overflow-y-auto">
-          <LayoutClient>{children}</LayoutClient>
-        </div>
+<div id="scroll-root" className="h-dvh overflow-hidden overflow-x-hidden os-loading">
+  <LayoutClient>{children}</LayoutClient>
+</div>
+
+
+
       </body>
     </html>
   );

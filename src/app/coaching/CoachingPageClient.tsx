@@ -25,7 +25,7 @@ export default function CoachingPageClient() {
 
   return (
     <>
-      <div className="fixed inset-0 z-0" style={{ background: pageBG }} />
+      <div className="fixed inset-0 z-0 pointer-events-none" style={{ background: pageBG }} />
 
       <div className="relative z-10 text-white overflow-x-clip">
         <section className="relative isolate overflow-x-clip">

@@ -73,7 +73,7 @@ useEffect(() => {
       </Link>
 
       {/* Fading bar */}
-      <div className="transition-[opacity] duration-75" style={{ opacity }}>
+      <div className="transition-[opacity] duration-75" style={{ opacity, pointerEvents: opacity < 0.1 ? 'none' : 'auto'  }}>
         <div className="absolute inset-0 -z-10 bg-[#0B0F1A]/30 backdrop-blur-md border-b border-white/10" />
 
         <nav className="w-full">

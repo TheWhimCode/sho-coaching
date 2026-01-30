@@ -21,14 +21,16 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
     <>
       <ScrollbarInit />
 
-      <div className={showNavBar ? "" : "hidden"}>
+      <div className={showNavBar ? "" : "hidden pointer-events-none"}>
         <NavBar />
       </div>
       <div className={showNavBar ? "h-16 md:h-20" : "h-0"} />
 
       <main>{children}</main>
 
-      {showFooter && <Footer />}
+      <div className={showFooter ? "" : "hidden pointer-events-none"}>
+        <Footer />
+      </div>
     </>
   );
 }
