@@ -56,12 +56,12 @@ export default function TermsPage() {
               live coaching) delivered via Discord. The exact scope, duration and price are as shown in the booking flow
               and the booking confirmation.
             </p>
+<h2 className="text-xl font-semibold">3. Booking &amp; Contract Formation</h2>
+<p>
+  By completing checkout you submit a binding offer to purchase a session. A contract is concluded
+  when the booking is confirmed on-screen and/or you receive an automated confirmation sent by my Discord bot.
+</p>
 
-            <h2 className="text-xl font-semibold">3. Booking &amp; Contract Formation</h2>
-            <p>
-              By completing checkout you submit a binding offer to purchase a session. A contract is concluded when you
-              receive my booking confirmation email.
-            </p>
 
             <h2 className="text-xl font-semibold">4. Prices &amp; Payment</h2>
             <p>
@@ -176,13 +176,13 @@ export default function TermsPage() {
 
             <h2 className="text-xl font-semibold">15. Contact</h2>
             <p>
-              Sho Coaching – Tim Bäumler<br />
-              Emsdettener Straße 18
-              48268 Greven • im.sho@yahoo.com
+            Sho Coaching – Tim Bäumler<br />
+Emsdettener Straße 18<br />
+48268 Greven • im.sho@yahoo.com
             </p>
           </div>
 
-          <p className="text-xs text-white/55 pt-2">Last updated: [DD Month YYYY]</p>
+          <p className="text-xs text-white/55 pt-2">Last updated: 01 February 2026</p>
         </div>
       </div>
     </section>

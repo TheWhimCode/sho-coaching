@@ -33,15 +33,15 @@ export default function ImpressumPage() {
 Legal information according to §5 TMG (German Telemedia Act)            </p>
 
             <p>
-              <span className="font-medium">Tim Bäumler </span> 
-              Sho Coaching <br />
+              <span className="font-medium">Tim Bäumler / Sho Coaching</span> 
+              <br />
               Emsdettener Straße 18<br />
               48268 Greven<br />
               Germany
             </p>
 
             <p>
-              <span className="font-medium">Contact</span> <br />
+              <span className="font-bold">Contact</span> <br />
               E-Mail: im.sho@yahoo.com <br />
               
             </p>
