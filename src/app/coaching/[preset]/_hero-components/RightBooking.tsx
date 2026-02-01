@@ -66,21 +66,17 @@ Suggested times — in your timezone
             </span>
           </div>
 
-          {loading ? (
-            // Your SlotSkeletons adds mt-1; cancel it so spacing matches exactly.
-            <div>
-              <SlotSkeletons count={3} />
-            </div>
-          ) : slots.length ? (
-            <AvailableSlots
-              slots={slots}
-              onPick={(id) => onOpenCalendar?.({ slotId: id, liveMinutes })}
-            />
-          ) : (
-            <div className="text-xs text-white/60">
-              Loading...
-            </div>
-          )}
+{(loading || slots.length === 0) ? (
+  <div>
+    <SlotSkeletons count={3} />
+  </div>
+) : (
+  <AvailableSlots
+    slots={slots}
+    onPick={(id) => onOpenCalendar?.({ slotId: id, liveMinutes })}
+  />
+)}
+
         </div>
 
         {/* Same padding-sized spacer between AvailableSlots and footer */}

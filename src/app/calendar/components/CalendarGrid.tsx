@@ -41,6 +41,7 @@ function dayKeyLocal(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
+
 export default function CalendarGrid({
   month,
   onMonthChange,
@@ -103,7 +104,7 @@ export default function CalendarGrid({
 
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
-              const key = dayKeyLocal(d);
+const key = dayKeyLocal(d);
               const hasAvail = displayableDayKeys?.has(key) ?? false;
 
               const selected = !!selectedDate && isSameDay(d, selectedDate);

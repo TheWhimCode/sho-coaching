@@ -30,6 +30,8 @@ function dayKeyLocal(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
+
+
 export default function DayPicker({
   month,
   onMonthChange,
@@ -79,7 +81,7 @@ export default function DayPicker({
       {[left, right].map((col, colIdx) => (
         <div key={colIdx} className="grid grid-rows-7 h-full">
           {col.map((d, rowIdx) => {
-            const key = dayKeyLocal(d);
+const key = dayKeyLocal(d);
             const hasAvail = displayableDayKeys?.has(key) ?? false;
 
             const selected = !!selectedDate && isSameDay(d, selectedDate);

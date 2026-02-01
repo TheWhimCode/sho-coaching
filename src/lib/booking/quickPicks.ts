@@ -20,13 +20,36 @@ export function computeQuickPicks(
 
   const ASAPTs = new Date(ASAP.startISO).getTime();
 
-  // 2) Weekend
-  const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
-  const wknd = sorted.find((s) => {
-    const d = new Date(s.startISO);
-    return d.getTime() > ASAPTs && isWeekend(d);
-  });
-  if (wknd) out.push({ ...wknd, label: "Weekend" });
+// 2) Weekend (latest time on the earliest weekend day)
+const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
+
+const firstWkndIdx = sorted.findIndex((s) => {
+  const d = new Date(s.startISO);
+  return d.getTime() > ASAPTs && isWeekend(d);
+});
+
+let wknd: QuickIn | undefined;
+
+if (firstWkndIdx !== -1) {
+  const firstDate = new Date(sorted[firstWkndIdx].startISO);
+
+  // advance to the last slot on that same (local) day
+  let i = firstWkndIdx;
+  while (i + 1 < sorted.length) {
+    const nextDate = new Date(sorted[i + 1].startISO);
+    if (
+      nextDate.getFullYear() !== firstDate.getFullYear() ||
+      nextDate.getMonth() !== firstDate.getMonth() ||
+      nextDate.getDate() !== firstDate.getDate()
+    ) break;
+    i++;
+  }
+
+  wknd = sorted[i];
+}
+
+if (wknd) out.push({ ...wknd, label: "Weekend" });
+
 
   // 3) In 4+ days (no label)
   const startOfToday = new Date(now);

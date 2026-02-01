@@ -7,6 +7,8 @@ import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { FaDiscord, FaTiktok, FaYoutube } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import { useNavChrome } from "@/app/_components/navChrome";
+import { usePathname } from "next/navigation";
 
 const NAV = [
   { label: "Coaching", href: "/coaching" },
@@ -22,40 +24,118 @@ const COURSE_LINKS = [
   { label: "Support", href: "/courses/support" },
 ];
 
-export default function NavBar({ className = "" }: { className?: string }) {
+export default function NavBar({
+  className = "",
+  logoOnly = false,
+}: {
+  className?: string;
+  logoOnly?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [opacity, setOpacity] = useState(1);
 
-useEffect(() => {
-  const maxScroll = 100;
+  // hover state for logo-only reveal
+  const [hovered, setHovered] = useState(false);
 
-  const root = document.getElementById("scroll-root");
-  const viewport = root?.querySelector<HTMLElement>(
-    "[data-overlayscrollbars-viewport]"
-  );
+  // prevents flash on route enter while still allowing fade-out after
+  const [logoOnlyReady, setLogoOnlyReady] = useState(true);
+  const [hoverArmed, setHoverArmed] = useState(true);
 
-  const scroller = viewport ?? window;
+  const { chrome, setChrome } = useNavChrome();
+  const pathname = usePathname() || "";
 
-  const onScroll = () => {
-    const y =
-      scroller === window
-        ? window.scrollY
-        : (scroller as HTMLElement).scrollTop;
+  // override wins during transition
+  const effectiveLogoOnly = chrome === "logoOnly" ? true : logoOnly;
 
-    setOpacity(Math.max(0, Math.min(1, 1 - y / maxScroll)));
+  // once the route changes, clear the override
+  useEffect(() => {
+    if (chrome !== "auto") setChrome("auto");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  useEffect(() => {
+    const maxScroll = 100;
+
+    const root = document.getElementById("scroll-root");
+    const viewport = root?.querySelector<HTMLElement>(
+      "[data-overlayscrollbars-viewport]"
+    );
+
+    const scroller = viewport ?? window;
+
+    const onScroll = () => {
+      const y =
+        scroller === window
+          ? window.scrollY
+          : (scroller as HTMLElement).scrollTop;
+
+      setOpacity(Math.max(0, Math.min(1, 1 - y / maxScroll)));
+    };
+
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    onScroll(); // initial sync
+
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  // Entering logo-only: hide immediately with transitions disabled for 1 frame,
+  // then enable transitions so hover-out can fade.
+  useEffect(() => {
+    if (!effectiveLogoOnly) {
+      setLogoOnlyReady(true);
+      setHoverArmed(true);
+      return;
+    }
+
+    setOpen(false);
+    setHovered(false);
+
+    setLogoOnlyReady(false);
+    setHoverArmed(false);
+
+    const id = requestAnimationFrame(() => {
+      setLogoOnlyReady(true);
+      setHoverArmed(true);
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [effectiveLogoOnly]);
+
+  // In logo-only mode:
+  // - hidden by default
+  // - fades in/out on hover after ready
+  // Otherwise: normal scroll fade
+  const barOpacity = effectiveLogoOnly ? (hovered ? 1 : 0) : opacity;
+
+  // Pointer events logic
+  const barPointerEvents = effectiveLogoOnly
+    ? hovered
+      ? "auto"
+      : "none"
+    : opacity < 0.1
+      ? "none"
+      : "auto";
+
+  const toggleMenu = () => {
+    if (effectiveLogoOnly) return;
+    setOpen((v) => !v);
   };
 
-  scroller.addEventListener("scroll", onScroll, { passive: true });
-  onScroll(); // initial sync
-
-  return () => {
-    scroller.removeEventListener("scroll", onScroll);
-  };
-}, []);
-
+  const barClassName = effectiveLogoOnly
+    ? logoOnlyReady
+      ? "transition-[opacity] duration-500"
+      : ""
+    : "transition-[opacity] duration-75";
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-40 ${className}`}>
+    <header
+      className={`fixed top-0 left-0 right-0 z-40 ${className}`}
+      onMouseEnter={() => effectiveLogoOnly && hoverArmed && setHovered(true)}
+      onMouseLeave={() => effectiveLogoOnly && setHovered(false)}
+      onMouseMove={() => effectiveLogoOnly && !hoverArmed && setHoverArmed(true)}
+    >
       {/* LOGO */}
       <Link
         href="/"
@@ -73,17 +153,25 @@ useEffect(() => {
       </Link>
 
       {/* Fading bar */}
-      <div className="transition-[opacity] duration-75" style={{ opacity, pointerEvents: opacity < 0.1 ? 'none' : 'auto'  }}>
-        <div className="absolute inset-0 -z-10 bg-[#0B0F1A]/30 backdrop-blur-md border-b border-white/10" />
+      <div
+        className={barClassName}
+        style={{ opacity: barOpacity, pointerEvents: barPointerEvents }}
+      >
+        <div
+          className={[
+            "absolute inset-0 -z-10 bg-[#0B0F1A]/30 border-b border-white/10",
+            effectiveLogoOnly ? "" : "backdrop-blur-md",
+          ].join(" ")}
+        />
 
         <nav className="w-full">
           <div className="relative h-16 md:h-20 flex items-center pl-14 md:pl-20 pr-4 md:pr-8">
-            {/* LEFT: title */}
+            {/* LEFT */}
             <span className="text-lg md:text-xl font-semibold tracking-tight">
               Sho Coaching
             </span>
 
-            {/* CENTER: links */}
+            {/* CENTER */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="hidden md:flex items-center gap-8 pointer-events-auto">
                 {NAV.map((it) =>
@@ -127,7 +215,7 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* RIGHT: socials + hamburger */}
+            {/* RIGHT */}
             <div className="ml-auto flex items-center">
               <div className="hidden md:flex items-center gap-3">
                 <Link
@@ -167,7 +255,7 @@ useEffect(() => {
               {/* Mobile hamburger */}
               <button
                 className="md:hidden ml-2 p-2 rounded-lg hover:bg-white/10"
-                onClick={() => setOpen((v) => !v)}
+                onClick={toggleMenu}
                 aria-label="Toggle menu"
               >
                 {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -177,7 +265,7 @@ useEffect(() => {
         </nav>
 
         {/* Mobile dropdown */}
-        {open && (
+        {open && !effectiveLogoOnly && (
           <div className="md:hidden border-t border-white/10 bg-[#0B0F1A]/90 backdrop-blur-md">
             <div className="px-4 py-3">
               <div className="flex flex-col">
@@ -205,10 +293,11 @@ useEffect(() => {
                   )
                 )}
 
-                {/* disabled courses */}
                 <div className="py-2 text-base text-white/50 flex items-center justify-between">
                   <span>Courses</span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-white/10">Soon</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-white/10">
+                    Soon
+                  </span>
                 </div>
 
                 <Link
@@ -219,7 +308,6 @@ useEffect(() => {
                   Contact
                 </Link>
 
-                {/* socials */}
                 <div className="mt-3 flex items-center gap-3">
                   <Link
                     href="https://www.youtube.com/@ShoCoaching"

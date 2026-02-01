@@ -139,15 +139,18 @@ export default function Calendar({
     }
   }, [prefetchedSlots, selectedSlotId]);
 
-// Fetch slots
+// Fetch slots (only if no prefetched data)
 useEffect(() => {
+  if (prefetchedSlots?.length) return;
+
   let ignore = false;
 
-  // ⚠️ Client must NOT import scheduling policy.
-  // This is a dumb UI range; the engine/API enforce real limits.
   const start = new Date();
-  const end = new Date();
-  end.setDate(start.getDate() + 14);
+  start.setUTCHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 14);
+  end.setUTCHours(23, 59, 59, 999);
 
   (async () => {
     setLoading(true);
@@ -167,7 +170,8 @@ useEffect(() => {
   return () => {
     ignore = true;
   };
-}, [totalMinutes]);
+}, [totalMinutes, prefetchedSlots]);
+
 
 
   // Use initialSlotId to preselect date + time (triggered by AvailableSlots)
@@ -211,7 +215,7 @@ const startsByDay = useMemo(() => {
   for (const s of normalizedSlots) {
     const d = s.startTime;
     // UI display rule: only show :00 / :30
-    if (d.getMinutes() % 30 !== 0) continue;
+if (d.getUTCMinutes() % 30 !== 0) continue;
 
     const key = dayKeyLocal(d);
     if (!map.has(key)) map.set(key, []);

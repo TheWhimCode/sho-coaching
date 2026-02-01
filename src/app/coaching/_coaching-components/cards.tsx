@@ -8,6 +8,7 @@ import type { Preset } from "@/engine/session/rules/preset";
 import { colorsByPreset } from "@/engine/session";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 import { motion, type Variants } from "framer-motion";
+import { useNavChrome } from "@/app/_components/navChrome";
 
 type PresetSlug = "vod" | "signature" | "instant";
 
@@ -113,6 +114,7 @@ const cardVariants: Variants = {
 function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
+const { setChrome } = useNavChrome();
 
   const [overlayActive, setOverlayActive] = useState(false);
   const [navQueuedTo, setNavQueuedTo] = useState<string | null>(null);
@@ -146,14 +148,18 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
     router.push(navQueuedTo);
   }, [router, navQueuedTo]);
 
-  const handleNavigate = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (overlayActive) return;
-    (e.currentTarget as HTMLElement)?.blur?.();
-    setNavQueuedTo(`/coaching/${item.slug}`);
-    setOverlayActive(true);
-  };
+const handleNavigate = (e: React.MouseEvent | React.KeyboardEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (overlayActive) return;
+
+  (e.currentTarget as HTMLElement)?.blur?.();
+
+  setChrome("logoOnly"); // hide navbar immediately during transition
+  setNavQueuedTo(`/coaching/${item.slug}`);
+  setOverlayActive(true);
+};
+
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") handleNavigate(e);

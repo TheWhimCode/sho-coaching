@@ -221,10 +221,10 @@ export default function SessionNotes({ student, sessions, onUpdateSession }: Pro
     patchActive({ champions });
   };
 
-  return (
-    <div className="flex gap-6">
-      <aside className="w-80 shrink-0">
-        <div className="flex flex-col gap-3">
+return (
+  <div className="flex flex-col md:flex-row gap-6">
+    <aside className="w-full md:w-80 md:shrink-0">
+      <div className="flex flex-col gap-3">
           {local.map((s) => {
             const isRealSession = !!s.sessionId && !s.id.startsWith('doc-');
 
@@ -264,13 +264,13 @@ export default function SessionNotes({ student, sessions, onUpdateSession }: Pro
         </div>
       </aside>
 
-      <section className="grow rounded-2xl border border-white/10 bg-white/5 p-6 min-h-[480px]">
-        {active ? (
-          <DocTemplate session={active} onChange={(p) => patchActive(p)} />
-        ) : (
-          <div className="text-zinc-400">No session selected.</div>
-        )}
-      </section>
-    </div>
-  );
+    <section className="grow rounded-2xl border border-white/10 bg-white/5 p-6 min-h-[480px]">
+      {active ? (
+        <DocTemplate session={active} onChange={(p) => patchActive(p)} />
+      ) : (
+        <div className="text-zinc-400">No session selected.</div>
+      )}
+    </section>
+  </div>
+);
 }

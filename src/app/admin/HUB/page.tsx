@@ -84,6 +84,28 @@ useEffect(() => {
     on = false;
   };
 }, []);
+// ---- Fetch bookings (sessions) ----
+useEffect(() => {
+  let on = true;
+
+  (async () => {
+    setLoadingBookings(true);
+    try {
+      const res = await fetch("/api/admin/sessions?range=all", {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = (await res.json()) as SessionData[];
+      if (on) setBookings(data);
+    } finally {
+      if (on) setLoadingBookings(false);
+    }
+  })();
+
+  return () => {
+    on = false;
+  };
+}, []);
 
 
   const nextThree = useMemo(() => {

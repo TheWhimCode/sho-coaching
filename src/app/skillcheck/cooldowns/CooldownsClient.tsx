@@ -23,12 +23,14 @@ type Spell = {
 };
 
 export default function CooldownsClient({
+  dayKey,
   champion,
   spells,
   initialActiveSpellId,
   askedRank,
   avgAttempts,
 }: {
+  dayKey: string;
   champion: { id: string; name?: string; title?: string; icon: string };
   spells: Spell[];
   initialActiveSpellId?: string;
@@ -73,43 +75,43 @@ export default function CooldownsClient({
   const question = `Guess the cooldown of ${activeSpell.name} at rank ${rank}?`;
 
   const storageKey = useMemo(
-    () => `skillcheck:cooldowns:${champion.id}:${activeSpell.id}:${rank}`,
-    [champion.id, activeSpell.id, rank]
+    () =>
+      `skillcheck:cooldowns:${dayKey}:${champion.id}:${activeSpell.id}:${rank}`,
+    [dayKey, champion.id, activeSpell.id, rank]
   );
 
-useEffect(() => {
-  const raw = localStorage.getItem(storageKey);
-  if (!raw) return;
+  useEffect(() => {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return;
 
-  try {
-    const s = JSON.parse(raw);
-    const isCompleted = !!s.completed;
+    try {
+      const s = JSON.parse(raw);
+      const isCompleted = !!s.completed;
 
-    setCompleted(isCompleted);
+      setCompleted(isCompleted);
 
-    // ✅ NEW: replay success animation on every page load if already solved
-    if (isCompleted) {
-      setShowSuccess(true);
-    }
+      // ✅ NEW: replay success animation on every page load if already solved
+      if (isCompleted) {
+        setShowSuccess(true);
+      }
 
-    if (isCompleted && !hasScrolledRef.current) {
-      hasScrolledRef.current = true;
+      if (isCompleted && !hasScrolledRef.current) {
+        hasScrolledRef.current = true;
 
-      setTimeout(() => {
-        setShowResult(true);
-        requestAnimationFrame(() => {
+        setTimeout(() => {
+          setShowResult(true);
           requestAnimationFrame(() => {
-            resultRef.current?.scrollIntoView({
-              behavior: SCROLL_BEHAVIOR,
-              block: "center",
+            requestAnimationFrame(() => {
+              resultRef.current?.scrollIntoView({
+                behavior: SCROLL_BEHAVIOR,
+                block: "center",
+              });
             });
           });
-        });
-      }, SHOW_AND_SCROLL_DELAY_MS);
-    }
-  } catch {}
-}, [storageKey]);
-
+        }, SHOW_AND_SCROLL_DELAY_MS);
+      }
+    } catch {}
+  }, [storageKey]);
 
   function revealAndScrollToResult() {
     if (hasScrolledRef.current) return;

@@ -16,19 +16,27 @@ type Props = {
 
 export default function StudentSummary({ student, onChange }: Props) {
   return (
-    <div className="flex w-full items-stretch">
+    <div className="flex w-full flex-col md:flex-row items-stretch gap-6 md:gap-0">
       {/* Left: student info */}
       <StudentDetails student={student} onChange={onChange} />
 
-      {/* Middle column: Rank graph */}
-      <div className="mx-8 w-[420px] shrink-0 border-l border-white/10 pl-6">
-      <div className="h-36 md:h-48">
-        <RankGraph studentId={student.id} />
-      </div>
+      {/* Middle: Rank graph */}
+      <div className="md:mx-8 md:w-[420px] md:shrink-0 md:border-l md:border-white/10 md:pl-6">
+        <div className="h-36 md:h-48">
+          <RankGraph studentId={student.id} />
+        </div>
       </div>
 
-      {/* Right: compact column */}
-      <div className="pl-6 border-l border-white/10 flex items-center justify-end shrink-0">
+      {/* Right: Rank card */}
+<div className="
+  flex
+  items-center
+  justify-center
+  md:justify-end
+  md:pl-6
+  md:border-l
+  md:border-white/10
+">
         {student.puuid ? (
           <RankCard
             puuid={student.puuid}

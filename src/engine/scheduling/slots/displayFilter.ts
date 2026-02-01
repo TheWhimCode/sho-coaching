@@ -5,8 +5,9 @@ import type { StartRef } from "./groupByDay";
  * Pure. No DB. No lead/max-advance. No contiguity.
  */
 export function isDisplayableStart(d: Date, displayStepMin: number) {
-  return d.getMinutes() % displayStepMin === 0;
+  return d.getUTCMinutes() % displayStepMin === 0;
 }
+
 
 export function filterDisplayableStarts(starts: StartRef[], displayStepMin: number) {
   return starts.filter((s) => isDisplayableStart(s.start, displayStepMin));

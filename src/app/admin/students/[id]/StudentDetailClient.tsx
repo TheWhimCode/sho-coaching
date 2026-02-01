@@ -273,7 +273,7 @@ useEffect(() => {
       />
       <div
         aria-hidden
-        className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
+        className="fixed inset-0 z-0 opacity-25 pointer-events-none"
         style={{ backgroundImage: "url('/images/coaching/texture.png')", backgroundRepeat: 'repeat' }}
       />
 
@@ -301,7 +301,7 @@ useEffect(() => {
             {soloErr ? <div className="mt-2 text-xs text-amber-400">Solo: {soloErr}</div> : null}
           </GlassPanel>
 
-          <GlassPanel className="p-6 md:p-8">
+          <GlassPanel className="p-6 md:p-8 hidden md:block">
             <MatchHistory matches={matches} puuid={puuid ?? undefined} />
           </GlassPanel>
 

@@ -10,8 +10,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
-const description =
-  "Guess todays cooldown for a champion ability.";
+const description = "Guess todays cooldown for a champion ability.";
 
 export const metadata: Metadata = {
   title: "Skillcheck — Cooldowns",
@@ -117,6 +116,7 @@ export default async function CooldownsPage() {
 
   return (
     <CooldownsClient
+      dayKey={dayKey}
       champion={{
         id: champ.id,
         name: champName,
