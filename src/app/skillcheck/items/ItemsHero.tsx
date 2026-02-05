@@ -1,4 +1,5 @@
 "use client";
+import { goldIconUrl } from "@/lib/datadragon/icons";
 
 export default function ItemsHero({
   targets,
@@ -38,10 +39,16 @@ export default function ItemsHero({
           </h1>
 
           {/* Small chip */}
-          <div className="inline-flex items-center gap-1.5 self-start rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs text-white/80">
-            <span className="leading-none">🪙</span>
-            <span className="font-medium">???</span>
-          </div>
+<div className="inline-flex items-center gap-1.5 self-start rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs text-white/80">
+  <img
+    src={goldIconUrl()}
+    alt="Gold"
+    className="w-5 h-5 opacity-90"
+    draggable={false}
+  />
+  <span className="font-medium">???</span>
+</div>
+
         </div>
       </div>
 

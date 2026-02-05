@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Hero({
   hero,
@@ -9,11 +9,58 @@ export default function Hero({
   hero: React.ReactNode;
   content?: React.ReactNode;
 }) {
-  const resultRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [imagesReady, setImagesReady] = useState(false);
+
+  useEffect(() => {
+    setImagesReady(false);
+
+    const root = rootRef.current;
+    if (!root) {
+      setImagesReady(true);
+      return;
+    }
+
+    const images = Array.from(root.querySelectorAll<HTMLImageElement>("img"));
+
+    if (images.length === 0) {
+      setImagesReady(true);
+      return;
+    }
+
+    let loaded = 0;
+    const cleanup: Array<() => void> = [];
+
+    const checkDone = () => {
+      loaded++;
+      if (loaded === images.length) {
+        cleanup.forEach((fn) => fn());
+        setImagesReady(true);
+      }
+    };
+
+    images.forEach((img) => {
+      if (img.complete) {
+        checkDone();
+        return;
+      }
+
+      const onDone = () => checkDone();
+      img.addEventListener("load", onDone, { once: true });
+      img.addEventListener("error", onDone, { once: true });
+
+      cleanup.push(() => {
+        img.removeEventListener("load", onDone);
+        img.removeEventListener("error", onDone);
+      });
+    });
+
+    return () => cleanup.forEach((fn) => fn());
+  }, [hero, content]);
 
   return (
-    <div className="w-full flex flex-col">
-      {/* HERO AREA */}
+    <div ref={rootRef} className="w-full flex flex-col">
+      {/* HERO AREA (always visible for background) */}
       <section
         className="relative w-full min-h-[70vh] flex items-center justify-center pt-6 md:pt-12 pb-6 md:pb-12 -mt-16 md:-mt-20 pt-[calc(1.5rem+4rem)] md:pt-[calc(3rem+5rem)]"
         style={{
@@ -35,15 +82,31 @@ export default function Hero({
           }}
         />
 
-        {/* Hero content */}
-        <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center p-2 md:p-4">
+
+
+        {/* Hero content (gated) */}
+        <div
+          className="relative w-full max-w-4xl mx-auto flex flex-col items-center p-2 md:p-4"
+          style={{
+            opacity: imagesReady ? 1 : 0,
+            transition: "opacity 150ms ease",
+            pointerEvents: imagesReady ? "auto" : "none",
+          }}
+        >
           {hero}
         </div>
       </section>
 
-      {/* BELOW-HERO CONTENT */}
+      {/* BELOW-HERO CONTENT (gated) */}
       {content && (
-        <section ref={resultRef} className="w-full py-6 text-white">
+        <section
+          className="w-full py-6 text-white"
+          style={{
+            opacity: imagesReady ? 1 : 0,
+            transition: "opacity 150ms ease",
+            pointerEvents: imagesReady ? "auto" : "none",
+          }}
+        >
           <div className="w-full sm:max-w-4xl sm:mx-auto px-0 sm:px-6 flex flex-col gap-6">
             {content}
           </div>

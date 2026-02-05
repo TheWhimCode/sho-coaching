@@ -260,20 +260,21 @@ export default function DraftAuthorMain({
   /* --------------------------------
      SUCCESS SHORT-CIRCUIT
   -------------------------------- */
-  if (step === "success" && !setup) {
-    return (
-      <div className="flex items-center justify-center min-h-[70vh] text-center text-white">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2">
-            Draft already submitted 🎉
-          </h2>
-          <p className="text-white/70">
-            You can submit a new draft tomorrow.
-          </p>
-        </div>
+if (step === "success") {
+  return (
+    <div className="flex items-center justify-center min-h-[70vh] text-center text-white">
+      <div>
+        <h2 className="text-2xl font-semibold mb-2">
+          Draft submitted 🎉
+        </h2>
+        <p className="text-white/70">
+          You can submit a new draft tomorrow.
+        </p>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   /* STEP 0 */
   if (step === "setup") {

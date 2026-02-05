@@ -57,6 +57,43 @@ export default function ResultsScreen({
     return () => clearInterval(id);
   }, []);
 
+  /* -----------------------------
+     icon entrance animation
+  ----------------------------- */
+
+  // 0 = none visible, 1 = first, 2 = first two, 3 = all
+  const [visibleIcons, setVisibleIcons] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setVisibleIcons(1), 500); // initial delay
+    const t2 = setTimeout(() => setVisibleIcons(2), 650); // stagger
+    const t3 = setTimeout(() => setVisibleIcons(3), 800); // stagger
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, []);
+
+  const iconAnim = (index: number) => `
+    transform transition-all duration-500 ease-out
+    ${
+      visibleIcons > index
+        ? "opacity-100 translate-y-0"
+        : "opacity-0 translate-y-3"
+    }
+  `;
+
+  const labelAnim = `
+    transform transition-all duration-500 ease-out
+    ${
+      visibleIcons > 0
+        ? "opacity-100 translate-x-0"
+        : "opacity-0 -translate-x-3"
+    }
+  `;
+
   return (
     <section className="relative z-10 w-full sm:max-w-4xl sm:mx-auto px-0 sm:px-6">
       <GlassPanel
@@ -107,70 +144,92 @@ export default function ResultsScreen({
           {/* CTA (provided by game) */}
           {cta && <div className="hidden sm:flex justify-center">{cta}</div>}
 
-{/* ICON LINKS */}
-<div className=" flex justify-center">
-  <div className="relative flex gap-3">
-    {/* label (does not affect layout/centering) */}
-    <span
-      className="
-        absolute right-full mr-4
-        top-1/2 -translate-y-1/2
-        text-sm  tracking-wide
-        text-neutral-400 whitespace-nowrap
-      "
-    >
-      Other modes
-    </span>
+          {/* ICON LINKS */}
+          <div className="flex justify-center">
+            <div className="relative flex gap-3">
+              {/* label (does not affect layout/centering) */}
+              <span
+                className={`
+                  absolute right-full mr-4
+                  top-1/2 -translate-y-1/2
+                  text-sm tracking-wide
+                  text-neutral-400 whitespace-nowrap
+                  ${labelAnim}
+                `}
+              >
+                Other modes
+              </span>
 
-    <Link
-      href="/skillcheck/draft"
-      aria-label="Draft"
-      title="Draft"
-      className="
-        inline-flex h-16 w-16 items-center justify-center
-        rounded-xl
-        border border-white/15
-        bg-slate-900/60 hover:bg-slate-800/70
-        text-white/90 hover:text-white
-        transition
-      "
-    >
-      <Swords className="h-5 w-5 opacity-90" />
-    </Link>
+              <Link
+                href="/skillcheck/draft"
+                aria-label="Draft"
+                title="Draft"
+                className={`
+                  group
+                  inline-flex h-16 w-16 items-center justify-center
+                  rounded-xl
+                  border border-white/30
+                  bg-gradient-to-b from-white/[0.08] to-white/[0.03]
+                  backdrop-blur-md
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]
+                  transition-all duration-200
+                  hover:-translate-y-0.5
+                  hover:from-white/[0.12] hover:to-white/[0.06]
+                  hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.6)]
+                  hover:ring-1 hover:ring-white/25
+                  ${iconAnim(0)}
+                `}
+              >
+                <Swords className="h-5 w-5 opacity-90 group-hover:opacity-100" />
+              </Link>
 
-    <Link
-      href="/skillcheck/cooldowns"
-      aria-label="Cooldowns"
-      title="Cooldowns"
-      className="
-        inline-flex h-16 w-16 items-center justify-center
-        rounded-xl
-        border border-white/15
-        bg-slate-900/60 hover:bg-slate-800/70
-        text-white/90 hover:text-white
-        transition
-      "
-    >
-      <Hourglass className="h-5 w-5 opacity-90" />
-    </Link>
-        <Link
-      href="/skillcheck/items"
-      aria-label="Items"
-      title="Items"
-      className="
-        inline-flex h-16 w-16 items-center justify-center
-        rounded-xl
-        border border-white/15
-        bg-slate-900/60 hover:bg-slate-800/70
-        text-white/90 hover:text-white
-        transition
-      "
-    >
-      <Gem className="h-5 w-5 opacity-90" />
-    </Link>
-  </div>
-</div>
+              <Link
+                href="/skillcheck/cooldowns"
+                aria-label="Cooldowns"
+                title="Cooldowns"
+                className={`
+                  group
+                  inline-flex h-16 w-16 items-center justify-center
+                  rounded-xl
+                  border border-white/30
+                  bg-gradient-to-b from-white/[0.08] to-white/[0.03]
+                  backdrop-blur-md
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]
+                  transition-all duration-200
+                  hover:-translate-y-0.5
+                  hover:from-white/[0.12] hover:to-white/[0.06]
+                  hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.6)]
+                  hover:ring-1 hover:ring-white/25
+                  ${iconAnim(1)}
+                `}
+              >
+                <Hourglass className="h-5 w-5 opacity-90 group-hover:opacity-100" />
+              </Link>
 
+              <Link
+                href="/skillcheck/items"
+                aria-label="Items"
+                title="Items"
+                className={`
+                  group
+                  inline-flex h-16 w-16 items-center justify-center
+                  rounded-xl
+                  border border-white/30
+                  bg-gradient-to-b from-white/[0.08] to-white/[0.03]
+                  backdrop-blur-md
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]
+                  transition-all duration-200
+                  hover:-translate-y-0.5
+                  hover:from-white/[0.12] hover:to-white/[0.06]
+                  hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.6)]
+                  hover:ring-1 hover:ring-white/25
+                  ${iconAnim(2)}
+                `}
+              >
+                <Gem className="h-5 w-5 opacity-90 group-hover:opacity-100" />
+              </Link>
+            </div>
+          </div>
 
           {/* COUNTDOWN (always) */}
           <div className="mt-8 text-center">

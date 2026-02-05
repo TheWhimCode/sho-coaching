@@ -62,7 +62,6 @@ export default function ItemsResult({
   trueGold: number;
   avgAttempts: string;
   storageKey: string;
-  /** Optional: pass preloaded DDragon html to avoid pop-in on first paint */
   preloadedDescHtml?: string;
 }) {
   const [descHtml, setDescHtml] = useState<string>(preloadedDescHtml ?? "");
@@ -75,14 +74,14 @@ export default function ItemsResult({
   const item = targets[0];
   const fullPrice = useMemo(() => getFullItemPrice(item), [item]);
 
-  // ✅ If parent provides/updates preload later, sync it in
+  // Sync preloaded html
   useEffect(() => {
     if (typeof preloadedDescHtml === "string") {
       setDescHtml(preloadedDescHtml);
     }
   }, [preloadedDescHtml]);
 
-  // ✅ Load Data Dragon description ONLY if not preloaded
+  // Load description if not preloaded
   useEffect(() => {
     if (descHtml) return;
 
@@ -104,7 +103,7 @@ export default function ItemsResult({
     };
   }, [item?.id, descHtml]);
 
-  // ✅ Split DDragon html into a "stats" column + "body" column (best-effort)
+  // Split stats + body
   const { statsHtml, bodyHtml } = useMemo(() => {
     const html = descHtml ?? "";
     const m = html.match(/<stats\b[^>]*>[\s\S]*?<\/stats>/i);
@@ -144,8 +143,10 @@ export default function ItemsResult({
               <span className="opacity-95">{item?.name}</span>
               {fullPrice != null && (
                 <>
-                  <span className="mx-2 ">—</span>
-                  <span className="font-black tabular-nums">{fullPrice}g</span>
+                  <span className="mx-2">—</span>
+                  <span className="font-black tabular-nums">
+                    {fullPrice}g
+                  </span>
                 </>
               )}
             </div>
@@ -153,7 +154,6 @@ export default function ItemsResult({
         </div>
       }
     >
-      {/* Stats (col 1) + Description (col 2) in a 3-col grid */}
       <div className="mt-0 px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Stats column */}
@@ -163,11 +163,12 @@ export default function ItemsResult({
                 className="
                   text-white/85 leading-relaxed
                   [&_br]:block [&_br]:content-[''] [&_br]:my-2
-                  [&_attention]:text-white [&_attention]:font-semibold
-                  [&_stats]:text-white/90 [&_stats]:font-semibold
-                  [&_passive]:text-white/90 [&_passive]:font-semibold
-                  [&_active]:text-white/90 [&_active]:font-semibold
-                  [&_unique]:text-white/70
+
+                  [&_attention]:text-[#F2C14E] [&_attention]:font-semibold
+                  [&_stats]:text-[#F2C14E] [&_stats]:font-semibold
+                  [&_passive]:text-[#F2C14E] [&_passive]:font-semibold
+                  [&_active]:text-[#F2C14E] [&_active]:font-semibold
+                  [&_unique]:text-[#F2C14E] [&_unique]:font-semibold
                 "
                 dangerouslySetInnerHTML={{ __html: statsHtml }}
               />
@@ -183,11 +184,12 @@ export default function ItemsResult({
                 className="
                   text-white/80 leading-relaxed
                   [&_br]:block [&_br]:content-[''] [&_br]:my-2
-                  [&_attention]:text-white [&_attention]:font-semibold
-                  [&_stats]:text-white/90 [&_stats]:font-semibold
-                  [&_passive]:text-white/90 [&_passive]:font-semibold
-                  [&_active]:text-white/90 [&_active]:font-semibold
-                  [&_unique]:text-white/70
+
+                  [&_attention]:text-[#F2C14E] [&_attention]:font-semibold
+                  [&_stats]:text-[#F2C14E] [&_stats]:font-semibold
+                  [&_passive]:text-[#F2C14E] [&_passive]:font-semibold
+                  [&_active]:text-[#F2C14E] [&_active]:font-semibold
+                  [&_unique]:text-[#F2C14E] [&_unique]:font-semibold
                 "
                 dangerouslySetInnerHTML={{ __html: bodyHtml }}
               />
@@ -206,7 +208,8 @@ export default function ItemsResult({
 
             <div className="flex flex-wrap gap-3">
               {item.from.map((c, i) => (
-  <div key={`${c.id}-${i}`}
+                <div
+                  key={`${c.id}-${i}`}
                   className="flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-black/30 p-2"
                   title={c.name}
                 >

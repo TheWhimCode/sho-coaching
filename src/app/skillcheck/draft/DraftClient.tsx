@@ -58,9 +58,24 @@ export default function DraftClient({
   const resultRef = useRef<HTMLDivElement | null>(null);
   const hasScrolledRef = useRef(false);
 
+  // ✅ NEW: hero/top scroll anchor
+  const heroTopRef = useRef<HTMLDivElement | null>(null);
+
   // Time before showing ResultScreen + initiating scroll (same moment)
   const SHOW_AND_SCROLL_DELAY_MS = 2500;
   const SCROLL_BEHAVIOR: ScrollBehavior = "smooth";
+
+  // ✅ NEW: helper that works even if scrolling is on a nested container
+  function scrollToHero() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        heroTopRef.current?.scrollIntoView({
+          behavior: SCROLL_BEHAVIOR,
+          block: "start",
+        });
+      });
+    });
+  }
 
   /* -----------------------------
      derived data
@@ -220,8 +235,10 @@ export default function DraftClient({
   }
 
   return (
-    <>
+    <div>
       {showSuccess && <SuccessOverlay text="CORRECT!" />}
+
+      <div ref={heroTopRef} />
 
       <div className="relative z-10">
         <Hero
@@ -266,7 +283,9 @@ export default function DraftClient({
                       hasScrolledRef.current = false;
                       setAuthoringStep(step);
                       setAuthoring(true);
-                      window.scrollTo({ top: 0 });
+
+                      // ✅ changed: scroll to hero reliably
+                      scrollToHero();
                     }}
                   />
                 )}
@@ -275,6 +294,6 @@ export default function DraftClient({
           }
         />
       </div>
-    </>
+    </div>
   );
 }

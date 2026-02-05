@@ -2,13 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Hero from "@/app/skillcheck/layout/Hero";
-import {
-  Swords,
-  Hourglass,
-  Gem,
-  Sparkles,
-  Hand,
-} from "lucide-react";
+import { Swords, Hourglass, Gem, Sparkles } from "lucide-react";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 
 const modes = [
@@ -67,14 +61,13 @@ export default function SkillcheckClient() {
               Skillcheck
             </span>
           </h1>
-          
-          <p className="mt-3 text-sm md:text-base opacity-70">
-            Choose a mode
-          </p>
-            <DividerWithLogo className="mt-6" />
+
+          <p className="mt-3 text-sm md:text-base opacity-70">Choose a mode</p>
+
+          <DividerWithLogo className="mt-6" />
 
           {/* Panels */}
-          <div className="mt-8 flex flex-col gap-2">
+          <div className="mt-8 flex flex-col gap-3">
             {modes.map((m) => {
               const Icon = m.icon;
               return (
@@ -83,37 +76,39 @@ export default function SkillcheckClient() {
                   onClick={() => m.available && router.push(m.href)}
                   disabled={!m.available}
                   className={[
-                    "group w-full rounded-2xl border px-5 py-4 transition",
-                    "border-white/10 bg-slate-900/80 hover:bg-slate-800/80",
+                    "group w-full rounded-2xl px-6 py-5 text-left transition-all duration-200",
+                    "border border-white/15 bg-gradient-to-b from-white/[0.06] to-white/[0.02]",
+                    "backdrop-blur-md",
+                    "hover:-translate-y-0.5 hover:from-white/[0.09] hover:to-white/[0.04]",
+                    "hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]",
+                    "group-hover:ring-1 group-hover:ring-white/20",
                     m.available
                       ? "cursor-pointer"
-                      : "cursor-not-allowed opacity-60 hover:bg-neutral-900/80",
+                      : "cursor-not-allowed opacity-60 hover:translate-y-0 hover:shadow-none",
                   ].join(" ")}
                 >
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/30 bg-black/40">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl
+                                 border border-white/30
+                                 bg-gradient-to-b from-black/60 to-black/30
+                                 shadow-inner"
+                    >
                       <Icon className="h-5 w-5 opacity-90" />
                     </div>
 
-                    <div className="flex-1 text-left">
+                    <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <div className="font-semibold text-lg">
-                          {m.label}
-                        </div>
+                        <div className="font-semibold text-lg">{m.label}</div>
                         {!m.available && (
                           <span className="rounded-full border border-white/10 bg-black/40 px-2 py-0.5 text-xs opacity-80">
                             Soon
                           </span>
                         )}
                       </div>
-                      <div className="text-sm opacity-70 text-left">
-                        {m.desc}
-                      </div>
+                      <div className="text-sm opacity-70">{m.desc}</div>
                     </div>
 
-                    <div className="text-sm opacity-60 group-hover:opacity-90 transition">
-                      →
-                    </div>
                   </div>
                 </button>
               );
