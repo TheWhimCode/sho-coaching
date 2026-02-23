@@ -23,8 +23,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const showNavBar = true;
 
-  const showFooter = !(isCoachingDetail || isCheckout);
-
+const showFooter = !(isCoachingDetail || isCheckout || isQuickbook);
   const showNavSpacer = showNavBar && !logoOnly;
 
   return (

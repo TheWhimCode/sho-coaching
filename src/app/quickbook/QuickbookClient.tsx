@@ -1,3 +1,4 @@
+// src/app/quickbook/QuickbookClient.tsx
 "use client";
 
 import * as React from "react";
@@ -45,6 +46,9 @@ export default function QuickbookClient({
   const [notes, setNotes] = React.useState("");
   const [discordIdentity, setDiscordIdentity] = React.useState<DiscordIdentity | null>(null);
   const [contactErr, setContactErr] = React.useState<string | null>(null);
+
+  // ✅ store booked start time for success screen
+  const [bookedStartISO, setBookedStartISO] = React.useState<string | null>(null);
 
   const config: QuickbookConfig = React.useMemo(
     () => ({
@@ -171,7 +175,7 @@ export default function QuickbookClient({
   return (
     <QuickbookShell>
       <div className="flex flex-col h-full min-h-0">
-        <div className="sm:px-6  pb-4 flex-1 min-h-0">
+        <div className="sm:px-6 pb-4 flex-1 min-h-0">
           <div
             className="
               h-full rounded-2xl ring-1 ring-[rgba(146,180,255,.20)]
@@ -213,7 +217,10 @@ export default function QuickbookClient({
                       notes={notes}
                       discordIdentity={discordIdentity!}
                       onBack={() => setStep(0)}
-                      onSuccess={() => setStep(2)}
+                      onSuccess={(startISO) => {
+                        setBookedStartISO(startISO);
+                        setStep(2);
+                      }}
                       setFooterState={setFooterState}
                     />
                   </motion.div>
@@ -221,7 +228,7 @@ export default function QuickbookClient({
 
                 {canShowStep2 && (
                   <motion.div key="success" {...fade} className="h-full min-h-0">
-                    <StepQuickSuccess riotTag={riotTag} discordIdentity={discordIdentity!} />
+                    <StepQuickSuccess bookedStartISO={bookedStartISO} />
                   </motion.div>
                 )}
               </AnimatePresence>

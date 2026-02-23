@@ -1,3 +1,4 @@
+// src/app/quickbook/_components/StepQuickCalendar.tsx
 "use client";
 
 import * as React from "react";
@@ -56,7 +57,7 @@ type Props = {
   discordIdentity: DiscordIdentity;
 
   onBack: () => void;
-  onSuccess: () => void;
+  onSuccess: (startISO: string) => void;
 
   setFooterState: (s: FooterState | null) => void;
 };
@@ -221,7 +222,18 @@ export default function StepQuickCalendar({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Could not quickbook");
 
-      onSuccess();
+      // ✅ pass selected start time to success screen
+      const apiStartISO =
+        data?.startISO || data?.booking?.startISO || data?.booking?.startTime || null;
+
+      let startISO: string | null = apiStartISO;
+
+      if (!startISO) {
+        const match = normalizedSlots.find((s) => s.id === selectedSlotId);
+        if (match?.startTime) startISO = match.startTime.toISOString();
+      }
+
+      onSuccess(startISO ?? new Date().toISOString());
     } finally {
       setPending(false);
     }

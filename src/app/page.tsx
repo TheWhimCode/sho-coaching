@@ -15,20 +15,7 @@ export default function Home() {
                 "radial-gradient(60% 80% at 50% 20%, rgba(56,97,251,0.55) 0%, rgba(56,97,251,0.18) 45%, transparent 70%)",
             }}
           />
-          <div
-            className="absolute bottom-[-20%] right-[-10%] w-[70vw] h-[70vh] blur-3xl opacity-70"
-            style={{
-              background:
-                "radial-gradient(55% 60% at 70% 60%, rgba(86,154,255,0.45) 0%, rgba(86,154,255,0.22) 50%, transparent 75%)",
-            }}
-          />
-          <div
-            className="absolute bottom-0 left-[-15%] w-[60vw] h-[55vh] blur-3xl opacity-70"
-            style={{
-              background:
-                "radial-gradient(55% 60% at 30% 80%, rgba(41,120,233,0.42) 0%, rgba(41,120,233,0.2) 50%, transparent 78%)",
-            }}
-          />
+
         </div>
       </div>
 
