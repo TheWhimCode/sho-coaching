@@ -3,14 +3,14 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { Scroll, Lightning, PuzzlePiece, Signature } from "@phosphor-icons/react";
+import { Scroll, Lightning, PuzzlePiece, Signature, StackPlus } from "@phosphor-icons/react";
 import type { Preset } from "@/engine/session/rules/preset";
 import { colorsByPreset } from "@/engine/session";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 import { motion, type Variants } from "framer-motion";
 import { useNavChrome } from "@/app/_components/navChrome";
 
-type PresetSlug = "vod" | "signature" | "instant";
+type PresetSlug = "vod" | "signature" | "rush";
 
 type Item = {
   slug: PresetSlug;
@@ -43,13 +43,13 @@ const DEFAULT_ITEMS: Item[] = [
     price: 45,
   },
   {
-    slug: "instant",
-    title: "Instant Insight",
-    subtitle: "Get quick, actionable answers to your most pressing questions.",
-    duration: "30 min",
-    badge: "Fastest feedback",
-    image: "/images/sessions/Instant4.png",
-    price: 20,
+    slug: "rush",
+    title: "Elo Rush",
+    subtitle: "4 sessions with built-in momentum. Best value if you're serious about climbing.",
+    duration: "60 min ×4",
+    badge: "Best value",
+    image: "/images/sessions/Rush.png",
+    price: 110,
   },
 ];
 
@@ -67,7 +67,9 @@ function SessionIcon({ preset }: { preset: Preset }) {
   if (preset === "signature") {
     return <Signature size={size} weight="bold" color={ring} style={glowStyle} aria-hidden />;
   }
-
+  if (preset === "rush") {
+    return <StackPlus size={size} weight="fill" color={ring} style={glowStyle} aria-hidden />;
+  }
   return <PuzzlePiece size={size} weight="fill" color={ring} style={glowStyle} aria-hidden />;
 }
 
@@ -114,7 +116,7 @@ const cardVariants: Variants = {
 function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
-const { setChrome } = useNavChrome();
+  const { setChrome } = useNavChrome();
 
   const [overlayActive, setOverlayActive] = useState(false);
   const [navQueuedTo, setNavQueuedTo] = useState<string | null>(null);
@@ -148,18 +150,17 @@ const { setChrome } = useNavChrome();
     router.push(navQueuedTo);
   }, [router, navQueuedTo]);
 
-const handleNavigate = (e: React.MouseEvent | React.KeyboardEvent) => {
-  e.preventDefault();
-  e.stopPropagation();
-  if (overlayActive) return;
+  const handleNavigate = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (overlayActive) return;
 
-  (e.currentTarget as HTMLElement)?.blur?.();
+    (e.currentTarget as HTMLElement)?.blur?.();
 
-  setChrome("logoOnly"); // hide navbar immediately during transition
-  setNavQueuedTo(`/coaching/${item.slug}`);
-  setOverlayActive(true);
-};
-
+    setChrome("logoOnly"); // hide navbar immediately during transition
+    setNavQueuedTo(`/coaching/${item.slug}`);
+    setOverlayActive(true);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") handleNavigate(e);
@@ -257,7 +258,26 @@ const handleNavigate = (e: React.MouseEvent | React.KeyboardEvent) => {
               ) : (
                 <span className="font-semibold">{item.duration}</span>
               )}
-              <span className="ml-auto font-semibold">€{item.price}</span>
+
+              {item.slug === "rush" ? (
+                <span className="ml-auto font-semibold flex items-baseline gap-2">
+                  <span
+                    className="
+                      inline-flex items-center
+                      bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00]
+                      bg-clip-text text-transparent font-extrabold
+                      drop-shadow-[0_0_6px_rgba(30,159,255,0.6),0_0_12px_rgba(255,140,0,0.5)]
+                    "
+                  >
+                    €{item.price}
+                  </span>
+                  <span className="text-[14px] font-semibold line-through leading-none opacity-60">
+                    €160
+                  </span>
+                </span>
+              ) : (
+                <span className="ml-auto font-semibold">€{item.price}</span>
+              )}
             </div>
           </div>
         </article>

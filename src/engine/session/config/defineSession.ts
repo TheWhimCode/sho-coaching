@@ -28,7 +28,7 @@ export function defineSession(productId: ProductId): SessionConfig {
     case "vod":
       return { liveMin: 60, followups: 0, liveBlocks: 0, productId };
     case "custom":
-      return { liveMin: 60, followups: 0, liveBlocks: 0, productId };
+      return { liveMin: 30, followups: 0, liveBlocks: 1, productId };
     default:
       return { liveMin: 60, followups: 0, liveBlocks: 0, productId };
   }

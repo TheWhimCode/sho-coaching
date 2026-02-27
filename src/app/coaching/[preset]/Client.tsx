@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SessionHero from "./_hero-components/SessionHero";
 import CalLikeOverlay from "@/app/calendar/Calendar";
 import CustomizeDrawer from "./_hero-components/CustomizeDrawer";
@@ -13,7 +13,6 @@ import { useSearchParams } from "next/navigation";
 import { defineSession } from "@/engine/session/config/defineSession";
 
 export default function Client({ preset }: { preset: string }) {
-
   // ⭐ normalize route param once
   const canonicalPreset = preset.replace(/-/g, "_");
 
@@ -21,27 +20,37 @@ export default function Client({ preset }: { preset: string }) {
   const wantsCustomize = params.get("open") === "customize";
   const focus = params.get("focus");
 
-  const qBase = Number(params.get("base") ?? NaN);
-  const qFU = Number(params.get("followups") ?? NaN);
-  const qLive = Number(params.get("live") ?? NaN);
+  // ✅ IMPORTANT:
+  // Read the incoming query string ONCE per route preset.
+  // This prevents our own history.replaceState() URL syncing from re-triggering init.
+  const initialQueryRef = useRef<string>("");
+  useEffect(() => {
+    initialQueryRef.current = params.toString();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canonicalPreset]);
+
+  const q = useMemo(() => new URLSearchParams(initialQueryRef.current), [canonicalPreset]);
+  const qBase = Number(q.get("base") ?? NaN);
+  const qFU = Number(q.get("followups") ?? NaN);
+  const qLive = Number(q.get("live") ?? NaN);
 
   const init = useMemo(() => {
-    const safe = (n: number, def: number) =>
-      (Number.isFinite(n) ? n : def);
+    const safe = (n: number, def: number) => (Number.isFinite(n) ? n : def);
 
-    if (canonicalPreset === "custom") {
-return {
-  title: canonicalPreset,
-  session: defineSession(canonicalPreset as any),
-};
-  
-    }
+    const base = defineSession(canonicalPreset as any);
 
-return {
-  title: canonicalPreset,
-  session: defineSession(canonicalPreset as any),
-};
+    // Apply query overrides only when present
+    const sessionFromUrl: SessionConfig = {
+      ...base,
+      liveMin: safe(qBase, base.liveMin),
+      followups: safe(qFU, base.followups),
+      liveBlocks: safe(qLive, base.liveBlocks),
+    };
 
+    return {
+      title: canonicalPreset,
+      session: sessionFromUrl,
+    };
   }, [canonicalPreset, qBase, qFU, qLive]);
 
   const [session, setSession] = useState<SessionConfig>(init.session);
@@ -61,22 +70,22 @@ return {
     )
   );
 
-useEffect(() => {
-  const html = document.documentElement;
-  const body = document.body;
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
 
-  // Delay until after navigation completes and DOM settles
-  const timeoutId = setTimeout(() => {
-    html.classList.add("no-scrollbar");
-    body.classList.add("no-scrollbar");
-  }, 100);
+    // Delay until after navigation completes and DOM settles
+    const timeoutId = setTimeout(() => {
+      html.classList.add("no-scrollbar");
+      body.classList.add("no-scrollbar");
+    }, 100);
 
-  return () => {
-    clearTimeout(timeoutId);
-    html.classList.remove("no-scrollbar");
-    body.classList.remove("no-scrollbar");
-  };
-}, []);
+    return () => {
+      clearTimeout(timeoutId);
+      html.classList.remove("no-scrollbar");
+      body.classList.remove("no-scrollbar");
+    };
+  }, []);
 
   useEffect(() => {
     const body = document.body;
@@ -110,6 +119,44 @@ useEffect(() => {
       )
     );
   }, [session.liveMin, session.followups, session.liveBlocks, session.productId]);
+
+  // ✅ Keep URL in sync with session changes, including the /vod|/signature part.
+  // Uses replaceState (no navigation), and does NOT re-trigger init because init reads initialQueryRef.
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      // Determine what the URL path SHOULD be for the current state.
+      // Bundles should keep their bundle preset.
+      const p = getPreset(
+        session.liveMin,
+        session.followups,
+        session.liveBlocks,
+        session.productId
+      );
+
+      // Update query params
+      const sp = new URLSearchParams(window.location.search);
+      sp.set("base", String(session.liveMin));
+      sp.set("followups", String(session.followups));
+      sp.set("live", String(session.liveBlocks));
+
+      // Optional: keep open/focus only while drawer is open (remove if you want them persistent)
+      if (!drawerOpen) {
+        sp.delete("open");
+        sp.delete("focus");
+      }
+
+      const nextPath = `/coaching/${p}`;
+      const nextUrl = `${nextPath}?${sp.toString()}`;
+
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+      if (nextUrl !== currentUrl) {
+        window.history.replaceState(null, "", nextUrl);
+      }
+    }, 200);
+
+    return () => window.clearTimeout(t);
+  }, [session.liveMin, session.followups, session.liveBlocks, session.productId, drawerOpen]);
 
   useEffect(() => {
     let on = true;
@@ -156,8 +203,7 @@ useEffect(() => {
           liveBlocks={session.liveBlocks}
           isCustomizingCenter={drawerOpen}
           isDrawerOpen={drawerOpen}
-            productId={session.productId}   // <<<<< REQUIRED
-
+          productId={session.productId} // <<<<< REQUIRED
           onCustomize={() => setDrawerOpen(true)}
           onOpenCalendar={({ slotId, liveMinutes }) => {
             setInitialSlotId(slotId);
@@ -176,8 +222,7 @@ useEffect(() => {
               followups={session.followups}
               liveBlocks={session.liveBlocks}
               onClose={() => setCalendarOpen(false)}
-                  productId={session.productId}   // <-- this was missing
-
+              productId={session.productId} // <-- this was missing
             />
           )}
         </AnimatePresence>
