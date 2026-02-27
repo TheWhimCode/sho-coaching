@@ -1,7 +1,7 @@
 "use client";
 
-import { addDays, format, isSameDay, isToday } from "date-fns";
-import { useMemo } from "react";
+import { addDays, format, isSameDay, isToday, differenceInCalendarDays } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
 
 type Props = {
   month: Date | string | number | null | undefined;
@@ -16,10 +16,13 @@ type Props = {
 
 function toValidDate(v: unknown, fallback = new Date()) {
   const d =
-    v instanceof Date ? v :
-    typeof v === "string" ? new Date(v) :
-    typeof v === "number" ? new Date(v) :
-    new Date(NaN);
+    v instanceof Date
+      ? v
+      : typeof v === "string"
+        ? new Date(v)
+        : typeof v === "number"
+          ? new Date(v)
+          : new Date(NaN);
   return Number.isNaN(d.getTime()) ? fallback : d;
 }
 
@@ -30,7 +33,31 @@ function dayKeyLocal(d: Date) {
   return `${y}-${m}-${da}`;
 }
 
+// Parse "YYYY-MM-DD" into a local Date at midnight.
+// This matches how dayKeyLocal() is produced and avoids UTC drift.
+function parseDayKeyLocal(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  if (!y || !m || !d) return new Date(NaN);
+  return new Date(y, m - 1, d);
+}
 
+function computeAnchor(month: Props["month"], displayableDayKeys?: Set<string>) {
+  const keys = displayableDayKeys ? Array.from(displayableDayKeys) : [];
+  keys.sort(); // YYYY-MM-DD lexicographic sort == chronological sort
+
+  const first = keys[0];
+  if (first) {
+    const d = parseDayKeyLocal(first);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  return toValidDate(month);
+}
+
+function inWindow(anchor: Date, d: Date) {
+  const diff = differenceInCalendarDays(d, anchor);
+  return diff >= 0 && diff < 14;
+}
 
 export default function DayPicker({
   month,
@@ -42,13 +69,32 @@ export default function DayPicker({
   loading,
   error,
 }: Props) {
-  // UI-only: render the next 14 calendar days passed from parent context
+  // Keep a stable "anchor" for the 14-day window.
+  // It should not change when selecting a day (otherwise the selected day jumps to the top).
+  const [anchor, setAnchor] = useState<Date>(() => computeAnchor(month, displayableDayKeys));
+
+  // When month or availability changes, recompute the anchor.
+  // (If you don't want month to affect anything, remove `month` from deps.)
+  useEffect(() => {
+    setAnchor(computeAnchor(month, displayableDayKeys));
+  }, [month, displayableDayKeys]);
+
+  // Optional: if parent sets a selectedDate that is outside the current window,
+  // shift anchor to keep it visible. (Remove this block if you never want shifting.)
+  useEffect(() => {
+    if (!selectedDate) return;
+    if (Number.isNaN(anchor.getTime())) return;
+    if (!inWindow(anchor, selectedDate)) {
+      setAnchor(selectedDate);
+    }
+  }, [selectedDate, anchor]);
+
+  // UI-only: render the next 14 calendar days starting from anchor
   const days = useMemo(() => {
-    const base = toValidDate(month);
     const list: Date[] = [];
-    for (let i = 0; i < 14; i++) list.push(addDays(base, i));
+    for (let i = 0; i < 14; i++) list.push(addDays(anchor, i));
     return list;
-  }, [month]);
+  }, [anchor]);
 
   const left = days.slice(0, 7);
   const right = days.slice(7, 14);
@@ -81,7 +127,7 @@ export default function DayPicker({
       {[left, right].map((col, colIdx) => (
         <div key={colIdx} className="grid grid-rows-7 h-full">
           {col.map((d, rowIdx) => {
-const key = dayKeyLocal(d);
+            const key = dayKeyLocal(d);
             const hasAvail = displayableDayKeys?.has(key) ?? false;
 
             const selected = !!selectedDate && isSameDay(d, selectedDate);
@@ -104,7 +150,7 @@ const key = dayKeyLocal(d);
               `${isLeftCol && isBottomRow ? " rounded-bl-2xl" : ""}` +
               `${isRightCol && isBottomRow ? " rounded-br-2xl" : ""}`;
 
-            const base =
+            const baseCls =
               "w-full h-full text-base transition-all flex items-center justify-between px-4 " +
               "border border-[rgba(146,180,255,.12)] bg-transparent";
             const enabled = "hover:bg-[#15284a] text-white/90";
@@ -118,7 +164,7 @@ const key = dayKeyLocal(d);
                 disabled={!hasAvail}
                 onClick={() => onSelectDate(d)}
                 className={[
-                  base,
+                  baseCls,
                   outerBorderFix,
                   cornerRounding,
                   selected ? selectedCls : hasAvail ? enabled : disabled,

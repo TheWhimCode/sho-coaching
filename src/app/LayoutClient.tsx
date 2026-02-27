@@ -17,16 +17,13 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const isSkillcheck = p === "/skillcheck" || p.startsWith("/skillcheck/");
 
-  // ✅ logo-only on all these
-  const logoOnly = isSkillcheck || isCoachingDetail || isCheckout;
+  const isQuickbook = p === "/quickbook" || p.startsWith("/quickbook/");
+  
+  const logoOnly = isSkillcheck || isCoachingDetail || isCheckout || isQuickbook;
 
-  // ✅ navbar always renders (logo-only will hide the bar part)
   const showNavBar = true;
 
-  // keep your old footer rule (hide on coaching detail + checkout)
-  const showFooter = !(isCoachingDetail || isCheckout);
-
-  // ✅ spacer only on “full navbar” pages
+const showFooter = !(isCoachingDetail || isCheckout || isQuickbook);
   const showNavSpacer = showNavBar && !logoOnly;
 
   return (
