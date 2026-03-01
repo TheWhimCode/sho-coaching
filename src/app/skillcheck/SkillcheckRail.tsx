@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Swords, Hourglass, Gem, Flame } from "lucide-react";
-import { getSkillcheckStreak, consumeStreakRenewedToday } from "@/app/skillcheck/streak";
+import { getSkillcheckStreak, consumeStreakRenewedToday, STREAK_UPDATED_EVENT } from "@/app/skillcheck/streak";
 import { syncLeaderboardOnVisit } from "@/app/skillcheck/leaderboard-client-id";
 
 const CELEBRATION_DURATION_MS = 2200;
@@ -93,6 +93,17 @@ export default function SkillcheckRail() {
     );
     return () => window.clearTimeout(t);
   }, [showStreakCelebration]);
+
+  useEffect(() => {
+    const onStreakUpdated = () => {
+      setStreak(getSkillcheckStreak());
+      if (consumeStreakRenewedToday() && getSkillcheckStreak().streakDays > 0) {
+        setShowStreakCelebration(true);
+      }
+    };
+    window.addEventListener(STREAK_UPDATED_EVENT, onStreakUpdated);
+    return () => window.removeEventListener(STREAK_UPDATED_EVENT, onStreakUpdated);
+  }, []);
 
   const streakActive = streak.streakDays > 0;
 

@@ -78,8 +78,11 @@ export function recordSkillcheckPlay(): void {
     );
     // Flag for rail: show celebration once when streak is renewed today
     localStorage.setItem(RENEWED_KEY, today);
+    window.dispatchEvent(new CustomEvent("skillcheck:streak-updated"));
   } catch {}
 }
+
+export const STREAK_UPDATED_EVENT = "skillcheck:streak-updated";
 
 /** Returns true if streak was renewed today and clears the flag (so celebration plays once per renewal). */
 export function consumeStreakRenewedToday(): boolean {
