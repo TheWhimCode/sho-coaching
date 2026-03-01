@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Breakdown } from "@/lib/checkout/buildBreakdown";
 import { ArrowLeft } from "lucide-react";
 import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
-import { clamp, computePriceWithProduct } from "@/engine/session";
+import { computePriceWithProduct } from "@/engine/session";
 import type { ProductId } from "@/engine/session/model/product";
-
-type Method = "card" | "paypal" | "revolut_pay" | "klarna";
+import type { PayMethod, Breakdown } from "@/engine/checkout";
+import { sessionFromCheckoutPayload, isBundleDisplay } from "@/engine/checkout";
 
 type Props = {
   goBack: () => void;
@@ -15,10 +14,10 @@ type Props = {
     baseMinutes: number;
     liveBlocks: number;
     followups: number;
-productId?: ProductId | null;
+    productId?: ProductId | null;
   };
   breakdown: Breakdown;
-  payMethod: Method;
+  payMethod: PayMethod;
   sessionBlockTitle: string;
 };
 
@@ -41,15 +40,9 @@ export default function StepSummary({
     });
   }, [setFooter]);
 
-  // build session correctly
-  const session = clamp({
-    liveMin: payload.baseMinutes,
-    liveBlocks: payload.liveBlocks,
-    followups: payload.followups,
-productId: payload.productId ?? undefined,  });
-
+  const session = sessionFromCheckoutPayload(payload);
   const { priceEUR } = computePriceWithProduct(session);
-  const isBundle = !!payload.productId?.startsWith("rush");
+  const isBundle = isBundleDisplay(payload);
 
   return (
     <div className="flex flex-col h-full md:pt-2">

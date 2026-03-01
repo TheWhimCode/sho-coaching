@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // new student: referral
+  // new student (referral): always €5 discount; coupon value does not apply
   const discount = 5;
   await prisma.session.update({
     where: { id: bookingId },

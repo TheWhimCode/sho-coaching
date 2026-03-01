@@ -7,7 +7,7 @@ import CustomizeDrawer from "./_hero-components/CustomizeDrawer";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { SessionConfig } from "@/engine/session/model/session";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
-import { computePriceEUR } from "@/lib/pricing";
+import { computePriceEUR } from "@/engine/session";
 import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { useSearchParams } from "next/navigation";
 import { defineSession } from "@/engine/session/config/defineSession";
@@ -122,8 +122,12 @@ export default function Client({ preset }: { preset: string }) {
 
   // ✅ Keep URL in sync with session changes, including the /vod|/signature part.
   // Uses replaceState (no navigation), and does NOT re-trigger init because init reads initialQueryRef.
+  // ⚠️ Guard: never overwrite URL when user has navigated to checkout (race: timeout can fire during navigation).
   useEffect(() => {
     const t = window.setTimeout(() => {
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/checkout")) {
+        return;
+      }
       // Determine what the URL path SHOULD be for the current state.
       // Bundles should keep their bundle preset.
       const p = getPreset(

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // new student: referral
+  // new student (referral): always €5 discount regardless of coupon value (e.g. €10 coupon still gives new customer €5)
   return NextResponse.json({
     valid: true,
     type: "referral",

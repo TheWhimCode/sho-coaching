@@ -2,16 +2,26 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { computePriceEUR } from "@/engine/session/rules/pricing";
+import { computePriceWithProduct } from "@/engine/session/rules/product";
+import { clamp } from "@/engine/session/config/session";
+import type { ProductId } from "@/engine/session/model/product";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
 
 export async function POST(req: Request) {
-  // Extract body
-  let { method, amountCents, bookingId } = await req.json().catch(() => ({}));
+  // slotIds from client for card flow; productId for bundle pricing; amountCents only used when no bookingId
+  let {
+    method,
+    amountCents: bodyAmountCents,
+    bookingId,
+    slotIds: bodySlotIds,
+    productId,
+  } = await req.json().catch(() => ({}));
 
-  console.log("[checkout/session] body", { method, amountCents, bookingId });
+  console.log("[checkout/session] body", { method, bookingId });
 
   // ⭐ SAFETY FIX:
   // If bookingId missing (because front-end forgot to send it),
@@ -35,15 +45,9 @@ export async function POST(req: Request) {
     }
   }
 
-  if (!amountCents) {
-    console.error("[checkout/session] missing_amount");
-    return NextResponse.json({ error: "missing_amount" }, { status: 400 });
-  }
-
   let metadata: Record<string, string> = {};
-  let finalAmountCents = amountCents;
+  let finalAmountCents: number;
 
-  // If bookingId available → attach full metadata
   if (bookingId) {
     const s = await prisma.session.findUnique({
       where: { id: bookingId },
@@ -55,24 +59,55 @@ export async function POST(req: Request) {
         riotTag: true,
         waiverAccepted: true,
         couponDiscount: true,
+        liveMinutes: true,
+        followups: true,
       },
     });
 
     console.log("[checkout/session] booking row", s);
 
-    if (s) {
-      const discount = s.couponDiscount ?? 0;
-      finalAmountCents = Math.max(amountCents - discount * 100, 0);
-
-      metadata = {
-        bookingId: s.id,
-        slotId: s.slotId ?? "",
-        slotIds: s.blockCsv ?? "",
-        sessionType: s.sessionType ?? "",
-        riotTag: s.riotTag ?? "",
-        ...(s.waiverAccepted ? { waiverAccepted: "true" } : {}),
-      };
+    if (!s) {
+      console.error("[checkout/session] booking_not_found");
+      return NextResponse.json({ error: "booking_not_found" }, { status: 404 });
     }
+
+    // Single source of truth: compute amount from booking and apply coupon discount (same logic as intent route)
+    const discount = s.couponDiscount ?? 0;
+    let amountCents: number;
+    if (productId) {
+      const sessionConfig = clamp({
+        liveMin: s.liveMinutes,
+        liveBlocks: 0,
+        followups: s.followups,
+        productId: productId as ProductId,
+      });
+      const { priceEUR } = computePriceWithProduct(sessionConfig);
+      amountCents = Math.max(priceEUR * 100 - discount * 100, 0);
+    } else {
+      const base = computePriceEUR(s.liveMinutes, s.followups);
+      amountCents = Math.max(base.amountCents - discount * 100, 0);
+    }
+    finalAmountCents = amountCents;
+
+    const slotIdsCsv =
+      typeof bodySlotIds === "string" && bodySlotIds.trim()
+        ? bodySlotIds.trim()
+        : (s.blockCsv ?? "");
+
+    metadata = {
+      bookingId: s.id,
+      slotId: s.slotId ?? "",
+      slotIds: slotIdsCsv,
+      sessionType: s.sessionType ?? "",
+      riotTag: s.riotTag ?? "",
+      ...(s.waiverAccepted ? { waiverAccepted: "true" } : {}),
+    };
+  } else {
+    if (!bodyAmountCents) {
+      console.error("[checkout/session] missing_amount");
+      return NextResponse.json({ error: "missing_amount" }, { status: 400 });
+    }
+    finalAmountCents = bodyAmountCents;
   }
 
   console.log("[checkout/session] metadata to attach", metadata);

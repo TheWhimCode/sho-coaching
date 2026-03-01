@@ -21,9 +21,10 @@ type Props = {
 function normalizeRiotTag(v: string) {
   return v.trim().replace(/\s*#\s*/g, "#");
 }
+// Riot ID: name#tag — name can be any script (e.g. Korean); tag 3–5 alphanumeric. No character restriction on name.
 function isValidRiotTagFormat(v: string) {
   const s = normalizeRiotTag(v);
-  return /^[A-Za-z0-9 .'_\-]{3,16}#[A-Za-z0-9]{3,5}$/.test(s);
+  return /^[^#]{3,16}#[A-Za-z0-9]{3,5}$/.test(s);
 }
 
 type CheckStatus = "idle" | "checking" | "ok" | "bad";
@@ -232,6 +233,8 @@ export default function StepContact({
                 placeholder="Riot#Tag of your main account"
                 aria-invalid={riotShowError}
                 spellCheck={false}
+                autoCorrect="off"
+                autoComplete="off"
                 className={`${baseInput} ${riotShowError ? badRing : okRing} pr-9`}
               />
               {checkStatus === "checking" && (
@@ -339,6 +342,7 @@ export default function StepContact({
               rows={3}
               placeholder="(Optional)"
               spellCheck={false}
+              autoCorrect="off"
               className={`${baseInput} ${okRing} resize-none min-h-[110px]`}
             />
           </label>

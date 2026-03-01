@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import PaymentChooser, { PayMethod } from "@/app/checkout/_components/checkout-steps/step-components/PaymentChooser";
+import PaymentChooser from "@/app/checkout/_components/checkout-steps/step-components/PaymentChooser";
+import type { PayMethod } from "@/engine/checkout";
 import { ArrowLeft } from "lucide-react";
 import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 

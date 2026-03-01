@@ -7,25 +7,15 @@ import CardForm from "@/app/checkout/_components/checkout-steps/step-components/
 import PaymentSkeleton from "@/app/checkout/_components/checkout-steps/step-components/PaymentSkeleton";
 import { ArrowLeft, CreditCard } from "lucide-react";
 import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
+import type { PayMethod, SavedCard } from "@/engine/checkout";
 
-type Method = "card" | "paypal" | "revolut_pay" | "klarna";
-
-type SavedCard = {
-  id: string;
-  brand: string | null;
-  last4: string | null;
-  exp_month: number | null;
-  exp_year: number | null;
-};
-
-type Common = { goBack: () => void; payMethod?: Method };
+type Common = { goBack: () => void; payMethod?: PayMethod };
 type LoadingProps = Common & { mode: "loading"; loadingIntent?: boolean };
 type FormProps = Common & {
   mode: "form";
-  payMethod: Method;
+  payMethod: PayMethod;
   onContinue: () => void;
   piId?: string | null;
-
   setCardPmId: (id: string) => void;
   setSavedCard: (c: SavedCard | null) => void;
   savedCard: SavedCard | null;
@@ -75,11 +65,11 @@ export default function StepPayDetails(props: Props) {
           <div className="relative min-h-[260px]">
             {/* Invisible placeholder to preserve layout */}
             <div className="opacity-0 pointer-events-none">
-              <PaymentSkeleton method={(payMethod ?? "card") as Method} />
+              <PaymentSkeleton method={(payMethod ?? "card") as PayMethod} />
             </div>
             {/* Visible skeleton overlay */}
             <div className="absolute inset-0">
-              <PaymentSkeleton method={(payMethod ?? "card") as Method} />
+              <PaymentSkeleton method={(payMethod ?? "card") as PayMethod} />
             </div>
           </div>
         </div>
@@ -132,7 +122,7 @@ function FormBody({
   setSavedCard,
   savedCard,
 }: {
-  payMethod: Method;
+  payMethod: PayMethod;
   piId?: string | null;
   onContinue: () => void;
   setCardPmId: (id: string) => void;

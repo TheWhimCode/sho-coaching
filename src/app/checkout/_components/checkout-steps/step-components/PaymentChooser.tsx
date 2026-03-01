@@ -3,18 +3,20 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import * as React from "react";
+import type { PayMethod } from "@/engine/checkout";
 
-export type PayMethod = "card" | "paypal" | "revolut_pay" | "klarna";
+/** PayMethod without empty string — only selectable options. */
+type PayMethodOption = Exclude<PayMethod, "">;
 
 type Props =
   | {
       /** chooser mode: only show badges and call onChoose */
       mode: "choose";
-      onChoose: (m: PayMethod) => void;
+      onChoose: (m: PayMethodOption) => void;
     }
   | never;
 
-type Row = { key: PayMethod; label: string; sub: string; img: string; alt: string };
+type Row = { key: PayMethodOption; label: string; sub: string; img: string; alt: string };
 
 export default function PaymentChooser(props: Props) {
   const rows: Row[] = React.useMemo(

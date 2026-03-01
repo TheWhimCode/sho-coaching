@@ -7,16 +7,8 @@ import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock"
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import { FooterProvider, useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 import { AnimatePresence, motion } from "framer-motion";
-import type { ProductId } from "@/engine/session";
-import { computePriceWithProduct } from "@/engine/session";
-
-// ⭐ NEW imports
-import {
-  clamp,
-  totalMinutes,
-  titlesByPreset,
-  type SessionConfig,
-} from "@/engine/session";
+import { computePriceWithProduct, type SessionConfig } from "@/engine/session";
+import { sessionFromCheckoutPayload } from "@/engine/checkout";
 
 function BottomBar({
   step,
@@ -123,8 +115,17 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
                       type="text"
                       value={coupon}
                       onChange={(e) => setCoupon(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyCoupon();
+                        }
+                      }}
                       placeholder="Coupon"
                       disabled={couponLocked}
+                      spellCheck={false}
+                      autoCorrect="off"
+                      autoComplete="off"
                       className="bg-white/[0.06] text-sm text-white/80 rounded-md px-3 py-2 w-full
                         placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
@@ -222,62 +223,16 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
 onClick={async () => {
   if (disabled || footer.loading) return;
 
-  // STEP LOGIC: If not on final step, just advance.
   if (flow.step < 2) {
-    footer.onClick?.();  // Usually goNext or chooseAndGo
+    footer.onClick?.();
     return;
   }
 
-  // PAYMENT LOGIC — only runs on step 2
   setFooter((f: any) => ({ ...f, loading: true }));
-
   try {
-    const stripe = await flow.stripePromise;
-    if (!stripe) return;
-
-    if (flow.payMethod === "card") {
-      const resp = await fetch("/api/stripe/checkout/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: "card",
-          amountCents: Math.round(discountedTotal * 100),
-              bookingId: flow.bookingId,   // ✅ FIX
-
-        }),
-      });
-
-      const data = await resp.json().catch(() => null);
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-
-      console.error("Failed to create Checkout Session", data);
-      return;
-    }
-
-    if (["paypal", "klarna", "revolut_pay"].includes(flow.payMethod)) {
-      const secret =
-        flow.clientSecret ?? (await flow.createPaymentIntent?.());
-      if (!secret) {
-        console.error("Missing client secret");
-        return;
-      }
-
-      const elements = stripe.elements({ clientSecret: secret });
-      const paymentElement = elements.create("payment");
-      paymentElement.mount("#hidden-payment-element");
-
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: { return_url: window.location.origin + "/checkout/success" },
-      });
-
-      if (error) console.error("Payment failed:", error.message);
-    }
+    await flow.runPayment("hidden-payment-element");
   } catch (err) {
-    console.error("Payment handling failed:", err);
+    console.error("[CheckoutPanel] Payment handling failed:", err);
   } finally {
     setFooter((f: any) => ({ ...f, loading: false }));
   }
@@ -302,15 +257,7 @@ export default function CheckoutPanel(props: Parameters<
   const flow = useCheckoutFlow(props);
   const { payload, breakdown, selectedStart } = flow;
 
-  // ⭐ Build session as before
-  const session = clamp({
-    liveMin: payload.baseMinutes,
-    liveBlocks: payload.liveBlocks,
-    followups: payload.followups,
-    productId: (payload.productId ?? undefined) as ProductId | undefined,
-  });
-
-  // ⭐ The fix — never recalculate preset on checkout
+  const session = sessionFromCheckoutPayload(payload);
   const preset = payload.preset as any;
 
   return (

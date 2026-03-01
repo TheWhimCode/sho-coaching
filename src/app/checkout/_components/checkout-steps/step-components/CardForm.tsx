@@ -16,8 +16,10 @@ import type {
   StripePaymentElementChangeEvent,
 } from "@stripe/stripe-js";
 import * as React from "react";
+import type { PayMethod } from "@/engine/checkout";
 
-type ActivePM = "card" | "paypal" | "revolut_pay" | "klarna";
+/** Selected payment method (excludes empty). */
+type ActivePM = Exclude<PayMethod, "">;
 
 type Props = {
   piId?: string | null;
@@ -199,6 +201,8 @@ export default function CardForm({
                   setPostal(e.target.value);
                   onPostalChange?.(e.target.value);
                 }}
+                spellCheck={false}
+                autoCorrect="off"
                 className={`mt-0.5 w-full rounded-lg bg-white/[.05] ring-1 px-4 text-base text-white/90 outline-none transition h-[48px] ${okRing}`}
                 placeholder="12345"
               />

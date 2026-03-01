@@ -2,52 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Stripe } from "@stripe/stripe-js";
-import type { Breakdown } from "@/lib/checkout/buildBreakdown";
+import type { Breakdown } from "@/engine/checkout";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
-
-// ⭐ new imports
-import { getPreset } from "@/engine/session/rules/preset";
-import { titlesByPreset } from "@/engine/session";
-import type { ProductId } from "@/engine/session/model/product";
-
-export type PayMethod = "" | "card" | "paypal" | "revolut_pay" | "klarna";
-
-export type Payload = {
-  slotId: string;
-  sessionType: string;
-  baseMinutes: number;
-  liveMinutes: number;
-  followups: number;
-  liveBlocks: number;
-  preset: string;
-  holdKey: string;
-  startTime?: string | number;
- productId?: ProductId | null;
-};
-
-export type PayloadForBackend = Pick<
-  Payload,
-  | "slotId"
-  | "sessionType"
-  | "liveMinutes"
-  | "followups"
-  | "liveBlocks"
-  | "preset"
-  | "holdKey"
-  | "productId"
-
-> & {
-  startTime?: string | number | Date;
-};
-
-export type DiscordIdentity = { id: string; username?: string | null };
-export type SavedCard = {
-  id: string;
-  brand: string | null;
-  last4: string | null;
-  exp_month: number | null;
-  exp_year: number | null;
-};
+import {
+  type PayMethod,
+  type Payload,
+  type PayloadForBackend,
+  type DiscordIdentity,
+  type SavedCard,
+  type CheckoutStep,
+  LAST_STEP,
+  totalLiveMinutesFromPayload,
+  sessionBlockTitleFromPayload,
+  mergeWithDefaultPayload,
+  parseStartTime,
+  buildBookingCreateBody,
+  sessionFromCheckoutPayload,
+} from "@/engine/checkout";
+import { computePriceWithProduct } from "@/engine/session";
+import { runCheckoutPayment } from "./runCheckoutPayment";
 
 type Args = {
   payload: Payload;
@@ -55,17 +28,6 @@ type Args = {
   stripePromise: Promise<Stripe | null>;
   appearance?: any;
   payloadForBackend: PayloadForBackend;
-};
-
-const DEFAULT_PAYLOAD: Payload = {
-  slotId: "",
-  sessionType: "",
-  baseMinutes: 60,
-  liveMinutes: 60,
-  followups: 0,
-  liveBlocks: 0,
-  preset: "",
-  holdKey: "",
 };
 
 export function useCheckoutFlow({
@@ -77,44 +39,32 @@ export function useCheckoutFlow({
 }: Args) {
   const appearanceToUse = appearance ?? appearanceDarkBrand;
   const safePayload: Payload = useMemo(
-    () => ({ ...DEFAULT_PAYLOAD, ...payload }),
+    () => mergeWithDefaultPayload(payload),
     [payload]
   );
 
-  // ⭐ correct version (bundle-safe)
-  const sessionBlockTitle = useMemo(() => {
-    const p = getPreset(
-      safePayload.baseMinutes,
-      safePayload.followups,
-      safePayload.liveBlocks,
-      safePayload.productId as ProductId | undefined
-    );
-    return titlesByPreset[p];
-  }, [
-    safePayload.baseMinutes,
-    safePayload.followups,
-    safePayload.liveBlocks,
-    safePayload.productId,
-  ]);
-
-  const totalLiveMinutes = useMemo(
-    () => safePayload.baseMinutes + safePayload.liveBlocks * 45,
-    [safePayload.baseMinutes, safePayload.liveBlocks]
+  const sessionBlockTitle = useMemo(
+    () => sessionBlockTitleFromPayload(safePayload),
+    [safePayload]
   );
 
-// Only valid steps: 0 = contact, 1 = choose, 2 = summary+payment
-const [step, setStep] = useState<0 | 1 | 2>(0);
-const [dir, setDir] = useState<1 | -1>(1);
+  const totalLiveMinutes = useMemo(
+    () => totalLiveMinutesFromPayload(safePayload),
+    [safePayload]
+  );
 
-const goNext = () => {
-  setDir(1);
-  setStep((s) => (s >= 2 ? 2 : ((s + 1) as 0 | 1 | 2)));
-};
+const [step, setStep] = useState<CheckoutStep>(0);
+  const [dir, setDir] = useState<1 | -1>(1);
 
-const goBack = () => {
-  setDir(-1);
-  setStep((s) => (s <= 0 ? 0 : ((s - 1) as 0 | 1 | 2)));
-};
+  const goNext = () => {
+    setDir(1);
+    setStep((s) => (s >= LAST_STEP ? LAST_STEP : ((s + 1) as CheckoutStep)));
+  };
+
+  const goBack = () => {
+    setDir(-1);
+    setStep((s) => (s <= 0 ? 0 : ((s - 1) as CheckoutStep)));
+  };
 
 
   const [payMethod, setPayMethod] = useState<PayMethod>("");
@@ -156,23 +106,13 @@ const goBack = () => {
   const [selectedStart, setSelectedStart] = useState<Date | null>(null);
 
   useEffect(() => {
-    function coerceToDate(v: unknown): Date | null {
-      if (v == null) return null;
-      if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-      if (typeof v === "number")
-        return isNaN(new Date(v).getTime()) ? null : new Date(v);
-      if (typeof v === "string")
-        return isNaN(new Date(v).getTime()) ? null : new Date(v);
-      return null;
-    }
-    const fromBackend = coerceToDate(payloadForBackend?.startTime);
-    const fromPayload = coerceToDate(safePayload.startTime);
+    const fromBackend = parseStartTime(payloadForBackend?.startTime);
+    const fromPayload = parseStartTime(safePayload.startTime);
     if (fromBackend) setSelectedStart(fromBackend);
     else if (fromPayload) setSelectedStart(fromPayload);
     else if (typeof window !== "undefined") {
-      const fromQuery = coerceToDate(
-        new URLSearchParams(window.location.search).get("startTime") ||
-          undefined
+      const fromQuery = parseStartTime(
+        new URLSearchParams(window.location.search).get("startTime") ?? undefined
       );
       if (fromQuery) setSelectedStart(fromQuery);
     }
@@ -187,6 +127,21 @@ const goBack = () => {
       setBookingId(null);
     }
   }, []);
+
+  // Hydrate coupon from session when we have a booking but no client-side coupon state (e.g. after refresh)
+  useEffect(() => {
+    if (!bookingId || couponDiscount !== 0 || couponCode !== null) return;
+    let cancelled = false;
+    fetch(`/api/checkout/booking-coupon?bookingId=${encodeURIComponent(bookingId)}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (cancelled || !data) return;
+        if (data.couponDiscount > 0) setCouponDiscount(data.couponDiscount);
+        if (data.couponCode) setCouponCode(data.couponCode);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [bookingId]);
 
   const handleRiotVerified = async ({ riotTag: verifiedTag, puuid }: any) => {
     setRiotTag(verifiedTag);
@@ -241,27 +196,24 @@ setStep(2);  // ok, but now guaranteed as a valid step
     setLoadingIntent(true);
 
     try {
-      const make = await fetch("/api/booking/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const body = buildBookingCreateBody(
+        safePayload,
+        sessionBlockTitle,
+        totalLiveMinutes,
+        {
           studentId: studentId ?? null,
-          sessionType: sessionBlockTitle,
-          slotId: safePayload.slotId,
-          liveMinutes: totalLiveMinutes,
-          followups: safePayload.followups,
           riotTag,
           discordId: discordIdentity?.id ?? null,
           discordName: discordIdentity?.username ?? null,
           notes,
-          waiverAccepted: waiver,
-          couponCode,
-          couponDiscount,
-          holdKey: safePayload.holdKey,
-
-            productId: safePayload.productId,  // ← ADD THIS
-
-        }),
+        },
+        waiver,
+        { code: couponCode, discount: couponDiscount }
+      );
+      const make = await fetch("/api/booking/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
 
       if (!make.ok) {
@@ -284,12 +236,13 @@ setStep(2);  // ok, but now guaranteed as a valid step
       const res = await fetch("/api/stripe/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-  bookingId,
-  payMethod,
-  holdKey: safePayload.holdKey,
-  productId: payload.productId,
-})      });
+        body: JSON.stringify({
+          bookingId,
+          payMethod,
+          holdKey: safePayload.holdKey,
+          productId: safePayload.productId,
+        }),
+      });
 
       if (res.status === 409) {
         console.warn("Selected start time can’t fit this duration.");
@@ -320,6 +273,26 @@ body: JSON.stringify({
     } finally {
       setLoadingIntent(false);
     }
+  };
+
+  const runPayment = async (paymentElementId?: string): Promise<void> => {
+    const stripe = await stripePromise;
+    if (!stripe) return;
+    // Card flow: session route computes amount from booking + couponDiscount; we still send amountCents for fallback when no bookingId
+    const session = sessionFromCheckoutPayload(safePayload);
+    const { priceEUR } = computePriceWithProduct(session);
+    const amountCents = Math.round((priceEUR - couponDiscount) * 100);
+    await runCheckoutPayment({
+      stripe,
+      payMethod,
+      bookingId,
+      clientSecret,
+      createPaymentIntent,
+      slotIds: safePayload.slotIds,
+      amountCents,
+      productId: safePayload.productId,
+      paymentElementId,
+    });
   };
 
   return {
@@ -359,6 +332,7 @@ body: JSON.stringify({
 
     chooseAndGo,
     createPaymentIntent,
+    runPayment,
     handleRiotVerified,
     handleDiscordLinked,
 

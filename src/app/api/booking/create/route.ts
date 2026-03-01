@@ -2,7 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
-import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
+import { CheckoutZ } from "@/engine/checkout";
+import { computePriceEUR } from "@/engine/session/rules/pricing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -5,45 +5,15 @@ import { useMemo, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import UsefulToKnow from "@/app/checkout/_components/UsefulToKnow";
-import { buildBreakdown } from "@/lib/checkout/buildBreakdown";
+import { buildBreakdown } from "@/engine/checkout";
 import CheckoutPanel from "@/app/checkout/_components/CheckoutPanel";
 import { appearanceDarkBrand } from "@/lib/checkout/stripeAppearance";
 
 import { loadStripe } from "@stripe/stripe-js";
 import { motion, type Variants } from "framer-motion";
-import type { ProductId } from "@/engine/session";
-
+import { parseCheckoutPayload, toPayloadForBackend } from "@/engine/checkout";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-const MIN = 30;
-const MAX = 120;
-const LIVEBLOCK_MIN = 45;
-
-function clampN(n: number, lo: number, hi: number) {
-  return Math.min(hi, Math.max(lo, n));
-}
-function deriveBaseMinutes({
-  liveMinParam,
-  liveMinutesParam,
-  liveBlocks,
-}: {
-  liveMinParam: number | null;
-  liveMinutesParam: number | null;
-  liveBlocks: number;
-}) {
-  if (typeof liveMinParam === "number" && !Number.isNaN(liveMinParam)) {
-    return clampN(liveMinParam, MIN, MAX);
-  }
-  const lm =
-    typeof liveMinutesParam === "number" && !Number.isNaN(liveMinutesParam)
-      ? liveMinutesParam
-      : 60;
-  return clampN(lm - liveBlocks * LIVEBLOCK_MIN, MIN, MAX);
-}
-function mergedMinutes(baseMinutes: number, liveBlocks: number) {
-  return Math.min(MAX, Math.max(MIN, baseMinutes + liveBlocks * LIVEBLOCK_MIN));
-}
 
 /** desktop animation */
 const rightCol: Variants = {
@@ -69,43 +39,8 @@ export default function CheckoutClient() {
   const spKey = sp?.toString() ?? "";
 
   const payload = useMemo(() => {
-    const getStr = (k: string, fallback = "") => sp?.get(k) ?? fallback;
-    const getNum = (k: string, fallback: number) => {
-      const v = sp?.get(k);
-      if (v == null) return fallback;
-      const n = Number(v);
-      return Number.isFinite(n) ? n : fallback;
-    };
-
-    const liveBlocks = getNum("liveBlocks", 0);
-    const liveMinRaw = sp?.get("liveMin");
-    const liveMinutesRaw = sp?.get("liveMinutes");
-
-    const baseMinutes = deriveBaseMinutes({
-      liveMinParam: liveMinRaw ? Number(liveMinRaw) : null,
-      liveMinutesParam: liveMinutesRaw ? Number(liveMinutesRaw) : null,
-      liveBlocks,
-    });
-
-    const totalMins = mergedMinutes(baseMinutes, liveBlocks);
-
-    return {
-      slotId: getStr("slotId"),
-      slotIds: getStr("slotIds"),
-      sessionType: getStr("sessionType", "Session"),
-      baseMinutes,
-      liveMinutes: totalMins,
-      followups: getNum("followups", 0),
-      liveBlocks,
-      discordId: getStr("discordId"),
-      discordName: getStr("discordName"),
-
-      // ⭐ FIX: we now read productId
-productId: getStr("productId") as ProductId | null,
-
-      preset: getStr("preset", "custom"),
-      holdKey: getStr("holdKey"),
-    };
+    if (!sp) return parseCheckoutPayload({ get: () => null });
+    return parseCheckoutPayload(sp);
   }, [spKey]);
 
   const breakdown = useMemo(
@@ -114,21 +49,7 @@ productId: getStr("productId") as ProductId | null,
   );
 
   const payloadForBackend = useMemo(
-    () => ({
-      slotId: payload.slotId,
-      slotIds: payload.slotIds,
-      sessionType: payload.sessionType,
-      liveMinutes: payload.liveMinutes,
-      followups: payload.followups,
-      liveBlocks: payload.liveBlocks,
-      discordId: payload.discordId,
-      discordName: payload.discordName,
-      preset: payload.preset,
-      holdKey: payload.holdKey,
-
-      // ⭐ FIX: forward productId
-      productId: payload.productId,
-    }),
+    () => toPayloadForBackend(payload),
     [payload]
   );
 

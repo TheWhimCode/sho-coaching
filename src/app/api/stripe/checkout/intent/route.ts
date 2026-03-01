@@ -2,13 +2,15 @@ import Stripe from "stripe";
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CheckoutZ, computePriceEUR } from "@/lib/pricing";
+import { CheckoutZ } from "@/engine/checkout";
+import { computePriceEUR } from "@/engine/session/rules/pricing";
 import { rateLimit } from "@/lib/rateLimit";
 import { CFG_SERVER } from "@/lib/config.server";
 import { SlotStatus } from "@prisma/client";
 import { computePriceWithProduct } from "@/engine/session/rules/product";
 import { clamp } from "@/engine/session/config/session";
 import type { ProductId } from "@/engine/session/model/product";
+import { getStripePaymentMethodTypes } from "@/engine/checkout";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -151,15 +153,7 @@ export async function POST(req: Request) {
 
     const slotIds = heldSlots.map((s) => s.id);
 
-    // ---- payment intent ----
-    const pmTypes =
-      payMethod === "paypal"
-        ? ["paypal"]
-        : payMethod === "revolut_pay"
-        ? ["revolut_pay"]
-        : payMethod === "klarna"
-        ? ["klarna"]
-        : ["card"];
+    const pmTypes = getStripePaymentMethodTypes(payMethod);
 
     const metadata: Record<string, string> = {
       bookingId: bookingId ?? "",

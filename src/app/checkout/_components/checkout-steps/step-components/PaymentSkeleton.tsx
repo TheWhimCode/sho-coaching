@@ -1,9 +1,9 @@
 // src/app/checkout/_components/checkout-steps/step-components/PaymentSkeleton.tsx
 "use client";
 
-type Method = "card" | "paypal" | "revolut_pay" | "klarna";
+import type { PayMethod } from "@/engine/checkout";
 
-export default function PaymentSkeleton({ method }: { method: Method }) {
+export default function PaymentSkeleton({ method }: { method: PayMethod }) {
   if (method === "card") {
     // Card skeleton — matches 48px rows + tight spacing
     return (
