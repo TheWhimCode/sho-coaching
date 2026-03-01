@@ -2,11 +2,12 @@
 // Keeps payment logic out of the hook and panel for testability and smaller hook size.
 
 import type { Stripe } from "@stripe/stripe-js";
+import type { PayMethod } from "@/engine/checkout";
 import { isCard, isAlternativePayment } from "@/engine/checkout";
 
 export type RunCheckoutPaymentParams = {
   stripe: Stripe;
-  payMethod: string;
+  payMethod: PayMethod;
   bookingId: string | null;
   clientSecret: string | null;
   createPaymentIntent: () => Promise<string | null>;
