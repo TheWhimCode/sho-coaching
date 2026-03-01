@@ -32,13 +32,8 @@ export async function GET(req: Request) {
           discordId ? { discordId } : undefined,
         ].filter(Boolean) as any,
       },
-      select: {
-        id: true,
-        puuid: true,
-        discordId: true,
-        discordName: true,
-        riotTag: true,
-        name: true,
+      include: {
+        coupons: { take: 1 },
       },
     });
 
@@ -46,13 +41,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
 
+    const couponRow = student.coupons[0] ?? null;
+    console.log("[by-DBmatch] studentId:", student.id, "coupons.length:", student.coupons?.length ?? 0, "couponRow:", couponRow ? { code: couponRow.code, value: couponRow.value } : null);
+
     return NextResponse.json({
       studentId: student.id,
       puuid: student.puuid ?? null,
       discordId: student.discordId ?? null,
       discordName: student.discordName ?? null,
       riotTag: student.riotTag ?? null,
+      name: student.name ?? null,
       displayName: student.discordName ?? student.name ?? null,
+      coupon: couponRow ? { code: couponRow.code, value: couponRow.value } : null,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

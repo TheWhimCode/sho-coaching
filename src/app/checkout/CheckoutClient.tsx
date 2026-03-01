@@ -56,11 +56,19 @@ export default function CheckoutClient() {
   const isDesktop = useIsDesktop();
   const RightCol: any = isDesktop ? motion.div : "div";
 
+  const [returningStudentName, setReturningStudentName] = useState<string | null>(null);
+  const [returningStudentCoupon, setReturningStudentCoupon] = useState<{ code: string; value: number } | null>(null);
+
+  const handleReturningStudentFound = (name: string, coupon: { code: string; value: number } | null) => {
+    setReturningStudentName(name);
+    setReturningStudentCoupon(coupon);
+  };
+
   return (
     <section
       className="
         relative isolate min-h-dvh pt-8 md:pt-10 lg:pt-12 pb-10 text-white
-        overflow-x-hidden lg:overflow-y-hidden
+        overflow-x-hidden
       "
     >
       {/* Background */}
@@ -70,11 +78,11 @@ export default function CheckoutClient() {
       </div>
 
       {/* Content */}
-      <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8">
-        <div className="flex justify-center">
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto_420px] gap-8 items-start lg:justify-items-stretch min-h-[70vh]">
-            <div className="hidden md:block relative w-full mt-12 lg:max-w-none xl:max-w-[820px] lg:-ml-6 xl:-ml-12 2xl:-ml-20">
-              <UsefulToKnow />
+      <div className="relative z-0 mx-auto w-full max-w-6xl px-6 md:px-8 overflow-visible">
+        <div className="flex justify-center overflow-visible">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto_420px] gap-8 items-start lg:justify-items-stretch min-h-[70vh] overflow-visible">
+            <div className="hidden md:block relative w-[40rem] max-w-full mt-12 lg:-ml-6 xl:-ml-12 2xl:-ml-20 overflow-visible">
+              <UsefulToKnow returningStudentName={returningStudentName} returningStudentCoupon={returningStudentCoupon} />
             </div>
 
             <div className="hidden lg:flex items-stretch mx-2 px-4">
@@ -93,6 +101,7 @@ export default function CheckoutClient() {
                 stripePromise={stripePromise}
                 appearance={appearanceDarkBrand}
                 payloadForBackend={payloadForBackend}
+                onReturningStudentFound={handleReturningStudentFound}
               />
             </RightCol>
           </div>

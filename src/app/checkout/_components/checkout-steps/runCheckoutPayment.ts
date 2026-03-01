@@ -69,7 +69,7 @@ export async function runCheckoutPayment(params: RunCheckoutPaymentParams): Prom
 
     // Give the Payment Element (especially PayPal in a hidden container) time to initialize
     // before confirmPayment; otherwise the first attempt can hang on "Just a moment..."
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 300));
 
     const result = await stripe.confirmPayment({
       elements,

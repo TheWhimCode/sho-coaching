@@ -2,29 +2,76 @@
 "use client";
 
 import { Target, FilmReel } from "@phosphor-icons/react";
-import { FaDiscord } from "react-icons/fa"; // 👈 added
+import { FaDiscord } from "react-icons/fa";
+import { AnimatePresence, motion } from "framer-motion";
 
-export default function UsefulToKnow() {
+type Props = {
+  returningStudentName?: string | null;
+  returningStudentCoupon?: { code: string; value: number } | null;
+};
+
+export default function UsefulToKnow({ returningStudentName, returningStudentCoupon }: Props) {
+  const isReturning = !!returningStudentName;
+
   return (
     <aside
-      className="
-        relative
-        max-w-3xl sm:max-w-4xl lg:max-w-5xl
-        w-full
-      "
+      className="relative w-full min-w-0 max-w-full overflow-visible"
     >
-      {/* Title */}
-      <h2 className="font-semibold tracking-tight text-xl sm:text-3xl text-white/90 mb-10">
-        Want to prepare?
-      </h2>
+      <div className="relative w-full min-w-0 overflow-visible">
+        <AnimatePresence mode="wait">
+          {isReturning ? (
+            <motion.div
+              key="welcome-back"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.45, ease: [0.22, 0.61, 0.36, 1] }}
+              className="relative w-full min-w-0 flex flex-col justify-center pt-16 pb-14 px-0 overflow-visible mt-24"
+            >
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12, duration: 0.4, ease: "easeOut" }}
+                className="relative z-10 font-semibold tracking-tight text-3xl sm:text-4xl lg:text-5xl text-white/95"
+              >
+                Welcome back{returningStudentName ? `, ${returningStudentName}` : ""}.
+              </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.4, ease: "easeOut" }}
+                className="relative z-10 mt-8 text-base sm:text-lg text-white/70"
+              >
+                {returningStudentCoupon ? (
+                  <>
+                    Ready for the next steps?
+                    <br />
+                    Don&apos;t forget your <strong className="font-semibold text-white/90">€{returningStudentCoupon.value}</strong> discount code — <strong className="font-semibold text-white/90">{returningStudentCoupon.code}</strong>
+                  </>
+                ) : (
+                  "Ready for the next steps? — continue to choose your payment method when you're ready."
+                )}
+              </motion.p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="prep"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              className="relative w-full min-w-0 overflow-y-auto"
+            >
+              <h2 className="font-semibold tracking-tight text-xl sm:text-3xl text-white/90 mb-10">
+                Want to prepare?
+              </h2>
 
-      {/* Notes */}
-      <ul className="space-y-14 text-[16px] leading-relaxed text-white/65">
+              <ul className="space-y-14 text-[16px] leading-relaxed text-white/65">
         <PrepItem
           color="sky"
           title="Join Discord"
           description="We will meet on my Discord server, make sure you join! You’ll find some additional resources there as well. Before your session, double-check your mic & audio."
-          icon={<FaDiscord size={20} />} // 👈 swapped in FontAwesome Discord
+          icon={<FaDiscord size={20} />}
         />
         <PrepItem
           color="violet"
@@ -39,6 +86,10 @@ export default function UsefulToKnow() {
           icon={<FilmReel size={20} weight="regular" />}
         />
       </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
     </aside>
   );
 }

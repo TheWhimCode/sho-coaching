@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCheckoutFlow } from "@/app/checkout/_components/checkout-steps/useCheckoutFlow";
 import CheckoutSteps from "@/app/checkout/_components/checkout-steps/CheckoutSteps";
 import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock";
@@ -251,10 +251,13 @@ onClick={async () => {
   );
 }
 
-export default function CheckoutPanel(props: Parameters<
-  typeof useCheckoutFlow
->[0]) {
-  const flow = useCheckoutFlow(props);
+type CheckoutPanelProps = Parameters<typeof useCheckoutFlow>[0] & {
+  onReturningStudentFound?: (name: string, coupon: { code: string; value: number } | null) => void;
+};
+
+export default function CheckoutPanel(props: CheckoutPanelProps) {
+  const { onReturningStudentFound, ...flowProps } = props;
+  const flow = useCheckoutFlow({ ...flowProps, onReturningStudentFound });
   const { payload, breakdown, selectedStart } = flow;
 
   const session = sessionFromCheckoutPayload(payload);

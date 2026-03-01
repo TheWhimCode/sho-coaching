@@ -28,6 +28,7 @@ type Args = {
   stripePromise: Promise<Stripe | null>;
   appearance?: any;
   payloadForBackend: PayloadForBackend;
+  onReturningStudentFound?: (name: string, coupon: { code: string; value: number } | null) => void;
 };
 
 export function useCheckoutFlow({
@@ -36,6 +37,7 @@ export function useCheckoutFlow({
   stripePromise,
   appearance,
   payloadForBackend,
+  onReturningStudentFound,
 }: Args) {
   const appearanceToUse = appearance ?? appearanceDarkBrand;
   const safePayload: Payload = useMemo(
@@ -82,6 +84,8 @@ const [step, setStep] = useState<CheckoutStep>(0);
     useState<DiscordIdentity | null>(null);
 
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [studentName, setStudentName] = useState<string | null>(null);
+  const [studentCoupon, setStudentCoupon] = useState<{ code: string; value: number } | null>(null);
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
 
@@ -152,7 +156,20 @@ const [step, setStep] = useState<CheckoutStep>(0);
       );
       if (resp.ok) {
         const data = await resp.json().catch(() => null);
-        if (data?.studentId) setStudentId(String(data.studentId));
+        if (data?.studentId) {
+          setStudentId(String(data.studentId));
+          const name = data?.name ?? data?.discordName ?? "there";
+          if (data?.name) setStudentName(String(data.name));
+          const val = data?.coupon?.value != null ? Number(data.coupon.value) : NaN;
+          const coupon = data?.coupon && typeof data.coupon.code === "string" && !Number.isNaN(val)
+            ? { code: data.coupon.code, value: val }
+            : null;
+          setStudentCoupon(coupon);
+          onReturningStudentFound?.(name, coupon);
+        } else {
+          setStudentName(null);
+          setStudentCoupon(null);
+        }
         if (data?.discordId)
           setDiscordIdentity({
             id: String(data.discordId),
@@ -174,7 +191,20 @@ const [step, setStep] = useState<CheckoutStep>(0);
       );
       if (resp.ok) {
         const data = await resp.json().catch(() => null);
-        if (data?.studentId) setStudentId(String(data.studentId));
+        if (data?.studentId) {
+          setStudentId(String(data.studentId));
+          const name = data?.name ?? u.username ?? "there";
+          if (data?.name) setStudentName(String(data.name));
+          const val = data?.coupon?.value != null ? Number(data.coupon.value) : NaN;
+          const coupon = data?.coupon && typeof data.coupon.code === "string" && !Number.isNaN(val)
+            ? { code: data.coupon.code, value: val }
+            : null;
+          setStudentCoupon(coupon);
+          onReturningStudentFound?.(name, coupon);
+        } else {
+          setStudentName(null);
+          setStudentCoupon(null);
+        }
       }
     } catch {}
   };
@@ -326,6 +356,8 @@ setStep(2);  // ok, but now guaranteed as a valid step
 
     studentId,
     setStudentId,
+    studentName,
+    studentCoupon,
 
     waiver,
     setWaiver,
