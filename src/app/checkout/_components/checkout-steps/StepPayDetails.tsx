@@ -328,7 +328,7 @@ function FormBody({
               )
             ) : (
               <CardForm
-                activePm={payMethod}
+                activePm={payMethod || "card"}
                 onElementsReady={() => {
                   if (!readyLocked.current) {
                     readyLocked.current = true;
