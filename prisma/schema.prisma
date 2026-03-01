@@ -275,8 +275,8 @@ model Draft {
   status     DraftStatus @default(PENDING)
   createdAt  DateTime    @default(now())
   submitIp String?
-  @@schema("public")
 
+  @@schema("skillcheck")
 }
 
 
@@ -285,8 +285,8 @@ enum DraftStatus {
   PENDING
   APPROVED
   REJECTED
-  @@schema("public")
 
+  @@schema("skillcheck")
 }
 model CooldownStat {
   id              String   @id @default(cuid())
@@ -303,5 +303,30 @@ model CooldownStat {
 
   @@unique([championId, spellKey, rank])
   @@index([championId])
+  @@schema("skillcheck")
+}
+
+model ItemStat {
+  id               String   @id @default(cuid())
+  dayKey           String   // YYYY-MM-DD (UTC)
+  itemId           String   // target item id for the day
+  attempts         Int      @default(0)
+  correctAttempts  Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([dayKey, itemId])
+  @@index([dayKey])
+  @@schema("skillcheck")
+}
+
+model LeaderboardEntry {
+  id          String   @id @default(cuid())
+  clientId    String   @unique // persistent id from client (e.g. localStorage)
+  displayName String?  // user can set on leaderboard page
+  streakDays  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@index([streakDays(sort: Desc)])
   @@schema("skillcheck")
 }

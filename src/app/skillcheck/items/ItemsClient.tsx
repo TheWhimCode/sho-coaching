@@ -12,6 +12,8 @@ import {
   ensureDDragonItems,
   getItemDescriptionHtml,
 } from "@/lib/datadragon/itemdescriptions";
+import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
+import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
 
 /* ---------------------------------
    Shared item shape for results
@@ -31,12 +33,14 @@ export type ResultItem = {
 };
 
 export default function ItemsClient({
+  dayKey,
   targets,
   inventory,
   trueGold,
   storageKey,
   avgAttempts,
 }: {
+  dayKey: string;
   targets: ResultItem[];
   inventory: { id: string; name: string; icon: string }[];
   trueGold: number;
@@ -141,6 +145,8 @@ export default function ItemsClient({
         content={
           <>
             <ItemsOptions
+              dayKey={dayKey}
+              itemId={item?.id ?? ""}
               targets={targets}
               inventory={inventory}
               trueGold={trueGold}
@@ -149,6 +155,8 @@ export default function ItemsClient({
                 if (completed) return;
 
                 setCompleted(true);
+                recordSkillcheckPlay();
+                syncToLeaderboardIfEligible();
                 setShowSuccess(true);
 
                 try {

@@ -9,6 +9,8 @@ import CooldownsHero, {
 } from "@/app/skillcheck/cooldowns/components/CooldownsHero";
 import CooldownOptions from "@/app/skillcheck/cooldowns/components/CooldownOptions";
 import CooldownResult from "./components/CooldownsResult";
+import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
+import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
 
 type SpellKey = "Q" | "W" | "E" | "R";
 
@@ -164,6 +166,8 @@ export default function CooldownsClient({
                 if (completed) return;
 
                 setCompleted(true);
+                recordSkillcheckPlay();
+                syncToLeaderboardIfEligible();
 
                 setShowSuccess(true);
                 // ❌ removed: setTimeout(() => setShowSuccess(false), 1500);

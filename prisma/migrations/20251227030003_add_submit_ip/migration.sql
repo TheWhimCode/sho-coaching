@@ -5,9 +5,7 @@
   - Made the column `createdAt` on table `SessionAsset` required. This step will fail if there are existing NULL values in that column.
 
 */
--- AlterTable
-ALTER TABLE "Draft" ADD COLUMN     "submitIp" TEXT;
-
+-- AlterTable (Draft submitIp moved to later migration so Draft table exists)
 -- AlterTable
 ALTER TABLE "PendingConfirmationDM" ALTER COLUMN "createdAt" SET NOT NULL,
 ALTER COLUMN "createdAt" SET DATA TYPE TIMESTAMP(3);

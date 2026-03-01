@@ -29,6 +29,8 @@ const PostZ = z.object({
   discordId: z.string().min(1).nullable().optional(),
   discordName: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+
+  champions: z.array(z.string().trim().max(64)).optional().default([]),
 });
 
 /* ----------------------- helpers ----------------------- */
@@ -139,10 +141,12 @@ export async function POST(req: Request) {
     discordId,
     discordName,
     notes,
+    champions: championsFromBody,
   } = body;
 
   const followups = body.followups ?? 0;
   const liveBlocks = body.liveBlocks ?? 0;
+  const champions = Array.isArray(championsFromBody) ? championsFromBody : [];
 
   const totalMinutes = liveMinutes + liveBlocks * 45;
 
@@ -247,6 +251,8 @@ const unpaid = await tx.session.create({
     notes: notes?.trim() ? notes.trim() : null,
     discordId: discordId ?? null,
     discordName: discordName ?? null,
+
+    champions,
 
     scheduledStart: startTime,
     scheduledMinutes: liveMinutes,

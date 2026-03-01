@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import QuickbookShell from "./_components/QuickbookShell";
 import StepQuickContact from "./_components/StepQuickContact";
+import StepQuickChampion from "./_components/StepQuickChampion";
 import StepQuickCalendar from "./_components/StepQuickCalendar";
 import StepQuickSuccess from "./_components/StepQuickSuccess";
 
@@ -40,12 +41,19 @@ export default function QuickbookClient({
   liveBlocks = 0,
   productId,
 }: Props) {
-  const [step, setStep] = React.useState<0 | 1 | 2>(0);
+  const [step, setStep] = React.useState<0 | 1 | 2 | 3>(0);
 
   const [riotTag, setRiotTag] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [discordIdentity, setDiscordIdentity] = React.useState<DiscordIdentity | null>(null);
   const [contactErr, setContactErr] = React.useState<string | null>(null);
+
+  const [champion, setChampion] = React.useState<string | null>(null);
+  const [champion2, setChampion2] = React.useState<string | null>(null);
+  const handleChampionChange = React.useCallback((champ: string) => {
+    setChampion(champ);
+    setChampion2((prev) => (prev === champ ? null : prev));
+  }, []);
 
   // ✅ store booked start time for success screen
   const [bookedStartISO, setBookedStartISO] = React.useState<string | null>(null);
@@ -164,12 +172,13 @@ export default function QuickbookClient({
 
   const [footerState, setFooterState] = React.useState<FooterState | null>(null);
 
-  const canShowStep1 = step === 1 && !!discordIdentity?.id;
-  const canShowStep2 = step === 2 && !!discordIdentity?.id;
+  const canShowChampion = step === 1 && !!discordIdentity?.id;
+  const canShowCalendar = step === 2 && !!discordIdentity?.id;
+  const canShowSuccess = step === 3;
 
-  // Ensure step 2 has no footer
+  // Ensure success step has no footer
   React.useEffect(() => {
-    if (step === 2) setFooterState(null);
+    if (step === 3) setFooterState(null);
   }, [step]);
 
   return (
@@ -200,14 +209,28 @@ export default function QuickbookClient({
                       contactErr={contactErr}
                       onNext={() => {
                         if (contactErr) return;
-                        setStep(1);
+                        setStep(1); // go to champion step
                       }}
                       setFooterState={setFooterState}
                     />
                   </motion.div>
                 )}
 
-                {canShowStep1 && (
+                {canShowChampion && (
+                  <motion.div key="champion" {...fade} className="h-full min-h-0">
+                    <StepQuickChampion
+                      champion={champion}
+                      onChampionChange={handleChampionChange}
+                      champion2={champion2}
+                      onChampion2Change={setChampion2}
+                      goBack={() => setStep(0)}
+                      onNext={() => setStep(2)}
+                      setFooterState={setFooterState}
+                    />
+                  </motion.div>
+                )}
+
+                {canShowCalendar && (
                   <motion.div key="calendar" {...fade} className="h-full min-h-0">
                     <StepQuickCalendar
                       config={config}
@@ -216,17 +239,18 @@ export default function QuickbookClient({
                       riotTag={riotTag}
                       notes={notes}
                       discordIdentity={discordIdentity!}
-                      onBack={() => setStep(0)}
+                      champions={[champion, champion2].filter((c): c is string => !!c)}
+                      onBack={() => setStep(1)}
                       onSuccess={(startISO) => {
                         setBookedStartISO(startISO);
-                        setStep(2);
+                        setStep(3);
                       }}
                       setFooterState={setFooterState}
                     />
                   </motion.div>
                 )}
 
-                {canShowStep2 && (
+                {canShowSuccess && (
                   <motion.div key="success" {...fade} className="h-full min-h-0">
                     <StepQuickSuccess bookedStartISO={bookedStartISO} />
                   </motion.div>

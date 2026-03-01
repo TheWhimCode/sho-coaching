@@ -8,6 +8,8 @@ import ChampOptions from "@/app/skillcheck/draft/game/ChampOptions";
 import { ResultScreen } from "@/app/skillcheck/draft/game/DraftResult";
 import DraftAuthorMain from "@/app/skillcheck/draft/authoring/DraftAuthorMain";
 import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
+import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
+import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
 
 type Pick = {
   role: "top" | "jng" | "mid" | "adc" | "sup";
@@ -187,6 +189,8 @@ export default function DraftClient({
 
       setCompleted(true);
       setLastWrong(null);
+      recordSkillcheckPlay();
+      syncToLeaderboardIfEligible();
 
       // success overlay immediately
       setShowSuccess(true);

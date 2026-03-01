@@ -8,7 +8,8 @@ import { SlotStatus } from "@prisma/client";
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
 import { holdSlot, releaseHold } from "@/utils/holds";
-import { getPreset } from "@/engine/session/rules/preset";
+import { getPreset, type Preset } from "@/engine/session/rules/preset";
+import { titlesByPreset } from "@/engine/session/metadata/labels";
 
 
 
@@ -102,6 +103,11 @@ export default function Calendar({
 }: Props) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
+
+  const sessionTypeDisplay =
+    presetProp && presetProp in titlesByPreset
+      ? titlesByPreset[presetProp as Preset]
+      : sessionType;
 
   const blocks = liveBlocks ?? 0;
   const totalMinutes = liveMinutes + blocks * 45;
@@ -355,7 +361,7 @@ const displayableDayKeys = useMemo(
                 <div className="text-[11px] uppercase tracking-[0.18em] text-white/60">
                   Schedule
                 </div>
-                <div className="text-xl font-semibold">{sessionType}</div>
+                <div className="text-xl font-semibold">{sessionTypeDisplay}</div>
               </div>
             </div>
 

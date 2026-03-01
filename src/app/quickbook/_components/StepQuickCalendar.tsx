@@ -56,6 +56,9 @@ type Props = {
   notes: string;
   discordIdentity: DiscordIdentity;
 
+  /** Champion IDs to save on the session (from StepQuickChampion). */
+  champions?: string[];
+
   onBack: () => void;
   onSuccess: (startISO: string) => void;
 
@@ -69,6 +72,7 @@ export default function StepQuickCalendar({
   riotTag,
   notes,
   discordIdentity,
+  champions = [],
   onBack,
   onSuccess,
   setFooterState,
@@ -216,6 +220,8 @@ export default function StepQuickCalendar({
           discordId: discordIdentity.id,
           discordName: discordIdentity.username ?? null,
           notes: notes?.trim() ? notes.trim() : null,
+
+          champions: champions.length ? champions : undefined,
         }),
       });
 

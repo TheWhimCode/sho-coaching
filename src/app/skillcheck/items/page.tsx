@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
 import ItemsClient from "./ItemsClient";
 import {
   ensureItemsData,
@@ -125,12 +126,25 @@ for (const [id, n] of componentCounts(data, targetId, new Map(), { rng })) {
   const trueGold = minGoldToComplete(data, [targetId], inventory);
 
   /* -------------------------
+     Item stats (for avg attempts display)
+  -------------------------- */
+  const itemStat = await prisma.itemStat.findUnique({
+    where: { dayKey_itemId: { dayKey, itemId: targetId } },
+    select: { attempts: true, correctAttempts: true },
+  });
+  const avgAttempts =
+    itemStat && itemStat.correctAttempts > 0
+      ? (itemStat.attempts / itemStat.correctAttempts).toFixed(2)
+      : "–";
+
+  /* -------------------------
      Render
   -------------------------- */
   const ICON_PATCH = "latest";
 
   return (
     <ItemsClient
+      dayKey={dayKey}
       targets={[
         {
           id: targetId,
@@ -173,7 +187,7 @@ for (const [id, n] of componentCounts(data, targetId, new Map(), { rng })) {
       trueGold={trueGold}
       // stable per-day storage key (so attempts/results can persist for the day)
       storageKey={`skillcheck:items:${dayKey}:${targetId}`}
-      avgAttempts={"–"}
+      avgAttempts={avgAttempts}
     />
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Hero from "@/app/skillcheck/layout/Hero";
-import { Swords, Hourglass, Gem, Sparkles } from "lucide-react";
+import { Swords, Hourglass, Gem, Sparkles, Flame } from "lucide-react";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
+import { getSkillcheckStreak } from "@/app/skillcheck/streak";
 
 const modes = [
   {
@@ -50,6 +52,7 @@ const modes = [
 
 export default function SkillcheckClient() {
   const router = useRouter();
+  const [streak] = useState(() => getSkillcheckStreak());
 
   return (
     <Hero
@@ -63,6 +66,13 @@ export default function SkillcheckClient() {
           </h1>
 
           <p className="mt-3 text-sm md:text-base opacity-70">Choose a mode</p>
+
+          {streak.streakDays > 0 && (
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-200/90">
+              <Flame className="h-3.5 w-3.5" />
+              <span>{streak.streakDays} day{streak.streakDays !== 1 ? "s" : ""} streak</span>
+            </div>
+          )}
 
           <DividerWithLogo className="mt-6" />
 

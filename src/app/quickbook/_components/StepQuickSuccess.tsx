@@ -36,7 +36,7 @@ export default function StepQuickSuccess({ bookedStartISO }: Props) {
 
   return (
     <div className="h-full min-h-0 flex pt-40 pb-60 justify-center md:px-4">
-      <div className="w-full max-w-xl rounded-2xl ring-1 ring-[rgba(146,180,255,.20)] bg-[rgba(12,22,44,.55)] supports-[backdrop-filter]:backdrop-blur-md p-6 sm:p-8 text-center">
+      <div className="w-full max-w-xl p-6 sm:p-8 text-center">
         <div className="text-[11px] uppercase tracking-[0.18em] text-white/60">
           Booking confirmed
         </div>

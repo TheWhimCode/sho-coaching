@@ -94,12 +94,16 @@ function renderQuestionWithGradientItem(itemName: string) {
 }
 
 export default function ItemsOptions({
+  dayKey,
+  itemId,
   targets,
   inventory,
   trueGold,
   storageKey,
   onSolved,
 }: {
+  dayKey: string;
+  itemId: string;
   targets: { id: string; name: string; icon: string }[];
   inventory: { id: string; name: string; icon: string }[];
   trueGold: number;
@@ -149,6 +153,18 @@ export default function ItemsOptions({
     let direction: Direction = "correct";
     if (inputNumber < trueGold) direction = "low";
     if (inputNumber > trueGold) direction = "high";
+
+    if (dayKey && itemId) {
+      fetch("/api/skillcheck/items/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dayKey,
+          itemId,
+          correct: direction === "correct",
+        }),
+      }).catch(() => {});
+    }
 
     const nextAttempt: Attempt = { guess: inputNumber, direction, delta };
 

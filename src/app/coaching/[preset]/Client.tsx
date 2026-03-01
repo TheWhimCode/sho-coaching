@@ -9,6 +9,7 @@ import type { SessionConfig } from "@/engine/session/model/session";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
 import { computePriceEUR } from "@/engine/session";
 import { getPreset, type Preset } from "@/engine/session/rules/preset";
+import { titlesByPreset } from "@/engine/session/metadata/labels";
 import { useSearchParams } from "next/navigation";
 import { defineSession } from "@/engine/session/config/defineSession";
 
@@ -124,6 +125,12 @@ export default function Client({ preset }: { preset: string }) {
     );
   }, [session.liveMin, session.followups, session.liveBlocks, session.productId]);
 
+  // Sync document title with current preset (e.g. "VOD Review" → "Instant Insights" when duration changes)
+  useEffect(() => {
+    const label = titlesByPreset[activePreset] ?? activePreset;
+    document.title = `${label} | Sho`;
+  }, [activePreset]);
+
   // ✅ Keep URL in sync with session changes, including the /vod|/signature part.
   // Uses replaceState (no navigation), and does NOT re-trigger init because init reads initialQueryRef.
   // ⚠️ Guard: never overwrite URL when user has navigated to checkout (race: timeout can fire during navigation).
@@ -147,8 +154,9 @@ export default function Client({ preset }: { preset: string }) {
       sp.set("followups", String(session.followups));
       sp.set("live", String(session.liveBlocks));
 
-      // Optional: keep open/focus only while drawer is open (remove if you want them persistent)
-      if (!drawerOpen) {
+      // Remove open/focus when drawer is closed, but preserve them if URL has open=customize
+      // (e.g. link from follow-up section) so the drawer can open on the delayed effect
+      if (!drawerOpen && sp.get("open") !== "customize") {
         sp.delete("open");
         sp.delete("focus");
       }

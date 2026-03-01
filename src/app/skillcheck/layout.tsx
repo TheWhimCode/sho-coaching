@@ -1,3 +1,5 @@
+import SkillcheckRail from "./SkillcheckRail";
+
 export default function SkillcheckLayout({
   children,
 }: {
@@ -5,6 +7,9 @@ export default function SkillcheckLayout({
 }) {
   return (
     <>
+      {/* Left-edge rail: expand on hover — games + streak */}
+      <SkillcheckRail />
+
       {/* Ambient page background */}
       <div
         aria-hidden
