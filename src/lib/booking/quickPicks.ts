@@ -3,11 +3,19 @@
 export type QuickIn = { id: string; startISO: string };
 export type QuickOut = QuickIn & { label?: "ASAP" | "Weekend" };
 
+/** Only include slots at :00 or :30 UTC so quickpicks match calendar (same rule as Calendar startsByDay). */
+function onHalfHourUTC(slots: QuickIn[]): QuickIn[] {
+  return slots.filter(
+    (s) => new Date(s.startISO).getUTCMinutes() % 30 === 0
+  );
+}
+
 export function computeQuickPicks(
   slots: QuickIn[],
   now = new Date()
 ): QuickOut[] {
-  const sorted = [...slots].sort(
+  const halfHour = onHalfHourUTC(slots);
+  const sorted = [...halfHour].sort(
     (a, b) => new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
   );
   if (!sorted.length) return [];
