@@ -5,8 +5,8 @@ type Step = { title: string };
 
 export const stepsByPreset: Record<Preset, Step[]> = {
   instant: [
-    { title: "Bring your questions" },
-    { title: "Hop on Discord" },
+    { title: "Schedule same-day sessions" },
+    { title: "Bring questions & hop on Discord" },
     { title: "Cut straight to the answers" },
     { title: "Leave with clear principles" },
   ],

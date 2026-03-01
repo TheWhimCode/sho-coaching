@@ -258,7 +258,7 @@ export default function WheelPicker({
                         role="option"
                         aria-selected={isSelected}
                         className={clsx(
-                          "snap-center flex items-center justify-center select-none",
+                          "snap-center flex items-center justify-center select-none cursor-pointer",
                           "text-white transition-[transform,opacity] duration-150 ease-out"
                         )}
                         style={{

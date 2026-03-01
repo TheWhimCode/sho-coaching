@@ -42,7 +42,7 @@ export default function AvailableSlots({
             key={s.id}
             onClick={() => onPick?.(s.id)}
             className="h-10 w-full rounded-xl px-3 text-sm ring-1 ring-white/10 
-                       hover:ring-white/30 text-left transition-colors"
+                       hover:ring-white/30 text-left transition-colors cursor-pointer"
             title={dt.toLocaleString()}
           >
             <div className="flex items-center justify-between">

@@ -53,7 +53,7 @@ export default function PresetButton({
         onMouseEnter={() => onHover(preset)}
         onMouseLeave={() => onHover(null)}
         className={[
-          "relative w-full rounded-xl text-left transition overflow-hidden border",
+          "relative w-full rounded-xl text-left transition overflow-hidden border cursor-pointer",
           isMobile
             ? "bg-black/[.04] hover:bg-black/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]"
             : "bg-white/[.04] hover:bg-white/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]",

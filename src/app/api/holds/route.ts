@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rateLimit";
 
+import { getLeadMinutesOverride } from "@/engine/scheduling/presetLead";
 import { holdSlots } from "@/engine/scheduling/holds/holdSlots";
 import { releaseHold } from "@/engine/scheduling/holds/releaseHold";
 
@@ -15,6 +16,7 @@ const PostZ = z.object({
   slotId: z.string().min(1).max(64),
   liveMinutes: z.coerce.number().int().min(30).max(240),
   holdKey: z.string().min(1).max(128).optional(),
+  preset: z.string().max(64).optional(),
 });
 
 const DelZ = z.object({
@@ -50,11 +52,11 @@ export async function POST(req: Request) {
     return noStore({ error: "bad_request" }, 400);
   }
 
-  const result = await holdSlots(
-    body.slotId,
-    body.liveMinutes,
-    { holdKey: body.holdKey }
-  );
+  const leadMinutes = getLeadMinutesOverride(body.preset);
+  const result = await holdSlots(body.slotId, body.liveMinutes, {
+    holdKey: body.holdKey,
+    leadMinutes,
+  });
 
   if (!result) {
     return noStore({ error: "unavailable" }, 409);

@@ -48,10 +48,10 @@ export default function CustomizationControls({
     "ring-1 ring-white/12 shadow-[inset_0_0_0_1px_rgba(0,0,0,.28)] " +
     "hover:bg-white/[.12] hover:ring-[rgba(120,160,255,.45)] " +
     "hover:shadow-[0_0_10px_rgba(56,124,255,.38),inset_0_0_0_1px_rgba(0,0,0,.28)] " +
-    "active:scale-[.98] transition disabled:opacity-45 disabled:shadow-none disabled:cursor-not-allowed";
+    "active:scale-[.98] transition cursor-pointer disabled:opacity-45 disabled:shadow-none disabled:cursor-not-allowed";
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 pl-0.5">
 
       {/* 1 — Duration */}
       <section>

@@ -40,8 +40,14 @@ type Props = {
   isCustomizingCenter?: boolean;
   isDrawerOpen?: boolean;
   liveBlocks?: number;
-productId?: ProductId;
+  productId?: ProductId;
   presetOverride?: Preset;
+  /** If user returned from checkout (cancel), pass their holdKey so their held slot appears in suggested times */
+  userHoldKey?: string | null;
+  /** When provided (null or array), parent owns slot data; quickpicks and calendar use this. Avoids duplicate fetch and keeps calendar in sync. */
+  slotsFromParent?: Slot[] | null;
+  /** Loading state when parent is fetching slots (so quickpicks show skeleton during refetch e.g. VOD → Instant). */
+  slotsLoadingFromParent?: boolean;
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -107,6 +113,9 @@ export default function SessionHero({
   liveBlocks = 0,
   presetOverride,
   productId,
+  userHoldKey = null,
+  slotsFromParent,
+  slotsLoadingFromParent = false,
 }: Props) {
 
   // ✔ unified engine logic
@@ -128,7 +137,7 @@ export default function SessionHero({
   const leftSteps = stepsByPreset[preset];
 
   const [autoSlots, setAutoSlots] = useState<UiSlot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingSelf, setLoadingSelf] = useState(true);
   const [seedSlots, setSeedSlots] = useState<Slot[]>([]);
   const [quickPool, setQuickPool] = useState<{ id: string; startISO: string }[]>([]);
   const [showCal, setShowCal] = useState(false);
@@ -168,43 +177,68 @@ export default function SessionHero({
     return () => window.removeEventListener("resize", calc);
   }, []);
 
-  // ---- data fetching unchanged
+  const parentControlled = slotsFromParent !== undefined;
+
+  const quickPoolFromParent = useMemo(
+    () =>
+      (slotsFromParent ?? []).map((r) => ({
+        id: r.id,
+        startISO: r.startTime ?? (r as { startISO?: string }).startISO ?? "",
+      })),
+    [slotsFromParent]
+  );
+
+  const loading = parentControlled ? slotsLoadingFromParent : loadingSelf;
+
+  // When parent provides slots, don't fetch; quickpicks + calendar use same data. When not, fetch here.
   useEffect(() => {
+    if (parentControlled) return;
     let on = true;
+    setLoadingSelf(true);
     (async () => {
       try {
-const start = new Date();
-
-const end = new Date(start);
-end.setDate(start.getDate() + 21);
-end.setUTCHours(23, 59, 59, 999);
-
-const rows = await fetchSlots(start, end, liveMinutes);
-
+        const start = new Date();
+        const end = new Date(start);
+        end.setDate(start.getDate() + 21);
+        end.setUTCHours(23, 59, 59, 999);
+        const rows = await fetchSlots(start, end, liveMinutes, userHoldKey, preset);
         if (!on) return;
         setSeedSlots(rows);
-        setQuickPool(rows.map(r => ({
-          id: r.id,
-          startISO: r.startTime ?? (r as any).startISO
-        })));
-      } catch {}
+        setQuickPool(
+          rows.map((r) => ({
+            id: r.id,
+            startISO: r.startTime ?? (r as { startISO?: string }).startISO ?? "",
+          }))
+        );
+      } catch {
+        if (on) {
+          setSeedSlots([]);
+          setQuickPool([]);
+        }
+      } finally {
+        if (on) setLoadingSelf(false);
+      }
     })();
-    return () => { on = false; };
-  }, [liveMinutes]);
+    return () => {
+      on = false;
+    };
+  }, [parentControlled, liveMinutes, userHoldKey, preset]);
 
   useEffect(() => {
+    if (parentControlled) return;
     let on = true;
-    setLoading(true);
+    setLoadingSelf(true);
     (async () => {
       try {
-const s = suggestStarts(
-  seedSlots.map(r => ({
-    id: r.id,
-    startTime: r.startTime,
-  }))
-);        if (!on) return;
+        const s = suggestStarts(
+          seedSlots.map((r) => ({
+            id: r.id,
+            startTime: r.startTime,
+          }))
+        );
+        if (!on) return;
         setAutoSlots(
-          s.map(x => ({
+          s.map((x) => ({
             id: x.id,
             startISO: x.startTime,
             durationMin: liveMinutes,
@@ -212,13 +246,16 @@ const s = suggestStarts(
           }))
         );
       } finally {
-        if (on) setLoading(false);
+        if (on) setLoadingSelf(false);
       }
     })();
-    return () => { on = false; };
-  }, [liveMinutes]);
+    return () => {
+      on = false;
+    };
+  }, [parentControlled, liveMinutes, seedSlots]);
 
-  const quick = useMemo(() => computeQuickPicks(quickPool), [quickPool]);
+  const effectiveQuickPool = parentControlled ? quickPoolFromParent : quickPool;
+  const quick = useMemo(() => computeQuickPicks(effectiveQuickPool), [effectiveQuickPool]);
   const quickUiSlots: UiSlot[] = quick.map(q => ({
     id: q.id,
     startISO: q.startISO,
@@ -377,13 +414,14 @@ const s = suggestStarts(
         <Calendar
           sessionType={titlesByPreset[preset]}
           liveMinutes={liveMinutes}
-          prefetchedSlots={seedSlots}
+          prefetchedSlots={parentControlled ? (slotsFromParent ?? []) : seedSlots}
           initialSlotId={initialSlotId}
           onClose={() => setShowCal(false)}
           liveBlocks={session.liveBlocks}
           followups={session.followups}
-            productId={session.productId}
-
+          productId={session.productId}
+          userHoldKey={userHoldKey}
+          preset={preset}
         />
       )}
     </section>

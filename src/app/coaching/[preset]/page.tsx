@@ -27,7 +27,7 @@ export async function generateMetadata({
 
   const descriptions: Record<string, string> = {
     vod: "Get an in-depth analysis of your gameplay. All your questions will be answered.",
-    instant: "Fast, detailed answers on a budget. Fantastic value, especially for beginners.",
+    instant: "Fast, detailed answers on a budget. Same-day scheduling enabled, available today.",
     signature: "My take on the perfect coaching session. No information overload, yet highly informative.",
     custom: "A session tailored exactly to your needs.",
     rush: "Four-session bundle at a massive discount. Improvement plan included.",

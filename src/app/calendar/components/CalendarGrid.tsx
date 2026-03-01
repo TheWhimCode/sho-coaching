@@ -71,7 +71,7 @@ export default function CalendarGrid({
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => onMonthChange(addMonths(safeMonth, -1))}
-          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0d1b34] hover:bg-[#12264a] ring-1 ring-[rgba(146,180,255,.22)] text-white/90"
+          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0d1b34] hover:bg-[#12264a] ring-1 ring-[rgba(146,180,255,.22)] text-white/90 cursor-pointer"
         >
           <ArrowLeft size={16} />
         </button>
@@ -80,7 +80,7 @@ export default function CalendarGrid({
 
         <button
           onClick={() => onMonthChange(addMonths(safeMonth, 1))}
-          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0d1b34] hover:bg-[#12264a] ring-1 ring-[rgba(146,180,255,.22)] text-white/90"
+          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0d1b34] hover:bg-[#12264a] ring-1 ring-[rgba(146,180,255,.22)] text-white/90 cursor-pointer"
         >
           <ArrowRight size={16} />
         </button>
@@ -112,7 +112,7 @@ const key = dayKeyLocal(d);
               const today = isToday(d);
 
               const base =
-                "aspect-square rounded-xl text-sm transition-all relative overflow-hidden";
+                "aspect-square rounded-xl text-sm transition-all relative overflow-hidden cursor-pointer";
               const enabled =
                 "bg-[#0d1b34] hover:bg-[#15284a] text-white/90 ring-1 ring-[rgba(146,180,255,.18)]";
               const selectedCls = "bg-[#0d1b34] text-white selected-glow";

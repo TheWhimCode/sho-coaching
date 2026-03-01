@@ -9,9 +9,9 @@ export async function getBlockIdsByTime(
   startTime: Date,
   liveMinutes: number,
   tx: any,
-  opts?: { holdKey?: string }
+  opts?: { holdKey?: string; leadMinutes?: number }
 ) {
-  const { minStart, maxStart } = guards(new Date());
+  const { minStart, maxStart } = guards(new Date(), opts?.leadMinutes != null ? { leadMinutes: opts.leadMinutes } : undefined);
   if (startTime < minStart || startTime > maxStart) return null;
 
   if (CFG_SERVER.booking.PER_DAY_CAP > 0) {

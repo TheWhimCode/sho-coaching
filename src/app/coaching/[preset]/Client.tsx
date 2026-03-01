@@ -60,6 +60,10 @@ export default function Client({ preset }: { preset: string }) {
   const [initialSlotId, setInitialSlotId] = useState<string | undefined>();
   const [liveMinutes, setLiveMinutes] = useState(init.session.liveMin);
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
+  const [slotsLoading, setSlotsLoading] = useState(true);
+  const [userHoldKey, setUserHoldKey] = useState<string | null>(null);
+  const slotsLoadStartedAtRef = useRef(0);
+  const slotsLoadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [activePreset, setActivePreset] = useState<Preset>(() =>
     getPreset(
@@ -162,10 +166,20 @@ export default function Client({ preset }: { preset: string }) {
     return () => window.clearTimeout(t);
   }, [session.liveMin, session.followups, session.liveBlocks, session.productId, drawerOpen]);
 
+  const MIN_SKELETON_MS = 1000;
+
   useEffect(() => {
     let on = true;
+    setSlotsLoading(true);
+    slotsLoadStartedAtRef.current = Date.now();
+    if (slotsLoadTimeoutRef.current) {
+      clearTimeout(slotsLoadTimeoutRef.current);
+      slotsLoadTimeoutRef.current = null;
+    }
+
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    // Start from now so API guards (minStart) apply: Instant = 2h lead, others = default lead
+    const start = new Date(now.getTime());
     const end = new Date(start);
     end.setDate(end.getDate() + 14);
     end.setHours(23, 59, 59, 999);
@@ -174,15 +188,33 @@ export default function Client({ preset }: { preset: string }) {
 
     (async () => {
       try {
-        const data = await fetchSlots(start, end, totalMinutes);
+        const data = await fetchSlots(start, end, totalMinutes, userHoldKey, activePreset);
         if (on) setPrefetchedSlots(data);
-      } catch {}
+      } catch {
+        if (on) setPrefetchedSlots([]);
+      } finally {
+        const elapsed = Date.now() - slotsLoadStartedAtRef.current;
+        const remaining = MIN_SKELETON_MS - elapsed;
+        const applyDone = () => {
+          if (on) setSlotsLoading(false);
+          slotsLoadTimeoutRef.current = null;
+        };
+        if (remaining <= 0) {
+          applyDone();
+        } else {
+          slotsLoadTimeoutRef.current = setTimeout(applyDone, remaining);
+        }
+      }
     })();
 
     return () => {
       on = false;
+      if (slotsLoadTimeoutRef.current) {
+        clearTimeout(slotsLoadTimeoutRef.current);
+        slotsLoadTimeoutRef.current = null;
+      }
     };
-  }, [session.liveMin, session.liveBlocks]);
+  }, [session.liveMin, session.liveBlocks, userHoldKey, activePreset]);
 
   const totalMinutes = session.liveMin + session.liveBlocks * 45;
   const { priceEUR } = computePriceEUR(totalMinutes, session.followups);
@@ -207,7 +239,10 @@ export default function Client({ preset }: { preset: string }) {
           liveBlocks={session.liveBlocks}
           isCustomizingCenter={drawerOpen}
           isDrawerOpen={drawerOpen}
-          productId={session.productId} // <<<<< REQUIRED
+          productId={session.productId}
+          userHoldKey={userHoldKey}
+          slotsFromParent={prefetchedSlots ?? null}
+          slotsLoadingFromParent={slotsLoading}
           onCustomize={() => setDrawerOpen(true)}
           onOpenCalendar={({ slotId, liveMinutes }) => {
             setInitialSlotId(slotId);
@@ -226,7 +261,9 @@ export default function Client({ preset }: { preset: string }) {
               followups={session.followups}
               liveBlocks={session.liveBlocks}
               onClose={() => setCalendarOpen(false)}
-              productId={session.productId} // <-- this was missing
+              productId={session.productId}
+              userHoldKey={userHoldKey}
+              preset={activePreset}
             />
           )}
         </AnimatePresence>

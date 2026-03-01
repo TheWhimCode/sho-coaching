@@ -8,7 +8,7 @@ import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import { FooterProvider, useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { computePriceWithProduct, type SessionConfig } from "@/engine/session";
-import { sessionFromCheckoutPayload } from "@/engine/checkout";
+import { sessionFromCheckoutPayload, STEP_PAYMENT } from "@/engine/checkout";
 
 function BottomBar({
   step,
@@ -32,7 +32,7 @@ const { priceEUR } = computePriceWithProduct(session);
 const baseTotal = priceEUR;
 const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
 
-  const blockedByWaiver = flow.step === 2 && !flow.waiver;
+  const blockedByWaiver = flow.step === 3 && !flow.waiver;
   const disabled = footer.disabled || footer.loading || blockedByWaiver;
 
   const couponLocked = !!flow.clientSecret;
@@ -96,7 +96,7 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="w-full"
           >
-            {flow.step === 2 && (
+            {flow.step === 3 && (
               <>
                 <div className="relative h-[38px] mb-2">
                   {couponMsg && (
@@ -223,7 +223,7 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
 onClick={async () => {
   if (disabled || footer.loading) return;
 
-  if (flow.step < 2) {
+  if (flow.step < STEP_PAYMENT) {
     footer.onClick?.();
     return;
   }

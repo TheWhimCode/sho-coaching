@@ -157,6 +157,7 @@ export default function DayPicker({
             const selectedCls =
               "text-white selected-glow ring-1 ring-[rgba(146,180,255,.35)] relative z-[1]";
             const disabled = "opacity-40 cursor-not-allowed";
+            const enabledWithPointer = enabled + " cursor-pointer";
 
             return (
               <button
@@ -167,7 +168,7 @@ export default function DayPicker({
                   baseCls,
                   outerBorderFix,
                   cornerRounding,
-                  selected ? selectedCls : hasAvail ? enabled : disabled,
+                  selected ? selectedCls : hasAvail ? enabledWithPointer : disabled,
                 ].join(" ")}
               >
                 <div className="flex flex-col items-start leading-tight">

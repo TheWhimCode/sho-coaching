@@ -6,11 +6,19 @@ export type Slot = {
   status: SlotStatus;           // free | blocked | taken
 };
 
-export async function fetchSlots(from: Date, to: Date, _liveMinutes?: number): Promise<Slot[]> {
+export async function fetchSlots(
+  from: Date,
+  to: Date,
+  _liveMinutes?: number,
+  holdKey?: string | null,
+  preset?: string | null
+): Promise<Slot[]> {
   const params = new URLSearchParams({
     from: from.toISOString(),
     to: to.toISOString(),
-    ...( _liveMinutes ? { liveMinutes: String(_liveMinutes) } : {} ),
+    ...(_liveMinutes ? { liveMinutes: String(_liveMinutes) } : {}),
+    ...(holdKey ? { holdKey } : {}),
+    ...(preset ? { preset } : {}),
   });
   const res = await fetch(`/api/slots?${params.toString()}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load availability");

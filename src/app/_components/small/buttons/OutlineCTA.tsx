@@ -26,7 +26,7 @@ export default function OutlineCTA({
         "text-white",
         "bg-[rgba(16,24,40,.70)] hover:bg-[rgba(20,28,48,.85)]",
         "ring-1 ring-[var(--color-divider)]",
-        "disabled:opacity-40 disabled:cursor-not-allowed",
+        "cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed",
         widthClass,
         className, // 👈 sizing comes from parent
       ].join(" ")}

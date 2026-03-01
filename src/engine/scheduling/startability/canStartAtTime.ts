@@ -4,8 +4,9 @@ import { getBlockIdsByTime } from "./getBlockIdsByTime";
 export async function canStartAtTime(
   startTime: Date,
   liveMinutes: number,
-  tx = prisma
+  tx = prisma,
+  opts?: { leadMinutes?: number }
 ) {
-  const ids = await getBlockIdsByTime(startTime, liveMinutes, tx);
+  const ids = await getBlockIdsByTime(startTime, liveMinutes, tx, opts);
   return Array.isArray(ids) && ids.length > 0;
 }

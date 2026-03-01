@@ -1,10 +1,15 @@
 'use client';
 
-export async function holdSlot(slotId: string, liveMinutes: number, holdKey?: string) {
+export async function holdSlot(
+  slotId: string,
+  liveMinutes: number,
+  holdKey?: string,
+  preset?: string | null
+) {
   const res = await fetch("/api/holds", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ slotId, liveMinutes, holdKey }),
+    body: JSON.stringify({ slotId, liveMinutes, holdKey, preset }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error || "Hold failed");

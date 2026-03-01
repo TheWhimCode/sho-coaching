@@ -34,10 +34,11 @@ export type BookingCreateBody = {
   couponDiscount: number;
   holdKey: string;
   productId: string | null;
+  champions: string[];
 };
 
 /**
- * Build the JSON body for POST /api/booking/create from payload + contact + waiver + coupon.
+ * Build the JSON body for POST /api/booking/create from payload + contact + waiver + coupon + champions.
  */
 export function buildBookingCreateBody(
   payload: Pick<Payload, "slotId" | "holdKey" | "productId" | "followups">,
@@ -45,7 +46,8 @@ export function buildBookingCreateBody(
   totalLiveMinutes: number,
   contact: BookingCreateContact,
   waiver: boolean,
-  coupon: BookingCreateCoupon
+  coupon: BookingCreateCoupon,
+  champions: string[]
 ): BookingCreateBody {
   return {
     studentId: contact.studentId ?? null,
@@ -62,5 +64,6 @@ export function buildBookingCreateBody(
     couponDiscount: coupon.discount,
     holdKey: payload.holdKey,
     productId: payload.productId ?? null,
+    champions,
   };
 }

@@ -120,7 +120,7 @@ export default function CustomizeDrawer({ open, onClose, session, onChange, high
             className={[
               "fixed inset-0 w-screen h-[100svh] text-white",
               "bg-black/35 backdrop-blur-[4px]",
-              "overflow-y-auto overflow-x-hidden overscroll-contain",
+              "overflow-y-auto overflow-x-visible overscroll-contain",
               "pb-[env(safe-area-inset-bottom)]",
               "md:absolute md:inset-auto md:left-0 md:top-0 md:h-full md:w-[min(440px,92vw)] md:bg-transparent md:backdrop-blur-0 md:overflow-y-auto",
             ].join(" ")}
@@ -147,7 +147,7 @@ transition={{
               </div>
             ) : (
               <GlassPanel className="h-full w-full rounded-none text-white md:border-r md:border-white/10">
-                <div className="p-6 h-full overflow-y-auto" onMouseDown={stopMouseDown}>
+                <div className="p-6 h-full overflow-y-auto overflow-x-visible" onMouseDown={stopMouseDown}>
                   <Header onClose={() => { clearHighlight(); onClose(); }} />
                   <Content
                     session={session}
@@ -174,7 +174,7 @@ function Header({ onClose }: { onClose: () => void }) {
       <button
         onClick={onClose}
         aria-label="Close customization drawer"
-        className="p-2 rounded-md hover:bg-white/10 transition"
+        className="p-2 rounded-md hover:bg-white/10 transition cursor-pointer"
       >
         <X size={22} weight="bold" />
       </button>
@@ -205,7 +205,7 @@ function Content({
   }, [isBundle]);
 
   return (
-    <div>
+    <div className="overflow-visible pl-px">
 
       {/* CUSTOM COLLAPSIBLE */}
       <AnimatePresence initial={false}>
@@ -227,7 +227,7 @@ function Content({
   }}
               className="relative w-full rounded-xl px-4 py-3 text-left border
                         bg-white/[.04] hover:bg-white/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]
-                        border-white/12 flex justify-between items-center transition"
+                        border-white/12 flex justify-between items-center transition cursor-pointer"
             >
               <span aria-hidden className="pointer-events-none absolute inset-0 rounded-xl bg-dottexture" />
               <span className="relative font-semibold text-[15px]">Adjust time</span>

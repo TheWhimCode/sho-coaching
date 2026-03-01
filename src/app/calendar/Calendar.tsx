@@ -32,6 +32,10 @@ type Props = {
   prefetchedSlots?: Slot[];
   liveBlocks?: number;
   productId?: ProductId;
+  /** If user returned from checkout (cancel), pass their holdKey so their held slot is still selectable */
+  userHoldKey?: string | null;
+  /** e.g. "instant" for Instant Insights — used for scheduling lead-time override (2h buffer) */
+  preset?: string | null;
 };
 
 const overlay: Variants = {
@@ -93,6 +97,8 @@ export default function Calendar({
   prefetchedSlots,
   liveBlocks = 0,
   productId,
+  userHoldKey: userHoldKeyProp = null,
+  preset: presetProp = null,
 }: Props) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -139,7 +145,7 @@ export default function Calendar({
     }
   }, [prefetchedSlots, selectedSlotId]);
 
-// Fetch slots (only if no prefetched data)
+// Fetch slots (only if no prefetched data); pass userHoldKey so user can reselect their held slot after cancel
 useEffect(() => {
   if (prefetchedSlots?.length) return;
 
@@ -156,7 +162,7 @@ useEffect(() => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchSlots(start, end, totalMinutes);
+      const data = await fetchSlots(start, end, totalMinutes, holdKey ?? userHoldKeyProp, presetProp);
       if (!ignore) setSlots(data);
     } catch (e) {
       if (!ignore) {
@@ -170,7 +176,7 @@ useEffect(() => {
   return () => {
     ignore = true;
   };
-}, [totalMinutes, prefetchedSlots]);
+}, [totalMinutes, prefetchedSlots, holdKey, userHoldKeyProp, presetProp]);
 
 
 
@@ -261,7 +267,8 @@ const displayableDayKeys = useMemo(
       const { holdKey: k, slotIds } = await holdSlot(
         selectedSlotId,
         totalMinutes,
-        holdKey || undefined
+        holdKey || userHoldKeyProp || undefined,
+        presetProp
       );
       setHoldKey(k);
       if (typeof window !== "undefined") {
@@ -293,7 +300,7 @@ const displayableDayKeys = useMemo(
     }
   }
 
-  // Release hold if closed without going to checkout
+  // Release hold if closed without going to checkout; clear persisted holdKey so next visit doesn't treat slots as theirs
   useEffect(() => {
     return () => {
       if (goingToCheckout.current) return;
@@ -302,6 +309,7 @@ const displayableDayKeys = useMemo(
         !window.location.pathname.startsWith("/checkout")
       ) {
         releaseHold(holdKey || undefined);
+        sessionStorage.removeItem("checkout:holdKey");
       }
     };
   }, [holdKey]);
@@ -424,7 +432,7 @@ const displayableDayKeys = useMemo(
                                 <button
                                   type="button"
                                   onClick={() => goStep("day", -1)}
-                                  className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white"
+                                  className="absolute left-0 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white cursor-pointer"
                                 >
                                   <ArrowLeft className="w-4 h-4" />
                                   Back

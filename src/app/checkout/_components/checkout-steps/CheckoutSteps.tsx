@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import StepContact from "./StepContact";
+import StepChampion from "./StepChampion";
 import StepChoose from "./StepChoose";
 import StepSummary from "./StepSummary";
 
@@ -23,6 +24,10 @@ export default function CheckoutSteps({
     notes,
     setNotes,
     discordIdentity,
+    champion,
+    handleChampionChange,
+    champion2,
+    setChampion2,
     payMethod,
     payload,
     breakdown,
@@ -65,8 +70,31 @@ export default function CheckoutSteps({
           </motion.div>
         )}
 
-        {/* Step 1: Choose payment method */}
+        {/* Step 1: Champion */}
         {step === 1 && (
+          <motion.div
+            key="step-champion"
+            custom={dir}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="flex flex-col min-h-0 overflow-visible"
+          >
+            <StepChampion
+              champion={champion}
+              onChampionChange={handleChampionChange}
+              champion2={champion2}
+              onChampion2Change={setChampion2}
+              goBack={goBack}
+              onSubmit={goNext}
+            />
+          </motion.div>
+        )}
+
+        {/* Step 2: Choose payment method */}
+        {step === 2 && (
           <motion.div
             key="step-choose"
             custom={dir}
@@ -81,8 +109,8 @@ export default function CheckoutSteps({
           </motion.div>
         )}
 
-        {/* Step 2: Order summary / confirm */}
-        {step === 2 && (
+        {/* Step 3: Order summary / confirm */}
+        {step === 3 && (
           <motion.div
             key="step-summary"
             custom={dir}

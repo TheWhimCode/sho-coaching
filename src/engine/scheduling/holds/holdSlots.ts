@@ -8,7 +8,7 @@ import { getHoldUntil } from "./policy";
 export async function holdSlots(
   slotId: string,
   liveMinutes: number,
-  opts?: { holdKey?: string },
+  opts?: { holdKey?: string; leadMinutes?: number },
   tx = prisma
 ) {
   const clientKey = opts?.holdKey || crypto.randomUUID();
@@ -23,7 +23,7 @@ export async function holdSlots(
     start.startTime,
     liveMinutes,
     tx,
-    { holdKey: clientKey }
+    { holdKey: clientKey, leadMinutes: opts?.leadMinutes }
   );
   if (!blockIds) return null;
 

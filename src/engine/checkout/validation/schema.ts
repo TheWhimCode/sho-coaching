@@ -17,6 +17,7 @@ export const CheckoutZ = z.object({
   followups: z.number().int().min(0).max(2).optional().default(0),
   liveBlocks: z.number().int().min(0).max(2).optional().default(0),
   holdKey: z.string().optional(),
+  champions: z.array(z.string().trim().max(64)).optional().default([]),
 });
 
 export type CheckoutZ = z.infer<typeof CheckoutZ>;

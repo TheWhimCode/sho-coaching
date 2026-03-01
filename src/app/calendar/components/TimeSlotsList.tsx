@@ -65,7 +65,7 @@ export default function TimeSlotsList({
 <button
   onClick={() => onSelectSlot(id)}
   className={[
-    "w-full px-3.5 py-4 rounded-xl text-sm transition supports-[backdrop-filter]:backdrop-blur-md leading-none",
+    "w-full px-3.5 py-4 rounded-xl text-sm transition supports-[backdrop-filter]:backdrop-blur-md leading-none cursor-pointer",
     isActive
       ? "bg-[#0d1b34] text-white selected-glow"
       : "bg-[#0d1b34] hover:bg-[#15284a] text-white/90 ring-1 ring-[rgba(146,180,255,.18)]",

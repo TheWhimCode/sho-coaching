@@ -12,6 +12,7 @@ import {
   type SavedCard,
   type CheckoutStep,
   LAST_STEP,
+  STEP_CHOOSE,
   totalLiveMinutesFromPayload,
   sessionBlockTitleFromPayload,
   mergeWithDefaultPayload,
@@ -86,6 +87,8 @@ const [step, setStep] = useState<CheckoutStep>(0);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [studentName, setStudentName] = useState<string | null>(null);
   const [studentCoupon, setStudentCoupon] = useState<{ code: string; value: number } | null>(null);
+  const [champion, setChampion] = useState<string | null>(null);
+  const [champion2, setChampion2] = useState<string | null>(null);
   const currentMethodRef = useRef<PayMethod>("");
   const [waiver, setWaiver] = useState(false);
 
@@ -95,6 +98,11 @@ const [step, setStep] = useState<CheckoutStep>(0);
   const applyCoupon = (amount: number, code: string) => {
     setCouponDiscount(amount);
     setCouponCode(code);
+  };
+
+  const handleChampionChange = (champ: string) => {
+    setChampion(champ);
+    setChampion2((prev) => (prev === champ ? null : prev));
   };
 
   useEffect(() => {
@@ -221,7 +229,7 @@ const [step, setStep] = useState<CheckoutStep>(0);
     setSavedCard(null);
 
 setDir(1);
-setStep(2);  // ok, but now guaranteed as a valid step
+setStep(3);  // summary + pay is now step 3
 
     setLoadingIntent(true);
 
@@ -238,7 +246,8 @@ setStep(2);  // ok, but now guaranteed as a valid step
           notes,
         },
         waiver,
-        { code: couponCode, discount: couponDiscount }
+        { code: couponCode, discount: couponDiscount },
+        [champion, champion2].filter((c): c is string => !!c)
       );
       const make = await fetch("/api/booking/create", {
         method: "POST",
@@ -247,7 +256,8 @@ setStep(2);  // ok, but now guaranteed as a valid step
       });
 
       if (!make.ok) {
-        if (make.status === 409) setStep(0);
+        // 409 = hold_expired: send back to choose step so user can click Back to reselect time
+        if (make.status === 409) setStep(STEP_CHOOSE);
         setLoadingIntent(false);
         return;
       }
@@ -276,7 +286,7 @@ setStep(2);  // ok, but now guaranteed as a valid step
 
       if (res.status === 409) {
         console.warn("Selected start time can’t fit this duration.");
-        setStep(0);
+        setStep(STEP_CHOOSE);
         return null;
       }
 
@@ -358,6 +368,12 @@ setStep(2);  // ok, but now guaranteed as a valid step
     setStudentId,
     studentName,
     studentCoupon,
+
+    champion,
+    setChampion,
+    handleChampionChange,
+    champion2,
+    setChampion2,
 
     waiver,
     setWaiver,

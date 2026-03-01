@@ -33,6 +33,8 @@ export async function GET(req: Request) {
   const from = new Date(searchParams.get("from") ?? "");
   const to = new Date(searchParams.get("to") ?? "");
   const liveMinutes = Number(searchParams.get("liveMinutes") ?? 60);
+  const holdKey = searchParams.get("holdKey")?.trim() || undefined;
+  const preset = searchParams.get("preset")?.trim() || undefined;
 
   if (!isFinite(from.getTime()) || !isFinite(to.getTime()) || to <= from) {
     return noStore({ error: "invalid_range" }, 400);
@@ -42,6 +44,8 @@ export async function GET(req: Request) {
     from,
     to,
     liveMinutes,
+    holdKey,
+    preset,
   });
 
   return noStore(

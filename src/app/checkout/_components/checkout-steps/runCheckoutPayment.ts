@@ -67,9 +67,26 @@ export async function runCheckoutPayment(params: RunCheckoutPaymentParams): Prom
     const paymentElement = elements.create("payment");
     paymentElement.mount(`#${paymentElementId}`);
 
-    // Give the Payment Element (especially PayPal in a hidden container) time to initialize
-    // before confirmPayment; otherwise the first attempt can hang on "Just a moment..."
-    await new Promise((r) => setTimeout(r, 300));
+    // Wait for Payment Element (especially PayPal) to be ready before confirmPayment.
+    // A fixed delay is unreliable; the first attempt can hang on "Just a moment..." until
+    // the user goes back and retries. Using the ready event fixes this.
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        try {
+          paymentElement.off("ready", onReady);
+        } catch {
+          /* ignore */
+        }
+        clearTimeout(timer);
+        resolve();
+      };
+      const onReady = finish;
+      paymentElement.on("ready", onReady);
+      const timer = setTimeout(finish, 8000); // fallback if ready never fires
+    });
 
     const result = await stripe.confirmPayment({
       elements,

@@ -24,7 +24,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const { slotId, liveMinutes, followups } = parsed.data;
+  const { slotId, liveMinutes, followups, champions: championsFromSchema } = parsed.data;
+
+  const champions = Array.isArray(championsFromSchema) ? championsFromSchema : [];
 
   const holdKey: string | null = body.holdKey ?? null;
   if (!holdKey) {
@@ -96,6 +98,7 @@ export async function POST(req: Request) {
           waiverAccepted,
           waiverIp,
           waiverAcceptedAt,
+          champions,
         },
         select: { id: true },
       });
@@ -127,6 +130,7 @@ export async function POST(req: Request) {
         waiverIp,
         waiverAcceptedAt,
         status: "unpaid",
+        champions,
       },
       select: { id: true },
     });

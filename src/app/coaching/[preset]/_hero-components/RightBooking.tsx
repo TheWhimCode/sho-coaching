@@ -46,7 +46,7 @@ export default function RightBookingPanel({
           {onCustomize && (
             <button
               onClick={onCustomize}
-              className="w-full rounded-xl px-5 py-3 text-white/80 font-medium bg-white/10 hover:bg-white/15 ring-1 ring-white/15 transition"
+              className="w-full rounded-xl px-5 py-3 text-white/80 font-medium bg-white/10 hover:bg-white/15 ring-1 ring-white/15 transition cursor-pointer"
             >
               Customize Session
             </button>

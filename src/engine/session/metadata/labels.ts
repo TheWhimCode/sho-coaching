@@ -11,7 +11,7 @@ export const titlesByPreset: Record<Preset, string> = {
 };
 
 export const taglinesByPreset: Record<Preset, string> = {
-  instant: "Clarity in minutes",
+  instant: "Clarity — Today",
   signature: "Designed to make you climb",
   vod: "Rewind. Analyze. Improve.",
   custom: "Your goals, your path",
