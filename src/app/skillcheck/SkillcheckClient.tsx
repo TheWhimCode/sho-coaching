@@ -65,7 +65,7 @@ export default function SkillcheckClient() {
             </span>
           </h1>
 
-          <p className="mt-3 text-sm md:text-base opacity-70">Choose a mode</p>
+          <p className="mt-3 text-base md:text-lg opacity-70">Choose a gamemode to play</p>
 
           {streak.streakDays > 0 && (
             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-sm font-medium text-amber-200/90">

@@ -78,7 +78,7 @@ export default function LeaderboardClient() {
             </span>
           </h1>
 
-          <p className="mt-2 text-lg text-white/60">Longest streak of consecutive days played</p>
+          <p className="mt-2 text-lg text-white/60">To get on the leaderboard, get your streak to 5!</p>
 
           {/* Edit my name: only when user is on the board */}
           {myEntry && !showNameInput && (
