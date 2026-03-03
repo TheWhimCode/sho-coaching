@@ -183,7 +183,7 @@ export default function SuccessClient() {
         <div className="absolute inset-0 bg-black/20" />
       </motion.div>
 
-      <div className="relative z-10 px-6 md:px-8 pt-20 pb-16">
+      <div className="relative z-10 px-3 md:px-8 pt-20 pb-16">
         <div className="mx-auto max-w-lg space-y-4">
           {/* Block 1: loading → session info */}
           <GlassPanel className="relative p-5 md:p-6 flex flex-col justify-center min-h-[200px] ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)] overflow-hidden">
@@ -286,10 +286,10 @@ export default function SuccessClient() {
             >
               <h2 className="text-xl font-semibold mb-2">What&apos;s next?</h2>
               <p className="text-base text-white/80 leading-relaxed mb-4">
-                You&apos;ll receive a confirmation DM from Axom via Discord. If you haven't already, join the server.
+                You&apos;ll receive a confirmation DM from Axom via Discord. Join the server, if you haven&apos;t already.
               </p>
-              <div className="flex items-start justify-between gap-4">
-                <div className="relative h-14 w-56 shrink-0 overflow-hidden rounded-xl">
+              <div className="flex flex-col items-stretch sm:flex-row sm:items-start justify-between gap-4">
+                <div className="relative h-14 w-full sm:w-56 shrink-0 overflow-hidden rounded-xl">
                   <Image
                     src="/images/checkout/success/AxomIMG.png"
                     alt="Axom"

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Swords, Hourglass, Gem, Flame } from "lucide-react";
-import { getSkillcheckStreak, consumeStreakRenewedToday, STREAK_UPDATED_EVENT } from "@/app/skillcheck/streak";
+import { getSkillcheckStreak, consumeStreakRenewedToday, STREAK_UPDATED_EVENT, type StreakState } from "@/app/skillcheck/streak";
 import { syncLeaderboardOnVisit } from "@/app/skillcheck/leaderboard-client-id";
 
 const CELEBRATION_DURATION_MS = 2200;
@@ -71,7 +71,11 @@ const iconBtn =
 export default function SkillcheckRail() {
   const pathname = usePathname();
   // Start with 0 so server and client match (no hydration mismatch); load from localStorage after mount
-  const [streak, setStreak] = useState({ streakDays: 0 });
+  const [streak, setStreak] = useState<StreakState>({
+    streakDays: 0,
+    lastPlayedDate: null,
+    playedToday: false,
+  });
   const [expanded, setExpanded] = useState(false);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
@@ -106,6 +110,7 @@ export default function SkillcheckRail() {
   }, []);
 
   const streakActive = streak.streakDays > 0;
+  const streakRenewed = streakActive && streak.playedToday;
 
   return (
     <div
@@ -136,14 +141,18 @@ export default function SkillcheckRail() {
               <Flame
                 className={`h-7 w-7 ${
                   streakActive
-                    ? "fill-[var(--color-orange)] text-[var(--color-orange)]"
-                    : "fill-none text-[var(--color-orange)]"
+                    ? "text-[var(--color-orange)]"
+                    : "text-[var(--color-orange)]/60"
                 }`}
-                strokeWidth={streakActive ? 0 : 1.5}
+                strokeWidth={streakActive ? 1.6 : 1.1}
               />
             </span>
-            {/* Streak count under icon, absolutely positioned; same color as flame */}
-            <span className="pointer-events-none absolute left-1/2 bottom-0.5 -translate-x-1/2 text-[12px] leading-none text-[var(--color-orange)] whitespace-nowrap">
+            {/* Streak count under icon, absolutely positioned */}
+            <span
+              className={`pointer-events-none absolute left-1/2 bottom-0.5 -translate-x-1/2 text-[12px] leading-none whitespace-nowrap ${
+                streakRenewed ? "text-[var(--color-orange)]" : "text-white/40"
+              }`}
+            >
               {streak.streakDays}
             </span>
           </div>

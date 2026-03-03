@@ -31,7 +31,6 @@ export default function NavBar({
   className?: string;
   logoOnly?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [opacity, setOpacity] = useState(1);
 
   // hover state for logo-only reveal
@@ -89,7 +88,6 @@ export default function NavBar({
       return;
     }
 
-    setOpen(false);
     setHovered(false);
 
     setLogoOnlyReady(false);
@@ -118,11 +116,6 @@ export default function NavBar({
       ? "none"
       : "auto";
 
-  const toggleMenu = () => {
-    if (effectiveLogoOnly) return;
-    setOpen((v) => !v);
-  };
-
   const barClassName = effectiveLogoOnly
     ? logoOnlyReady
       ? "transition-[opacity] duration-500"
@@ -139,7 +132,7 @@ export default function NavBar({
       {/* LOGO */}
       <Link
         href="/coaching/"
-        className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 flex items-center"
+        className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 hidden md:flex items-center"
       >
         <Image
           src="/images/Logo_blue.png"
@@ -152,14 +145,14 @@ export default function NavBar({
         />
       </Link>
 
-      {/* Fading bar */}
+      {/* Desktop fading bar */}
       <div
         className={barClassName}
         style={{ opacity: barOpacity, pointerEvents: barPointerEvents }}
       >
         <div
           className={[
-            "absolute inset-0 -z-10 bg-[#0B0F1A]/30 border-b border-white/10",
+            "absolute inset-0 -z-10 bg-[#0B0F1A]/30 border-b border-white/10 hidden md:block",
             effectiveLogoOnly ? "" : "backdrop-blur-md",
           ].join(" ")}
         />
@@ -167,7 +160,7 @@ export default function NavBar({
         <nav className="w-full">
           <div className="relative h-16 md:h-20 flex items-center pl-14 md:pl-20 pr-4 md:pr-8">
             {/* LEFT */}
-            <span className="text-lg md:text-xl font-semibold tracking-tight">
+            <span className="hidden md:inline text-lg md:text-xl font-semibold tracking-tight">
               Sho Coaching
             </span>
 
@@ -251,97 +244,9 @@ export default function NavBar({
                   <FaXTwitter className="h-5 w-5" />
                 </Link>
               </div>
-
-              {/* Mobile hamburger */}
-              <button
-                className="md:hidden ml-2 p-2 rounded-lg hover:bg-white/10"
-                onClick={toggleMenu}
-                aria-label="Toggle menu"
-              >
-                {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
             </div>
           </div>
         </nav>
-
-        {/* Mobile dropdown */}
-        {open && !effectiveLogoOnly && (
-          <div className="md:hidden border-t border-white/10 bg-[#0B0F1A]/90 backdrop-blur-md">
-            <div className="px-4 py-3">
-              <div className="flex flex-col">
-                {NAV.map((it) =>
-                  it.external ? (
-                    <a
-                      key={it.href}
-                      href={it.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="py-2 text-base text-white/80 hover:text-orange-400"
-                      onClick={() => setOpen(false)}
-                    >
-                      {it.label}
-                    </a>
-                  ) : (
-                    <Link
-                      key={it.href}
-                      href={it.href}
-                      className="py-2 text-base text-white/80 hover:text-orange-400"
-                      onClick={() => setOpen(false)}
-                    >
-                      {it.label}
-                    </Link>
-                  )
-                )}
-
-                <div className="py-2 text-base text-white/50 flex items-center justify-between">
-                  <span>Courses</span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-white/10">
-                    Soon
-                  </span>
-                </div>
-
-                <Link
-                  href="/contact"
-                  className="py-2 text-base text-white/80 hover:text-orange-400"
-                  onClick={() => setOpen(false)}
-                >
-                  Contact
-                </Link>
-
-                <div className="mt-3 flex items-center gap-3">
-                  <Link
-                    href="https://www.youtube.com/@ShoCoaching"
-                    target="_blank"
-                    className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
-                  >
-                    <FaYoutube className="h-5 w-5" />
-                  </Link>
-                  <Link
-                    href="https://tiktok.com"
-                    target="_blank"
-                    className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
-                  >
-                    <FaTiktok className="h-5 w-5" />
-                  </Link>
-                  <Link
-                    href="https://discord.gg/HfvxZBp"
-                    target="_blank"
-                    className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
-                  >
-                    <FaDiscord className="h-5 w-5" />
-                  </Link>
-                  <Link
-                    href="https://x.com/Shoaching"
-                    target="_blank"
-                    className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
-                  >
-                    <FaXTwitter className="h-5 w-5" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Hero from "@/app/skillcheck/layout/Hero";
 import { Swords, Hourglass, Gem, Sparkles, Flame } from "lucide-react";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
-import { getSkillcheckStreak } from "@/app/skillcheck/streak";
+import { getSkillcheckStreak, type StreakState } from "@/app/skillcheck/streak";
 
 const modes = [
   {
@@ -52,7 +52,15 @@ const modes = [
 
 export default function SkillcheckClient() {
   const router = useRouter();
-  const [streak] = useState(() => getSkillcheckStreak());
+  const [streak, setStreak] = useState<StreakState>({
+    streakDays: 0,
+    lastPlayedDate: null,
+    playedToday: false,
+  });
+
+  useEffect(() => {
+    setStreak(getSkillcheckStreak());
+  }, []);
 
   return (
     <Hero

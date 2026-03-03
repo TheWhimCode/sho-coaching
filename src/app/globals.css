@@ -385,6 +385,16 @@ html, body {
   height: 10px !important;
 }
 
+@media (max-width: 768px) {
+  .os-theme-custom.os-scrollbar-vertical {
+    width: 5px !important;
+  }
+
+  .os-theme-custom.os-scrollbar-horizontal {
+    height: 5px !important;
+  }
+}
+
 /* Track (no background) */
 .os-theme-custom.os-scrollbar > .os-scrollbar-track {
   background: transparent !important;

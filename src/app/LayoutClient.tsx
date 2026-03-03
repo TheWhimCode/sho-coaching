@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import NavBar from "@/app/_components/NavBar";
+import MobileNav from "@/app/_components/MobileNav";
 import Footer from "@/app/_components/Footer";
 import ScrollbarInit from "@/app/ScrollbarInit";
 
@@ -32,6 +33,7 @@ const showFooter = !(isCoachingDetail || isCheckout || isQuickbook);
     <>
       <ScrollbarInit />
 
+      <MobileNav />
       <NavBar logoOnly={logoOnly} />
 
       <div className={showNavSpacer ? "h-16 md:h-20" : "h-0"} />
