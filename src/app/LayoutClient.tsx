@@ -15,11 +15,13 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
     p === "/checkout" ||
     (p.startsWith("/checkout/") && !p.startsWith("/checkout/success"));
 
+  const isCheckoutSuccess = p === "/checkout/success";
+
   const isSkillcheck = p === "/skillcheck" || p.startsWith("/skillcheck/");
 
   const isQuickbook = p === "/quickbook" || p.startsWith("/quickbook/");
-  
-  const logoOnly = isSkillcheck || isCoachingDetail || isCheckout || isQuickbook;
+
+  const logoOnly = isSkillcheck || isCoachingDetail || isCheckout || isCheckoutSuccess || isQuickbook;
 
   const showNavBar = true;
 

@@ -5,9 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { CheckCircle2, AlertCircle, Calendar, Clock } from "lucide-react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
+
+const BG_FADE_DURATION = 3;
+const EASE = [0.22, 1, 0.36, 1] as const;
+const TAKING_TOO_LONG_MS = 5000;
 
 type BookingInfo = {
   id: string;
@@ -34,45 +39,56 @@ function isBookingInfo(v: unknown): v is BookingInfo {
   );
 }
 
-const FAKE_BOOKING: BookingInfo = {
-  id: "test-booking-123",
-  sessionType: "VOD Review",
-  liveMinutes: 60,
-  followups: 1,
-  currency: "eur",
-  amountCents: 4900,
-  startISO: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), // ~2 days from now
-};
-
 export default function SuccessClient() {
   const sp = useSearchParams();
-
-  const isTestMode = sp?.get("test") === "1";
-
-  // Stripe-only
-  const redirectStatus = sp?.get("redirect_status") ?? undefined;
   const intentId = sp?.get("payment_intent") ?? undefined;
-
-  const ref = useMemo(
-    () => (isTestMode ? undefined : intentId ? intentId : undefined),
-    [isTestMode, intentId]
-  );
+  const ref = useMemo(() => intentId ?? undefined, [intentId]);
 
   const [booking, setBooking] = useState<BookingInfo | null>(null);
-  const [loading, setLoading] = useState<boolean>(!isTestMode && !!ref);
+  const [loading, setLoading] = useState<boolean>(!!ref);
   const [err, setErr] = useState<string | null>(null);
+  const [block1Phase, setBlock1Phase] = useState<"loading" | "revealing" | "revealed">(
+    "loading"
+  );
+  const [blocks2And3Visible, setBlocks2And3Visible] = useState(false);
+  const [contentHeightExpanded, setContentHeightExpanded] = useState(false);
+  const [takingTooLong, setTakingTooLong] = useState(false);
 
   useEffect(() => {
-    if (isTestMode) {
-      setBooking(FAKE_BOOKING);
-      setLoading(false);
-      setErr(null);
+    if (booking) {
+      setTakingTooLong(false);
       return;
     }
-  }, [isTestMode]);
+    const t = setTimeout(() => setTakingTooLong(true), TAKING_TOO_LONG_MS);
+    return () => clearTimeout(t);
+  }, [booking]);
 
   useEffect(() => {
-    if (!ref || isTestMode) return;
+    if (!booking && (loading || !ref)) {
+      setBlock1Phase("loading");
+      setBlocks2And3Visible(false);
+    }
+  }, [loading, booking, ref]);
+
+  useEffect(() => {
+    if (booking && !loading) {
+      setBlock1Phase("revealing");
+      setContentHeightExpanded(false);
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setContentHeightExpanded(true));
+      });
+      const t1 = setTimeout(() => setBlock1Phase("revealed"), 600);
+      const t2 = setTimeout(() => setBlocks2And3Visible(true), 2000);
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [booking, loading]);
+
+  useEffect(() => {
+    if (!ref) return;
     let cancelled = false;
     let attempts = 0;
     const maxAttempts = 12;
@@ -129,19 +145,25 @@ export default function SuccessClient() {
 
     setLoading(true);
     setErr(null);
-    tick();
+    const startTimer = setTimeout(() => tick(), 1000);
     return () => {
       cancelled = true;
+      clearTimeout(startTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, isTestMode]);
+  }, [ref]);
 
   const StatusIcon = err ? AlertCircle : CheckCircle2;
 
   return (
     <main className="relative min-h-[100svh] text-white">
-      {/* Particle background (same as presets) – temporary */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* Particle background – fade in like SessionHero */}
+      <motion.div
+        className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: BG_FADE_DURATION, ease: EASE }}
+      >
         <video
           src="/videos/customize/Particle1_slow.webm"
           autoPlay
@@ -159,16 +181,33 @@ export default function SuccessClient() {
           className="block md:hidden h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-black/20" />
-      </div>
+      </motion.div>
 
-      <div className="relative z-10 px-5 pt-32 pb-16">
+      <div className="relative z-10 px-6 md:px-8 pt-20 pb-16">
         <div className="mx-auto max-w-lg space-y-4">
           {/* Block 1: loading → session info */}
-          <GlassPanel className="p-4 md:p-5 flex flex-col min-h-[200px] ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)]">
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-8 gap-3 text-white/75">
-                <StatusIcon className="w-8 h-8 animate-pulse" />
-                <p className="text-sm">Finalizing your booking…</p>
+          <GlassPanel className="relative p-5 md:p-6 flex flex-col justify-center min-h-[200px] ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)] overflow-hidden">
+            {/* Nebula gradient overlay (loading / revealing) */}
+            {(block1Phase === "loading" || block1Phase === "revealing") && (
+              <div
+                className="absolute inset-0 transition-opacity duration-500 ease-out"
+                style={{
+                  opacity: block1Phase === "revealing" ? 0 : 1,
+                  background:
+                    "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(59, 130, 246, 0.22), transparent 50%), radial-gradient(ellipse 60% 80% at 80% 80%, rgba(99, 102, 241, 0.18), transparent 45%), radial-gradient(ellipse 70% 50% at 20% 60%, rgba(37, 99, 235, 0.15), transparent 50%)",
+                }}
+                aria-hidden
+              />
+            )}
+            {block1Phase === "loading" && (
+              <div className="relative flex flex-col items-center justify-center gap-3 text-white/90 min-h-[180px]">
+                <StatusIcon className="w-9 h-9 animate-pulse" />
+                <p className="text-sm font-medium">Finalizing your session</p>
+                {takingTooLong && (
+                  <p className="absolute bottom-4 left-0 right-0 text-sm text-white/70 text-center px-4">
+                    This is taking a while… please reach out to Sho.
+                  </p>
+                )}
               </div>
             )}
             {err && !loading && !booking && (
@@ -178,16 +217,24 @@ export default function SuccessClient() {
               </div>
             )}
             {booking && (
-              <div className="flex flex-col gap-4">
-                <h2 className="text-xl font-semibold text-white/95">
-                  Your session has been scheduled.
-                </h2>
-                <DividerWithLogo/>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 flex-1 items-start">
+              <div
+                className="relative grid transition-[grid-template-rows] duration-500 ease-out"
+                style={{ gridTemplateRows: contentHeightExpanded ? "1fr" : "0fr" }}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div
+                    className="flex flex-col gap-4 transition-opacity duration-500 ease-out"
+                    style={{ opacity: block1Phase === "loading" ? 0 : 1 }}
+                  >
+                    <h2 className="text-xl font-semibold text-white/95">
+                      Your session has been scheduled.
+                    </h2>
+                    <DividerWithLogo/>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 flex-1 items-start">
                   {/* Left: Scheduled Time header + date, then time – timezone */}
-                  <div className="flex flex-col text-base text-white/90 leading-tight">
+                  <div className="flex flex-col text-base leading-tight">
                     <div className="font-semibold text-white/95 text-base mb-1.5">Scheduled Time</div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-white/75">
                       <Calendar className="w-4 h-4 shrink-0 text-[#7289DA]" />
                       <span>
                         {new Date(booking.startISO).toLocaleString([], { weekday: "long" })}{" "}
@@ -195,7 +242,7 @@ export default function SuccessClient() {
                         {new Date(booking.startISO).toLocaleString([], { month: "long" })}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-2 text-white/75">
                       <Clock className="w-4 h-4 shrink-0 text-[#7289DA]" />
                       <span>
                         {new Date(booking.startISO).toLocaleString([], {
@@ -223,17 +270,25 @@ export default function SuccessClient() {
                     </ul>
                   </div>
                 </div>
+                  </div>
+                </div>
               </div>
             )}
           </GlassPanel>
 
           {booking && (
-            <GlassPanel className="p-4 md:p-5 flex flex-col ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)]">
+            <GlassPanel
+              className="p-5 md:p-6 flex flex-col justify-center min-h-[200px] ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)] transition-all duration-[1.1s] ease-out"
+              style={{
+                opacity: blocks2And3Visible ? 1 : 0,
+                transform: blocks2And3Visible ? "translateY(0)" : "translateY(6px)",
+              }}
+            >
               <h2 className="text-xl font-semibold mb-2">What&apos;s next?</h2>
               <p className="text-base text-white/80 leading-relaxed mb-4">
-                You&apos;ll receive a confirmation DM from Axom via Discord. Make sure you join the server.
+                You&apos;ll receive a confirmation DM from Axom via Discord. If you haven't already, join the server.
               </p>
-              <div className="flex items-end justify-between gap-4 mt-auto">
+              <div className="flex items-start justify-between gap-4">
                 <div className="relative h-14 w-56 shrink-0 overflow-hidden rounded-xl">
                   <Image
                     src="/images/checkout/success/AxomIMG.png"
@@ -250,13 +305,22 @@ export default function SuccessClient() {
           )}
 
           {booking && (
-            <GlassPanel className="p-4 md:p-5 flex flex-col ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)]">
-              <h2 className="text-xl font-semibold mb-2">Before we start</h2>
+            <GlassPanel
+              className="p-5 md:p-6 flex flex-col justify-center min-h-[200px] ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)] transition-all duration-[1.1s] ease-out"
+              style={{
+                opacity: blocks2And3Visible ? 1 : 0,
+                transform: blocks2And3Visible ? "translateY(0)" : "translateY(6px)",
+                transitionDelay: blocks2And3Visible ? "500ms" : "0ms",
+              }}
+            >
+              <h2 className="text-xl font-semibold mb-2">Quick reminder</h2>
               <ul className="text-base text-white/80 space-y-1 list-disc list-inside">
-                <li>Placeholder prep step you can customize.</li>
-                <li>Another short bullet about what to bring.</li>
-                <li>Any last-minute notes or expectations.</li>
+                <li>Make sure you played games on this patch to review.</li>
+                <li>Check your mic & audio before the session to avoid disaster.</li>
+                <li>Don't tilt. Ever.</li>
               </ul>
+              <h2 className="pt-2 text-md text-white/80 font-base mb-0">See you soon!</h2>
+
             </GlassPanel>
           )}
         </div>
