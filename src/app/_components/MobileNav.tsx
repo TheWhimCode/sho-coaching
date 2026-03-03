@@ -171,7 +171,7 @@ export default function MobileNav() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="pl-0 pr-4 py-2 rounded-full bg-white/5 text-white/90 hover:bg-white/10 hover:text-orange-400 transition"
+                  className="p-2 rounded-full bg-white/5 text-white/90 hover:bg-white/10 hover:text-orange-400 transition flex items-center justify-center"
                   initial={{ opacity: 0, x: -8 }}
                   animate={
                     showContent

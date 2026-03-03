@@ -159,11 +159,6 @@ export default function NavBar({
 
         <nav className="w-full">
           <div className="relative h-16 md:h-20 flex items-center pl-14 md:pl-20 pr-4 md:pr-8">
-            {/* LEFT */}
-            <span className="hidden md:inline text-lg md:text-xl font-semibold tracking-tight">
-              Sho Coaching
-            </span>
-
             {/* CENTER */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="hidden md:flex items-center gap-8 pointer-events-auto">

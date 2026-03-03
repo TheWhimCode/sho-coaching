@@ -314,7 +314,7 @@ export default function SuccessClient() {
               }}
             >
               <h2 className="text-xl font-semibold mb-2">Quick reminder</h2>
-              <ul className="text-base text-white/80 space-y-1 list-disc list-inside">
+              <ul className="text-base text-white/80 space-y-1 list-disc list-outside pl-5">
                 <li>Make sure you played games on this patch to review.</li>
                 <li>Check your mic & audio before the session to avoid disaster.</li>
                 <li>Don't tilt. Ever.</li>
