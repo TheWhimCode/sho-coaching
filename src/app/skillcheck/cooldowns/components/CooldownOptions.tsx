@@ -171,6 +171,7 @@ export default function CooldownOptions({
   function writeStorage(
     patch: Partial<{ attempts: Attempt[]; completed: boolean }>
   ) {
+    if (!storageKey) return;
     try {
       const raw = localStorage.getItem(storageKey);
       const s = raw ? JSON.parse(raw) : {};
@@ -180,6 +181,7 @@ export default function CooldownOptions({
 
   // ✅ NEW: restore attempts + solved state after reload (and whenever storageKey changes)
   useEffect(() => {
+    if (!storageKey) return;
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) return;

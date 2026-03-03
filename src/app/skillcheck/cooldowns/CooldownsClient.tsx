@@ -32,6 +32,7 @@ export default function CooldownsClient({
   initialActiveSpellId,
   askedRank,
   avgAttempts,
+  adminMode = false,
 }: {
   dayKey: string;
   champion: { id: string; name?: string; title?: string; icon: string };
@@ -39,6 +40,7 @@ export default function CooldownsClient({
   initialActiveSpellId?: string;
   askedRank?: number;
   avgAttempts: string;
+  adminMode?: boolean;
 }) {
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -79,11 +81,15 @@ export default function CooldownsClient({
 
   const storageKey = useMemo(
     () =>
-      `skillcheck:cooldowns:${dayKey}:${champion.id}:${activeSpell.id}:${rank}`,
-    [dayKey, champion.id, activeSpell.id, rank]
+      adminMode
+        ? ""
+        : `skillcheck:cooldowns:${dayKey}:${champion.id}:${activeSpell.id}:${rank}`,
+    [adminMode, dayKey, champion.id, activeSpell.id, rank]
   );
 
   useEffect(() => {
+    if (adminMode || !storageKey) return;
+
     const raw = localStorage.getItem(storageKey);
     if (!raw) return;
 
@@ -93,7 +99,7 @@ export default function CooldownsClient({
 
       setCompleted(isCompleted);
 
-      // ✅ NEW: replay success animation on every page load if already solved
+      // replay success animation on every page load if already solved
       if (isCompleted) {
         setShowSuccess(true);
       }
@@ -114,9 +120,10 @@ export default function CooldownsClient({
         }, SHOW_AND_SCROLL_DELAY_MS);
       }
     } catch {}
-  }, [storageKey]);
+  }, [adminMode, storageKey]);
 
   function revealAndScrollToResult() {
+    if (adminMode) return;
     if (hasScrolledRef.current) return;
     hasScrolledRef.current = true;
 
@@ -164,45 +171,48 @@ export default function CooldownsClient({
               rank={rank}
               storageKey={storageKey}
               onSolved={() => {
-                if (completed) return;
+                if (!adminMode) {
+                  if (completed) return;
 
-                setCompleted(true);
-                recordSkillcheckPlay();
-                syncToLeaderboardIfEligible();
-                markModeCompletedToday("cooldowns");
+                  setCompleted(true);
+                  recordSkillcheckPlay();
+                  syncToLeaderboardIfEligible();
+                  markModeCompletedToday("cooldowns");
 
-                setShowSuccess(true);
-                // ❌ removed: setTimeout(() => setShowSuccess(false), 1500);
+                  try {
+                    const raw = localStorage.getItem(storageKey);
+                    const s = raw ? JSON.parse(raw) : {};
+                    localStorage.setItem(
+                      storageKey,
+                      JSON.stringify({ ...s, completed: true })
+                    );
+                  } catch {
+                    localStorage.setItem(
+                      storageKey,
+                      JSON.stringify({ completed: true })
+                    );
+                  }
 
-                try {
-                  const raw = localStorage.getItem(storageKey);
-                  const s = raw ? JSON.parse(raw) : {};
-                  localStorage.setItem(
-                    storageKey,
-                    JSON.stringify({ ...s, completed: true })
-                  );
-                } catch {
-                  localStorage.setItem(
-                    storageKey,
-                    JSON.stringify({ completed: true })
-                  );
+                  revealAndScrollToResult();
                 }
 
-                revealAndScrollToResult();
+                setShowSuccess(true);
               }}
             />
 
-            <div ref={resultRef}>
-              {showResult && (
-                <CooldownResult
-                  champion={champion}
-                  spell={activeSpell}
-                  rank={rank}
-                  avgAttempts={avgAttempts}
-                  storageKey={storageKey}
-                />
-              )}
-            </div>
+            {!adminMode && (
+              <div ref={resultRef}>
+                {showResult && (
+                  <CooldownResult
+                    champion={champion}
+                    spell={activeSpell}
+                    rank={rank}
+                    avgAttempts={avgAttempts}
+                    storageKey={storageKey}
+                  />
+                )}
+              </div>
+            )}
           </>
         }
       />

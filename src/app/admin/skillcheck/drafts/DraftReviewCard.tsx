@@ -59,13 +59,16 @@ function buildInitialAnswersFromDraft(draft: any): Answer[] {
 function buildTeamSlots(
   team: any[],
   solutionRole: string,
-  isUserTeam: boolean
+  isUserTeam: boolean,
+  side: "blue" | "red"
 ): TeamSlot[] {
   return team.map((p: any) => {
     const isSolution = isUserTeam && p.role === solutionRole;
 
     return {
       champ: champUrl(p.champ),
+      role: p.role,
+      side,
       state: isSolution
         ? "solution"
         : p.champ
@@ -89,13 +92,15 @@ export default function DraftReviewCard({
   const blueSlots = buildTeamSlots(
     draft.blue,
     draft.role,
-    draft.userTeam === "blue"
+    draft.userTeam === "blue",
+    "blue"
   );
 
   const redSlots = buildTeamSlots(
     draft.red,
     draft.role,
-    draft.userTeam === "red"
+    draft.userTeam === "red",
+    "red"
   );
 
   async function submit(status: "APPROVED" | "REJECTED") {

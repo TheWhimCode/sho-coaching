@@ -6,7 +6,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
-  schemas   = ["public", "skillcheck"]
+  schemas   = ["public", "skillcheck", "axom"]
 
 }
 
@@ -329,4 +329,14 @@ model LeaderboardEntry {
 
   @@index([streakDays(sort: Desc)])
   @@schema("skillcheck")
+}
+
+model AxomEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  type      String
+  for       String   @map("for")
+
+  @@schema("axom")
+  @@map("events")
 }

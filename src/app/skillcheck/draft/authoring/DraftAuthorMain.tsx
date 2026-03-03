@@ -40,8 +40,12 @@ function isSameSlot(a: ActiveSlot, b: ActiveSlot) {
 
 export default function DraftAuthorMain({
   initialStep = "setup",
+  submitUrl = "/api/skillcheck/draft/db",
+  successMode = "public",
 }: {
   initialStep?: Step;
+  submitUrl?: string;
+  successMode?: "public" | "admin";
 }) {
   const [step, setStep] = useState<Step>(initialStep);
   const [setup, setSetup] = useState<DraftSetup | null>(null);
@@ -260,21 +264,22 @@ export default function DraftAuthorMain({
   /* --------------------------------
      SUCCESS SHORT-CIRCUIT
   -------------------------------- */
-if (step === "success") {
-  return (
-    <div className="flex items-center justify-center min-h-[70vh] text-center text-white">
-      <div>
-        <h2 className="text-2xl font-semibold mb-2">
-          Draft submitted 🎉
-        </h2>
-        <p className="text-white/70">
-          You can submit a new draft tomorrow.
-        </p>
+  if (step === "success") {
+    return (
+      <div className="flex items-center justify-center min-h-[70vh] text-center text-white">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2">
+            Draft submitted 🎉
+          </h2>
+          <p className="text-white/70">
+            {successMode === "admin"
+              ? "You can create another draft right away on this page."
+              : "You can submit a new draft tomorrow."}
+          </p>
+        </div>
       </div>
-    </div>
-  );
-}
-
+    );
+  }
 
   /* STEP 0 */
   if (step === "setup") {
@@ -336,7 +341,7 @@ if (step === "success") {
 
             setLocked(true);
 
-            await fetch("/api/skillcheck/draft/db", {
+            await fetch(submitUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
