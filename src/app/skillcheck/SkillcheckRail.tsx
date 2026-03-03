@@ -144,7 +144,9 @@ export default function SkillcheckRail() {
                     ? "text-[var(--color-orange)]"
                     : "text-[var(--color-orange)]/60"
                 }`}
-                strokeWidth={streakActive ? 1.6 : 1.1}
+                // Filled when renewed today, ultra-thin outline otherwise
+                fill={streakRenewed ? "currentColor" : "none"}
+                strokeWidth={streakRenewed ? 1.4 : 0.7}
               />
             </span>
             {/* Streak count under icon, absolutely positioned */}
