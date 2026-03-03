@@ -4,8 +4,13 @@
 import { ReactNode, useEffect, useState } from "react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 import Link from "next/link";
-import { Swords, Hourglass, Gem } from "lucide-react";
+import { Swords, Hourglass, Gem, Check } from "lucide-react";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
+import {
+  getTodayModeProgress,
+  MODE_PROGRESS_UPDATED_EVENT,
+  type ModeId,
+} from "@/app/skillcheck/modeProgress";
 
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
@@ -63,6 +68,11 @@ export default function ResultsScreen({
 
   // 0 = none visible, 1 = first, 2 = first two, 3 = all
   const [visibleIcons, setVisibleIcons] = useState(0);
+  const [modeProgress, setModeProgress] = useState<Record<ModeId, boolean>>({
+    draft: false,
+    cooldowns: false,
+    items: false,
+  });
 
   useEffect(() => {
     const t1 = setTimeout(() => setVisibleIcons(1), 500); // initial delay
@@ -74,6 +84,15 @@ export default function ResultsScreen({
       clearTimeout(t2);
       clearTimeout(t3);
     };
+  }, []);
+
+  useEffect(() => {
+    setModeProgress(getTodayModeProgress());
+    const onProgressUpdated = () => {
+      setModeProgress(getTodayModeProgress());
+    };
+    window.addEventListener(MODE_PROGRESS_UPDATED_EVENT, onProgressUpdated);
+    return () => window.removeEventListener(MODE_PROGRESS_UPDATED_EVENT, onProgressUpdated);
   }, []);
 
   const iconAnim = (index: number) => `
@@ -165,7 +184,7 @@ export default function ResultsScreen({
                 aria-label="Draft"
                 title="Draft"
                 className={`
-                  group
+                  group relative
                   inline-flex h-16 w-16 items-center justify-center
                   rounded-xl
                   border border-white/30
@@ -181,6 +200,11 @@ export default function ResultsScreen({
                 `}
               >
                 <Swords className="h-5 w-5 opacity-90 group-hover:opacity-100" />
+                {modeProgress.draft && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 shadow-md">
+                    <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -188,7 +212,7 @@ export default function ResultsScreen({
                 aria-label="Cooldowns"
                 title="Cooldowns"
                 className={`
-                  group
+                  group relative
                   inline-flex h-16 w-16 items-center justify-center
                   rounded-xl
                   border border-white/30
@@ -204,6 +228,11 @@ export default function ResultsScreen({
                 `}
               >
                 <Hourglass className="h-5 w-5 opacity-90 group-hover:opacity-100" />
+                {modeProgress.cooldowns && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 shadow-md">
+                    <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -211,7 +240,7 @@ export default function ResultsScreen({
                 aria-label="Items"
                 title="Items"
                 className={`
-                  group
+                  group relative
                   inline-flex h-16 w-16 items-center justify-center
                   rounded-xl
                   border border-white/30
@@ -227,6 +256,11 @@ export default function ResultsScreen({
                 `}
               >
                 <Gem className="h-5 w-5 opacity-90 group-hover:opacity-100" />
+                {modeProgress.items && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 shadow-md">
+                    <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                  </span>
+                )}
               </Link>
             </div>
           </div>

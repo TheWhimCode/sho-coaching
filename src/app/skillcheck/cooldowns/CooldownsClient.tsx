@@ -11,6 +11,7 @@ import CooldownOptions from "@/app/skillcheck/cooldowns/components/CooldownOptio
 import CooldownResult from "./components/CooldownsResult";
 import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
 import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
+import { markModeCompletedToday } from "@/app/skillcheck/modeProgress";
 
 type SpellKey = "Q" | "W" | "E" | "R";
 
@@ -168,6 +169,7 @@ export default function CooldownsClient({
                 setCompleted(true);
                 recordSkillcheckPlay();
                 syncToLeaderboardIfEligible();
+                markModeCompletedToday("cooldowns");
 
                 setShowSuccess(true);
                 // ❌ removed: setTimeout(() => setShowSuccess(false), 1500);

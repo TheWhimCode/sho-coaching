@@ -10,6 +10,7 @@ import DraftAuthorMain from "@/app/skillcheck/draft/authoring/DraftAuthorMain";
 import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
 import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
 import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
+import { markModeCompletedToday } from "@/app/skillcheck/modeProgress";
 
 type Pick = {
   role: "top" | "jng" | "mid" | "adc" | "sup";
@@ -191,6 +192,7 @@ export default function DraftClient({
       setLastWrong(null);
       recordSkillcheckPlay();
       syncToLeaderboardIfEligible();
+      markModeCompletedToday("draft");
 
       // success overlay immediately
       setShowSuccess(true);

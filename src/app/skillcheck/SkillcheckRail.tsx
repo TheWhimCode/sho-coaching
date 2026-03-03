@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Swords, Hourglass, Gem, Flame } from "lucide-react";
+import { Swords, Hourglass, Gem, Flame, Check } from "lucide-react";
 import { getSkillcheckStreak, consumeStreakRenewedToday, STREAK_UPDATED_EVENT, type StreakState } from "@/app/skillcheck/streak";
 import { syncLeaderboardOnVisit } from "@/app/skillcheck/leaderboard-client-id";
+import { getTodayModeProgress, MODE_PROGRESS_UPDATED_EVENT, type ModeId } from "@/app/skillcheck/modeProgress";
 
 const CELEBRATION_DURATION_MS = 2200;
 
@@ -79,6 +80,11 @@ export default function SkillcheckRail() {
   const [expanded, setExpanded] = useState(false);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
+  const [modeProgress, setModeProgress] = useState<Record<ModeId, boolean>>({
+    draft: false,
+    cooldowns: false,
+    items: false,
+  });
 
   useEffect(() => {
     setHasMounted(true);
@@ -107,6 +113,15 @@ export default function SkillcheckRail() {
     };
     window.addEventListener(STREAK_UPDATED_EVENT, onStreakUpdated);
     return () => window.removeEventListener(STREAK_UPDATED_EVENT, onStreakUpdated);
+  }, []);
+
+  useEffect(() => {
+    setModeProgress(getTodayModeProgress());
+    const onProgressUpdated = () => {
+      setModeProgress(getTodayModeProgress());
+    };
+    window.addEventListener(MODE_PROGRESS_UPDATED_EVENT, onProgressUpdated);
+    return () => window.removeEventListener(MODE_PROGRESS_UPDATED_EVENT, onProgressUpdated);
   }, []);
 
   const streakActive = streak.streakDays > 0;
@@ -171,6 +186,7 @@ export default function SkillcheckRail() {
         {gameModes.map((m) => {
           const Icon = m.icon;
           const isActive = pathname.startsWith(m.href);
+          const completedToday = modeProgress[m.key as ModeId];
           return (
             <Link
               key={m.key}
@@ -179,8 +195,13 @@ export default function SkillcheckRail() {
                 isActive ? "bg-white/10" : "hover:bg-white/5"
               }`}
             >
-              <div className={iconBtn}>
+              <div className={`${iconBtn} relative`}>
                 <Icon className="h-6 w-6 opacity-90 text-white" />
+                {completedToday && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 shadow-md">
+                    <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                  </span>
+                )}
               </div>
               {expanded && (
                 <span className="text-sm font-medium text-white/90 whitespace-nowrap">

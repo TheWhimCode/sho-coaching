@@ -14,6 +14,7 @@ import {
 } from "@/lib/datadragon/itemdescriptions";
 import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
 import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
+import { markModeCompletedToday } from "@/app/skillcheck/modeProgress";
 
 /* ---------------------------------
    Shared item shape for results
@@ -157,6 +158,7 @@ export default function ItemsClient({
                 setCompleted(true);
                 recordSkillcheckPlay();
                 syncToLeaderboardIfEligible();
+                 markModeCompletedToday("items");
                 setShowSuccess(true);
 
                 try {
