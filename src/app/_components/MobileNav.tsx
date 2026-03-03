@@ -74,6 +74,7 @@ export default function MobileNav() {
                 animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
                 transition={{
                   duration: 0.18,
+                  ease: [0.22, 1, 0.36, 1],
                   delay: showContent ? 0.04 * idx : 0,
                 }}
               >
@@ -102,7 +103,11 @@ export default function MobileNav() {
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, delay: showContent ? 0.16 : 0 }}
+              transition={{
+                duration: 0.18,
+                ease: [0.22, 1, 0.36, 1],
+                delay: showContent ? 0.16 : 0,
+              }}
             >
               <Link
                 href="/contact"
@@ -117,7 +122,11 @@ export default function MobileNav() {
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, delay: showContent ? 0.2 : 0 }}
+              transition={{
+                duration: 0.18,
+                ease: [0.22, 1, 0.36, 1],
+                delay: showContent ? 0.2 : 0,
+              }}
             >
               <div className="py-2 text-base text-white/60 flex items-center gap-3">
                 <span className="font-semibold">Courses</span>
@@ -162,17 +171,22 @@ export default function MobileNav() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="p-1.5 rounded-full bg-white/5 text-white/85 hover:bg-white/10 hover:text-orange-400 transition"
-                  initial={{ opacity: 0, x: -12 }}
+                  className="pl-0 pr-3 py-1.5 rounded-full bg-white/5 text-white/85 hover:bg-white/10 hover:text-orange-400 transition"
+                  initial={{ opacity: 0, x: -8 }}
                   animate={
                     showContent
                       ? { opacity: 1, x: 0 }
-                      : { opacity: 0, x: -12 }
+                      : { opacity: 0, x: -8 }
                   }
                   transition={{
                     duration: 0.18,
-                    // pick up right after Courses (0.2s) and continue stagger
-                    delay: showContent ? 0.24 + idx * 0.04 : 0,
+                    ease: [0.22, 1, 0.36, 1],
+                    // continue same 0.04s staircase after Courses (index 5)
+                    // nav: 0,1,2 → delays 0, .04, .08
+                    // Contact: index 3 → .12
+                    // Courses: index 4 → .16
+                    // socials: indices 5–8 → .20, .24, .28, .32
+                    delay: showContent ? 0.20 + idx * 0.04 : 0,
                   }}
                 >
                   <Icon className="h-5 w-5" />
