@@ -64,9 +64,9 @@ export default function MobileNav() {
         transition={{ duration: EXIT_DURATION, ease: [0.22, 1, 0.36, 1] }}
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
-        <div className="pt-20 pl-16 pr-5 pb-8 flex h-full flex-col gap-6">
+        <div className="pt-24 pl-16 pr-6 pb-10 flex h-full flex-col gap-8">
           {/* Main links – slide down with slight stagger */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {NAV.map((it, idx) => (
               <motion.div
                 key={it.href}
@@ -83,7 +83,7 @@ export default function MobileNav() {
                     href={it.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block py-2 text-lg font-semibold text-white/90 hover:text-orange-400 transition"
+                    className="block py-3 text-xl font-semibold text-white/90 hover:text-orange-400 transition"
                     onClick={() => setOpen(false)}
                   >
                     {it.label}
@@ -91,7 +91,7 @@ export default function MobileNav() {
                 ) : (
                   <Link
                     href={it.href}
-                    className="block py-2 text-lg font-semibold text-white/90 hover:text-orange-400 transition"
+                    className="block py-3 text-xl font-semibold text-white/90 hover:text-orange-400 transition"
                     onClick={() => setOpen(false)}
                   >
                     {it.label}
@@ -111,7 +111,7 @@ export default function MobileNav() {
             >
               <Link
                 href="/contact"
-                className="block py-2 text-lg font-semibold text-white/90 hover:text-orange-400 transition"
+                className="block py-3 text-xl font-semibold text-white/90 hover:text-orange-400 transition"
                 onClick={() => setOpen(false)}
               >
                 Contact
@@ -128,9 +128,9 @@ export default function MobileNav() {
                 delay: showContent ? 0.2 : 0,
               }}
             >
-              <div className="py-2 text-base text-white/60 flex items-center gap-3">
+              <div className="py-3 text-lg text-white/60 flex items-center gap-4">
                 <span className="font-semibold">Courses</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-white/10 uppercase tracking-wide">
+                <span className="text-sm px-3 py-1 rounded bg-white/10 uppercase tracking-wide">
                   Soon
                 </span>
               </div>
@@ -138,7 +138,7 @@ export default function MobileNav() {
           </div>
 
           {/* Socials – continue stagger after nav, slide in L→R; exit with bar */}
-          <div className="mt-4 flex items-center gap-4">
+          <div className="mt-6 flex items-center gap-5">
             {[
                 {
                   key: "discord",
@@ -171,7 +171,7 @@ export default function MobileNav() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="pl-0 pr-3 py-1.5 rounded-full bg-white/5 text-white/85 hover:bg-white/10 hover:text-orange-400 transition"
+                  className="pl-0 pr-4 py-2 rounded-full bg-white/5 text-white/90 hover:bg-white/10 hover:text-orange-400 transition"
                   initial={{ opacity: 0, x: -8 }}
                   animate={
                     showContent
@@ -189,7 +189,7 @@ export default function MobileNav() {
                     delay: showContent ? 0.20 + idx * 0.04 : 0,
                   }}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-6 w-6" />
                 </motion.a>
               ))}
           </div>
