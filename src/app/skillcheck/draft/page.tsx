@@ -36,6 +36,7 @@ type DraftType = {
   role: Pick["role"];
   userTeam: "blue" | "red";
   answers: DraftAnswer[];
+  madeBy?: string | null;
 };
 
 export default async function DraftPage() {
@@ -58,6 +59,7 @@ export default async function DraftPage() {
     role: raw.role as DraftType["role"],
     userTeam: raw.userTeam as "blue" | "red",
     answers: raw.answers as DraftAnswer[],
+    madeBy: raw.madeBy ?? null,
   };
 
   return <DraftClient draft={draft} avgAttempts={avgAttempts} />;

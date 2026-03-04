@@ -30,10 +30,12 @@ function getDraftDifficulty(avgAttempts: string): DifficultyUI {
 export function ResultScreen({
   answers,
   avgAttempts,
+  madeBy,
   onCreateDraft,
 }: {
   answers: DraftAnswer[];
   avgAttempts: string;
+  madeBy?: string | null;
   onCreateDraft?: (initialStep: "setup" | "success") => void;
 }) {
   const correct = answers.find((a) => a.correct);
@@ -44,9 +46,19 @@ export function ResultScreen({
       avgAttempts={avgAttempts}
       difficulty={difficulty}
       header={
-        <>
-          Why <span className="whitespace-nowrap">{correct?.champ}</span>?
-        </>
+        <div className="flex items-center justify-between gap-4 w-full flex-wrap">
+          <span>
+            Why <span className="whitespace-nowrap">{correct?.champ}</span>?
+          </span>
+          {madeBy && (
+            <span
+              className="text-base font-medium text-white/60 shrink-0 px-4 py-2 rounded-lg bg-black/40 border border-white/10 inline-flex items-center gap-1.5"
+              aria-label={`Draft made by ${madeBy}`}
+            >
+              Draft made by <span className="text-white/90">{madeBy}</span>
+            </span>
+          )}
+        </div>
       }
       cta={
         onCreateDraft ? (

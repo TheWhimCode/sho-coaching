@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const { id, status, answers } = await req.json();
+  const { id, status, answers, madeBy } = await req.json();
 
   if (!["APPROVED", "REJECTED"].includes(status)) {
     return NextResponse.json(
@@ -18,15 +18,27 @@ export async function POST(req: Request) {
     select: { usedLast: true },
   });
 
+  const updateData: {
+    status: string;
+    answers: unknown;
+    usedLast: Date | null;
+    madeBy?: string | null;
+  } = {
+    status,
+    answers,
+    usedLast: status === "APPROVED"
+      ? oldest?.usedLast ?? new Date(0)
+      : null,
+  };
+
+  if (status === "APPROVED" && madeBy !== undefined) {
+    updateData.madeBy =
+      typeof madeBy === "string" && madeBy.trim() ? madeBy.trim() : null;
+  }
+
   await prisma.draft.update({
     where: { id },
-    data: {
-      status,
-      answers, // finalized answers from AnswerAuthorPanel
-      usedLast: status === "APPROVED"
-        ? oldest?.usedLast ?? new Date(0)
-        : null,
-    },
+    data: updateData,
   });
 
   return NextResponse.json({ ok: true });

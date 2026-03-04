@@ -65,3 +65,34 @@ export async function leagueEntriesByPuuid(platform: string, puuid: string) {
     `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`
   );
 }
+
+/** Master league for a queue (contains entries with summonerIds). */
+export async function masterLeagueByQueue(platform: string, queue: string) {
+  const host = platform.toUpperCase();
+  return riotFetchJSON<{ entries?: { summonerId: string }[] }>(
+    `https://${host}.api.riotgames.com/lol/league/v4/masterleagues/by-queue/${encodeURIComponent(queue)}`
+  );
+}
+
+/** Grandmaster league for a queue (contains entries with summonerIds). */
+export async function grandmasterLeagueByQueue(platform: string, queue: string) {
+  const host = platform.toUpperCase();
+  return riotFetchJSON<{ entries?: { summonerId: string }[] }>(
+    `https://${host}.api.riotgames.com/lol/league/v4/grandmasterleagues/by-queue/${encodeURIComponent(queue)}`
+  );
+}
+
+/** Challenger league for a queue (contains entries with summonerIds). */
+export async function challengerLeagueByQueue(platform: string, queue: string) {
+  const host = platform.toUpperCase();
+  return riotFetchJSON<{ entries?: { summonerId: string }[] }>(
+    `https://${host}.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/${encodeURIComponent(queue)}`
+  );
+}
+
+/** Summoner v4 by summonerId (platform-specific). Returns puuid. */
+export async function summonerBySummonerId(platform: string, summonerId: string) {
+  return riotFetchJSON<{ id: string; puuid: string }>(
+    `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/${encodeURIComponent(summonerId)}`
+  );
+}

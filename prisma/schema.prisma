@@ -274,7 +274,8 @@ model Draft {
 
   status     DraftStatus @default(PENDING)
   createdAt  DateTime    @default(now())
-  submitIp String?
+  submitIp   String?
+  madeBy     String?
 
   @@schema("skillcheck")
 }
@@ -316,6 +317,32 @@ model ItemStat {
   updatedAt       DateTime @updatedAt
 
   @@unique([dayKey, itemId])
+  @@index([dayKey])
+  @@schema("skillcheck")
+}
+
+model RuneDaily {
+  dayKey      String    @id // YYYY-MM-DD (UTC)
+  championId  String    // champion key e.g. Aatrox
+  keystoneId  Int       // rune perk id (primary slot 0)
+  sampledAt   DateTime? // when Riot sampling ran
+  errorLog    String?   // last error if sampling failed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@schema("skillcheck")
+}
+
+model RuneStat {
+  id               String   @id @default(cuid())
+  dayKey           String
+  championId       String
+  attempts         Int      @default(0)
+  correctAttempts  Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([dayKey, championId])
   @@index([dayKey])
   @@schema("skillcheck")
 }

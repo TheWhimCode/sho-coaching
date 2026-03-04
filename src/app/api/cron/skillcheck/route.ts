@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureRuneDailyForDay } from "@/lib/skillcheck/ensureRuneDaily";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function unauthorized() {
   return new Response("Unauthorized", { status: 401 });
+}
+
+function ymdUTC(d = new Date()) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
 /* ✅ cleanup rejected drafts */
@@ -33,9 +38,11 @@ async function assignDailyDraft() {
 }
 
 async function runSkillcheck() {
+  const dayKey = ymdUTC(new Date());
   const results = {
     cleanupRejectedDrafts: null as any,
     dailyDraft: null as any,
+    runeDaily: null as any,
     errors: [] as string[],
   };
 
@@ -49,6 +56,13 @@ async function runSkillcheck() {
     results.dailyDraft = await assignDailyDraft();
   } catch (e: any) {
     results.errors.push(`assignDailyDraft: ${e?.message || e}`);
+  }
+
+  try {
+    results.runeDaily = await ensureRuneDailyForDay(dayKey);
+  } catch (e: any) {
+    results.errors.push(`ensureRuneDaily: ${e?.message || e}`);
+    console.error("[skillcheck:cron] ensureRuneDaily threw", e);
   }
 
   return results;

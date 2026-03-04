@@ -30,6 +30,7 @@ type DraftType = {
   role: Pick["role"];
   userTeam: "blue" | "red";
   answers: DraftAnswer[];
+  madeBy?: string | null;
 };
 
 export default function DraftClient({
@@ -79,6 +80,8 @@ export default function DraftClient({
       });
     });
   }
+
+  const madeBy = draft.madeBy?.trim() || null;
 
   /* -----------------------------
      derived data
@@ -285,6 +288,7 @@ export default function DraftClient({
                   <ResultScreen
                     answers={draft.answers}
                     avgAttempts={avgAttempts}
+                    madeBy={madeBy}
                     onCreateDraft={(step) => {
                       hasScrolledRef.current = false;
                       setAuthoringStep(step);

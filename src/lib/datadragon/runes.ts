@@ -72,6 +72,38 @@ function statShardIconUrl(id: number) {
     : null;
 }
 
+/** All keystone runes (slot 0 of each tree) from runesReforged. */
+export type KeystoneRune = { id: number; key: string; name: string; icon: string };
+
+let keystoneList: KeystoneRune[] | null = null;
+
+export async function fetchKeystoneRunes(patch?: string, locale: string = "en_US"): Promise<KeystoneRune[]> {
+  if (keystoneList) return keystoneList;
+  const p = patch ?? (await import("./patch").then((m) => m.currentPatch));
+  const url = `https://ddragon.leagueoflegends.com/cdn/${p}/data/${locale}/runesReforged.json`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`runesReforged fetch failed: ${res.status}`);
+  const trees: RunesTree[] = await res.json();
+  if (!Array.isArray(trees)) return [];
+  const list: KeystoneRune[] = [];
+  for (const tree of trees) {
+    const slot0 = tree.slots?.[0];
+    const runes = slot0?.runes ?? [];
+    for (const r of runes) {
+      if (r?.id != null && r?.name != null && r?.icon != null) {
+        list.push({
+          id: r.id,
+          key: r.key ?? "",
+          name: r.name,
+          icon: `https://ddragon.leagueoflegends.com/cdn/img/${r.icon}`,
+        });
+      }
+    }
+  }
+  keystoneList = list;
+  return list;
+}
+
 export function runeIconsFromPerks(perks: RunePerks | null | undefined): RuneIconSet {
   const styles = Array.isArray(perks?.styles) ? perks.styles : [];
 

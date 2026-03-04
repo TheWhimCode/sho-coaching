@@ -23,6 +23,7 @@ type CreateDraftInput = {
   red: Pick[];
 
   answers: DraftAnswer[];
+  madeBy?: string | null;
 };
 
 function validateTeam(team: Pick[]) {
@@ -46,7 +47,7 @@ function extractAllChamps(blue: Pick[], red: Pick[]) {
 }
 
 async function createDraftAdmin(input: CreateDraftInput) {
-  const { role, userTeam, blue, red, answers } = input;
+  const { role, userTeam, blue, red, answers, madeBy } = input;
 
   validateTeam(blue);
   validateTeam(red);
@@ -93,6 +94,8 @@ async function createDraftAdmin(input: CreateDraftInput) {
       red: safeRed,
       answers,
       status: "PENDING",
+      madeBy:
+        typeof madeBy === "string" && madeBy.trim() ? madeBy.trim() : null,
     },
   });
 }

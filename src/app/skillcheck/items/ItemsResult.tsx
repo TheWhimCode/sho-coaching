@@ -10,6 +10,7 @@ import {
   ensureDDragonItems,
   getItemDescriptionHtml,
 } from "@/lib/datadragon/itemdescriptions";
+import { statIconUrlFromLine } from "@/lib/datadragon/staticons";
 
 type ItemDTO = {
   id: string;
@@ -104,12 +105,17 @@ export default function ItemsResult({
   }, [item?.id, descHtml]);
 
   // Split stats + body
-  const { statsHtml, bodyHtml } = useMemo(() => {
+  const { statsLines, bodyHtml } = useMemo(() => {
     const html = descHtml ?? "";
-    const m = html.match(/<stats\b[^>]*>[\s\S]*?<\/stats>/i);
-    const stats = m?.[0] ?? "";
-    const body = stats ? html.replace(stats, "").trim() : html.trim();
-    return { statsHtml: stats, bodyHtml: body };
+    const m = html.match(/<stats\b[^>]*>([\s\S]*?)<\/stats>/i);
+    const statsInner = m?.[1] ?? "";
+    const statsBlock = m?.[0] ?? "";
+    const body = statsBlock ? html.replace(statsBlock, "").trim() : html.trim();
+    const lines = statsInner
+      .split(/<br\s*\/?>/i)
+      .map((s) => s.replace(/<[^>]+>/g, "").trim())
+      .filter(Boolean);
+    return { statsLines: lines, bodyHtml: body };
   }, [descHtml]);
 
   return (
@@ -158,20 +164,28 @@ export default function ItemsResult({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Stats column */}
           <div className="md:col-span-1 md:mt-14">
-            {statsHtml ? (
-              <div
-                className="
-                  text-white/85 leading-relaxed
-                  [&_br]:block [&_br]:content-[''] [&_br]:my-2
-
-                  [&_attention]:text-[#F2C14E] [&_attention]:font-semibold
-                  [&_stats]:text-[#F2C14E] [&_stats]:font-semibold
-                  [&_passive]:text-[#F2C14E] [&_passive]:font-semibold
-                  [&_active]:text-[#F2C14E] [&_active]:font-semibold
-                  [&_unique]:text-[#F2C14E] [&_unique]:font-semibold
-                "
-                dangerouslySetInnerHTML={{ __html: statsHtml }}
-              />
+            {statsLines.length > 0 ? (
+              <div className="text-white/85 leading-relaxed space-y-2">
+                {statsLines.map((line, i) => {
+                  const iconUrl = statIconUrlFromLine(line);
+                  return (
+                    <div
+                      key={`${i}-${line}`}
+                      className="flex items-center gap-2 text-[#F2C14E] font-semibold"
+                    >
+                      {iconUrl && (
+                        <img
+                          src={iconUrl}
+                          alt=""
+                          aria-hidden
+                          className="w-8 h-8 shrink-0 object-contain"
+                        />
+                      )}
+                      <span>{line}</span>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <div className="text-white/50">—</div>
             )}

@@ -11,7 +11,8 @@
     "prisma:seed": "prisma db seed",
     "migrate:create": "prisma migrate dev --create-only",
     "migrate:deploy": "prisma migrate deploy",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "seed:runes": "tsx scripts/seed-rune-today.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

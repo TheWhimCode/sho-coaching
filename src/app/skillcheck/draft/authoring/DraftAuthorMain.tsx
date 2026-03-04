@@ -20,7 +20,7 @@ type ActiveSlot = {
   index: number;
 } | null;
 
-type Step = "setup" | "draft" | "success";
+type Step = "setup" | "draft" | "name" | "success";
 
 const EMPTY_TEAM: Pick[] = [
   { role: "jng", champ: null },
@@ -49,6 +49,7 @@ export default function DraftAuthorMain({
 }) {
   const [step, setStep] = useState<Step>(initialStep);
   const [setup, setSetup] = useState<DraftSetup | null>(null);
+  const [madeBy, setMadeBy] = useState<string>("Anonymous");
 
   const role = setup?.role ?? "mid";
   const userTeam = setup?.side ?? "blue";
@@ -294,7 +295,64 @@ export default function DraftAuthorMain({
     );
   }
 
-  /* STEP 1 */
+  /* STEP: name (public only – enter display name before submit) */
+  if (step === "name" && successMode === "public") {
+    return (
+      <div className="flex flex-col items-center gap-6 max-w-md mx-auto">
+        <h2 className="text-xl md:text-2xl font-semibold text-white text-center">
+          What's your name?
+        </h2>
+        <p className="text-white/70 text-center text-sm">
+          This name will appear when your draft is eventually featured.
+        </p>
+        <input
+          type="text"
+          value={madeBy}
+          onChange={(e) => setMadeBy(e.target.value)}
+          placeholder="Anonymous"
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+        />
+        <div className="flex gap-4 w-full">
+          <OutlineCTA
+            className="flex-1 px-6 py-3 text-lg"
+            onClick={() => setStep("draft")}
+          >
+            Back
+          </OutlineCTA>
+          <PrimaryCTA
+            className="flex-1 px-6 py-3 text-lg"
+            onClick={async () => {
+              if (!setup) return;
+              setLocked(true);
+              await fetch(submitUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  role: setup.role,
+                  userTeam: setup.side,
+                  blue,
+                  red,
+                  answers: [
+                    {
+                      champ: setup.mainChamp,
+                      explanation: "PLACEHOLDER",
+                      correct: true,
+                    },
+                  ],
+                  madeBy: madeBy.trim() || "Anonymous",
+                }),
+              });
+              setStep("success");
+            }}
+          >
+            Submit Draft
+          </PrimaryCTA>
+        </div>
+      </div>
+    );
+  }
+
+  /* STEP 1: draft board */
   return (
     <div className="flex flex-col items-center gap-8">
       <DraftOverlay
@@ -307,7 +365,7 @@ export default function DraftAuthorMain({
         locked={locked}
         authoring
         activeSlot={activeSlot}
-        disabledSlots={disabledSlots}   // ← THIS WAS MISSING
+        disabledSlots={disabledSlots}
 
         onMoveRole={moveRole}
         onSlotClick={(side, index) => {
@@ -338,9 +396,11 @@ export default function DraftAuthorMain({
           className="px-8 py-3 text-lg"
           onClick={async () => {
             if (!setup) return;
-
+            if (successMode === "public") {
+              setStep("name");
+              return;
+            }
             setLocked(true);
-
             await fetch(submitUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -358,7 +418,6 @@ export default function DraftAuthorMain({
                 ],
               }),
             });
-
             setStep("success");
           }}
         >

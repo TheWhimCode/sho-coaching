@@ -1,4 +1,4 @@
-export type ModeId = "draft" | "cooldowns" | "items";
+export type ModeId = "draft" | "cooldowns" | "items" | "runes";
 
 const STORAGE_KEY = "skillcheck:mode-progress";
 export const MODE_PROGRESS_UPDATED_EVENT = "skillcheck:modes-updated";
@@ -32,17 +32,18 @@ function readStored(): StoredProgress | null {
 
 export function getTodayModeProgress(): Record<ModeId, boolean> {
   if (typeof window === "undefined") {
-    return { draft: false, cooldowns: false, items: false };
+    return { draft: false, cooldowns: false, items: false, runes: false };
   }
   const today = dayKeyUTC();
   const stored = readStored();
   if (!stored || stored.dayKey !== today) {
-    return { draft: false, cooldowns: false, items: false };
+    return { draft: false, cooldowns: false, items: false, runes: false };
   }
   return {
     draft: !!stored.modes.draft,
     cooldowns: !!stored.modes.cooldowns,
     items: !!stored.modes.items,
+    runes: !!stored.modes.runes,
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DraftGrid } from "@/app/skillcheck/draft/DraftGrid";
 import { TeamSlot } from "@/app/skillcheck/draft/DraftTeam";
 import AnswerAuthorPanel from "@/app/admin/skillcheck/drafts/AnswerAuthorPanel";
@@ -88,6 +88,11 @@ export default function DraftReviewCard({
   const [answers, setAnswers] = useState<Answer[]>(() =>
     buildInitialAnswersFromDraft(draft)
   );
+  const [madeBy, setMadeBy] = useState<string>(draft.madeBy ?? "");
+
+  useEffect(() => {
+    setMadeBy(draft.madeBy ?? "");
+  }, [draft.id, draft.madeBy]);
 
   const blueSlots = buildTeamSlots(
     draft.blue,
@@ -111,6 +116,7 @@ export default function DraftReviewCard({
         id: draft.id,
         status,
         answers,
+        madeBy: status === "APPROVED" ? (madeBy.trim() || null) : undefined,
       }),
     });
 
@@ -127,6 +133,23 @@ export default function DraftReviewCard({
         value={answers}
         onChange={setAnswers}
       />
+
+      {/* MADE BY (shown in daily game when set) */}
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-white/80 mb-2">
+          Draft made by (optional)
+        </label>
+        <input
+          type="text"
+          value={madeBy}
+          onChange={(e) => setMadeBy(e.target.value)}
+          placeholder="e.g. StreamerName, Coach Y"
+          className="w-full max-w-md bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+        />
+        <p className="text-xs text-white/50 mt-1">
+          Shown as a badge in the daily draft game. Leave empty to hide.
+        </p>
+      </div>
 
       {/* ACTIONS */}
       <div className="flex justify-center gap-6 mt-8">

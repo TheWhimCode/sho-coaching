@@ -24,6 +24,7 @@ type CreateDraftInput = {
   red: Pick[];
 
   answers: DraftAnswer[];
+  madeBy?: string | null;
 };
 
 /* -----------------------------
@@ -70,7 +71,11 @@ async function createDraft(
   input: CreateDraftInput,
   submitIp: string
 ) {
-  const { role, userTeam, blue, red, answers } = input;
+  const { role, userTeam, blue, red, answers, madeBy } = input;
+  const madeByValue =
+    typeof madeBy === "string" && madeBy.trim()
+      ? madeBy.trim()
+      : "Anonymous";
 
   validateTeam(blue);
   validateTeam(red);
@@ -163,6 +168,7 @@ async function createDraft(
       red: safeRed,
       answers,
       status: "PENDING",
+      madeBy: madeByValue,
     },
   });
 }
