@@ -306,7 +306,7 @@ export default function SuccessClient() {
 
           {booking && (
             <GlassPanel
-              className="p-5 md:p-6 flex flex-col justify-center min-h-[200px] ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)] transition-all duration-[1.1s] ease-out"
+              className="p-5 md:p-6 flex flex-col justify-center  ring-[rgba(88,101,242,0.45)] shadow-[0_0_24px_rgba(88,101,242,0.12)] transition-all duration-[1.1s] ease-out"
               style={{
                 opacity: blocks2And3Visible ? 1 : 0,
                 transform: blocks2And3Visible ? "translateY(0)" : "translateY(6px)",
@@ -317,9 +317,8 @@ export default function SuccessClient() {
               <ul className="text-base text-white/80 space-y-1 list-disc list-outside pl-5">
                 <li>Make sure you played games on this patch to review.</li>
                 <li>Check your mic & audio before the session to avoid disaster.</li>
-                <li>Don't tilt. Ever.</li>
+                <li>Don't tilt.</li>
               </ul>
-              <h2 className="pt-2 text-md text-white/80 font-base mb-0">See you soon!</h2>
 
             </GlassPanel>
           )}

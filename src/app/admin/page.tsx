@@ -10,8 +10,9 @@ const Hub = dynamic(() => import("./HUB/page"), { ssr: false });
 const Slots = dynamic(() => import("./availability/page"), { ssr: false });
 const Sessions = dynamic(() => import("./sessions/page"), { ssr: false });
 const Students = dynamic(() => import("./students/page"), { ssr: false });
+const Skillcheck = dynamic(() => import("./skillcheck/page"), { ssr: false });
 
-const TABS = ["hub", "slots", "sessions", "students"] as const;
+const TABS = ["hub", "slots", "sessions", "students", "skillcheck"] as const;
 type Tab = (typeof TABS)[number];
 
 function AdminInner() {
@@ -73,9 +74,10 @@ function AdminInner() {
         className="hidden md:flex fixed z-50 left-0 top-1/2 -translate-y-1/2 flex-col items-stretch gap-3"
       >
         <TabButton id="hub" label="📊 Hub" />
-        <TabButton id="slots" label="🧙 Availability" />
-        <TabButton id="sessions" label="✨ Sessions" />
+        <TabButton id="slots" label="🕐 Availability" />
+        <TabButton id="sessions" label="📅 Sessions" />
         <TabButton id="students" label="🎓 Students" />
+        <TabButton id="skillcheck" label="⚡ Skillcheck" />
       </motion.div>
 
       {/* Mobile bottom bar */}
@@ -86,9 +88,10 @@ function AdminInner() {
       >
         <div className="mx-auto max-w-md rounded-2xl ring-1 ring-white/10 bg-black/60 backdrop-blur flex gap-2 p-2">
           <MobileTabButton id="hub" icon="📊" />
-          <MobileTabButton id="slots" icon="🧙" />
-          <MobileTabButton id="sessions" icon="✨" />
+          <MobileTabButton id="slots" icon="🕐" />
+          <MobileTabButton id="sessions" icon="📅" />
           <MobileTabButton id="students" icon="🎓" />
+          <MobileTabButton id="skillcheck" icon="⚡" />
         </div>
       </motion.div>
 
@@ -98,6 +101,7 @@ function AdminInner() {
         {tab === "slots" && <Slots />}
         {tab === "sessions" && <Sessions />}
         {tab === "students" && <Students />}
+        {tab === "skillcheck" && <Skillcheck />}
       </div>
     </>
   );
