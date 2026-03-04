@@ -39,6 +39,7 @@ export type Rune = {
   id: number;
   key: string;
   icon: string;
+  name?: string;
 };
 
 export type RuneSlot = {

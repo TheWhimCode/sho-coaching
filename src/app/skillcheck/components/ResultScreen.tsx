@@ -72,6 +72,7 @@ export default function ResultsScreen({
     draft: false,
     cooldowns: false,
     items: false,
+    runes: false,
   });
 
   useEffect(() => {

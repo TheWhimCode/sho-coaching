@@ -84,6 +84,7 @@ export default function SkillcheckRail() {
     draft: false,
     cooldowns: false,
     items: false,
+    runes: false,
   });
 
   useEffect(() => {

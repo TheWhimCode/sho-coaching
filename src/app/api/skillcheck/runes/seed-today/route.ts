@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const dayKey = ymdUTC(new Date());
   const result = await ensureRuneDailyForDay(dayKey);
 
-  return NextResponse.json({ dayKey, ...result }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(req: NextRequest) {
