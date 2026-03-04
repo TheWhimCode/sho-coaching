@@ -170,6 +170,7 @@ export default function CooldownsClient({
               spellKey={activeSpell.key}
               rank={rank}
               storageKey={storageKey}
+              adminMode={adminMode}
               onSolved={() => {
                 if (!adminMode) {
                   if (completed) return;

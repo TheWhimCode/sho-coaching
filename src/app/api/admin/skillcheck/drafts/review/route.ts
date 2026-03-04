@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { DraftStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -12,6 +12,8 @@ export async function POST(req: Request) {
     );
   }
 
+  const draftStatus = status as DraftStatus;
+
   // get oldest usedLast in DB
   const oldest = await prisma.draft.findFirst({
     where: { status: "APPROVED" },
@@ -20,19 +22,19 @@ export async function POST(req: Request) {
   });
 
   const updateData: {
-    status: string;
+    status: DraftStatus;
     answers: Prisma.InputJsonValue;
     usedLast: Date | null;
     madeBy?: string | null;
   } = {
-    status,
+    status: draftStatus,
     answers: answers as Prisma.InputJsonValue,
-    usedLast: status === "APPROVED"
+    usedLast: draftStatus === "APPROVED"
       ? oldest?.usedLast ?? new Date(0)
       : null,
   };
 
-  if (status === "APPROVED" && madeBy !== undefined) {
+  if (draftStatus === "APPROVED" && madeBy !== undefined) {
     updateData.madeBy =
       typeof madeBy === "string" && madeBy.trim() ? madeBy.trim() : null;
   }

@@ -145,6 +145,7 @@ export default function CooldownOptions({
   spellKey,
   rank,
   storageKey,
+  adminMode = false,
 }: {
   question: string;
   trueCooldown: number;
@@ -153,6 +154,7 @@ export default function CooldownOptions({
   spellKey: "Q" | "W" | "E" | "R";
   rank: number;
   storageKey: string;
+  adminMode?: boolean;
 }) {
   const [input, setInput] = useState("");
   const [attempts, setAttempts] = useState<Attempt[]>([]);
@@ -208,16 +210,18 @@ export default function CooldownOptions({
     if (inputNumber < trueCooldown) direction = "low";
     if (inputNumber > trueCooldown) direction = "high";
 
-    fetch("/api/skillcheck/cooldowns/attempt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        championId,
-        spellKey,
-        rank,
-        correct: direction === "correct",
-      }),
-    }).catch(() => {});
+    if (!adminMode) {
+      fetch("/api/skillcheck/cooldowns/attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          championId,
+          spellKey,
+          rank,
+          correct: direction === "correct",
+        }),
+      }).catch(() => {});
+    }
 
     const nextAttempt: Attempt = { guess: inputNumber, direction, rel };
 
