@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -20,12 +21,12 @@ export async function POST(req: Request) {
 
   const updateData: {
     status: string;
-    answers: unknown;
+    answers: Prisma.InputJsonValue;
     usedLast: Date | null;
     madeBy?: string | null;
   } = {
     status,
-    answers,
+    answers: answers as Prisma.InputJsonValue,
     usedLast: status === "APPROVED"
       ? oldest?.usedLast ?? new Date(0)
       : null,
