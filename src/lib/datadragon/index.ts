@@ -8,3 +8,4 @@ export * from "./ranks";
 export * from "./objectives";
 export * from "./roles";
 export * from "./championspells";
+export * from "./championRegions";

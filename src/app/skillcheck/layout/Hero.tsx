@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSkillcheckBackground } from "./SkillcheckBackgroundContext";
 
 export default function Hero({
   hero,
@@ -11,6 +12,8 @@ export default function Hero({
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [imagesReady, setImagesReady] = useState(false);
+  const backgroundPath = useSkillcheckBackground();
+  const backgroundUrl = `/skillcheck/${backgroundPath}`;
 
   useEffect(() => {
     setImagesReady(false);
@@ -64,14 +67,15 @@ export default function Hero({
       <section
         className="relative w-full min-h-[70vh] flex items-center justify-center pt-6 md:pt-12 pb-6 md:pb-12 -mt-16 md:-mt-20 pt-[calc(1.5rem+4rem)] md:pt-[calc(3rem+5rem)]"
         style={{
-          backgroundImage: "url('/skillcheck/background.jpg')",
+          backgroundImage: `url('${backgroundUrl}')`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: "50% 0",
           backgroundRepeat: "no-repeat",
+          backgroundAttachment: "fixed",
         }}
       >
         {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none" />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] pointer-events-none" />
 
         {/* Bottom fade */}
         <div

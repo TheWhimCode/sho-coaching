@@ -171,7 +171,7 @@ export default function ItemsResult({
                   return (
                     <div
                       key={`${i}-${line}`}
-                      className="flex items-center gap-2 text-white font-semibold"
+                      className="flex items-center gap-2 text-white"
                     >
                       {iconUrl && (
                         <img

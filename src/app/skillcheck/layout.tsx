@@ -1,12 +1,40 @@
 import SkillcheckRail from "./SkillcheckRail";
+import { SkillcheckBackgroundProvider } from "./layout/SkillcheckBackgroundContext";
+import {
+  getDailyBackgroundPathForRegion,
+  ymdUTC,
+} from "@/lib/skillcheck/dailyBackground";
+import { getChampionRegion } from "@/lib/datadragon/championRegions";
+import { prisma } from "@/lib/prisma";
 
-export default function SkillcheckLayout({
+type DraftAnswer = { champ: string; explanation: string; correct?: true };
+
+export default async function SkillcheckLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const dayKey =
+    process.env.SKILLCHECK_BACKGROUND_PER_RELOAD === "true"
+      ? String(Date.now())
+      : ymdUTC(new Date());
+
+  const raw = await prisma.draft.findFirst({
+    where: { status: "APPROVED" },
+    orderBy: { usedLast: "desc" },
+    select: { answers: true },
+  });
+  const answers = (raw?.answers ?? []) as DraftAnswer[];
+  const correctChamp = answers.find((a) => a.correct)?.champ;
+  const region = correctChamp ? getChampionRegion(correctChamp) : null;
+
+  const dailyBackgroundPath = await getDailyBackgroundPathForRegion(
+    region ?? "Runeterra",
+    dayKey
+  );
+
   return (
-    <>
+    <SkillcheckBackgroundProvider dailyBackgroundPath={dailyBackgroundPath}>
       {/* Left-edge rail: expand on hover — games + streak */}
       <SkillcheckRail />
 
@@ -22,6 +50,6 @@ export default function SkillcheckLayout({
 
       {/* Actual page content */}
       <div className="relative z-10">{children}</div>
-    </>
+    </SkillcheckBackgroundProvider>
   );
 }

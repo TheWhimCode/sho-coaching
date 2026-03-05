@@ -24,7 +24,7 @@ async function cleanupRejectedDrafts() {
 async function assignDailyDraft() {
   const draft = await prisma.draft.findFirst({
     where: { status: "APPROVED" },
-    orderBy: { usedLast: "asc" },
+    orderBy: [{ usedLast: "asc" }, { id: "asc" }],
   });
 
   if (!draft) return { assigned: false as const, draftId: null as string | null };
@@ -69,10 +69,18 @@ async function runSkillcheck() {
 }
 
 export async function GET(req: NextRequest) {
+  console.log("[skillcheck:cron] GET invoked", {
+    at: new Date().toISOString(),
+    hasVercelCron: !!req.headers.get("x-vercel-cron"),
+    hasVercelSignature: !!req.headers.get("x-vercel-signature"),
+  });
   const fromVercel = !!req.headers.get("x-vercel-cron") || !!req.headers.get("x-vercel-signature");
   const secret = (process.env.CRON_SECRET || "").trim();
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
-  if (!fromVercel && (!secret || token !== secret)) return unauthorized();
+  if (!fromVercel && (!secret || token !== secret)) {
+    console.log("[skillcheck:cron] auth failed (not from Vercel, no/invalid token)");
+    return unauthorized();
+  }
 
   const result = await runSkillcheck();
 
