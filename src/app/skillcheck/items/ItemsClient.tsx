@@ -2,7 +2,7 @@
 
 import Hero from "@/app/skillcheck/layout/Hero";
 import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ItemsHero from "./ItemsHero";
 import ItemsOptions from "./ItemsOptions";
 import ItemsResult from "./ItemsResult";
@@ -61,6 +61,11 @@ export default function ItemsClient({
   const SHOW_AND_SCROLL_DELAY_MS = 2500;
 
   const item = targets[0];
+
+  const heroElement = useMemo(
+    () => <ItemsHero targets={targets} inventory={inventory} />,
+    [targets, inventory]
+  );
 
   /* -------------------------
      Preload item description
@@ -142,7 +147,7 @@ export default function ItemsClient({
       )}
 
       <Hero
-        hero={<ItemsHero targets={targets} inventory={inventory} />}
+        hero={heroElement}
         content={
           <>
             <ItemsOptions
