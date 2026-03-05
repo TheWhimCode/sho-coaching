@@ -2,6 +2,7 @@ import SkillcheckRail from "./SkillcheckRail";
 import { SkillcheckBackgroundProvider } from "./layout/SkillcheckBackgroundContext";
 import {
   getDailyBackgroundPathForRegion,
+  getRandomBackgroundPathAnyRegion,
   ymdUTC,
 } from "@/lib/skillcheck/dailyBackground";
 import { getChampionRegion } from "@/lib/datadragon/championRegions";
@@ -12,19 +13,18 @@ export default async function SkillcheckLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const dayKeyForBackground =
-    process.env.SKILLCHECK_BACKGROUND_PER_RELOAD === "true"
-      ? String(Date.now())
-      : ymdUTC(new Date());
+  const backgroundPerReload =
+    process.env.SKILLCHECK_BACKGROUND_PER_RELOAD === "true";
 
-  const cooldownsDayKey = ymdUTC(new Date());
-  const cooldownsChampionId = getCooldownsDailyChampion(cooldownsDayKey);
-  const region = getChampionRegion(cooldownsChampionId) ?? "Runeterra";
+  const todayKey = ymdUTC(new Date());
 
-  const dailyBackgroundPath = await getDailyBackgroundPathForRegion(
-    region,
-    dayKeyForBackground
-  );
+  const dailyBackgroundPath = backgroundPerReload
+    ? await getRandomBackgroundPathAnyRegion(String(Date.now()))
+    : await (async () => {
+        const cooldownsChampionId = getCooldownsDailyChampion(todayKey);
+        const region = getChampionRegion(cooldownsChampionId) ?? "Runeterra";
+        return getDailyBackgroundPathForRegion(region, todayKey);
+      })();
 
   return (
     <SkillcheckBackgroundProvider dailyBackgroundPath={dailyBackgroundPath}>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useSkillcheckBackground } from "@/app/skillcheck/layout/SkillcheckBackgroundContext";
 
 export type SpellKey = "Q" | "W" | "E" | "R";
 
@@ -81,6 +82,9 @@ export default function SpellPanelList({
   title?: string;
   subtitle?: string;
 }) {
+  const backgroundPath = useSkillcheckBackground();
+  const backgroundUrl = `/skillcheck/${backgroundPath}`;
+
   // Ensure order Q W E R
   const order: Record<SpellKey, number> = { Q: 0, W: 1, E: 2, R: 3 };
   const ordered = [...spells].sort((a, b) => order[a.key] - order[b.key]);
@@ -108,18 +112,29 @@ export default function SpellPanelList({
             <div
               key={s.id}
               className={[
-                "rounded-2xl border overflow-hidden transition",
+                "relative rounded-2xl border overflow-hidden transition",
                 isSelected ? "border-orange-400/30" : "border-white/10 opacity-70",
               ].join(" ")}
             >
-              {/* Gradient highlight for selected */}
+              {/* Local blurred copy of hero background (avoids backdrop-filter flicker) */}
+              <div
+                aria-hidden
+                className="absolute inset-0 scale-[1.05] blur-xl"
+                style={{
+                  backgroundImage: `url("${backgroundUrl}")`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "50% 0",
+                }}
+              />
+              <div className="absolute inset-0 bg-black/60" />
+
+              {/* Content + highlight */}
               <div
                 className={[
-                  "p-4 md:p-5",
-isSelected
-  ? "bg-[linear-gradient(135deg,rgba(17,76,187,0.34),rgba(255,140,0,0.16)),radial-gradient(circle_at_22%_30%,rgba(14,70,140,0.18),transparent_62%),radial-gradient(circle_at_78%_72%,rgba(255,140,0,0.08),transparent_70%)]"
-  : "bg-white/5",
-
+                  "relative p-4 md:p-5",
+                  isSelected
+                    ? "bg-[linear-gradient(135deg,rgba(17,76,187,0.34),rgba(255,140,0,0.16)),radial-gradient(circle_at_22%_30%,rgba(14,70,140,0.18),transparent_62%),radial-gradient(circle_at_78%_72%,rgba(255,140,0,0.08),transparent_70%)]"
+                    : "bg-transparent",
                 ].join(" ")}
               >
                 {/* IMPORTANT: items-start, not items-center */}

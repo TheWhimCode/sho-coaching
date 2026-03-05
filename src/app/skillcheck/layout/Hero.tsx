@@ -59,7 +59,9 @@ export default function Hero({
     });
 
     return () => cleanup.forEach((fn) => fn());
-  }, [hero, content]);
+    // Only re-run when hero changes (e.g. game mode). Don't reset when content
+    // changes (e.g. result screen appears) or we hide everything and wait again.
+  }, [hero]);
 
   return (
     <div ref={rootRef} className="w-full flex flex-col">
@@ -93,7 +95,6 @@ export default function Hero({
           className="relative w-full max-w-4xl mx-auto flex flex-col items-center p-2 md:p-4"
           style={{
             opacity: imagesReady ? 1 : 0,
-            transition: "opacity 150ms ease",
             pointerEvents: imagesReady ? "auto" : "none",
           }}
         >
@@ -107,7 +108,6 @@ export default function Hero({
           className="w-full py-6 text-white"
           style={{
             opacity: imagesReady ? 1 : 0,
-            transition: "opacity 150ms ease",
             pointerEvents: imagesReady ? "auto" : "none",
           }}
         >
