@@ -20,6 +20,14 @@ export const REVIEWS: Review[] = [
     rankTo: "Grandmaster",
     champion: "Akali",
   },
+  {
+    name: "Fiend",
+    text:
+      "It only took one session to identify my problems and give me the fix. You will see results instantly after the coaching session.",
+    rankFrom: "Gold",
+    rankTo: "Emerald",
+    champion: "Sona",
+  },
     {
     name: "Kefla",
     text:

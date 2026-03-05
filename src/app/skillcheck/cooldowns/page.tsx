@@ -5,6 +5,7 @@ import CooldownsClient from "./CooldownsClient";
 import { cooldownAbilities } from "./components/cooldownAbilities";
 import { fetchChampionSpellsById } from "@/lib/datadragon/championspells";
 import { champSquareUrlById } from "@/lib/datadragon";
+import { getCooldownsDailyChampion } from "@/lib/skillcheck/cooldownsDailyChampion";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -50,22 +51,17 @@ function pickSeeded<T>(arr: T[], seed: number) {
 }
 
 export default async function CooldownsPage() {
-  const eligibleChamps = Object.entries(cooldownAbilities)
-    .map(([id, keys]) => ({
-      id,
-      keys: keys.filter(Boolean) as SpellKey[],
-    }))
-    .filter((x) => x.keys.length > 0);
-
   const dayKey = ymdUTC(new Date());
 
-  const champSeed = hash32(`cooldowns:${dayKey}`);
-  const champ = pickSeeded(eligibleChamps, champSeed);
+  const championId = getCooldownsDailyChampion(dayKey);
+  const championKeys = (cooldownAbilities[championId] ?? []).filter(
+    Boolean
+  ) as SpellKey[];
 
-  const spellSeed = hash32(`cooldowns:${dayKey}:${champ.id}`);
-  const spellKey = pickSeeded(champ.keys, spellSeed);
+  const spellSeed = hash32(`cooldowns:${dayKey}:${championId}`);
+  const spellKey = pickSeeded(championKeys, spellSeed);
 
-  const { data, version } = await fetchChampionSpellsById(champ.id);
+  const { data, version } = await fetchChampionSpellsById(championId);
 
   const idx =
     spellKey === "Q"
@@ -80,13 +76,13 @@ export default async function CooldownsPage() {
 
   const maxRank = activeSpell.cooldowns?.length ?? 1;
   const rankArr = Array.from({ length: maxRank }, (_, i) => i + 1);
-  const rankSeed = hash32(`cooldowns:${dayKey}:${champ.id}:${spellKey}`);
+  const rankSeed = hash32(`cooldowns:${dayKey}:${championId}:${spellKey}`);
   const askedRank = pickSeeded(rankArr, rankSeed);
 
   const stat = await prisma.cooldownStat.findUnique({
     where: {
       championId_spellKey_rank: {
-        championId: champ.id,
+        championId,
         spellKey,
         rank: askedRank,
       },
@@ -109,7 +105,7 @@ export default async function CooldownsPage() {
   }
 
   const champMetaJson = await champMetaRes.json();
-  const champMeta = champMetaJson.data?.[champ.id];
+  const champMeta = champMetaJson.data?.[championId];
 
   const champName: string | undefined = champMeta?.name;
   const champTitle: string | undefined = champMeta?.title;
@@ -118,10 +114,10 @@ export default async function CooldownsPage() {
     <CooldownsClient
       dayKey={dayKey}
       champion={{
-        id: champ.id,
+        id: championId,
         name: champName,
         title: champTitle,
-        icon: champSquareUrlById(champ.id, version),
+        icon: champSquareUrlById(championId, version),
       }}
       spells={data.spells}
       initialActiveSpellId={activeSpell.id}

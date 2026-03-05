@@ -5,32 +5,25 @@ import {
   ymdUTC,
 } from "@/lib/skillcheck/dailyBackground";
 import { getChampionRegion } from "@/lib/datadragon/championRegions";
-import { prisma } from "@/lib/prisma";
-
-type DraftAnswer = { champ: string; explanation: string; correct?: true };
+import { getCooldownsDailyChampion } from "@/lib/skillcheck/cooldownsDailyChampion";
 
 export default async function SkillcheckLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const dayKey =
+  const dayKeyForBackground =
     process.env.SKILLCHECK_BACKGROUND_PER_RELOAD === "true"
       ? String(Date.now())
       : ymdUTC(new Date());
 
-  const raw = await prisma.draft.findFirst({
-    where: { status: "APPROVED" },
-    orderBy: { usedLast: "desc" },
-    select: { answers: true },
-  });
-  const answers = (raw?.answers ?? []) as DraftAnswer[];
-  const correctChamp = answers.find((a) => a.correct)?.champ;
-  const region = correctChamp ? getChampionRegion(correctChamp) : null;
+  const cooldownsDayKey = ymdUTC(new Date());
+  const cooldownsChampionId = getCooldownsDailyChampion(cooldownsDayKey);
+  const region = getChampionRegion(cooldownsChampionId) ?? "Runeterra";
 
   const dailyBackgroundPath = await getDailyBackgroundPathForRegion(
-    region ?? "Runeterra",
-    dayKey
+    region,
+    dayKeyForBackground
   );
 
   return (
