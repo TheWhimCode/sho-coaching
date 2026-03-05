@@ -10,7 +10,7 @@ import {
   ensureDDragonItems,
   getItemDescriptionHtml,
 } from "@/lib/datadragon/itemdescriptions";
-import { statIconUrlFromLine } from "@/lib/datadragon/staticons";
+import { statIconUrlFromLine } from "./statIcons";
 
 type ItemDTO = {
   id: string;
@@ -171,14 +171,14 @@ export default function ItemsResult({
                   return (
                     <div
                       key={`${i}-${line}`}
-                      className="flex items-center gap-2 text-[#F2C14E] font-semibold"
+                      className="flex items-center gap-2 text-white font-semibold"
                     >
                       {iconUrl && (
                         <img
                           src={iconUrl}
                           alt=""
                           aria-hidden
-                          className="w-8 h-8 shrink-0 object-contain"
+                          className="w-5 h-5 shrink-0 object-contain"
                         />
                       )}
                       <span>{line}</span>

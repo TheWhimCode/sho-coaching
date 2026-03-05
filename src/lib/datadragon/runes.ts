@@ -1,4 +1,4 @@
-import { currentPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch } from "./patch";
 import type {
   Rune,
   RuneSlot,
@@ -20,8 +20,11 @@ export function areRunesReady() {
 export function ensureRunesAssets(locale: string = "en_US") {
   if (runesInit) return runesInit;
 
-  runesInit = fetch(
-    `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/runesReforged.json`
+  runesInit = ensureLiveDDragonPatch().then(() =>
+    fetch(
+      `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/runesReforged.json`,
+      { cache: "no-store" }
+    )
   )
     .then(r => r.json())
     .then((trees: RunesTree[]) => {
@@ -79,7 +82,8 @@ let keystoneList: KeystoneRune[] | null = null;
 
 export async function fetchKeystoneRunes(patch?: string, locale: string = "en_US"): Promise<KeystoneRune[]> {
   if (keystoneList) return keystoneList;
-  const p = patch ?? (await import("./patch").then((m) => m.currentPatch));
+  await ensureLiveDDragonPatch();
+  const p = patch ?? currentPatch;
   const url = `https://ddragon.leagueoflegends.com/cdn/${p}/data/${locale}/runesReforged.json`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`runesReforged fetch failed: ${res.status}`);

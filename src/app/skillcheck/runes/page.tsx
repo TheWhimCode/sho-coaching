@@ -25,7 +25,7 @@ export default async function RunesPage() {
   });
 
   const championId = runeDaily?.championId ?? getRunesDailyChampion(dayKey);
-  const patch = process.env.NEXT_PUBLIC_DDRAGON_PATCH ?? "15.19.1";
+  const patch = process.env.NEXT_PUBLIC_DDRAGON_PATCH ?? "16.5.1";
   const championIcon = champSquareUrlById(championId, patch);
 
   const [keystoneRunes, champMeta] = await Promise.all([

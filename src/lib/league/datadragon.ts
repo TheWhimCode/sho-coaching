@@ -1,6 +1,6 @@
 // src/lib/league/datadragon.ts
 export const FALLBACK_PATCH =
-  process.env.NEXT_PUBLIC_DDRAGON_PATCH ?? '15.19.1';
+  process.env.NEXT_PUBLIC_DDRAGON_PATCH ?? '16.5.1';
 
 let currentPatch = FALLBACK_PATCH;
 

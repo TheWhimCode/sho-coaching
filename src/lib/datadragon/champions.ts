@@ -1,4 +1,4 @@
-import { currentPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch } from "./patch";
 import type { ChampionAliasMap } from "./types";
 
 const ALIAS: ChampionAliasMap = {
@@ -90,8 +90,10 @@ export async function getAllChampions(
   patch = currentPatch,
   locale = "en_US"
 ): Promise<{ id: string; name: string }[]> {
+  await ensureLiveDDragonPatch();
   const res = await fetch(
-    `https://ddragon.leagueoflegends.com/cdn/${patch}/data/${locale}/champion.json`
+    `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/champion.json`,
+    { cache: "no-store" }
   );
 
   if (!res.ok) {
@@ -103,8 +105,7 @@ export async function getAllChampions(
   return Object.values(data.data).map((c: any) => ({
     id: c.id,
     name: c.name,
-    title: c.title, // ✅ "the Nine-Tailed Fox"
-    icon: champSquareUrlById(c.id, patch), // ✅ square portrait
-
+    title: c.title,
+    icon: champSquareUrlById(c.id, currentPatch),
   }));
 }

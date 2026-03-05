@@ -1,4 +1,4 @@
-import { currentPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch } from "./patch";
 
 /* ---------------------------- Types ---------------------------- */
 
@@ -41,12 +41,12 @@ let items: Record<string, CDragonItem> = {};
 export function ensureItemsData(locale: string = "en_US") {
   if (itemsInit) return itemsInit;
 
-  const patch = normalizeCDragonPatch(currentPatch);
-
   const urlFor = (p: string) =>
     `https://raw.communitydragon.org/${p}/plugins/rcp-be-lol-game-data/global/default/v1/items.json`;
 
   itemsInit = (async () => {
+    await ensureLiveDDragonPatch();
+    const patch = normalizeCDragonPatch(currentPatch);
     const urls = [urlFor(patch), urlFor("latest")];
     let lastError: unknown = null;
 

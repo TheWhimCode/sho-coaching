@@ -1,4 +1,4 @@
-import { currentPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch } from "./patch";
 
 /* ---------------------------- Types ---------------------------- */
 
@@ -30,12 +30,12 @@ function normalizeDDragonPatch(patch: string) {
 export function ensureDDragonItems(locale: string = "en_US") {
   if (ddragItemsInit) return ddragItemsInit;
 
-  const patch = normalizeDDragonPatch(currentPatch);
-
   const urlFor = (p: string) =>
     `https://ddragon.leagueoflegends.com/cdn/${p}/data/${locale}/item.json`;
 
   ddragItemsInit = (async () => {
+    await ensureLiveDDragonPatch();
+    const patch = normalizeDDragonPatch(currentPatch);
     const urls = [urlFor(patch), urlFor("latest")];
     let lastError: unknown = null;
 
