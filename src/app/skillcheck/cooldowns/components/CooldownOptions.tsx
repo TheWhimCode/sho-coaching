@@ -125,7 +125,7 @@ function renderQuestionWithGradientAbility(question: string) {
   return (
     <>
       <span style={{ textShadow: HEAVY_TEXT_SHADOW }}>
-        Guess the cooldown of{" "}
+        What's the cooldown of{" "}
       </span>
       <span className="bg-clip-text text-transparent bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00] saturate-180">
         {ability}
