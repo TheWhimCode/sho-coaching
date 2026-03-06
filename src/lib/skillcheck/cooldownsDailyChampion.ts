@@ -24,6 +24,9 @@ function hash32(s: string) {
  * Returns the champion id (e.g. "Anivia") for the cooldowns game for the given dayKey (YYYY-MM-DD).
  */
 export function getCooldownsDailyChampion(dayKey: string): string {
+  if (ELIGIBLE_CHAMP_IDS.length === 0) {
+    throw new Error("No eligible champions for cooldowns daily");
+  }
   const seed = hash32(`cooldowns:${dayKey}`);
   const idx = seed % ELIGIBLE_CHAMP_IDS.length;
   return ELIGIBLE_CHAMP_IDS[idx] ?? ELIGIBLE_CHAMP_IDS[0]!;

@@ -178,7 +178,7 @@ export default function ItemsResult({
                           src={iconUrl}
                           alt=""
                           aria-hidden
-                          className="w-5 h-5 shrink-0 object-contain"
+                          className="w-4 h-4 shrink-0 object-contain"
                         />
                       )}
                       <span>{line}</span>

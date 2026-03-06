@@ -51,6 +51,30 @@ export async function getImageNamesInRegionFolder(region: string): Promise<strin
   }
 }
 
+async function getAllBackgroundImages(): Promise<{ folder: string; filename: string }[]> {
+  try {
+    const root = skillcheckDir();
+    const entries = await readdir(root, { withFileTypes: true } as any);
+    const results: { folder: string; filename: string }[] = [];
+
+    for (const entry of entries as any[]) {
+      if (!entry.isDirectory?.()) continue;
+      const folder = entry.name;
+      const dir = path.join(root, folder);
+      const files = await readdir(dir);
+      for (const f of files) {
+        if (IMAGE_EXT.has(path.extname(f).toLowerCase())) {
+          results.push({ folder, filename: f });
+        }
+      }
+    }
+
+    return results;
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Pick one image path for the day from the given region's folder.
  * Returns path relative to /skillcheck (e.g. "demacia/foo.jpg" or "background.jpg").
@@ -77,3 +101,21 @@ export async function getDailyBackgroundPathForRegion(
   const filename = images[index];
   return `${folder}/${filename}`;
 }
+
+/**
+ * Pick a background image from any region folder.
+ * Used when SKILLCHECK_BACKGROUND_PER_RELOAD is true (per‑reload randomness).
+ */
+export async function getRandomBackgroundPathAnyRegion(seed: string): Promise<string> {
+  const allImages = await getAllBackgroundImages();
+
+  if (allImages.length === 0) {
+    return DEFAULT_FALLBACK;
+  }
+
+  const hash = hash32(`skillcheck:any-region:${seed}`);
+  const index = hash % allImages.length;
+  const { folder, filename } = allImages[index];
+  return `${folder}/${filename}`;
+}
+
