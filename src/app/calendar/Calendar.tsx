@@ -164,11 +164,16 @@ useEffect(() => {
   end.setUTCDate(end.getUTCDate() + 14);
   end.setUTCHours(23, 59, 59, 999);
 
+  const effectiveHoldKey =
+    holdKey ??
+    userHoldKeyProp ??
+    (typeof window !== "undefined" ? sessionStorage.getItem("checkout:holdKey") : null);
+
   (async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchSlots(start, end, totalMinutes, holdKey ?? userHoldKeyProp, presetProp);
+      const data = await fetchSlots(start, end, totalMinutes, effectiveHoldKey, presetProp);
       if (!ignore) setSlots(data);
     } catch (e) {
       if (!ignore) {
@@ -279,6 +284,7 @@ const displayableDayKeys = useMemo(
       setHoldKey(k);
       if (typeof window !== "undefined") {
         sessionStorage.setItem(`hold:${selectedSlotId}`, k);
+        sessionStorage.setItem("checkout:holdKey", k);
       }
 
       const baseOnly = Math.max(30, liveMinutes);

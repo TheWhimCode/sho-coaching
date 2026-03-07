@@ -44,6 +44,10 @@ export default function SuccessClient() {
   const intentId = sp?.get("payment_intent") ?? undefined;
   const ref = useMemo(() => intentId ?? undefined, [intentId]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") sessionStorage.removeItem("checkout:holdKey");
+  }, []);
+
   const [booking, setBooking] = useState<BookingInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(!!ref);
   const [err, setErr] = useState<string | null>(null);

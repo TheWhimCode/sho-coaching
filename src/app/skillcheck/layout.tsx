@@ -1,5 +1,6 @@
 import SkillcheckRail from "./SkillcheckRail";
 import { SkillcheckBackgroundProvider } from "./layout/SkillcheckBackgroundContext";
+import LeaderboardNamePrompt from "./components/LeaderboardNamePrompt";
 import {
   getDailyBackgroundPathForRegion,
   getRandomBackgroundPathAnyRegion,
@@ -43,6 +44,9 @@ export default async function SkillcheckLayout({
 
       {/* Actual page content */}
       <div className="relative z-10">{children}</div>
+
+      {/* Pop-up when user first gets on the leaderboard (any game can trigger it) */}
+      <LeaderboardNamePrompt />
     </SkillcheckBackgroundProvider>
   );
 }

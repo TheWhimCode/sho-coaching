@@ -35,7 +35,7 @@ export function getLeaderboardClientId(): string {
   }
 }
 
-/** Get or create a random display name for the leaderboard; user can edit on the leaderboard page. */
+/** Get or create a random display name for the leaderboard. */
 export function getOrCreateLeaderboardDisplayName(): string {
   if (typeof window === "undefined") return "";
   try {
@@ -50,7 +50,7 @@ export function getOrCreateLeaderboardDisplayName(): string {
   }
 }
 
-/** Update stored display name after user edits on leaderboard page. */
+/** Update stored display name (e.g. after "you're on the board" popup). */
 export function setLeaderboardDisplayName(name: string): void {
   if (typeof window === "undefined") return;
   try {
@@ -61,7 +61,9 @@ export function setLeaderboardDisplayName(name: string): void {
 
 const MIN_STREAK_TO_ADD = 5;
 
-/** Call after recordSkillcheckPlay(); syncs to leaderboard if streak >= 5 (auto-add, no manual submit). */
+export const LEADERBOARD_ADDED_EVENT = "skillcheck:leaderboard-added";
+
+/** Call after recordSkillcheckPlay(); syncs to leaderboard if streak >= 5 (auto-add, no manual submit). Dispatches LEADERBOARD_ADDED_EVENT when user is newly added so UI can show name prompt. */
 export function syncToLeaderboardIfEligible(): void {
   if (typeof window === "undefined") return;
   try {
@@ -77,7 +79,14 @@ export function syncToLeaderboardIfEligible(): void {
         streakDays: streak.streakDays,
         displayName,
       }),
-    }).catch(() => {});
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.added === true) {
+          window.dispatchEvent(new CustomEvent(LEADERBOARD_ADDED_EVENT));
+        }
+      })
+      .catch(() => {});
   } catch {}
 }
 

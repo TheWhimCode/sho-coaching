@@ -14,15 +14,23 @@ export async function POST(req: Request) {
 
   const draftStatus = status as DraftStatus;
 
-  // When approving: put draft at back of queue = give it the newest usedLast
-  // (cron picks oldest first, so newest = last to be picked). Avoids ties.
-  const newest =
+  // When approving: put draft at front of queue = oldest usedLast in DB minus 1 day
+  // (cron picks oldest first, so this draft gets picked next). E.g. oldest 10/03 → this becomes 09/03.
+  const oldest =
     draftStatus === "APPROVED"
       ? await prisma.draft.findFirst({
-          where: { status: "APPROVED", id: { not: id } },
-          orderBy: { usedLast: "desc" },
+          where: { status: "APPROVED", usedLast: { not: null } },
+          orderBy: { usedLast: "asc" },
           select: { usedLast: true },
         })
+      : null;
+
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const usedLastWhenApproved =
+    draftStatus === "APPROVED"
+      ? oldest?.usedLast
+        ? new Date(oldest.usedLast.getTime() - oneDayMs)
+        : new Date(0)
       : null;
 
   const updateData: {
@@ -33,12 +41,7 @@ export async function POST(req: Request) {
   } = {
     status: draftStatus,
     answers: answers as Prisma.InputJsonValue,
-    usedLast:
-      draftStatus === "APPROVED"
-        ? newest?.usedLast
-          ? new Date(newest.usedLast.getTime() + 1)
-          : new Date(0)
-        : null,
+    usedLast: usedLastWhenApproved,
   };
 
   if (draftStatus === "APPROVED" && madeBy !== undefined) {

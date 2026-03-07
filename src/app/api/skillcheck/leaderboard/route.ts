@@ -77,6 +77,11 @@ export async function POST(req: Request) {
           : null)
       : undefined;
 
+  const existing = await prisma.leaderboardEntry.findUnique({
+    where: { clientId },
+    select: { clientId: true },
+  });
+
   await prisma.leaderboardEntry.upsert({
     where: { clientId },
     create: {
@@ -90,5 +95,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, added: !existing });
 }

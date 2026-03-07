@@ -114,6 +114,13 @@ export default function Client({ preset }: { preset: string }) {
     );
   }, [init]);
 
+  // Restore holdKey when user returns from checkout (e.g. Back) so their held slot stays selectable
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const k = sessionStorage.getItem("checkout:holdKey");
+    if (k) setUserHoldKey(k);
+  }, []);
+
   useEffect(() => {
     setActivePreset(
       getPreset(
