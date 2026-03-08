@@ -10,6 +10,7 @@ export const CHAMPION_REGION: Record<string, string> = {
   Akali: "Ionia",
   Akshan: "Shurima",
   Alistar: "Runeterra",
+  Ambessa: "Noxus",
   Amumu: "Shurima",
   Anivia: "Freljord",
   Annie: "Noxus",
