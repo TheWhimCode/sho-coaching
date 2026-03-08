@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
+import { accountByRiotTag } from "@/lib/riot";
 
 // ✅ ENGINE imports
 import { getDayAvailability } from "@/engine/scheduling/availability/getDayAvailability";
@@ -120,6 +121,45 @@ async function fetchRank(origin: string, server: string, puuid: string): Promise
   return null;
 }
 
+/** Backfill puuid for students that have riotTag + server but no puuid (e.g. Riot IDs with spaces were not resolved before). */
+async function backfillPuuidForStudents() {
+  const needPuuid = await prisma.student.findMany({
+    where: {
+      riotTag: { not: null },
+      server: { not: null },
+      puuid: null,
+    },
+    select: { id: true, riotTag: true, server: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  let filled = 0;
+  const start = Date.now();
+
+  for (const s of needPuuid) {
+    if (Date.now() - start > MAX_DURATION_MS) break;
+    const riotTag = (s.riotTag ?? "").trim();
+    const server = (s.server ?? "").trim();
+    if (!riotTag || !server) continue;
+
+    try {
+      const acct = await accountByRiotTag(server, riotTag);
+      if (acct?.puuid) {
+        await prisma.student.update({
+          where: { id: s.id },
+          data: { puuid: acct.puuid },
+        });
+        filled++;
+      }
+    } catch {
+      // skip on error (e.g. invalid tag or rate limit)
+    }
+    await sleep(INTERVAL_MS);
+  }
+
+  return { studentsNeedingPuuid: needPuuid.length, puuidsFilled: filled };
+}
+
 async function createRankSnapshots(origin: string) {
   const students = await prisma.student.findMany({
     where: { puuid: { not: null }, server: { not: null } },
@@ -166,7 +206,7 @@ async function createRankSnapshots(origin: string) {
 }
 
 async function runAll(origin: string) {
-  const results = { cleanup: null as any, slots: null as any, ranks: null as any, errors: [] as string[] };
+  const results = { cleanup: null as any, slots: null as any, puuidBackfill: null as any, ranks: null as any, errors: [] as string[] };
 
   try {
     results.cleanup = { deleted: await cleanupUnpaidBookings() };
@@ -178,6 +218,12 @@ async function runAll(origin: string) {
     results.slots = await manageSlots();
   } catch (e: any) {
     results.errors.push(`slots: ${e?.message || e}`);
+  }
+
+  try {
+    results.puuidBackfill = await backfillPuuidForStudents();
+  } catch (e: any) {
+    results.errors.push(`puuidBackfill: ${e?.message || e}`);
   }
 
   try {
