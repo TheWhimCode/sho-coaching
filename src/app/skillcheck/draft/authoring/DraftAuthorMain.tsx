@@ -13,6 +13,7 @@ import {
   Side,
   Pick,
   getGlobalPick,
+  getTeamIndexFromGlobalPick,
 } from "@/app/skillcheck/draft/draftCore";
 
 type ActiveSlot = {
@@ -38,6 +39,16 @@ function isSameSlot(a: ActiveSlot, b: ActiveSlot) {
   return !!a && !!b && a.side === b.side && a.index === b.index;
 }
 
+function slotFromGlobalPick(globalPick: number): ActiveSlot | null {
+  const blueIndex = getTeamIndexFromGlobalPick("blue", globalPick);
+  if (blueIndex !== -1) return { side: "blue", index: blueIndex };
+
+  const redIndex = getTeamIndexFromGlobalPick("red", globalPick);
+  if (redIndex !== -1) return { side: "red", index: redIndex };
+
+  return null;
+}
+
 export default function DraftAuthorMain({
   initialStep = "setup",
   submitUrl = "/api/skillcheck/draft/db",
@@ -58,6 +69,7 @@ export default function DraftAuthorMain({
   const [red, setRed] = useState<Pick[]>(EMPTY_TEAM);
 
   const [activeSlot, setActiveSlot] = useState<ActiveSlot>(null);
+  const [globalPickCursor, setGlobalPickCursor] = useState<number | null>(null);
   const [previewChamp, setPreviewChamp] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
 
@@ -131,6 +143,24 @@ export default function DraftAuthorMain({
     return null;
   }
 
+  function findNextActiveFromGlobal(
+    currentGlobal: number | null
+  ): { slot: ActiveSlot | null; global: number | null } {
+    if (!setup) return { slot: null, global: null };
+
+    const start = currentGlobal === null ? 0 : currentGlobal + 1;
+
+    for (let g = start; g <= 9; g++) {
+      const slot = slotFromGlobalPick(g);
+      if (!slot) continue;
+      if (isSlotSelectable(slot.side, slot.index)) {
+        return { slot, global: g };
+      }
+    }
+
+    return { slot: null, global: null };
+  }
+
   /* --------------------------------------------------
      reset draft when setup changes
   -------------------------------------------------- */
@@ -140,7 +170,10 @@ export default function DraftAuthorMain({
     setBlue(EMPTY_TEAM);
     setRed(EMPTY_TEAM);
 
-    setActiveSlot({ side: setup.side, index: 0 });
+    setGlobalPickCursor(null);
+    const { slot, global } = findNextActiveFromGlobal(null);
+    setActiveSlot(slot);
+    setGlobalPickCursor(global);
     setLocked(false);
   }, [setup?.side, setup?.role, setup?.mainChamp]);
 
@@ -168,20 +201,23 @@ export default function DraftAuthorMain({
   -------------------------------------------------- */
   useEffect(() => {
     if (!setup) return;
-    if (!activeSlot) return;
+    if (activeSlot && isSlotSelectable(activeSlot.side, activeSlot.index))
+      return;
 
-    if (isSlotSelectable(activeSlot.side, activeSlot.index)) return;
+    const currentGlobal =
+      globalPickCursor === null && activeSlot
+        ? getGlobalPick(activeSlot.side, activeSlot.index)
+        : globalPickCursor;
 
-    const next =
-      findNextSelectableSameSide(activeSlot) ??
-      findFirstSelectableOnSide(setup.side) ??
-      null;
+    const { slot, global } = findNextActiveFromGlobal(currentGlobal);
 
-    if (!isSameSlot(activeSlot, next)) {
-      setActiveSlot(next);
+    if (!isSameSlot(activeSlot, slot)) {
+      setActiveSlot(slot);
       setPreviewChamp(null);
     }
-  }, [setup, blue, red, activeSlot, locked]);
+
+    setGlobalPickCursor(global);
+  }, [setup, blue, red, activeSlot, locked, globalPickCursor]);
 
   /* --------------------------------------------------
      AUTO-CLEAR illegal enemy champs after reorder
@@ -241,8 +277,9 @@ export default function DraftAuthorMain({
     setPreviewChamp(null);
 
     if (champ) {
-      const nextSlot = findNextSelectableSameSide(activeSlot);
-      setActiveSlot(nextSlot);
+      const { slot, global } = findNextActiveFromGlobal(globalPickCursor);
+      setActiveSlot(slot);
+      setGlobalPickCursor(global);
     }
   }
 
@@ -371,6 +408,7 @@ export default function DraftAuthorMain({
         onSlotClick={(side, index) => {
           if (!isSlotSelectable(side, index)) return;
           setActiveSlot({ side, index });
+          setGlobalPickCursor(getGlobalPick(side, index));
         }}
         center={
           <ChampSelectPanel

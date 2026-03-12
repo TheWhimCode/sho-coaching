@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import GlassPanel from "@/app/_components/panels/GlassPanel";
 
 import {
   champSquareUrlById,
@@ -23,6 +24,8 @@ type ActiveSlot = {
 } | null;
 
 type DisabledSlots = Partial<Record<Side, boolean[]>>;
+
+const AUTHOR_TUTORIAL_KEY = "skillcheck:draftAuthorTutorialSeen";
 
 export function DraftOverlay({
   blue,
@@ -59,10 +62,24 @@ export function DraftOverlay({
   disabledSlots?: DisabledSlots;
 }) {
   const [hydrated, setHydrated] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState<1 | 2 | 3 | null>(1);
 
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  // Only show the authoring tutorial the first time on this device.
+  useEffect(() => {
+    if (!authoring) return;
+    try {
+      const seen = localStorage.getItem(AUTHOR_TUTORIAL_KEY);
+      if (seen === "1") {
+        setTutorialStep(null);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [authoring]);
 
   if (
     !hydrated ||
@@ -73,43 +90,106 @@ export function DraftOverlay({
     return null;
   }
 
-  return (
-    <div className="flex justify-center my-6 gap-10">
-      <Team
-        team={blue}
-        side="blue"
-        role={role}
-        userTeam={userTeam}
-        previewChamp={previewChamp}
-        solutionChamp={solutionChamp}
-        locked={locked}
-        authoring={authoring}
-        activeSlot={activeSlot}
-        onSlotClick={onSlotClick}
-        onMoveRole={onMoveRole}
-        disabledSlots={disabledSlots}
-      />
+  // Normal player-facing draft UI: keep original wider spacing.
+  if (!authoring) {
+    return (
+      <div className="flex justify-center my-6 gap-10">
+        <Team
+          team={blue}
+          side="blue"
+          role={role}
+          userTeam={userTeam}
+          previewChamp={previewChamp}
+          solutionChamp={solutionChamp}
+          locked={locked}
+        />
 
-      {authoring && (
-        <div className="w-[720px] flex items-center justify-center">
-          {center}
+        <Team
+          team={red}
+          side="red"
+          role={role}
+          userTeam={userTeam}
+          previewChamp={previewChamp}
+          solutionChamp={solutionChamp}
+          locked={locked}
+        />
+      </div>
+    );
+  }
+
+  const showTutorial = tutorialStep !== null;
+
+  return (
+    <div className="relative flex w-full max-w-6xl items-stretch justify-between my-6 px-4 py-6">
+      <div className="flex-1 flex justify-start">
+        <Team
+          team={blue}
+          side="blue"
+          role={role}
+          userTeam={userTeam}
+          previewChamp={previewChamp}
+          solutionChamp={solutionChamp}
+          locked={locked}
+          authoring
+          activeSlot={activeSlot}
+          onSlotClick={onSlotClick}
+          onMoveRole={onMoveRole}
+          disabledSlots={disabledSlots}
+          tutorialStep={tutorialStep}
+          showTutorial={showTutorial}
+          onAdvanceTutorial={setTutorialStep}
+        />
+      </div>
+
+      <div className="w-[720px] flex items-center justify-center">
+        {center}
+      </div>
+
+      <div className="flex-1 flex justify-end">
+        <Team
+          team={red}
+          side="red"
+          role={role}
+          userTeam={userTeam}
+          previewChamp={previewChamp}
+          solutionChamp={solutionChamp}
+          locked={locked}
+          authoring
+          activeSlot={activeSlot}
+          onSlotClick={onSlotClick}
+          onMoveRole={onMoveRole}
+          disabledSlots={disabledSlots}
+          tutorialStep={tutorialStep}
+          showTutorial={showTutorial}
+          onAdvanceTutorial={setTutorialStep}
+        />
+      </div>
+
+      {showTutorial && tutorialStep === 3 && (
+        <div className="pointer-events-auto absolute -bottom-12 right-8">
+          <GlassPanel className="max-w-sm px-4 py-3 text-base text-white/80 shadow-lg backdrop-blur-[6px]">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                Players that pick after you show as hovering or locked.
+              </div>
+              <button
+                type="button"
+                className="cursor-pointer text-base text-sky-300 hover:text-sky-200"
+                onClick={() => {
+                  setTutorialStep(null);
+                  try {
+                    localStorage.setItem(AUTHOR_TUTORIAL_KEY, "1");
+                  } catch {
+                    // ignore
+                  }
+                }}
+              >
+                Finish 3/3
+              </button>
+            </div>
+          </GlassPanel>
         </div>
       )}
-
-      <Team
-        team={red}
-        side="red"
-        role={role}
-        userTeam={userTeam}
-        previewChamp={previewChamp}
-        solutionChamp={solutionChamp}
-        locked={locked}
-        authoring={authoring}
-        activeSlot={activeSlot}
-        onSlotClick={onSlotClick}
-        onMoveRole={onMoveRole}
-        disabledSlots={disabledSlots}
-      />
     </div>
   );
 }
@@ -132,6 +212,9 @@ function Team({
   onSlotClick,
   onMoveRole,
   disabledSlots,
+  tutorialStep,
+  showTutorial,
+  onAdvanceTutorial,
 }: {
   team: Pick[];
   side: Side;
@@ -148,6 +231,9 @@ function Team({
   onMoveRole?: (side: Side, index: number, dir: -1 | 1) => void;
 
   disabledSlots?: DisabledSlots;
+  tutorialStep?: 1 | 2 | 3 | null;
+  showTutorial?: boolean;
+  onAdvanceTutorial?: (step: 1 | 2 | 3 | null) => void;
 }) {
   const userIndex = team.findIndex(
     (p) => side === userTeam && p.role === role
@@ -159,7 +245,44 @@ function Team({
       : -1;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="relative flex flex-col gap-3">
+      {showTutorial && tutorialStep === 2 && authoring && side === "blue" && (
+        <div className="pointer-events-auto absolute top-1/2 -left-72 -translate-y-1/2 z-20">
+          <GlassPanel className="max-w-xs px-5 py-4 text-base text-white/80 shadow-lg backdrop-blur-[6px]">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                Use the arrows to change the pick-order and match a real champselect.
+              </div>
+              <button
+                type="button"
+                className="cursor-pointer text-base text-sky-300 hover:text-sky-200"
+                onClick={() => onAdvanceTutorial?.(3)}
+              >
+                Next 2/3
+              </button>
+            </div>
+          </GlassPanel>
+        </div>
+      )}
+
+      {showTutorial && tutorialStep === 1 && authoring && side === "red" && (
+        <div className="pointer-events-auto absolute top-1/2 -right-72 -translate-y-1/2 z-20">
+          <GlassPanel className="max-w-xs px-4 py-3 text-base text-white/80 shadow-lg backdrop-blur-[6px]">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                Pick the comps for both teams that will enable your champ to the max.
+              </div>
+              <button
+                type="button"
+                className="cursor-pointer text-base text-sky-300 hover:text-sky-200"
+                onClick={() => onAdvanceTutorial?.(2)}
+              >
+                Next 1/3
+              </button>
+            </div>
+          </GlassPanel>
+        </div>
+      )}
       {team.map((p, i) => {
         const isUserSlot =
           !authoring && side === userTeam && p.role === role;

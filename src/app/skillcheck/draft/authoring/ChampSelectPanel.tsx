@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { champSquareUrlById, getAllChampions } from "@/lib/datadragon";
+import {
+  champSquareUrlById,
+  getAllChampions,
+  resolveChampionId,
+} from "@/lib/datadragon";
 
 function normalizeName(input: string) {
   return input.replace(/[’‘]/g, "'").replace(/\s+/g, " ").trim();
@@ -71,10 +75,14 @@ export default function ChampSelectPanel({
     };
   }, []);
 
-  const disabledSet = useMemo(
-    () => new Set(disabledChamps.map((c) => normalizeName(c).toLowerCase())),
-    [disabledChamps]
-  );
+  const disabledIdSet = useMemo(() => {
+    return new Set(
+      disabledChamps
+        .map((c) => resolveChampionId(c))
+        .filter((c) => c)
+        .map((c) => c.toLowerCase())
+    );
+  }, [disabledChamps]);
 
   const filtered = useMemo(() => {
     const q = normalizeName(query).toLowerCase();
@@ -142,7 +150,8 @@ export default function ChampSelectPanel({
         {!loading &&
           filtered.map(({ id, name: rawName }) => {
             const name = normalizeName(rawName);
-            const isDisabled = disabledSet.has(name.toLowerCase());
+            const resolvedId = resolveChampionId(id);
+            const isDisabled = !!resolvedId && disabledIdSet.has(resolvedId.toLowerCase());
 
             return (
               <button
@@ -151,7 +160,6 @@ onMouseEnter={() => !isDisabled && onHover(id)}
 onClick={() => {
   if (!isDisabled) onSelect(id);
 }}
-
                 disabled={isDisabled}
                 className={[
                   "w-16 h-16 rounded-lg overflow-hidden transition",
