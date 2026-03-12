@@ -22,10 +22,12 @@ export function regionalForServer(server: string): Regional {
   return "europe";
 }
 
+/** Parse "GameName#TAG" (game name can contain spaces). */
 export function parseRiotTag(riotTag: string): { gameName: string; tagLine: string } {
-  const [gameName, tagLine] = (riotTag || "").split("#");
-  if (!gameName || !tagLine) throw new Error('riotTag must be "Name#TAG"');
-  return { gameName, tagLine };
+  const tag = (riotTag || "").trim();
+  const i = tag.indexOf("#");
+  if (i <= 0 || i === tag.length - 1) throw new Error('riotTag must be "GameName#TAG"');
+  return { gameName: tag.slice(0, i).trim(), tagLine: tag.slice(i + 1).trim() };
 }
 
 async function expectOk(res: Response, label: string) {
