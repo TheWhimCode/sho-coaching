@@ -309,6 +309,9 @@ export default function DraftAuthorMain({
           <h2 className="text-2xl font-semibold mb-2">
             Draft submitted 🎉
           </h2>
+          <p className="text-white/70 mb-1">
+            Sho will approve it asap (if it&apos;s good)
+          </p>
           <p className="text-white/70">
             {successMode === "admin"
               ? "You can create another draft right away on this page."

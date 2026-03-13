@@ -190,7 +190,7 @@ export function DraftOverlay({
           <GlassPanel className="max-w-sm px-4 py-3 text-base text-white/80 shadow-lg backdrop-blur-[6px]">
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                Players that pick after you show as hovering or locked.
+                Enemies that pick after you are locked. Adjust pick-order to unlock them.
               </div>
               <button
                 type="button"
