@@ -22,6 +22,7 @@ const STAT_ICON_MAP: Record<string, string> = {
   "mana regeneration": "ManaRegen.webp",
   "attack speed": "AS.webp",
   "movement speed": "MS.webp",
+  "move speed": "MS.webp",
   "tenacity": "Tenacity.webp",
   "lethality": "ArmorPen.webp",
   "armor penetration": "ArmorPen.webp",

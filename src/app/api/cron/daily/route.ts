@@ -113,8 +113,23 @@ async function fetchRank(origin: string, server: string, puuid: string): Promise
           division: s?.division ?? s?.rank ?? null,
           lp: Number(s?.lp ?? s?.leaguePoints ?? 0) || 0,
         };
+      } else {
+        const body = await r.text().catch(() => "");
+        console.warn("cron.daily fetchRank non-ok", {
+          server,
+          puuid: puuid.slice(0, 16) + "...",
+          status: r.status,
+          statusText: r.statusText,
+          body: body.slice(0, 200),
+        });
       }
-    } catch {}
+    } catch (e: any) {
+      console.warn("cron.daily fetchRank error", {
+        server,
+        puuid: puuid.slice(0, 16) + "...",
+        error: String(e?.message || e),
+      });
+    }
     clearTimeout(tm);
     await sleep(1000);
   }
@@ -184,6 +199,12 @@ async function createRankSnapshots(origin: string) {
         tier: rank.tier,
         division: rank.division ?? null,
         lp: rank.lp,
+      });
+    } else {
+      console.warn("cron.daily rank snapshot skipped (no rank)", {
+        studentId: s.id,
+        server: s.server,
+        puuid: s.puuid?.slice(0, 16) + "...",
       });
     }
 

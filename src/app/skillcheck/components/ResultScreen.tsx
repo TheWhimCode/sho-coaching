@@ -143,7 +143,7 @@ export default function ResultsScreen({
           <div className="mt-8 flex justify-center">
             <div
               className={`
-                w-full max-w-[320px]
+                w-full max-w-[340px]
                 px-4 py-3
                 rounded-lg
                 border
