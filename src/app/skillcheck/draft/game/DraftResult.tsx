@@ -52,10 +52,10 @@ export function ResultScreen({
           </span>
           {madeBy && (
             <span
-              className="text-base font-semibold text-sky-100 shrink-0 px-4 py-2 rounded-lg bg-black/70 border border-sky-400/70 shadow-[0_0_0_1px_rgba(125,211,252,0.9)] inline-flex items-center gap-1.5"
+              className="text-base font-medium text-white/60 shrink-0 px-4 py-2 rounded-lg bg-black/40 border border-white/25 inline-flex items-center gap-1.5"
               aria-label={`Draft made by ${madeBy}`}
             >
-              Draft made by <span className="text-white">{madeBy}</span>
+              Draft made by <span className="text-white/90">{madeBy}</span>
             </span>
           )}
         </div>

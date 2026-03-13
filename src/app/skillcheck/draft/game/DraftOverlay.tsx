@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
+import { RefreshCw } from "lucide-react";
 
 import {
   champSquareUrlById,
@@ -40,6 +41,8 @@ export function DraftOverlay({
   onSlotClick,
   center,
   onMoveRole,
+  onToggleLaneOrder,
+  suppressHover,
   disabledSlots,
 }: {
   blue: Pick[];
@@ -59,6 +62,8 @@ export function DraftOverlay({
 
   onMoveRole?: (side: Side, index: number, dir: -1 | 1) => void;
 
+  onToggleLaneOrder?: () => void;
+  suppressHover?: boolean;
   disabledSlots?: DisabledSlots;
 }) {
   const [hydrated, setHydrated] = useState(false);
@@ -93,7 +98,18 @@ export function DraftOverlay({
   // Normal player-facing draft UI: keep original wider spacing.
   if (!authoring) {
     return (
-      <div className="flex justify-center my-6 gap-10">
+      <div className="relative flex justify-center my-6 gap-10">
+        {onToggleLaneOrder && (
+          <button
+            type="button"
+            onClick={onToggleLaneOrder}
+            className="pointer-events-auto absolute -bottom-14 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-lg border-2 border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-white shadow-[0_10px_15px_rgba(0,0,0,0.9),0_4px_6px_rgba(0,0,0,0.8)] hover:bg-gray-800 transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.2} />
+            <span>Switch order</span>
+          </button>
+        )}
+
         <Team
           team={blue}
           side="blue"
@@ -102,6 +118,7 @@ export function DraftOverlay({
           previewChamp={previewChamp}
           solutionChamp={solutionChamp}
           locked={locked}
+          suppressHover={suppressHover}
         />
 
         <Team
@@ -112,6 +129,7 @@ export function DraftOverlay({
           previewChamp={previewChamp}
           solutionChamp={solutionChamp}
           locked={locked}
+          suppressHover={suppressHover}
         />
       </div>
     );
@@ -138,6 +156,7 @@ export function DraftOverlay({
           tutorialStep={tutorialStep}
           showTutorial={showTutorial}
           onAdvanceTutorial={setTutorialStep}
+          suppressHover={suppressHover}
         />
       </div>
 
@@ -162,6 +181,7 @@ export function DraftOverlay({
           tutorialStep={tutorialStep}
           showTutorial={showTutorial}
           onAdvanceTutorial={setTutorialStep}
+          suppressHover={suppressHover}
         />
       </div>
 
@@ -215,6 +235,7 @@ function Team({
   tutorialStep,
   showTutorial,
   onAdvanceTutorial,
+  suppressHover,
 }: {
   team: Pick[];
   side: Side;
@@ -234,6 +255,7 @@ function Team({
   tutorialStep?: 1 | 2 | 3 | null;
   showTutorial?: boolean;
   onAdvanceTutorial?: (step: 1 | 2 | 3 | null) => void;
+  suppressHover?: boolean;
 }) {
   const userIndex = team.findIndex(
     (p) => side === userTeam && p.role === role
@@ -331,13 +353,17 @@ function Team({
               i,
               userIndex
             );
+        const effectiveState =
+          !authoring && suppressHover && rawState === "hover"
+            ? "filled"
+            : rawState;
 
         const slotState: SlotState =
-          rawState === "disabled"
+          effectiveState === "disabled"
             ? "blocked"
-            : rawState === "active"
+            : effectiveState === "active"
             ? "solution"
-            : rawState;
+            : effectiveState;
 
         const shouldPulse =
           !locked &&
@@ -349,7 +375,7 @@ function Team({
           <div
             key={`${side}-${i}`}
             className={
-              "flex items-center gap-3 " +
+              "flex items-center gap-3 transition-transform duration-300 ease-out " +
               (side === "red" ? "flex-row-reverse" : "")
             }
           >

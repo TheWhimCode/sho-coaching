@@ -50,6 +50,7 @@ export default function DraftClient({
 
   const [blue, setBlue] = useState<Pick[]>(draft.blue);
   const [red, setRed] = useState<Pick[]>(draft.red);
+  const [laneOrderActive, setLaneOrderActive] = useState(false);
 
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -82,6 +83,17 @@ export default function DraftClient({
   }
 
   const madeBy = draft.madeBy?.trim() || null;
+
+  const baseBlueOrder = useMemo(
+    () => draft.blue.map((p) => p.role),
+    [draft.blue]
+  );
+  const baseRedOrder = useMemo(
+    () => draft.red.map((p) => p.role),
+    [draft.red]
+  );
+
+  const LANE_ORDER: Pick["role"][] = ["top", "jng", "mid", "adc", "sup"];
 
   /* -----------------------------
      derived data
@@ -243,6 +255,27 @@ export default function DraftClient({
     );
   }
 
+  function reorderTeam(team: Pick[], order: Pick["role"][]): Pick[] {
+    return order.map((role) => {
+      const existing = team.find((p) => p.role === role);
+      return existing ? { ...existing } : { role, champ: null };
+    });
+  }
+
+  function toggleLaneOrder() {
+    setLaneOrderActive((prev) => {
+      const toLane = !prev;
+      if (toLane) {
+        setBlue((team) => reorderTeam(team, LANE_ORDER));
+        setRed((team) => reorderTeam(team, LANE_ORDER));
+      } else {
+        setBlue((team) => reorderTeam(team, baseBlueOrder));
+        setRed((team) => reorderTeam(team, baseRedOrder));
+      }
+      return toLane;
+    });
+  }
+
   return (
     <div>
       {showSuccess && <SuccessOverlay text="CORRECT!" />}
@@ -263,6 +296,8 @@ export default function DraftClient({
                 solutionChamp={correctAnswer}
                 previewChamp={!completed ? selected : null}
                 locked={completed}
+                onToggleLaneOrder={toggleLaneOrder}
+                suppressHover={laneOrderActive}
               />
             )
           }

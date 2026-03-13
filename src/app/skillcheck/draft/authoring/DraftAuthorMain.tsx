@@ -299,6 +299,23 @@ export default function DraftAuthorMain({
     setActiveSlot(isSlotSelectable(side, next) ? candidate : null);
   }
 
+  function reorderTeam(team: Pick[], order: Role[]): Pick[] {
+    return order.map((role) => {
+      const existing = team.find((p) => p.role === role);
+      return existing ? { ...existing } : { role, champ: null };
+    });
+  }
+
+  function toggleLaneOrder() {
+    setLaneOrderActive((prev) => {
+      const toLane = !prev;
+      const targetOrder = toLane ? LANE_ORDER : DB_ORDER;
+      setBlue((team) => reorderTeam(team, targetOrder));
+      setRed((team) => reorderTeam(team, targetOrder));
+      return toLane;
+    });
+  }
+
   /* --------------------------------
      SUCCESS SHORT-CIRCUIT
   -------------------------------- */
@@ -403,7 +420,6 @@ export default function DraftAuthorMain({
         authoring
         activeSlot={activeSlot}
         disabledSlots={disabledSlots}
-
         onMoveRole={moveRole}
         onSlotClick={(side, index) => {
           if (!isSlotSelectable(side, index)) return;
