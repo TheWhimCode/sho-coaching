@@ -16,6 +16,7 @@ export async function GET(req: Request) {
 
   const [entries, myEntry] = await Promise.all([
     prisma.leaderboardEntry.findMany({
+      where: { streakDays: { gt: 0 } },
       orderBy: { streakDays: "desc" },
       take: MAX_ENTRIES,
       select: {
