@@ -283,20 +283,16 @@ export default function DraftAuthorMain({
     }
   }
 
-  function moveRole(side: Side, index: number, dir: -1 | 1) {
-    const team = side === "blue" ? blue : red;
+  function reorderTeam(side: Side, newOrder: Pick[]) {
     const setTeam = side === "blue" ? setBlue : setRed;
-
-    const next = index + dir;
-    if (next < 0 || next >= team.length) return;
-
-    const updated = [...team];
-    [updated[index], updated[next]] = [updated[next], updated[index]];
-
-    setTeam(updated);
-
-    const candidate: ActiveSlot = { side, index: next };
-    setActiveSlot(isSlotSelectable(side, next) ? candidate : null);
+    const team = side === "blue" ? blue : red;
+    setTeam(newOrder);
+    if (activeSlot?.side === side) {
+      const oldPick = team[activeSlot.index];
+      const newIndex = newOrder.findIndex((p) => p.role === oldPick?.role);
+      if (newIndex >= 0) setActiveSlot({ side, index: newIndex });
+      else setActiveSlot(null);
+    }
   }
 
   /* --------------------------------
@@ -406,9 +402,10 @@ export default function DraftAuthorMain({
         authoring
         activeSlot={activeSlot}
         disabledSlots={disabledSlots}
-        onMoveRole={moveRole}
+        onReorderTeam={reorderTeam}
         onSlotClick={(side, index) => {
           if (!isSlotSelectable(side, index)) return;
+          setPreviewChamp(null);
           setActiveSlot({ side, index });
           setGlobalPickCursor(getGlobalPick(side, index));
         }}

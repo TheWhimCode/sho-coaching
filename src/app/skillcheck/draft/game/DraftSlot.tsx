@@ -20,11 +20,13 @@ export function DraftSlot({
   pulse?: boolean;
   onClick?: () => void;
 }) {
+  const isBlocked = state === "blocked";
+
   return (
     <div
       onClick={onClick}
       className={[
-        "w-16 h-16 rounded-lg border-2 relative overflow-hidden",
+        "group w-16 h-16 rounded-lg border-2 relative overflow-hidden",
         "flex items-center justify-center transition",
         "bg-gray-900",
         "shadow-[0_10px_15px_rgba(0,0,0,0.9),0_4px_6px_rgba(0,0,0,0.8)]",
@@ -35,7 +37,7 @@ export function DraftSlot({
         // base borders (no container opacity)
         state === "empty" && "border-gray-700",
         state === "hover" && "border-gray-500",
-        state === "blocked" && "border-gray-700",
+        isBlocked && "border-gray-700 opacity-80",
 
         // filled = team color
         state === "filled" &&
@@ -49,7 +51,8 @@ export function DraftSlot({
         state === "solution" && "border-yellow-400",
         highlight && "border-yellow-400",
 
-        onClick ? "cursor-pointer" : "cursor-not-allowed",
+        // cursor: disabled when blocked, else pointer if clickable
+        isBlocked ? "cursor-not-allowed" : onClick ? "cursor-pointer" : "cursor-not-allowed",
       ].join(" ")}
     >
       {champ ? (
@@ -59,16 +62,20 @@ export function DraftSlot({
           className={[
             "w-full h-full object-cover",
             state === "hover" && "opacity-50",
-            state === "blocked" && "opacity-25",
           ].join(" ")}
         />
       ) : (
         <div
           className={[
             "w-full h-full bg-gray-800",
-            state === "blocked" ? "opacity-20" : "opacity-40",
+            "opacity-40",
           ].join(" ")}
         />
+      )}
+
+      {/* Blocked: dark overlay */}
+      {isBlocked && (
+        <div className="absolute inset-0 bg-black/80 pointer-events-none" aria-hidden />
       )}
 
       {/* HOVERING overlay */}
@@ -79,9 +86,21 @@ export function DraftSlot({
       )}
 
       {/* BLOCKED diagonal */}
-      {state === "blocked" && (
+      {isBlocked && (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
           <div className="w-[140%] h-[3px] bg-gray-700 -rotate-45" />
+        </div>
+      )}
+
+      {/* Blocked: hover hint "Pick-order locked" */}
+      {isBlocked && (
+        <div
+          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none bg-black/30"
+          aria-hidden
+        >
+          <span className="text-[9px] font-medium text-white/80 text-center px-1 leading-tight">
+            Locked by pick-order
+          </span>
         </div>
       )}
     </div>

@@ -1,8 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
-import { RefreshCw } from "lucide-react";
+import { GripVertical, RefreshCw } from "lucide-react";
 
 import {
   champSquareUrlById,
@@ -40,7 +55,7 @@ export function DraftOverlay({
   activeSlot,
   onSlotClick,
   center,
-  onMoveRole,
+  onReorderTeam,
   onToggleLaneOrder,
   suppressHover,
   disabledSlots,
@@ -60,7 +75,7 @@ export function DraftOverlay({
 
   center?: React.ReactNode;
 
-  onMoveRole?: (side: Side, index: number, dir: -1 | 1) => void;
+  onReorderTeam?: (side: Side, newOrder: Pick[]) => void;
 
   onToggleLaneOrder?: () => void;
   suppressHover?: boolean;
@@ -85,6 +100,17 @@ export function DraftOverlay({
       // ignore storage errors
     }
   }, [authoring]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
+
+  const [justDropped, setJustDropped] = useState(false);
+  useEffect(() => {
+    if (!justDropped) return;
+    const id = requestAnimationFrame(() => setJustDropped(false));
+    return () => cancelAnimationFrame(id);
+  }, [justDropped]);
 
   if (
     !hydrated ||
@@ -137,24 +163,53 @@ export function DraftOverlay({
 
   const showTutorial = tutorialStep !== null;
 
+  const handleBlueDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !onReorderTeam) return;
+    const oldIndex = blue.findIndex((_, i) => String(active.id) === `blue-${i}`);
+    const newIndex = blue.findIndex((_, i) => String(over.id) === `blue-${i}`);
+    if (oldIndex === -1 || newIndex === -1) return;
+    // Flush reorder first so parent commits new order + activeSlot; then set justDropped.
+    // That way the highlight (activeSlot) is already correct when we snap rows.
+    flushSync(() => {
+      onReorderTeam("blue", arrayMove([...blue], oldIndex, newIndex));
+    });
+    setJustDropped(true);
+  };
+
+  const handleRedDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !onReorderTeam) return;
+    const oldIndex = red.findIndex((_, i) => String(active.id) === `red-${i}`);
+    const newIndex = red.findIndex((_, i) => String(over.id) === `red-${i}`);
+    if (oldIndex === -1 || newIndex === -1) return;
+    flushSync(() => {
+      onReorderTeam("red", arrayMove([...red], oldIndex, newIndex));
+    });
+    setJustDropped(true);
+  };
+
   return (
     <div className="relative flex w-full max-w-6xl items-stretch justify-between my-6 px-4 py-6">
       <div className="flex-1 flex justify-start">
-        <Team
-          team={blue}
-          side="blue"
-          role={role}
-          userTeam={userTeam}
-          previewChamp={previewChamp}
-          solutionChamp={solutionChamp}
-          locked={locked}
-          authoring
-          activeSlot={activeSlot}
-          onSlotClick={onSlotClick}
-          onMoveRole={onMoveRole}
-          disabledSlots={disabledSlots}
-          suppressHover={suppressHover}
-        />
+        <DndContext onDragEnd={handleBlueDragEnd} sensors={sensors}>
+          <Team
+            team={blue}
+            side="blue"
+            role={role}
+            userTeam={userTeam}
+            previewChamp={previewChamp}
+            solutionChamp={solutionChamp}
+            locked={locked}
+            authoring
+            sortable={!!onReorderTeam}
+            justDropped={justDropped}
+            activeSlot={activeSlot}
+            onSlotClick={onSlotClick}
+            disabledSlots={disabledSlots}
+            suppressHover={suppressHover}
+          />
+        </DndContext>
       </div>
 
       <div className="w-[720px] flex items-center justify-center">
@@ -162,21 +217,24 @@ export function DraftOverlay({
       </div>
 
       <div className="flex-1 flex justify-end">
-        <Team
-          team={red}
-          side="red"
-          role={role}
-          userTeam={userTeam}
-          previewChamp={previewChamp}
-          solutionChamp={solutionChamp}
-          locked={locked}
-          authoring
-          activeSlot={activeSlot}
-          onSlotClick={onSlotClick}
-          onMoveRole={onMoveRole}
-          disabledSlots={disabledSlots}
-          suppressHover={suppressHover}
-        />
+        <DndContext onDragEnd={handleRedDragEnd} sensors={sensors}>
+          <Team
+            team={red}
+            side="red"
+            role={role}
+            userTeam={userTeam}
+            previewChamp={previewChamp}
+            solutionChamp={solutionChamp}
+            locked={locked}
+            authoring
+            sortable={!!onReorderTeam}
+            justDropped={justDropped}
+            activeSlot={activeSlot}
+            onSlotClick={onSlotClick}
+            disabledSlots={disabledSlots}
+            suppressHover={suppressHover}
+          />
+        </DndContext>
       </div>
 
       {showTutorial && (
@@ -187,9 +245,9 @@ export function DraftOverlay({
                 {tutorialStep === 1 &&
                   "Pick the comps for both teams that will enable your champ to the max."}
                 {tutorialStep === 2 &&
-                  "Use the arrows to change the pick-order and match a real champselect."}
+                  "Drag rows to change the pick-order and match a real champselect."}
                 {tutorialStep === 3 &&
-                  "Enemies that pick after your selected champion are locked. Adjust pick-order to unlock them."}
+                  "Enemies that pick after your selected main champion are locked. Adjust pick-order to unlock them."}
               </div>
               <button
                 type="button"
@@ -222,6 +280,47 @@ function champUrlFromAny(input: string | null | undefined) {
   return champSquareUrlById(resolveChampionId(input));
 }
 
+function SortableRow({
+  id,
+  side,
+  justDropped,
+  children,
+}: {
+  id: string;
+  side: Side;
+  justDropped?: boolean;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  // When justDropped, skip transform and transition so slots snap to final order without animating.
+  // Otherwise apply both so the dragged item follows the pointer and other rows shift.
+  const style = {
+    transform: justDropped ? undefined : CSS.Transform.toString(transform),
+    transition: justDropped ? "none" : transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={
+        "flex items-center gap-2 transition-transform duration-300 ease-out " +
+        (side === "red" ? "flex-row-reverse" : "")
+      }
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab touch-none p-1 -m-1 rounded text-white/40 hover:text-white/70 active:cursor-grabbing"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function Team({
   team,
   side,
@@ -231,9 +330,10 @@ function Team({
   solutionChamp,
   locked,
   authoring,
+  sortable = false,
+  justDropped = false,
   activeSlot,
   onSlotClick,
-  onMoveRole,
   disabledSlots,
   suppressHover,
 }: {
@@ -246,10 +346,10 @@ function Team({
   locked: boolean;
 
   authoring?: boolean;
+  sortable?: boolean;
+  justDropped?: boolean;
   activeSlot?: ActiveSlot;
   onSlotClick?: (side: Side, index: number) => void;
-
-  onMoveRole?: (side: Side, index: number, dir: -1 | 1) => void;
 
   disabledSlots?: DisabledSlots;
   suppressHover?: boolean;
@@ -263,9 +363,9 @@ function Team({
       ? getGlobalPick(side, userIndex)
       : -1;
 
-  return (
-    <div className="relative flex flex-col gap-3">
-      {team.map((p, i) => {
+  const sortableIds = authoring && sortable ? team.map((_, i) => `${side}-${i}`) : [];
+
+  const listContent = team.map((p, i) => {
         const isUserSlot =
           !authoring && side === userTeam && p.role === role;
 
@@ -285,7 +385,7 @@ function Team({
 
         const isPreviewing =
           !!previewChamp &&
-          (authoring ? isActiveAuthorSlot : isUserSlot);
+          (authoring ? isActiveAuthorSlot && !p.champ : isUserSlot);
 
         const champToShow = isPreviewing
           ? previewChamp
@@ -331,43 +431,8 @@ function Team({
           isUserSlot &&
           !p.champ;
 
-        return (
-          <div
-            key={`${side}-${i}`}
-            className={
-              "flex items-center gap-3 transition-transform duration-300 ease-out " +
-              (side === "red" ? "flex-row-reverse" : "")
-            }
-          >
-            {authoring && onMoveRole && (
-              <div className="flex flex-col items-center gap-[2px]">
-                <button
-                  disabled={i === 0}
-                  onClick={() => onMoveRole(side, i, -1)}
-                  className="
-                    w-4 h-4 text-[10px] rounded
-                    bg-black/70 text-white
-                    hover:bg-black/90
-                    disabled:opacity-20
-                  "
-                >
-                  ▲
-                </button>
-                <button
-                  disabled={i === team.length - 1}
-                  onClick={() => onMoveRole(side, i, 1)}
-                  className="
-                    w-4 h-4 text-[10px] rounded
-                    bg-black/70 text-white
-                    hover:bg-black/90
-                    disabled:opacity-20
-                  "
-                >
-                  ▼
-                </button>
-              </div>
-            )}
-
+        const rowContent = (
+          <>
             <div
               className="w-6 h-6 rounded"
               style={{
@@ -402,11 +467,39 @@ function Team({
                 }
               }}
             />
+          </>
+        );
+
+        if (sortable) {
+          return (
+            <SortableRow key={`${side}-${i}`} id={`${side}-${i}`} side={side} justDropped={justDropped}>
+              {rowContent}
+            </SortableRow>
+          );
+        }
+
+        return (
+          <div
+            key={`${side}-${i}`}
+            className={
+              "flex items-center gap-3 transition-transform duration-300 ease-out " +
+              (side === "red" ? "flex-row-reverse" : "")
+            }
+          >
+            {rowContent}
           </div>
         );
-      })}
-    </div>
+      });
+
+  const wrappedContent = sortable ? (
+    <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+      {listContent}
+    </SortableContext>
+  ) : (
+    listContent
   );
+
+  return <div className="relative flex flex-col gap-3">{wrappedContent}</div>;
 }
 
 function getSlotState(
