@@ -1,4 +1,4 @@
-// src/middleware.ts
+// src/proxy.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -12,13 +12,13 @@ function ctEqual(a: Uint8Array, b: Uint8Array) {
   return out === 0;
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isAdmin = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
 
-  // if not admin stuff → skip middleware
+  // if not admin stuff → skip proxy
   if (!(isAdmin || isAdminApi)) return NextResponse.next();
 
   if (IS_PROD) {
