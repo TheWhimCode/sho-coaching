@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DraftOverlay } from "@/app/skillcheck/draft/game/DraftOverlay";
+import { DraftAuthoringOverlay } from "@/app/skillcheck/draft/game/DraftAuthoringOverlay";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 import ChampSelectPanel from "./ChampSelectPanel";
@@ -391,7 +391,7 @@ export default function DraftAuthorMain({
   /* STEP 1: draft board */
   return (
     <div className="flex flex-col items-center gap-8">
-      <DraftOverlay
+      <DraftAuthoringOverlay
         blue={blue}
         red={red}
         role={role}
@@ -399,7 +399,6 @@ export default function DraftAuthorMain({
         solutionChamp={setup?.mainChamp ?? ""}
         previewChamp={previewChamp}
         locked={locked}
-        authoring
         activeSlot={activeSlot}
         disabledSlots={disabledSlots}
         onReorderTeam={reorderTeam}
