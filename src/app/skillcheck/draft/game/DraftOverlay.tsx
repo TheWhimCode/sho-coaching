@@ -189,7 +189,7 @@ export function DraftOverlay({
                 {tutorialStep === 2 &&
                   "Use the arrows to change the pick-order and match a real champselect."}
                 {tutorialStep === 3 &&
-                  "Enemies that pick after you are locked. Adjust pick-order to unlock them."}
+                  "Enemies that pick after your selected champion are locked. Adjust pick-order to unlock them."}
               </div>
               <button
                 type="button"
