@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { dayKey, championId, correct } = body;
+    const { dayKey, championId, correct, clientId } = body;
     if (!dayKey || !championId || typeof correct !== "boolean") {
       return NextResponse.json(
         { error: "dayKey, championId, correct required" },
@@ -27,6 +27,18 @@ export async function POST(req: Request) {
         ...(correct ? { correctAttempts: { increment: 1 } } : {}),
       },
     });
+
+    const clientIdTrimmed =
+      typeof clientId === "string" && clientId.trim().length > 0 ? clientId.trim().slice(0, 64) : null;
+    if (clientIdTrimmed) {
+      await prisma.leaderboardEntry.updateMany({
+        where: { clientId: clientIdTrimmed },
+        data: {
+          runesAttempts: { increment: 1 },
+          ...(correct && { runesCorrectAttempts: { increment: 1 } }),
+        },
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {

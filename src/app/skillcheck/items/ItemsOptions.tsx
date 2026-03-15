@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
+import { getLeaderboardClientId } from "@/app/skillcheck/leaderboard-client-id";
 
 type Direction = "low" | "high" | "correct";
 type Attempt = { guess: number; direction: Direction; delta: number };
@@ -162,6 +163,7 @@ export default function ItemsOptions({
           dayKey,
           itemId,
           correct: direction === "correct",
+          clientId: getLeaderboardClientId() || undefined,
         }),
       }).catch(() => {});
     }

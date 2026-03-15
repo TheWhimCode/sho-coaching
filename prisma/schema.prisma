@@ -354,6 +354,16 @@ model LeaderboardEntry {
   streakDays  Int      @default(0)
   updatedAt   DateTime @updatedAt
 
+  // Per-mode attempt stats for avg attempts on leaderboard (attempts / correctAttempts)
+  draftAttempts       Int @default(0)
+  draftCorrectAttempts Int @default(0)
+  runesAttempts       Int @default(0)
+  runesCorrectAttempts Int @default(0)
+  cooldownsAttempts   Int @default(0)
+  cooldownsCorrectAttempts Int @default(0)
+  itemsAttempts       Int @default(0)
+  itemsCorrectAttempts Int @default(0)
+
   @@index([streakDays(sort: Desc)])
   @@schema("skillcheck")
 }

@@ -4,7 +4,7 @@ import Hero from "@/app/skillcheck/layout/Hero";
 import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
 import { useEffect, useRef, useState } from "react";
 import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
-import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
+import { getLeaderboardClientId, syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
 import { markModeCompletedToday } from "@/app/skillcheck/modeProgress";
 
 export type KeystoneOption = { id: number; name: string; icon: string };
@@ -89,6 +89,7 @@ export default function RunesClient({
           dayKey,
           championId: champion.id,
           correct,
+          clientId: getLeaderboardClientId() || undefined,
         }),
       });
     } catch {}

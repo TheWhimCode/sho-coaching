@@ -153,9 +153,6 @@ export function DraftOverlay({
           onSlotClick={onSlotClick}
           onMoveRole={onMoveRole}
           disabledSlots={disabledSlots}
-          tutorialStep={tutorialStep}
-          showTutorial={showTutorial}
-          onAdvanceTutorial={setTutorialStep}
           suppressHover={suppressHover}
         />
       </div>
@@ -178,33 +175,39 @@ export function DraftOverlay({
           onSlotClick={onSlotClick}
           onMoveRole={onMoveRole}
           disabledSlots={disabledSlots}
-          tutorialStep={tutorialStep}
-          showTutorial={showTutorial}
-          onAdvanceTutorial={setTutorialStep}
           suppressHover={suppressHover}
         />
       </div>
 
-      {showTutorial && tutorialStep === 3 && (
+      {showTutorial && (
         <div className="pointer-events-auto absolute -bottom-12 right-8">
           <GlassPanel className="max-w-sm px-4 py-3 text-base text-white/80 shadow-lg backdrop-blur-[6px]">
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                Enemies that pick after you are locked. Adjust pick-order to unlock them.
+                {tutorialStep === 1 &&
+                  "Pick the comps for both teams that will enable your champ to the max."}
+                {tutorialStep === 2 &&
+                  "Use the arrows to change the pick-order and match a real champselect."}
+                {tutorialStep === 3 &&
+                  "Enemies that pick after you are locked. Adjust pick-order to unlock them."}
               </div>
               <button
                 type="button"
                 className="cursor-pointer text-base text-sky-300 hover:text-sky-200"
                 onClick={() => {
-                  setTutorialStep(null);
-                  try {
-                    localStorage.setItem(AUTHOR_TUTORIAL_KEY, "1");
-                  } catch {
-                    // ignore
+                  if (tutorialStep === 3) {
+                    setTutorialStep(null);
+                    try {
+                      localStorage.setItem(AUTHOR_TUTORIAL_KEY, "1");
+                    } catch {
+                      // ignore
+                    }
+                  } else {
+                    setTutorialStep((tutorialStep === 1 ? 2 : 3) as 1 | 2 | 3);
                   }
                 }}
               >
-                Finish 3/3
+                {tutorialStep === 1 ? "Next 1/3" : tutorialStep === 2 ? "Next 2/3" : "Finish 3/3"}
               </button>
             </div>
           </GlassPanel>
@@ -232,9 +235,6 @@ function Team({
   onSlotClick,
   onMoveRole,
   disabledSlots,
-  tutorialStep,
-  showTutorial,
-  onAdvanceTutorial,
   suppressHover,
 }: {
   team: Pick[];
@@ -252,9 +252,6 @@ function Team({
   onMoveRole?: (side: Side, index: number, dir: -1 | 1) => void;
 
   disabledSlots?: DisabledSlots;
-  tutorialStep?: 1 | 2 | 3 | null;
-  showTutorial?: boolean;
-  onAdvanceTutorial?: (step: 1 | 2 | 3 | null) => void;
   suppressHover?: boolean;
 }) {
   const userIndex = team.findIndex(
@@ -268,43 +265,6 @@ function Team({
 
   return (
     <div className="relative flex flex-col gap-3">
-      {showTutorial && tutorialStep === 2 && authoring && side === "blue" && (
-        <div className="pointer-events-auto absolute top-1/2 -left-72 -translate-y-1/2 z-20">
-          <GlassPanel className="max-w-xs px-5 py-4 text-base text-white/80 shadow-lg backdrop-blur-[6px]">
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                Use the arrows to change the pick-order and match a real champselect.
-              </div>
-              <button
-                type="button"
-                className="cursor-pointer text-base text-sky-300 hover:text-sky-200"
-                onClick={() => onAdvanceTutorial?.(3)}
-              >
-                Next 2/3
-              </button>
-            </div>
-          </GlassPanel>
-        </div>
-      )}
-
-      {showTutorial && tutorialStep === 1 && authoring && side === "red" && (
-        <div className="pointer-events-auto absolute top-1/2 -right-72 -translate-y-1/2 z-20">
-          <GlassPanel className="max-w-xs px-4 py-3 text-base text-white/80 shadow-lg backdrop-blur-[6px]">
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                Pick the comps for both teams that will enable your champ to the max.
-              </div>
-              <button
-                type="button"
-                className="cursor-pointer text-base text-sky-300 hover:text-sky-200"
-                onClick={() => onAdvanceTutorial?.(2)}
-              >
-                Next 1/3
-              </button>
-            </div>
-          </GlassPanel>
-        </div>
-      )}
       {team.map((p, i) => {
         const isUserSlot =
           !authoring && side === userTeam && p.role === role;

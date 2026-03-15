@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
+import { getLeaderboardClientId } from "@/app/skillcheck/leaderboard-client-id";
 
 const HEAVY_TEXT_SHADOW =
   "0 0 10px rgba(0,0,0,0.95), 0 0 22px rgba(0,0,0,0.95), 0 0 36px rgba(0,0,0,0.95)";
@@ -219,6 +220,7 @@ export default function CooldownOptions({
           spellKey,
           rank,
           correct: direction === "correct",
+          clientId: getLeaderboardClientId() || undefined,
         }),
       }).catch(() => {});
     }

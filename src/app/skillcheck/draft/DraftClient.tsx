@@ -9,7 +9,7 @@ import { ResultScreen } from "@/app/skillcheck/draft/game/DraftResult";
 import DraftAuthorMain from "@/app/skillcheck/draft/authoring/DraftAuthorMain";
 import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
 import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
-import { syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
+import { getLeaderboardClientId, syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
 import { markModeCompletedToday } from "@/app/skillcheck/modeProgress";
 
 type Pick = {
@@ -183,6 +183,7 @@ export default function DraftClient({
       body: JSON.stringify({
         draftId: draft.id,
         correct: selected === correctAnswer,
+        clientId: getLeaderboardClientId() || undefined,
       }),
     });
 

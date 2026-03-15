@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 
 const MAX_ENTRIES = 100;
 
+/** Average attempts per correct solve; null when no correct attempts. */
+function avgAttempts(attempts: number, correctAttempts: number): number | null {
+  if (correctAttempts <= 0) return null;
+  return Math.round((attempts / correctAttempts) * 100) / 100;
+}
+
 /** GET: top streak entries; ?clientId=xxx returns myEntry for that client */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -16,19 +22,42 @@ export async function GET(req: Request) {
         displayName: true,
         streakDays: true,
         updatedAt: true,
+        draftAttempts: true,
+        draftCorrectAttempts: true,
+        runesAttempts: true,
+        runesCorrectAttempts: true,
+        cooldownsAttempts: true,
+        cooldownsCorrectAttempts: true,
+        itemsAttempts: true,
+        itemsCorrectAttempts: true,
       },
     }),
     clientId
       ? prisma.leaderboardEntry
           .findUnique({
             where: { clientId },
-            select: { displayName: true, streakDays: true },
+            select: {
+              displayName: true,
+              streakDays: true,
+              draftAttempts: true,
+              draftCorrectAttempts: true,
+              runesAttempts: true,
+              runesCorrectAttempts: true,
+              cooldownsAttempts: true,
+              cooldownsCorrectAttempts: true,
+              itemsAttempts: true,
+              itemsCorrectAttempts: true,
+            },
           })
           .then((e) =>
             e
               ? {
                   displayName: e.displayName ?? "Anonymous",
                   streakDays: e.streakDays,
+                  avgDraft: avgAttempts(e.draftAttempts, e.draftCorrectAttempts),
+                  avgRunes: avgAttempts(e.runesAttempts, e.runesCorrectAttempts),
+                  avgCooldowns: avgAttempts(e.cooldownsAttempts, e.cooldownsCorrectAttempts),
+                  avgItems: avgAttempts(e.itemsAttempts, e.itemsCorrectAttempts),
                 }
               : null
           )
@@ -40,6 +69,10 @@ export async function GET(req: Request) {
       displayName: e.displayName ?? "Anonymous",
       streakDays: e.streakDays,
       updatedAt: e.updatedAt.toISOString(),
+      avgDraft: avgAttempts(e.draftAttempts, e.draftCorrectAttempts),
+      avgRunes: avgAttempts(e.runesAttempts, e.runesCorrectAttempts),
+      avgCooldowns: avgAttempts(e.cooldownsAttempts, e.cooldownsCorrectAttempts),
+      avgItems: avgAttempts(e.itemsAttempts, e.itemsCorrectAttempts),
     })),
     myEntry,
   });
