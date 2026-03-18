@@ -12,15 +12,23 @@ export const metadata: Metadata = {
   description: "Coaching & courses",
 };
 
+const MAINTENANCE = process.env.NEXT_PUBLIC_MAINTENANCE === "true";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}>
-        <NavChromeProvider>
-          <div id="scroll-root" className="h-dvh overflow-hidden overflow-x-hidden os-loading">
-            <LayoutClient>{children}</LayoutClient>
+        {MAINTENANCE ? (
+          <div className="min-h-dvh flex items-center justify-center p-6 text-center">
+            <p className="text-xl text-white/90">Unavailable until next month.</p>
           </div>
-        </NavChromeProvider>
+        ) : (
+          <NavChromeProvider>
+            <div id="scroll-root" className="h-dvh overflow-hidden overflow-x-hidden os-loading">
+              <LayoutClient>{children}</LayoutClient>
+            </div>
+          </NavChromeProvider>
+        )}
       </body>
     </html>
   );
