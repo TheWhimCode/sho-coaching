@@ -1,5 +1,6 @@
 // app/api/gm-chall-cutoffs/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { riotFetchJSON } from '@/lib/riot/fetch';
 
 export const revalidate = 300; // cache for 5 minutes (ISR)
 
@@ -36,8 +37,7 @@ export async function GET(req: NextRequest) {
     const platform = (searchParams.get('platform') || DEFAULT_PLATFORM).toUpperCase();
     const queue = searchParams.get('queue') || DEFAULT_QUEUE;
 
-    const apiKey = process.env.RIOT_API_KEY;
-    if (!apiKey) {
+    if (!process.env.RIOT_API_KEY) {
       return NextResponse.json(
         { error: 'RIOT_API_KEY missing on server' },
         { status: 500 }
@@ -45,28 +45,24 @@ export async function GET(req: NextRequest) {
     }
 
     const base = `https://${platform}.api.riotgames.com/lol/league/v4`;
-    const headers = { 'X-Riot-Token': apiKey };
 
-    const [gmRes, chRes] = await Promise.all([
-      fetch(`${base}/grandmasterleagues/by-queue/${queue}`, { headers, next: { revalidate } }),
-      fetch(`${base}/challengerleagues/by-queue/${queue}`,   { headers, next: { revalidate } }),
-    ]);
-
-    if (!gmRes.ok || !chRes.ok) {
-      const detail = {
-        grandmasterStatus: gmRes.status,
-        challengerStatus: chRes.status,
-      };
+    let gmJson: RiotLeagueResponse;
+    let chJson: RiotLeagueResponse;
+    try {
+      [gmJson, chJson] = (await Promise.all([
+        riotFetchJSON<RiotLeagueResponse>(
+          `${base}/grandmasterleagues/by-queue/${encodeURIComponent(queue)}`
+        ),
+        riotFetchJSON<RiotLeagueResponse>(
+          `${base}/challengerleagues/by-queue/${encodeURIComponent(queue)}`
+        ),
+      ])) as [RiotLeagueResponse, RiotLeagueResponse];
+    } catch {
       return NextResponse.json(
-        { error: 'Failed to fetch ladder(s) from Riot', detail },
+        { error: 'Failed to fetch ladder(s) from Riot' },
         { status: 502 }
       );
     }
-
-    const [gmJson, chJson] = (await Promise.all([
-      gmRes.json(),
-      chRes.json(),
-    ])) as [RiotLeagueResponse, RiotLeagueResponse];
 
     const gmCutoffLP = minLP(gmJson.entries);
     const challengerCutoffLP = minLP(chJson.entries);

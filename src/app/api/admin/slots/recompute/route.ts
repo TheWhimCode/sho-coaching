@@ -3,7 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
 
 // ✅ ENGINE imports
-import { getDayAvailability } from "@/engine/scheduling/availability/getDayAvailability";
+import {
+  computeDayAvailability,
+  groupExceptionsByUtcDay,
+} from "@/engine/scheduling/availability/getDayAvailability";
+import {
+  getAllAvailabilityExceptionsInRange,
+  getAllAvailabilityRules,
+} from "@/engine/scheduling/availability/repository";
 import { SLOT_SIZE_MIN } from "@/engine/scheduling/time/timeMath";
 
 export const runtime = "nodejs";
@@ -35,10 +42,21 @@ export async function POST() {
     },
   });
 
+  const [allRules, exceptionsInRange] = await Promise.all([
+    getAllAvailabilityRules(),
+    getAllAvailabilityExceptionsInRange(today, end),
+  ]);
+  const exceptionsByDay = groupExceptionsByUtcDay(exceptionsInRange);
+
   // 3) regenerate future FREE slots
   let created = 0;
   for (let day = new Date(today); day < end; day.setUTCDate(day.getUTCDate() + 1)) {
-    const intervals = await getDayAvailability(day);
+    const dayKey = utcMidnight(day).getTime();
+    const intervals = computeDayAvailability(
+      day,
+      allRules,
+      exceptionsByDay.get(dayKey) ?? []
+    );
     if (!intervals) continue;
 
     for (const { openMinute, closeMinute } of intervals) {

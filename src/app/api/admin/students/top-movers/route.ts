@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getLastSessionChampionsByStudentIds } from "@/lib/admin/studentLastSessionChampions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -90,36 +91,11 @@ export async function GET(req: NextRequest) {
 
     const byId = new Map(students.map((s) => [String(s.id), s]));
 
-    // --------------------------------------------------
-    // 3) Fetch sessions → union champions (same as /students)
-    // --------------------------------------------------
-    const sessions = await prisma.session.findMany({
-      where: { studentId: { in: studentIds as any } },
-      select: {
-        studentId: true,
-        champions: true,
-      },
-    });
-
-    const championsByStudent = new Map<string, Set<string>>();
-
-    for (const row of sessions) {
-      const sid = String(row.studentId);
-      if (!championsByStudent.has(sid)) {
-        championsByStudent.set(sid, new Set());
-      }
-
-      const set = championsByStudent.get(sid)!;
-      const arr = Array.isArray(row.champions) ? row.champions : [];
-
-      for (const champ of arr) {
-        const c = String(champ).trim();
-        if (c) set.add(c);
-      }
-    }
+    const { championsByStudent } =
+      await getLastSessionChampionsByStudentIds(studentIds);
 
     // --------------------------------------------------
-    // 4) Merge + shape exactly for StudentCard
+    // 3) Merge + shape exactly for StudentCard (icons = latest session only)
     // --------------------------------------------------
     const merged = raw
       .map((r) => {
@@ -129,9 +105,7 @@ export async function GET(req: NextRequest) {
         return {
           student: {
             ...s,
-            allChampions: Array.from(
-              championsByStudent.get(String(s.id)) ?? []
-            ),
+            allChampions: championsByStudent.get(String(s.id)) ?? [],
           },
           delta: r.delta,
         };

@@ -6,21 +6,17 @@ import {
   recentSoloMatchIds,
   matchById,
 } from "@/lib/riot/core";
+import { riotFetchJSON } from "@/lib/riot/fetch";
 
 export const dynamic = "force-dynamic";
 const REMAKE_SEC = 180;
 const DEFAULT_LIMIT = 500;
 const LIMIT_MAX = 1000;
 
-async function fetchValidSummonerData(server: string, summonerName: string, riotTag: string): Promise<{ puuid: string }> {
-  // Use Summoner V4 or Account V1 to get the PUUID
+async function fetchValidSummonerData(server: string, summonerName: string, _riotTag: string): Promise<{ puuid: string }> {
   const platform = normalizePlatform(server).platform;
-  const url = `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-name/${encodeURIComponent(summonerName)}?api_key=${process.env.RIOT_API_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Summoner-v4 error: ${res.status}`);
-  }
-  const data = await res.json();
+  const url = `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-name/${encodeURIComponent(summonerName)}`;
+  const data = await riotFetchJSON<{ puuid?: string }>(url);
   if (!data.puuid) {
     throw new Error("No puuid in summoner-v4 response");
   }

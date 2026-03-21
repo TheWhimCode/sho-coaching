@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { runWithRequestQueryLabelAsync } from "@/lib/queryContext";
 import { NextResponse } from "next/server";
 
 const MAX_ENTRIES = 100;
@@ -9,10 +10,58 @@ function avgAttempts(attempts: number, correctAttempts: number): number | null {
   return Math.round((attempts / correctAttempts) * 100) / 100;
 }
 
-/** GET: top streak entries; ?clientId=xxx returns myEntry for that client */
+function mapMyEntry(e: {
+  displayName: string | null;
+  streakDays: number;
+  draftAttempts: number;
+  draftCorrectAttempts: number;
+  runesAttempts: number;
+  runesCorrectAttempts: number;
+  cooldownsAttempts: number;
+  cooldownsCorrectAttempts: number;
+  itemsAttempts: number;
+  itemsCorrectAttempts: number;
+}) {
+  return {
+    displayName: e.displayName ?? "Anonymous",
+    streakDays: e.streakDays,
+    avgDraft: avgAttempts(e.draftAttempts, e.draftCorrectAttempts),
+    avgRunes: avgAttempts(e.runesAttempts, e.runesCorrectAttempts),
+    avgCooldowns: avgAttempts(e.cooldownsAttempts, e.cooldownsCorrectAttempts),
+    avgItems: avgAttempts(e.itemsAttempts, e.itemsCorrectAttempts),
+  };
+}
+
+/**
+ * GET: top streak entries.
+ * ?clientId=xxx adds myEntry for that client.
+ * ?lite=1 with clientId: only fetch myEntry (one query) — use for visit sync, not the full leaderboard page.
+ */
 export async function GET(req: Request) {
+  return runWithRequestQueryLabelAsync(req, async () => {
   const { searchParams } = new URL(req.url);
   const clientId = searchParams.get("clientId")?.trim().slice(0, 64) || null;
+  const lite = searchParams.get("lite") === "1" || searchParams.get("lite") === "true";
+
+  if (lite && clientId) {
+    const row = await prisma.leaderboardEntry.findUnique({
+      where: { clientId },
+      select: {
+        displayName: true,
+        streakDays: true,
+        draftAttempts: true,
+        draftCorrectAttempts: true,
+        runesAttempts: true,
+        runesCorrectAttempts: true,
+        cooldownsAttempts: true,
+        cooldownsCorrectAttempts: true,
+        itemsAttempts: true,
+        itemsCorrectAttempts: true,
+      },
+    });
+    const myEntry = row ? mapMyEntry(row) : null;
+    return NextResponse.json({ entries: [], myEntry });
+  }
 
   const [entries, myEntry] = await Promise.all([
     prisma.leaderboardEntry.findMany({
@@ -50,18 +99,7 @@ export async function GET(req: Request) {
               itemsCorrectAttempts: true,
             },
           })
-          .then((e) =>
-            e
-              ? {
-                  displayName: e.displayName ?? "Anonymous",
-                  streakDays: e.streakDays,
-                  avgDraft: avgAttempts(e.draftAttempts, e.draftCorrectAttempts),
-                  avgRunes: avgAttempts(e.runesAttempts, e.runesCorrectAttempts),
-                  avgCooldowns: avgAttempts(e.cooldownsAttempts, e.cooldownsCorrectAttempts),
-                  avgItems: avgAttempts(e.itemsAttempts, e.itemsCorrectAttempts),
-                }
-              : null
-          )
+          .then((e) => (e ? mapMyEntry(e) : null))
       : Promise.resolve(null),
   ]);
 
@@ -77,10 +115,12 @@ export async function GET(req: Request) {
     })),
     myEntry,
   });
+  });
 }
 
 /** POST: submit or update streak (upsert by clientId) */
 export async function POST(req: Request) {
+  return runWithRequestQueryLabelAsync(req, async () => {
   let body: { clientId?: string; displayName?: string; streakDays?: number };
   try {
     body = await req.json();
@@ -130,4 +170,5 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ok: true, added: !existing });
+  });
 }

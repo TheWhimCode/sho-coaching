@@ -1,4 +1,5 @@
-import { Interval, MIN_MINUTE, MAX_MINUTE } from "./model";
+import type { AvailabilityException, AvailabilityRule } from "@prisma/client";
+import { type Interval, MIN_MINUTE, MAX_MINUTE } from "./model";
 import { clampMinute, mergeIntervals, subtractInterval } from "./intervalMath";
 import { utcMidnight } from "../time/timeMath";
 import {
@@ -6,14 +7,38 @@ import {
   getExceptionsForDay,
 } from "./repository";
 
+/**
+ * Group DB exception rows by UTC midnight timestamp for O(1) lookup per day in batch flows.
+ */
+export function groupExceptionsByUtcDay(
+  rows: AvailabilityException[]
+): Map<number, AvailabilityException[]> {
+  const map = new Map<number, AvailabilityException[]>();
+  for (const ex of rows) {
+    const key = utcMidnight(ex.date).getTime();
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(ex);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => (a.openMinute ?? 0) - (b.openMinute ?? 0));
+  }
+  return map;
+}
 
-export async function getDayAvailability(date: Date): Promise<Interval[] | null> {
+/**
+ * Pure availability for one UTC calendar day from preloaded rules + exceptions.
+ * Mirrors the logic of the async path that used to query per day (see getDayAvailability).
+ */
+export function computeDayAvailability(
+  date: Date,
+  allRules: AvailabilityRule[],
+  exceptionsForDay: AvailabilityException[]
+): Interval[] | null {
   const day = utcMidnight(date);
-  const wd = day.getUTCDay();          // 0–6
+  const wd = day.getUTCDay(); // 0–6
   const prev = (wd + 6) % 7;
 
-  const rules = await getRulesForWeekdays([wd, prev]);
-  const byWd = new Map(rules.map(r => [r.weekday, r]));
+  const byWd = new Map(allRules.map((r) => [r.weekday, r]));
 
   let windows: Interval[] = [];
 
@@ -42,8 +67,8 @@ export async function getDayAvailability(date: Date): Promise<Interval[] | null>
   windows = mergeIntervals(windows);
   if (!windows.length) return null;
 
-  const exceptions = await getExceptionsForDay(day);
-  if (exceptions.some(e => e.blocked)) return null;
+  const exceptions = exceptionsForDay;
+  if (exceptions.some((e) => e.blocked)) return null;
 
   for (const ex of exceptions) {
     windows = subtractInterval(windows, {
@@ -54,4 +79,14 @@ export async function getDayAvailability(date: Date): Promise<Interval[] | null>
   }
 
   return windows.length ? windows : null;
+}
+
+export async function getDayAvailability(date: Date): Promise<Interval[] | null> {
+  const day = utcMidnight(date);
+  const wd = day.getUTCDay();
+  const prev = (wd + 6) % 7;
+
+  const rules = await getRulesForWeekdays([wd, prev]);
+  const exceptions = await getExceptionsForDay(day);
+  return computeDayAvailability(date, rules, exceptions);
 }

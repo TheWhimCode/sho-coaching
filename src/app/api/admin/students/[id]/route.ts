@@ -4,23 +4,23 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { riotFetchJSON } from '@/lib/riot/fetch';
 
 type Ctx = { params: Promise<{ id: string }> };
 
 async function fetchAccountByPuuid(puuid: string) {
   const clusters = ['americas', 'europe', 'asia', 'sea'] as const;
 
-  // Try all clusters, return the first successful one
+  // Try all clusters, return the first successful one (shared Riot app rate limiter)
   for (const c of clusters) {
     const url = `https://${c}.api.riotgames.com/riot/account/v1/accounts/by-puuid/${encodeURIComponent(
       puuid
     )}`;
-    const r = await fetch(url, {
-      headers: { 'X-Riot-Token': process.env.RIOT_API_KEY ?? '' },
-      cache: 'no-store',
-    });
-    if (r.ok) return r.json() as Promise<{ gameName?: string; tagLine?: string }>;
-    // 404 means "not found here", try next cluster; 4xx/5xx others keep trying next
+    try {
+      return await riotFetchJSON<{ gameName?: string; tagLine?: string }>(url);
+    } catch {
+      // not found on this cluster — try next
+    }
   }
   throw new Error('PUUID not found on any account cluster');
 }

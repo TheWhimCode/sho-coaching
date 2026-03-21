@@ -1,6 +1,7 @@
 // src/app/api/admin/students/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getLastSessionChampionsByStudentIds } from "@/lib/admin/studentLastSessionChampions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,58 +25,19 @@ export async function GET() {
 
     const studentIds = students.map((s) => s.id);
 
-    // 2) Latest session start per student (for sorting)
-    const latestByStudent = await prisma.session.groupBy({
-      by: ["studentId"],
-      where: { studentId: { in: studentIds } },
-      _max: { scheduledStart: true },
-    });
+    const { latestSessionStartByStudent, championsByStudent } =
+      await getLastSessionChampionsByStudentIds(studentIds);
 
-    const latestMap = new Map<string, Date>();
-    for (const row of latestByStudent) {
-      if (row.studentId && row._max.scheduledStart) {
-        latestMap.set(String(row.studentId), row._max.scheduledStart);
-      }
-    }
-
-    // 3) Fetch sessions for these students (DON'T use champions.isEmpty)
-    const sessions = await prisma.session.findMany({
-      where: {
-        studentId: { in: studentIds as any },
-        // optional:
-        // status: "paid",
-      },
-      select: {
-        studentId: true,
-        champions: true, // string[] (or possibly null)
-      },
-    });
-
-    // 4) Build union map: studentId -> Set(champions) using STRING keys
-    const championsByStudent = new Map<string, Set<string>>();
-
-    for (const row of sessions) {
-      const sid = String(row.studentId);
-      if (!championsByStudent.has(sid)) championsByStudent.set(sid, new Set());
-
-      const set = championsByStudent.get(sid)!;
-      const arr = Array.isArray(row.champions) ? row.champions : [];
-
-      for (const champ of arr) {
-        const c = String(champ).trim();
-        if (c) set.add(c);
-      }
-    }
-
-    // 5) Attach latestSessionStart + allChampions, then sort
+    // `allChampions`: champions from **latest session only** (icons on cards)
     const shaped = students
       .map((s) => {
-        const latest = latestMap.get(String(s.id)) ?? null;
+        const id = String(s.id);
+        const latest = latestSessionStartByStudent.get(id) ?? null;
 
         return {
           ...s,
           latestSessionStart: latest, // Date | null (serializes to ISO)
-          allChampions: Array.from(championsByStudent.get(String(s.id)) ?? []),
+          allChampions: championsByStudent.get(id) ?? [],
         };
       })
       .sort((a, b) => {

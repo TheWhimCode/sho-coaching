@@ -2,13 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
 import { accountByRiotTag } from "@/lib/riot";
+import { leagueEntriesByPuuid, normalizePlatform } from "@/lib/riot/core";
 
 // ✅ ENGINE imports
-import { getDayAvailability } from "@/engine/scheduling/availability/getDayAvailability";
+import {
+  computeDayAvailability,
+  groupExceptionsByUtcDay,
+} from "@/engine/scheduling/availability/getDayAvailability";
+import {
+  getAllAvailabilityExceptionsInRange,
+  getAllAvailabilityRules,
+} from "@/engine/scheduling/availability/repository";
 import { SLOT_SIZE_MIN } from "@/engine/scheduling/time/timeMath";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Allow rank snapshots to finish for hundreds of students (Vercel Pro+). */
+export const maxDuration = 300;
 
 function unauthorized() {
   return new Response("Unauthorized", { status: 401 });
@@ -58,10 +68,21 @@ async function manageSlots() {
     },
   });
 
+  const [allRules, exceptionsInRange] = await Promise.all([
+    getAllAvailabilityRules(),
+    getAllAvailabilityExceptionsInRange(today, end),
+  ]);
+  const exceptionsByDay = groupExceptionsByUtcDay(exceptionsInRange);
+
   let created = 0;
 
   for (let day = new Date(today); day < end; day.setUTCDate(day.getUTCDate() + 1)) {
-    const intervals = await getDayAvailability(day);
+    const dayKey = utcMidnight(day).getTime();
+    const intervals = computeDayAvailability(
+      day,
+      allRules,
+      exceptionsByDay.get(dayKey) ?? []
+    );
     if (!intervals) continue;
 
     const batch: { startTime: Date; duration: number; status: SlotStatus }[] = [];
@@ -90,50 +111,40 @@ async function manageSlots() {
   return { deleted: delPast.count + delFuture.count, created };
 }
 
-/* ---------- RANK SNAPSHOT LOGIC (UNCHANGED) ---------- */
+/* ---------- RANK SNAPSHOTS ---------- */
 
 type RiotRank = { tier: string; division?: string | null; lp: number };
 
-const RATE_PER_MIN = 40;
-const INTERVAL_MS = Math.ceil(60000 / RATE_PER_MIN);
+/** Puuid backfill: keep bounded so slot + rank work can run in one invocation. */
 const MAX_DURATION_MS = 50_000;
 
-async function fetchRank(origin: string, server: string, puuid: string): Promise<RiotRank | null> {
-  const url = `${origin}/api/riot/rank?server=${encodeURIComponent(server)}&puuid=${encodeURIComponent(puuid)}`;
-  for (let i = 0; i < 2; i++) {
-    const ac = new AbortController();
-    const tm = setTimeout(() => ac.abort(), 12000);
-    try {
-      const r = await fetch(url, { cache: "no-store", signal: ac.signal });
-      if (r.ok) {
-        const j: any = await r.json().catch(() => ({}));
-        const s = j?.solo ?? j?.data ?? j;
-        return {
-          tier: s?.tier ?? "UNRANKED",
-          division: s?.division ?? s?.rank ?? null,
-          lp: Number(s?.lp ?? s?.leaguePoints ?? 0) || 0,
-        };
-      } else {
-        const body = await r.text().catch(() => "");
-        console.warn("cron.daily fetchRank non-ok", {
-          server,
-          puuid: puuid.slice(0, 16) + "...",
-          status: r.status,
-          statusText: r.statusText,
-          body: body.slice(0, 200),
-        });
-      }
-    } catch (e: any) {
-      console.warn("cron.daily fetchRank error", {
-        server,
-        puuid: puuid.slice(0, 16) + "...",
-        error: String(e?.message || e),
-      });
-    }
-    clearTimeout(tm);
-    await sleep(1000);
+/** ~40/min pacing for Riot account resolution (separate from league entries limiter). */
+const PUUID_BACKFILL_INTERVAL_MS = Math.ceil(60_000 / 40);
+
+/** Rank snapshots: separate budget; no fixed per-student sleep (Riot `riotFetch` uses Bottleneck). */
+const RANK_SNAPSHOT_BUDGET_MS = 280_000;
+
+/** Call Riot league API directly — avoids HTTP to /api/riot/rank (extra hop + cold starts). */
+async function fetchRankFromRiot(server: string, puuid: string): Promise<RiotRank | null> {
+  try {
+    const { platform } = normalizePlatform(server);
+    const entries = await leagueEntriesByPuuid(platform, puuid);
+    const solo = Array.isArray(entries)
+      ? entries.find((e: { queueType?: string }) => e.queueType === "RANKED_SOLO_5x5")
+      : null;
+    return {
+      tier: solo?.tier ?? "UNRANKED",
+      division: solo?.rank ?? null,
+      lp: Number(solo?.leaguePoints ?? 0) || 0,
+    };
+  } catch (e: any) {
+    console.warn("cron.daily fetchRankFromRiot error", {
+      server,
+      puuid: puuid.slice(0, 16) + "...",
+      error: String(e?.message || e),
+    });
+    return null;
   }
-  return null;
 }
 
 /** Backfill puuid for students that have riotTag + server but no puuid (e.g. Riot IDs with spaces were not resolved before). */
@@ -169,29 +180,45 @@ async function backfillPuuidForStudents() {
     } catch {
       // skip on error (e.g. invalid tag or rate limit)
     }
-    await sleep(INTERVAL_MS);
+    await sleep(PUUID_BACKFILL_INTERVAL_MS);
   }
 
   return { studentsNeedingPuuid: needPuuid.length, puuidsFilled: filled };
 }
 
-async function createRankSnapshots(origin: string) {
+async function createRankSnapshots() {
+  const dayStart = startOfTodayUTC();
+  const dayEnd = new Date(dayStart);
+  dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+
+  const alreadyToday = await prisma.rankSnapshot.findMany({
+    where: {
+      capturedAt: { gte: dayStart, lt: dayEnd },
+    },
+    select: { studentId: true },
+  });
+  const alreadyIds = new Set(alreadyToday.map((r) => r.studentId));
+
   const students = await prisma.student.findMany({
-    where: { puuid: { not: null }, server: { not: null } },
+    where: {
+      puuid: { not: null },
+      server: { not: null },
+      ...(alreadyIds.size ? { id: { notIn: [...alreadyIds] } } : {}),
+    },
     select: { id: true, puuid: true, server: true },
     orderBy: { createdAt: "asc" },
   });
 
   const capturedAt = new Date();
-  const todayUtc = startOfTodayUTC();
+  const todayUtc = dayStart;
   const start = Date.now();
 
   const rows: { studentId: string; capturedAt: Date; tier: string; division: string | null; lp: number }[] = [];
 
   for (const s of students) {
-    if (Date.now() - start > MAX_DURATION_MS) break;
+    if (Date.now() - start > RANK_SNAPSHOT_BUDGET_MS) break;
 
-    const rank = await fetchRank(origin, s.server!, s.puuid!);
+    const rank = await fetchRankFromRiot(s.server!, s.puuid!);
     if (rank) {
       rows.push({
         studentId: s.id,
@@ -207,26 +234,28 @@ async function createRankSnapshots(origin: string) {
         puuid: s.puuid?.slice(0, 16) + "...",
       });
     }
-
-    await sleep(INTERVAL_MS);
   }
 
+  let inserted = 0;
   if (rows.length) {
-    await prisma.rankSnapshot.createMany({
+    const res = await prisma.rankSnapshot.createMany({
       data: rows,
       skipDuplicates: true,
     });
+    inserted = res.count;
   }
 
   return {
+    studentsEligible: students.length + alreadyIds.size,
+    skippedAlreadySnapshottedToday: alreadyIds.size,
     studentsScanned: students.length,
     snapshotsAttempted: rows.length,
-    snapshotsInserted: rows.length,
+    snapshotsInserted: inserted,
     dayUTC: todayUtc.toISOString().slice(0, 10),
   };
 }
 
-async function runAll(origin: string) {
+async function runAll() {
   const results = { cleanup: null as any, slots: null as any, puuidBackfill: null as any, ranks: null as any, errors: [] as string[] };
 
   try {
@@ -248,7 +277,7 @@ async function runAll(origin: string) {
   }
 
   try {
-    results.ranks = await createRankSnapshots(origin);
+    results.ranks = await createRankSnapshots();
   } catch (e: any) {
     results.errors.push(`ranks: ${e?.message || e}`);
   }
@@ -262,11 +291,7 @@ export async function GET(req: NextRequest) {
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!fromVercel && (!secret || token !== secret)) return unauthorized();
 
-  const origin =
-    (process.env.CANONICAL_URL || process.env.NEXT_PUBLIC_SITE_URL || "").trim() ||
-    req.nextUrl.origin;
-
-  const result = await runAll(origin);
+  const result = await runAll();
 
   console.log("CRON RESULT:", JSON.stringify({ result }));
 
