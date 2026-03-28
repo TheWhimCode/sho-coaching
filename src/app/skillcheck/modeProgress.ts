@@ -8,7 +8,8 @@ type StoredProgress = {
   modes: Partial<Record<ModeId, boolean>>;
 };
 
-function dayKeyUTC(d = new Date()): string {
+/** UTC calendar day YYYY-MM-DD (same boundary as skillcheck daily puzzles). */
+export function dayKeyUTC(d = new Date()): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(
     2,
     "0"

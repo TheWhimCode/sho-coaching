@@ -10,7 +10,7 @@ import DraftAuthorMain from "@/app/skillcheck/draft/authoring/DraftAuthorMain";
 import SuccessOverlay from "@/app/skillcheck/components/SuccessOverlay";
 import { recordSkillcheckPlay } from "@/app/skillcheck/streak";
 import { getLeaderboardClientId, syncToLeaderboardIfEligible } from "@/app/skillcheck/leaderboard-client-id";
-import { markModeCompletedToday } from "@/app/skillcheck/modeProgress";
+import { dayKeyUTC, markModeCompletedToday } from "@/app/skillcheck/modeProgress";
 
 type Pick = {
   role: "top" | "jng" | "mid" | "adc" | "sup";
@@ -84,6 +84,10 @@ export default function DraftClient({
 
   const madeBy = draft.madeBy?.trim() || null;
 
+  /** One day key per page load so progress is scoped to "today's" puzzle (UTC), even if draft id repeats on future days. */
+  const [storageDayKey] = useState(() => dayKeyUTC());
+  const draftStorageKey = `skillcheck:draft:${draft.id}:${storageDayKey}`;
+
   const baseBlueOrder = useMemo(
     () => draft.blue.map((p) => p.role),
     [draft.blue]
@@ -114,8 +118,7 @@ export default function DraftClient({
   ----------------------------- */
 
   useEffect(() => {
-    const key = `skillcheck:${draft.id}`;
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(draftStorageKey);
     if (!raw) return;
 
     try {
@@ -163,7 +166,7 @@ export default function DraftClient({
         }, SHOW_AND_SCROLL_DELAY_MS);
       }
     } catch {}
-  }, [draft]);
+  }, [draft, draftStorageKey]);
 
   /* -----------------------------
      handlers
@@ -228,7 +231,7 @@ export default function DraftClient({
       }, SHOW_AND_SCROLL_DELAY_MS);
 
       localStorage.setItem(
-        `skillcheck:${draft.id}`,
+        draftStorageKey,
         JSON.stringify({
           attempts: nextAttempts,
           disabledAnswers,
@@ -247,7 +250,7 @@ export default function DraftClient({
     setTimeout(() => setLastWrong(null), 400);
 
     localStorage.setItem(
-      `skillcheck:${draft.id}`,
+      draftStorageKey,
       JSON.stringify({
         attempts: nextAttempts,
         disabledAnswers: nextDisabled,
