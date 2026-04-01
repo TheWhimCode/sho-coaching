@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { finalizeBooking } from "@/lib/booking/finalizeBooking";
+import { notifyDiscordBotSessionPaidFromMeta } from "@/lib/discord/sessionPaidWebhook";
 import { CFG_SERVER } from "@/lib/config.server";
 import { SlotStatus } from "@prisma/client";
 
@@ -102,15 +103,16 @@ export async function POST(req: Request) {
 
         const meta = (pi.metadata ?? {}) as Record<string, string>;
         await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id);
-const paymentRef = pi.id;
+        const paymentRef = pi.id;
 
-if (meta.bookingId) {
-  await prisma.session.update({
-    where: { id: meta.bookingId },
-    data: { paymentRef },
-  });
-}
+        if (meta.bookingId) {
+          await prisma.session.update({
+            where: { id: meta.bookingId },
+            data: { paymentRef },
+          });
+        }
 
+        await notifyDiscordBotSessionPaidFromMeta(meta);
         break;
       }
 
@@ -133,6 +135,7 @@ if (meta.bookingId) {
 
         const paymentRef = pi?.id ?? cs.id; // prefer PI id
         await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", paymentRef);
+        await notifyDiscordBotSessionPaidFromMeta(meta);
         break;
       }
 

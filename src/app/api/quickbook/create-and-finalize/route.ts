@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import type { Prisma } from "@prisma/client";
 import { SlotStatus } from "@prisma/client";
+import { notifyDiscordBotSessionPaid } from "@/lib/discord/sessionPaidWebhook";
 
 /**
  * Notes:
@@ -311,6 +312,10 @@ const session = await tx.session.update({
     if (!out.ok) {
       return noStore({ error: out.error }, out.status);
     }
+
+    notifyDiscordBotSessionPaid(out.sessionId).catch((e) => {
+      console.error("[quickbook] discord session_paid webhook failed", e);
+    });
 
     // Keep naming consistent with your client (bookingId)
     return noStore({ bookingId: out.sessionId }, 200);
