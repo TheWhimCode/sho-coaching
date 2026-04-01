@@ -313,9 +313,13 @@ const session = await tx.session.update({
       return noStore({ error: out.error }, out.status);
     }
 
-    notifyDiscordBotSessionPaid(out.sessionId).catch((e) => {
+    // Await so serverless doesn’t freeze/terminate before the outbound fetch finishes
+    // (fire-and-forget often never completes after the response is sent).
+    try {
+      await notifyDiscordBotSessionPaid(out.sessionId);
+    } catch (e) {
       console.error("[quickbook] discord session_paid webhook failed", e);
-    });
+    }
 
     // Keep naming consistent with your client (bookingId)
     return noStore({ bookingId: out.sessionId }, 200);

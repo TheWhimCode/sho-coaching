@@ -60,9 +60,11 @@ export async function POST(req: Request) {
 
     const prevStart = current.scheduledStart.getTime();
     if (prevStart !== newStartDate.getTime()) {
-      notifyDiscordBotSessionRescheduled(id, current.scheduledStart).catch((e) => {
+      try {
+        await notifyDiscordBotSessionRescheduled(id, current.scheduledStart);
+      } catch (e) {
         console.error("[reschedule] discord session_rescheduled webhook failed", e);
-      });
+      }
     }
 
     return NextResponse.json({
