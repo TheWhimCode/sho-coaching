@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   description: "Coaching & courses",
 };
 
-const MAINTENANCE = process.env.NEXT_PUBLIC_MAINTENANCE === "true";
+/** Set to `process.env.NEXT_PUBLIC_MAINTENANCE === "true"` to show the full-site maintenance screen. */
+const MAINTENANCE = false;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
