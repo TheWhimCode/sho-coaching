@@ -7,34 +7,137 @@ import { prisma } from "@/lib/prisma";
 const WEBHOOK_URL = process.env.DISCORD_BOT_WEBHOOK_URL?.trim() ?? "";
 const WEBHOOK_SECRET = process.env.DISCORD_BOT_WEBHOOK_SECRET?.trim() ?? "";
 
+/** Fields sent to the Discord bot for both paid and rescheduled events. */
+const sessionWebhookSelect = {
+  id: true,
+  status: true,
+  sessionType: true,
+  liveMinutes: true,
+  followups: true,
+  liveBlocks: true,
+  riotTag: true,
+  discordId: true,
+  discordName: true,
+  scheduledStart: true,
+  scheduledMinutes: true,
+  paymentRef: true,
+  paymentProvider: true,
+  amountCents: true,
+  currency: true,
+  studentId: true,
+  slotId: true,
+  student: {
+    select: { name: true, discordName: true, riotTag: true },
+  },
+  slot: { select: { startTime: true } },
+} as const;
+
+export type SessionWebhookSession = {
+  id: string;
+  status: string;
+  sessionType: string;
+  liveMinutes: number;
+  followups: number;
+  liveBlocks: number;
+  riotTag: string;
+  discordId: string | null;
+  discordName: string | null;
+  scheduledStart: string;
+  scheduledMinutes: number;
+  paymentRef: string | null;
+  paymentProvider: string | null;
+  amountCents: number | null;
+  currency: string;
+  studentId: string | null;
+  student: {
+    name: string;
+    discordName: string | null;
+    riotTag: string | null;
+  } | null;
+  slotId: string | null;
+  slotStartISO: string | null;
+};
+
+function rowToSessionPayload(row: {
+  id: string;
+  status: string;
+  sessionType: string;
+  liveMinutes: number;
+  followups: number;
+  liveBlocks: number;
+  riotTag: string;
+  discordId: string | null;
+  discordName: string | null;
+  scheduledStart: Date;
+  scheduledMinutes: number;
+  paymentRef: string | null;
+  paymentProvider: string | null;
+  amountCents: number | null;
+  currency: string;
+  studentId: string | null;
+  slotId: string | null;
+  student: {
+    name: string;
+    discordName: string | null;
+    riotTag: string | null;
+  } | null;
+  slot: { startTime: Date } | null;
+}): SessionWebhookSession {
+  return {
+    id: row.id,
+    status: row.status,
+    sessionType: row.sessionType,
+    liveMinutes: row.liveMinutes,
+    followups: row.followups,
+    liveBlocks: row.liveBlocks,
+    riotTag: row.riotTag,
+    discordId: row.discordId,
+    discordName: row.discordName,
+    scheduledStart: row.scheduledStart.toISOString(),
+    scheduledMinutes: row.scheduledMinutes,
+    paymentRef: row.paymentRef,
+    paymentProvider: row.paymentProvider,
+    amountCents: row.amountCents,
+    currency: row.currency,
+    studentId: row.studentId,
+    student: row.student,
+    slotId: row.slotId,
+    slotStartISO: row.slot?.startTime?.toISOString() ?? null,
+  };
+}
+
 export type SessionPaidWebhookPayload = {
   type: "session_paid";
-  session: {
-    id: string;
-    status: string;
-    sessionType: string;
-    liveMinutes: number;
-    followups: number;
-    liveBlocks: number;
-    riotTag: string;
-    discordId: string | null;
-    discordName: string | null;
-    scheduledStart: string;
-    scheduledMinutes: number;
-    paymentRef: string | null;
-    paymentProvider: string | null;
-    amountCents: number | null;
-    currency: string;
-    studentId: string | null;
-    student: {
-      name: string;
-      discordName: string | null;
-      riotTag: string | null;
-    } | null;
-    slotId: string | null;
-    slotStartISO: string | null;
-  };
+  session: SessionWebhookSession;
 };
+
+export type SessionRescheduledWebhookPayload = {
+  type: "session_rescheduled";
+  session: SessionWebhookSession;
+  previousScheduledStart: string;
+};
+
+async function postToDiscordBot(
+  payload: SessionPaidWebhookPayload | SessionRescheduledWebhookPayload
+): Promise<void> {
+  const body = JSON.stringify(payload);
+  const signature = createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex");
+
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Sho-Signature": signature,
+    },
+    body,
+    signal: AbortSignal.timeout(12_000),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`discord_bot_webhook ${res.status} ${detail.slice(0, 200)}`);
+  }
+}
 
 async function resolveSessionIdFromMeta(meta: Record<string, string>): Promise<string | null> {
   if (meta.bookingId) return meta.bookingId;
@@ -70,75 +173,47 @@ export async function notifyDiscordBotSessionPaid(sessionId: string): Promise<vo
 
   const row = await prisma.session.findUnique({
     where: { id: sessionId },
-    select: {
-      id: true,
-      status: true,
-      sessionType: true,
-      liveMinutes: true,
-      followups: true,
-      liveBlocks: true,
-      riotTag: true,
-      discordId: true,
-      discordName: true,
-      scheduledStart: true,
-      scheduledMinutes: true,
-      paymentRef: true,
-      paymentProvider: true,
-      amountCents: true,
-      currency: true,
-      studentId: true,
-      slotId: true,
-      student: {
-        select: { name: true, discordName: true, riotTag: true },
-      },
-      slot: { select: { startTime: true } },
-    },
+    select: sessionWebhookSelect,
   });
 
   if (!row || row.status !== "paid") return;
 
   const payload: SessionPaidWebhookPayload = {
     type: "session_paid",
-    session: {
-      id: row.id,
-      status: row.status,
-      sessionType: row.sessionType,
-      liveMinutes: row.liveMinutes,
-      followups: row.followups,
-      liveBlocks: row.liveBlocks,
-      riotTag: row.riotTag,
-      discordId: row.discordId,
-      discordName: row.discordName,
-      scheduledStart: row.scheduledStart.toISOString(),
-      scheduledMinutes: row.scheduledMinutes,
-      paymentRef: row.paymentRef,
-      paymentProvider: row.paymentProvider,
-      amountCents: row.amountCents,
-      currency: row.currency,
-      studentId: row.studentId,
-      student: row.student,
-      slotId: row.slotId,
-      slotStartISO: row.slot?.startTime?.toISOString() ?? null,
-    },
+    session: rowToSessionPayload(row),
   };
 
-  const body = JSON.stringify(payload);
-  const signature = createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex");
+  await postToDiscordBot(payload);
+}
 
-  const res = await fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Sho-Signature": signature,
-    },
-    body,
-    signal: AbortSignal.timeout(12_000),
+/**
+ * POSTs when an admin reschedules a session (`scheduledStart` changed).
+ * Bot should handle `type: "session_rescheduled"` and dedupe by session id + previousScheduledStart if needed.
+ */
+export async function notifyDiscordBotSessionRescheduled(
+  sessionId: string,
+  previousScheduledStart: Date
+): Promise<void> {
+  if (!WEBHOOK_URL) return;
+  if (!WEBHOOK_SECRET) {
+    console.warn("[discord-notify] DISCORD_BOT_WEBHOOK_URL is set but DISCORD_BOT_WEBHOOK_SECRET is missing");
+    return;
+  }
+
+  const row = await prisma.session.findUnique({
+    where: { id: sessionId },
+    select: sessionWebhookSelect,
   });
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`discord_bot_webhook ${res.status} ${detail.slice(0, 200)}`);
-  }
+  if (!row) return;
+
+  const payload: SessionRescheduledWebhookPayload = {
+    type: "session_rescheduled",
+    session: rowToSessionPayload(row),
+    previousScheduledStart: previousScheduledStart.toISOString(),
+  };
+
+  await postToDiscordBot(payload);
 }
 
 /**

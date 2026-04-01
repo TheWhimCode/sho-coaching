@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { SlotStatus } from "@prisma/client";
 
 import { getBlockIdsByTimeAdmin } from "@/engine/scheduling/startability/getBlockIdsByTimeAdmin";
+import { notifyDiscordBotSessionRescheduled } from "@/lib/discord/sessionPaidWebhook";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,18 +15,6 @@ const Body = z.object({
   scheduledMinutes: z.number().int().positive().optional(),
 });
 
-function ymd(d: Date) {
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-function toHHMM(totalMinutes: number) {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
 export async function POST(req: Request) {
   try {
     const { id, newStart, scheduledMinutes } = Body.parse(await req.json());
@@ -35,7 +24,7 @@ export async function POST(req: Request) {
     // 1) Fetch current session (to get duration if not provided)
     const current = await prisma.session.findUnique({
       where: { id },
-      select: { id: true, scheduledMinutes: true },
+      select: { id: true, scheduledMinutes: true, scheduledStart: true },
     });
 
     if (!current) {
@@ -66,6 +55,13 @@ export async function POST(req: Request) {
       await prisma.slot.updateMany({
         where: { id: { in: blockIds } },
         data: { status: SlotStatus.blocked },
+      });
+    }
+
+    const prevStart = current.scheduledStart.getTime();
+    if (prevStart !== newStartDate.getTime()) {
+      notifyDiscordBotSessionRescheduled(id, current.scheduledStart).catch((e) => {
+        console.error("[reschedule] discord session_rescheduled webhook failed", e);
       });
     }
 
