@@ -17,14 +17,6 @@ const NAV = [
   { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
 ];
 
-const COURSE_LINKS = [
-  { label: "Top", href: "/courses/top" },
-  { label: "Jungle", href: "/courses/jungle" },
-  { label: "Mid", href: "/courses/mid" },
-  { label: "Top", href: "/courses/top" },
-  { label: "Support", href: "/courses/support" },
-];
-
 export default function NavBar({
   className = "",
   logoOnly = false,
@@ -184,16 +176,6 @@ export default function NavBar({
                     </Link>
                   )
                 )}
-
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  title="Courses coming soon"
-                  className="text-base md:text-lg text-white/50 cursor-not-allowed select-none"
-                >
-                  Courses
-                </button>
 
                 <Link
                   href="/contact"

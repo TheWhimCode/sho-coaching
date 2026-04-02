@@ -166,15 +166,14 @@ export default function SpeedReviewsClient() {
       })
     : null;
 
-  /** After first API response (queue + next session), use narrow column; until then match site width (e.g. footer). */
   const initialLoadDone = data !== null || loadErr !== null;
 
+  if (!initialLoadDone) {
+    return null;
+  }
+
   return (
-    <div
-      className={`mx-auto w-full px-4 sm:px-6 pt-10 pb-36 text-white md:pt-14 ${
-        initialLoadDone ? "max-w-3xl" : "max-w-7xl"
-      }`}
-    >
+    <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-10 pb-36 text-white md:pt-14">
       <div className="mb-10 text-center">
         <h1 className="text-5xl font-bold tracking-tight">Speed Reviews</h1>
         <p className="mt-2 text-white/70 text-xl max-w-xl mx-auto">
@@ -261,30 +260,30 @@ export default function SpeedReviewsClient() {
           </PrimaryCTA>
         </div>
         {loadErr && <p className="text-red-400 text-sm mb-2">{loadErr}</p>}
-        {!data ? (
-          <p className="text-white/50 text-sm">Loading…</p>
-        ) : data.queue.length === 0 ? (
-          <p className="text-white/60 text-sm">No one in the queue yet. Be the first.</p>
-        ) : (
-          <ul className="space-y-2">
-            {data.queue.map((r) => (
-              <li
-                key={`${r.position}-${r.discordName}-${r.role}`}
-                className="flex items-center justify-between rounded-lg bg-white/[.04] px-3 py-2 text-sm"
-              >
-                <span className="text-white/50 w-8">#{r.position}</span>
-                <span className="flex-1 font-medium truncate">{r.discordName}</span>
-                <span className="flex w-10 shrink-0 items-center justify-end" title={r.role}>
-                  <img
-                    src={speedReviewRoleIconUrl(r.role)}
-                    alt=""
-                    className="h-7 w-7 object-contain"
-                  />
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {data ? (
+          data.queue.length === 0 ? (
+            <p className="text-white/60 text-sm">No one in the queue yet. Be the first.</p>
+          ) : (
+            <ul className="space-y-2">
+              {data.queue.map((r) => (
+                <li
+                  key={`${r.position}-${r.discordName}-${r.role}`}
+                  className="flex items-center justify-between rounded-lg bg-white/[.04] px-3 py-2 text-sm"
+                >
+                  <span className="text-white/50 w-8">#{r.position}</span>
+                  <span className="flex-1 font-medium truncate">{r.discordName}</span>
+                  <span className="flex w-10 shrink-0 items-center justify-end" title={r.role}>
+                    <img
+                      src={speedReviewRoleIconUrl(r.role)}
+                      alt=""
+                      className="h-7 w-7 object-contain"
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : null}
       </GlassPanel>
 
       {modalOpen && (
@@ -302,26 +301,38 @@ export default function SpeedReviewsClient() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 overflow-visible">
-              <div className="flex items-start justify-between gap-3 mb-6">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs uppercase tracking-wider text-white/45 mb-1">
-                    Step {modalStep} of 2
-                  </p>
-                  <h2 id="speed-review-modal-title" className="text-xl font-semibold">
-                    {modalStep === 1 && "Choose your role"}
-                    {modalStep === 2 &&
-                      (joinedSuccess ? "You're in the queue" : "Riot ID & Discord")}
-                  </h2>
+              {modalStep === 2 && joinedSuccess ? (
+                <div className="flex justify-end mb-4">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="shrink-0 rounded-lg p-2 -mr-1 -mt-1 text-white/70 hover:text-white hover:bg-white/10"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="shrink-0 rounded-lg p-2 -mr-1 -mt-1 text-white/70 hover:text-white hover:bg-white/10"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+              ) : (
+                <div className="flex items-start justify-between gap-3 mb-6">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs uppercase tracking-wider text-white/45 mb-1">
+                      Step {modalStep} of 2
+                    </p>
+                    <h2 id="speed-review-modal-title" className="text-xl font-semibold">
+                      {modalStep === 1 && "Choose your role"}
+                      {modalStep === 2 && "Riot ID & Discord"}
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="shrink-0 rounded-lg p-2 -mr-1 -mt-1 text-white/70 hover:text-white hover:bg-white/10"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
 
               {modalStep === 1 && (
                 <div className="space-y-4">
@@ -371,15 +382,19 @@ export default function SpeedReviewsClient() {
               )}
 
               {modalStep === 2 && joinedSuccess && (
-                <div className="space-y-5 text-center">
-                  <p className="text-sm text-emerald-400 font-medium">
-                    You&apos;re on the list — see you at the next Stage session.
+                <div className="flex flex-col items-center justify-center text-center text-white">
+                  <h2 id="speed-review-modal-title" className="text-2xl font-semibold mb-2">
+                    You&apos;re in the queue 🎉
+                  </h2>
+                  <p className="text-white/70 mb-1 max-w-sm">
+                    See you at the next Stage session.
                   </p>
-                  <div className="flex justify-center pt-2">
-                    <PrimaryCTA withHalo={false} className="h-10 px-8" onClick={closeModal}>
-                      Done
-                    </PrimaryCTA>
-                  </div>
+                  <p className="text-white/70 max-w-sm mb-6">
+                    If you can&apos;t make an event, you won&apos;t be removed from the queue.
+                  </p>
+                  <PrimaryCTA withHalo={false} className="h-10 px-8" onClick={closeModal}>
+                    Done
+                  </PrimaryCTA>
                 </div>
               )}
             </div>

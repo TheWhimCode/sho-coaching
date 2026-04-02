@@ -118,24 +118,6 @@ export default function MobileNav() {
                 Contact
               </Link>
             </motion.div>
-
-            {/* Courses – visible but disabled */}
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
-              transition={{
-                duration: 0.18,
-                ease: [0.22, 1, 0.36, 1],
-                delay: showContent ? 0.2 : 0,
-              }}
-            >
-              <div className="py-3 text-lg text-white/60 flex items-center gap-4">
-                <span className="font-semibold">Courses</span>
-                <span className="text-sm px-3 py-1 rounded bg-white/10 uppercase tracking-wide">
-                  Soon
-                </span>
-              </div>
-            </motion.div>
           </div>
 
           {/* Socials – continue stagger after nav, slide in L→R; exit with bar */}
@@ -182,12 +164,7 @@ export default function MobileNav() {
                   transition={{
                     duration: 0.18,
                     ease: [0.22, 1, 0.36, 1],
-                    // continue same 0.04s staircase after Courses (index 5)
-                    // nav: 0,1,2 → delays 0, .04, .08
-                    // Contact: index 3 → .12
-                    // Courses: index 4 → .16
-                    // socials: indices 5–8 → .20, .24, .28, .32
-                    delay: showContent ? 0.20 + idx * 0.04 : 0,
+                    delay: showContent ? 0.2 + idx * 0.04 : 0,
                   }}
                 >
                   <Icon className="h-6 w-6" />
