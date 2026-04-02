@@ -15,6 +15,14 @@ type Props = {
   riotInputRef: React.RefObject<HTMLInputElement | null>;
   onSubmit: () => void;
   onRiotVerified?: (d: { riotTag: string; puuid: string; region: string }) => void;
+  /** Hide optional notes field (e.g. speed review join). */
+  hideNotes?: boolean;
+  /** Omit “Contact details” title and divider (checkout keeps the default). */
+  hideContactHeading?: boolean;
+  /** Footer primary label. */
+  footerLabel?: string;
+  /** Show loading state on footer primary (e.g. async join). */
+  footerLoading?: boolean;
 };
 
 // keep spaces elsewhere, but remove spaces around '#'
@@ -40,6 +48,10 @@ export default function StepContact({
   riotInputRef,
   onSubmit,
   onRiotVerified,
+  hideNotes,
+  hideContactHeading,
+  footerLabel = "Continue",
+  footerLoading,
 }: Props) {
   const riotVal = riotTag ?? "";
   const notesVal = notes ?? "";
@@ -184,22 +196,24 @@ export default function StepContact({
 
   React.useEffect(() => {
     setFooter({
-      label: "Continue",
-      disabled: !canSubmit,
-      loading: false,
+      label: footerLabel,
+      disabled: !canSubmit || !!footerLoading,
+      loading: !!footerLoading,
       onClick: () => formRef.current?.requestSubmit(),
       hidden: false,
     });
-  }, [setFooter, canSubmit]);
+  }, [setFooter, canSubmit, footerLabel, footerLoading]);
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-3">
-        <div className="relative h-7 flex items-center justify-center">
-          <div className="text-sm text-white/80">Contact details</div>
+      {!hideContactHeading && (
+        <div className="mb-3">
+          <div className="relative h-7 flex items-center justify-center">
+            <div className="text-sm text-white/80">Contact details</div>
+          </div>
+          <div className="mt-2 border-t border-white/10" />
         </div>
-        <div className="mt-2 border-t border-white/10" />
-      </div>
+      )}
 
       <form
         ref={formRef}
@@ -333,19 +347,20 @@ export default function StepContact({
             </div>
           </div>
 
-          {/* Notes */}
-          <label className="block">
-            <span className="text-xs text-white/65">Anything you want me to know</span>
-            <textarea
-              value={notesVal}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              placeholder="(Optional)"
-              spellCheck={false}
-              autoCorrect="off"
-              className={`${baseInput} ${okRing} resize-none min-h-[110px]`}
-            />
-          </label>
+          {!hideNotes && (
+            <label className="block">
+              <span className="text-xs text-white/65">Anything you want me to know</span>
+              <textarea
+                value={notesVal}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="(Optional)"
+                spellCheck={false}
+                autoCorrect="off"
+                className={`${baseInput} ${okRing} resize-none min-h-[110px]`}
+              />
+            </label>
+          )}
 
           {contactErr && <div className="text-sm text-red-400 mt-1">{contactErr}</div>}
         </div>

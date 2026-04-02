@@ -5,6 +5,7 @@ import NavBar from "@/app/_components/NavBar";
 import MobileNav from "@/app/_components/MobileNav";
 import Footer from "@/app/_components/Footer";
 import ScrollbarInit from "@/app/ScrollbarInit";
+import SpeedReviewsPageBackground from "@/app/speed-reviews/SpeedReviewsPageBackground";
 
 export default function LayoutClient({ children }: { children: React.ReactNode }) {
   const p = usePathname() || "";
@@ -22,7 +23,15 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const isQuickbook = p === "/quickbook" || p.startsWith("/quickbook/");
 
-  const logoOnly = isSkillcheck || isCoachingDetail || isCheckout || isCheckoutSuccess || isQuickbook;
+  const isSpeedReviews = p === "/speed-reviews" || p.startsWith("/speed-reviews/");
+
+  const logoOnly =
+    isSkillcheck ||
+    isCoachingDetail ||
+    isCheckout ||
+    isCheckoutSuccess ||
+    isQuickbook ||
+    isSpeedReviews;
 
   const showNavBar = true;
 
@@ -38,11 +47,26 @@ const showFooter = !(isCoachingDetail || isCheckout || isQuickbook);
 
       <div className={showNavSpacer ? "h-16 md:h-20" : "h-0"} />
 
-      <main>{children}</main>
-
-      <div className={showFooter ? "" : "hidden pointer-events-none"}>
-        <Footer />
-      </div>
+      {isSpeedReviews ? (
+        <div className="relative">
+          <SpeedReviewsPageBackground />
+          <main className="relative z-10">{children}</main>
+          <div
+            className={
+              showFooter ? "relative z-10" : "hidden pointer-events-none"
+            }
+          >
+            <Footer />
+          </div>
+        </div>
+      ) : (
+        <>
+          <main>{children}</main>
+          <div className={showFooter ? "" : "hidden pointer-events-none"}>
+            <Footer />
+          </div>
+        </>
+      )}
     </>
   );
 }

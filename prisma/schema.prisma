@@ -255,6 +255,44 @@ model Coupon {
   @@schema("public")
 
 }
+
+/// Stage speed review queue (single table MVP).
+model SpeedReviewQueue {
+  id              String              @id @default(cuid())
+  discordId       String              @unique
+  discordName     String?
+  riotTag         String
+  puuid           String?
+  role            String
+  queueDate       DateTime            @default(now())
+  previousReviews Int                 @default(0)
+  paidPriority    Boolean             @default(false)
+  reviewStatus    SpeedReviewStatus   @default(Pending)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([reviewStatus, paidPriority])
+  @@index([queueDate])
+  @@index([discordId])
+  @@index([puuid])
+  @@schema("public")
+}
+
+enum SpeedReviewStatus {
+  Pending
+  Done
+
+  @@schema("public")
+}
+
+/// Singleton row id = "default" — next public Stage review time.
+model SpeedReviewConfig {
+  id            String    @id @default("default")
+  nextSessionAt DateTime?
+  updatedAt     DateTime  @updatedAt
+
+  @@schema("public")
+}
 model Draft {
   id        String   @id @default(cuid())
 

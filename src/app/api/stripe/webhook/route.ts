@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { finalizeBooking } from "@/lib/booking/finalizeBooking";
 import { notifyDiscordBotSessionPaidFromMeta } from "@/lib/discord/sessionPaidWebhook";
 import { CFG_SERVER } from "@/lib/config.server";
+import { applySpeedReviewPriorityPayment } from "@/lib/speedReview/applyPriorityPayment";
 import { SlotStatus } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -18,6 +19,17 @@ function getStripe(): Stripe {
   if (stripe) return stripe;
   stripe = new Stripe(CFG_SERVER.STRIPE_SECRET_KEY, { apiVersion: "2025-07-30.basil" as Stripe.LatestApiVersion });
   return stripe;
+}
+
+/** Stripe metadata.kind = speed_review_priority — 10€ queue bump; skip booking flow. */
+async function trySpeedReviewPriorityPayment(
+  meta: Record<string, string>,
+  paymentRef: string,
+  amountCents: number
+): Promise<boolean> {
+  if (meta.kind !== "speed_review_priority" || !meta.queueEntryId) return false;
+  await applySpeedReviewPriorityPayment(meta.queueEntryId, paymentRef, amountCents);
+  return true;
 }
 
 async function commitTakenSlots(slotIdsCsv: string | undefined) {
@@ -102,7 +114,13 @@ export async function POST(req: Request) {
         console.log("🔥 WEBHOOK METADATA:", pi.metadata);
 
         const meta = (pi.metadata ?? {}) as Record<string, string>;
-        await handle(meta, pi.amount_received ?? undefined, pi.currency, pi.id);
+        const amountCents = pi.amount_received ?? 0;
+
+        if (await trySpeedReviewPriorityPayment(meta, pi.id, amountCents)) {
+          break;
+        }
+
+        await handle(meta, amountCents || undefined, pi.currency, pi.id);
         const paymentRef = pi.id;
 
         if (meta.bookingId) {
@@ -134,7 +152,13 @@ export async function POST(req: Request) {
         console.log("[webhook] CS meta", { csId: cs.id, meta });
 
         const paymentRef = pi?.id ?? cs.id; // prefer PI id
-        await handle(meta, cs.amount_total ?? undefined, cs.currency ?? "eur", paymentRef);
+        const amountCents = cs.amount_total ?? 0;
+
+        if (await trySpeedReviewPriorityPayment(meta, paymentRef, amountCents)) {
+          break;
+        }
+
+        await handle(meta, amountCents || undefined, cs.currency ?? "eur", paymentRef);
         await notifyDiscordBotSessionPaidFromMeta(meta);
         break;
       }

@@ -11,8 +11,9 @@ const Slots = dynamic(() => import("./availability/page"), { ssr: false });
 const Sessions = dynamic(() => import("./sessions/page"), { ssr: false });
 const Students = dynamic(() => import("./students/page"), { ssr: false });
 const Skillcheck = dynamic(() => import("./skillcheck/page"), { ssr: false });
+const SpeedReview = dynamic(() => import("./SpeedReviewAdmin"), { ssr: false });
 
-const TABS = ["hub", "slots", "sessions", "students", "skillcheck"] as const;
+const TABS = ["hub", "slots", "sessions", "students", "skillcheck", "speed"] as const;
 type Tab = (typeof TABS)[number];
 
 function AdminInner() {
@@ -78,6 +79,7 @@ function AdminInner() {
         <TabButton id="sessions" label="📅 Sessions" />
         <TabButton id="students" label="🎓 Students" />
         <TabButton id="skillcheck" label="⚡ Skillcheck" />
+        <TabButton id="speed" label="🎤 Speed" />
       </motion.div>
 
       {/* Mobile bottom bar */}
@@ -92,6 +94,7 @@ function AdminInner() {
           <MobileTabButton id="sessions" icon="📅" />
           <MobileTabButton id="students" icon="🎓" />
           <MobileTabButton id="skillcheck" icon="⚡" />
+          <MobileTabButton id="speed" icon="🎤" />
         </div>
       </motion.div>
 
@@ -102,6 +105,7 @@ function AdminInner() {
         {tab === "sessions" && <Sessions />}
         {tab === "students" && <Students />}
         {tab === "skillcheck" && <Skillcheck />}
+        {tab === "speed" && <SpeedReview />}
       </div>
     </>
   );
