@@ -386,11 +386,8 @@ export default function SpeedReviewsClient() {
                   <h2 id="speed-review-modal-title" className="text-2xl font-semibold mb-2">
                     You&apos;re in the queue 🎉
                   </h2>
-                  <p className="text-white/70 mb-1 max-w-sm">
-                    See you at the next Stage session.
-                  </p>
                   <p className="text-white/70 max-w-sm mb-6">
-                    If you can&apos;t make an event, you won&apos;t be removed from the queue.
+                    See you soon! 
                   </p>
                   <PrimaryCTA withHalo={false} className="h-10 px-8" onClick={closeModal}>
                     Done
