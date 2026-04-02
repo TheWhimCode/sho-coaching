@@ -34,6 +34,34 @@ export function regionalForServer(server: string): Regional {
   return region;
 }
 
+/** LoL platform hosts under each account routing region (for summoner/league by PUUID). */
+const PLATFORMS_BY_REGIONAL: Record<Regional, readonly string[]> = {
+  americas: ["na1", "br1", "la1", "la2", "oc1"],
+  europe: ["euw1", "eun1", "tr1", "ru"],
+  asia: ["kr", "jp1"],
+  sea: ["ph2", "sg2", "th2", "tw2", "vn2"],
+};
+
+/**
+ * Finds which platform shard hosts this Riot account's LoL summoner (summoner v4 by PUUID).
+ * Used after Account-v1 resolve to know which host to query for league entries.
+ */
+export async function findPlatformForPuuid(puuid: string, regional: Regional): Promise<string | null> {
+  const platforms = PLATFORMS_BY_REGIONAL[regional];
+  if (!platforms?.length) return null;
+  for (const platform of platforms) {
+    try {
+      await riotFetchJSON(
+        `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`,
+      );
+      return platform;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 export function parseRiotTag(tag: string) {
   const i = tag.lastIndexOf("#");
   if (i <= 0 || i === tag.length - 1) throw new Error('riotTag must be "Game#TAG"');
@@ -46,6 +74,49 @@ export async function resolveAccount(regional: Regional, riotTag: string) {
   return riotFetchJSON<{ puuid: string; gameName: string; tagLine: string }>(
     `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`
   );
+}
+
+/** Regional routers to try for Account-v1 `by-riot-id` (same order as POST /api/riot/resolve). */
+export const ACCOUNT_ROUTING_REGIONS: readonly Regional[] = ["europe", "americas", "asia", "sea"];
+
+export type ResolvedRiotAccount = {
+  puuid: string;
+  regional: Regional;
+  gameName: string;
+  tagLine: string;
+};
+
+/**
+ * Resolve Riot ID (Game#TAG) → PUUID by trying Account-v1 regional hosts.
+ * Single source of truth for “riot id → puuid”; used by /api/riot/resolve and rank-at-payment.
+ *
+ * @param options.region — if set, only that router is tried (same as resolve body `region`).
+ */
+export async function resolveAccountByRiotTag(
+  riotTag: string,
+  options?: { region?: Regional },
+): Promise<ResolvedRiotAccount> {
+  const tag = riotTag.trim();
+  if (!tag) throw new Error("riotTag required");
+
+  const regionsToTry: readonly Regional[] = options?.region ? [options.region] : ACCOUNT_ROUTING_REGIONS;
+
+  let lastErr: unknown = null;
+  for (const regional of regionsToTry) {
+    try {
+      const acct = await resolveAccount(regional, tag);
+      return {
+        puuid: acct.puuid,
+        regional,
+        gameName: acct.gameName,
+        tagLine: acct.tagLine,
+      };
+    } catch (e) {
+      lastErr = e;
+      continue;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("not_found");
 }
 
 export async function recentSoloMatchIds(regional: Regional, puuid: string, count: number) {
