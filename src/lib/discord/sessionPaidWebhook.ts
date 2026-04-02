@@ -3,6 +3,7 @@ import "server-only";
 import { createHmac } from "node:crypto";
 
 import { prisma } from "@/lib/prisma";
+import { resolveRankForPaidSession, type SessionPaidRank } from "@/lib/riot/soloRankForSession";
 
 const WEBHOOK_URL = process.env.DISCORD_BOT_WEBHOOK_URL?.trim() ?? "";
 const WEBHOOK_SECRET = process.env.DISCORD_BOT_WEBHOOK_SECRET?.trim() ?? "";
@@ -26,8 +27,10 @@ const sessionWebhookSelect = {
   currency: true,
   studentId: true,
   slotId: true,
+  notes: true,
+  champions: true,
   student: {
-    select: { name: true, discordName: true, riotTag: true },
+    select: { name: true, discordName: true, riotTag: true, puuid: true, server: true },
   },
   slot: { select: { startTime: true } },
 } as const;
@@ -49,10 +52,14 @@ export type SessionWebhookSession = {
   amountCents: number | null;
   currency: string;
   studentId: string | null;
+  notes: string | null;
+  champions: string[];
   student: {
     name: string;
     discordName: string | null;
     riotTag: string | null;
+    puuid: string | null;
+    server: string | null;
   } | null;
   slotId: string | null;
   slotStartISO: string | null;
@@ -76,10 +83,14 @@ function rowToSessionPayload(row: {
   currency: string;
   studentId: string | null;
   slotId: string | null;
+  notes: string | null;
+  champions: string[];
   student: {
     name: string;
     discordName: string | null;
     riotTag: string | null;
+    puuid: string | null;
+    server: string | null;
   } | null;
   slot: { startTime: Date } | null;
 }): SessionWebhookSession {
@@ -100,7 +111,17 @@ function rowToSessionPayload(row: {
     amountCents: row.amountCents,
     currency: row.currency,
     studentId: row.studentId,
-    student: row.student,
+    notes: row.notes ?? null,
+    champions: row.champions ?? [],
+    student: row.student
+      ? {
+          name: row.student.name,
+          discordName: row.student.discordName,
+          riotTag: row.student.riotTag,
+          puuid: row.student.puuid ?? null,
+          server: row.student.server ?? null,
+        }
+      : null,
     slotId: row.slotId,
     slotStartISO: row.slot?.startTime?.toISOString() ?? null,
   };
@@ -109,6 +130,8 @@ function rowToSessionPayload(row: {
 export type SessionPaidWebhookPayload = {
   type: "session_paid";
   session: SessionWebhookSession;
+  /** Solo/Duo at payment time (from riot#tag or student puuid+server when present). */
+  rank: SessionPaidRank;
 };
 
 export type SessionRescheduledWebhookPayload = {
@@ -178,9 +201,21 @@ export async function notifyDiscordBotSessionPaid(sessionId: string): Promise<vo
 
   if (!row || row.status !== "paid") return;
 
+  let rank: SessionPaidRank = {
+    league: null,
+    division: null,
+    platform: null,
+  };
+  try {
+    rank = await resolveRankForPaidSession(row.riotTag, row.student);
+  } catch (e) {
+    console.warn("[discord-notify] rank lookup failed", e);
+  }
+
   const payload: SessionPaidWebhookPayload = {
     type: "session_paid",
     session: rowToSessionPayload(row),
+    rank,
   };
 
   await postToDiscordBot(payload);
