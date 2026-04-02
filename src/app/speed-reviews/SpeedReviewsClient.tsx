@@ -163,19 +163,18 @@ export default function SpeedReviewsClient() {
 
   return (
     <>
-      <React.Suspense fallback={null}>
-        <SpeedReviewsPriorityListener onPrioritySuccess={load} />
-      </React.Suspense>
-      {initialLoadDone ? (
-    <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-10 pb-36 text-white md:pt-14">
-      <div className="mb-10 text-center">
-        <h1 className="text-5xl font-bold tracking-tight">Speed Reviews</h1>
-        <p className="mt-2 text-white/70 text-xl max-w-xl mx-auto">
-          Free coaching on Discord — sign up today
-        </p>
-      </div>
+      <SpeedReviewsPriorityListener onPrioritySuccess={load} />
+      <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-10 pb-36 text-white md:pt-14">
+        <div className="mb-10 text-center">
+          <h1 className="text-5xl font-bold tracking-tight">Speed Reviews</h1>
+          <p className="mt-2 text-white/70 text-xl max-w-xl mx-auto">
+            Free coaching on Discord — sign up today
+          </p>
+        </div>
 
-      <GlassPanel className="mb-8 p-6">
+        {initialLoadDone ? (
+          <div className="animate-speed-reviews-content-in">
+      <GlassPanel className="mb-8 p-6 !backdrop-blur-none [backdrop-filter:none]">
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:gap-0">
           <section className="min-w-0 flex-1 md:pr-6">
             <h2 className="sr-only">Next event</h2>
@@ -246,7 +245,7 @@ export default function SpeedReviewsClient() {
         </div>
       </GlassPanel>
 
-      <GlassPanel className="mb-8 p-6">
+      <GlassPanel className="mb-8 p-6 !backdrop-blur-none [backdrop-filter:none]">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h2 className="text-lg font-semibold">Current queue</h2>
           <PrimaryCTA withHalo={false} className="h-10 px-6 shrink-0 w-full sm:w-auto" onClick={openModal}>
@@ -279,10 +278,12 @@ export default function SpeedReviewsClient() {
           )
         ) : null}
       </GlassPanel>
+          </div>
+        ) : null}
 
       {modalOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/70"
           role="dialog"
           aria-modal="true"
           aria-labelledby="speed-review-modal-title"
@@ -392,8 +393,7 @@ export default function SpeedReviewsClient() {
           </div>
         </div>
       )}
-    </div>
-      ) : null}
+      </div>
     </>
   );
 }

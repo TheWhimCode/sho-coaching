@@ -47,26 +47,22 @@ const showFooter = !(isCoachingDetail || isCheckout || isQuickbook);
 
       <div className={showNavSpacer ? "h-16 md:h-20" : "h-0"} />
 
-      {isSpeedReviews ? (
-        <div className="relative">
-          <SpeedReviewsPageBackground />
-          <main className="relative z-10">{children}</main>
-          <div
-            className={
-              showFooter ? "relative z-10" : "hidden pointer-events-none"
-            }
-          >
-            <Footer />
-          </div>
+      {/* Single stable wrapper: avoid Fragment vs div swap on route change (fixes React removeChild errors with OverlayScrollbars). */}
+      <div className={isSpeedReviews ? "relative" : undefined}>
+        {isSpeedReviews ? <SpeedReviewsPageBackground /> : null}
+        <main className={isSpeedReviews ? "relative z-10" : undefined}>{children}</main>
+        <div
+          className={
+            showFooter
+              ? isSpeedReviews
+                ? "relative z-10"
+                : ""
+              : "hidden pointer-events-none"
+          }
+        >
+          <Footer />
         </div>
-      ) : (
-        <>
-          <main>{children}</main>
-          <div className={showFooter ? "" : "hidden pointer-events-none"}>
-            <Footer />
-          </div>
-        </>
-      )}
+      </div>
     </>
   );
 }

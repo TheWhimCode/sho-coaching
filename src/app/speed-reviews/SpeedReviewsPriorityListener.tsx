@@ -1,21 +1,27 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 
-/** Isolated so `useSearchParams` does not suspend the whole speed-reviews page tree. */
+/**
+ * Stripe returns to `/speed-reviews?priority=success`. We avoid `useSearchParams()` here —
+ * it can throw or misbehave on client-side navigations unless every layout boundary
+ * provides Suspense; reading `window.location` in an effect is stable for SPA + full load.
+ */
 export default function SpeedReviewsPriorityListener({
   onPrioritySuccess,
 }: {
   onPrioritySuccess: () => void;
 }) {
-  const sp = useSearchParams();
+  const pathname = usePathname();
 
   React.useEffect(() => {
-    if (sp.get("priority") === "success") {
+    if (typeof window === "undefined") return;
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("priority") === "success") {
       onPrioritySuccess();
     }
-  }, [sp, onPrioritySuccess]);
+  }, [pathname, onPrioritySuccess]);
 
   return null;
 }

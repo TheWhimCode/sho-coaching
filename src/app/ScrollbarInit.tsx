@@ -23,7 +23,7 @@ export default function ScrollbarInit() {
       if (viewport) {
         viewport.scrollTop = 0;
       }
-      
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
@@ -52,7 +52,6 @@ export default function ScrollbarInit() {
     const viewport = instance.elements().viewport;
     if (viewport) viewport.style.scrollBehavior = "smooth";
 
-    // ✅ Fix pointer-events on OverlayScrollbars wrapper elements
     const { host, padding } = instance.elements();
     if (host) host.style.pointerEvents = "none";
     if (padding) padding.style.pointerEvents = "none";

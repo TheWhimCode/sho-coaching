@@ -103,6 +103,28 @@ html, body {
   pointer-events: none;
 }
 
+/* Speed Reviews: main column after API load — transform only (no parent opacity).
+   Animating opacity on a wrapper that contains semi-transparent panels multiplies alphas
+   and reads darker/muddier until the keyframes finish. */
+@keyframes speed-reviews-content-in {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-speed-reviews-content-in {
+  animation: speed-reviews-content-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-speed-reviews-content-in {
+    animation: none;
+  }
+}
+
 .frost-card {
   background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
   backdrop-filter: blur(8px);
