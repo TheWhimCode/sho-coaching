@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
 import SearchDropdown from "@/app/_components/small/SearchDropdown";
 import StepContact from "@/app/checkout/_components/checkout-steps/StepContact";
 import {
@@ -13,6 +12,7 @@ import GlassPanel from "@/app/_components/panels/GlassPanel";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 import { X } from "lucide-react";
 import { speedReviewRoleIconUrl } from "@/lib/speedReview/roleIcons";
+import SpeedReviewsPriorityListener from "./SpeedReviewsPriorityListener";
 
 const ROLES = ["TOP", "JUNGLE", "MID", "BOTTOM", "SUPPORT"] as const;
 
@@ -51,7 +51,6 @@ function FooterBar() {
 }
 
 export default function SpeedReviewsClient() {
-  const sp = useSearchParams();
   const riotInputRef = React.useRef<HTMLInputElement | null>(null);
   const [riotTag, setRiotTag] = React.useState("");
   const [notes, setNotes] = React.useState("");
@@ -83,12 +82,6 @@ export default function SpeedReviewsClient() {
   React.useEffect(() => {
     load();
   }, [load]);
-
-  React.useEffect(() => {
-    if (sp.get("priority") === "success") {
-      load();
-    }
-  }, [sp, load]);
 
   const resetModal = React.useCallback(() => {
     setModalStep(1);
@@ -168,11 +161,12 @@ export default function SpeedReviewsClient() {
 
   const initialLoadDone = data !== null || loadErr !== null;
 
-  if (!initialLoadDone) {
-    return null;
-  }
-
   return (
+    <>
+      <React.Suspense fallback={null}>
+        <SpeedReviewsPriorityListener onPrioritySuccess={load} />
+      </React.Suspense>
+      {initialLoadDone ? (
     <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-10 pb-36 text-white md:pt-14">
       <div className="mb-10 text-center">
         <h1 className="text-5xl font-bold tracking-tight">Speed Reviews</h1>
@@ -399,5 +393,7 @@ export default function SpeedReviewsClient() {
         </div>
       )}
     </div>
+      ) : null}
+    </>
   );
 }

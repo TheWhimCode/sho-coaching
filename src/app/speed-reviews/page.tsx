@@ -10,11 +10,7 @@ export const metadata: Metadata = {
 export default function SpeedReviewsPage() {
   return (
     <div className="min-h-dvh overflow-y-auto">
-      <Suspense
-        fallback={
-          <div className="min-h-dvh p-10 text-white/60 text-center bg-[#0a1224]">Loading…</div>
-        }
-      >
+      <Suspense fallback={null}>
         <SpeedReviewsClient />
       </Suspense>
     </div>
