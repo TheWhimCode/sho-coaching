@@ -27,6 +27,8 @@ const sessionWebhookSelect = {
   currency: true,
   studentId: true,
   slotId: true,
+  notes: true,
+  champions: true,
   student: {
     select: { name: true, discordName: true, riotTag: true, puuid: true, server: true },
   },
@@ -50,6 +52,8 @@ export type SessionWebhookSession = {
   amountCents: number | null;
   currency: string;
   studentId: string | null;
+  notes: string | null;
+  champions: string[];
   student: {
     name: string;
     discordName: string | null;
@@ -79,6 +83,8 @@ function rowToSessionPayload(row: {
   currency: string;
   studentId: string | null;
   slotId: string | null;
+  notes: string | null;
+  champions: string[];
   student: {
     name: string;
     discordName: string | null;
@@ -105,6 +111,8 @@ function rowToSessionPayload(row: {
     amountCents: row.amountCents,
     currency: row.currency,
     studentId: row.studentId,
+    notes: row.notes ?? null,
+    champions: row.champions ?? [],
     student: row.student
       ? {
           name: row.student.name,
