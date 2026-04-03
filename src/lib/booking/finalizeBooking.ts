@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
 import { getPreset } from "@/engine/session/rules/preset";
+import { resolveCanonicalStudent } from "@/lib/students/resolveCanonicalStudent";
 
 export type FinalizeMeta = {
   bookingId?: string;
@@ -25,77 +25,6 @@ function titleFromPreset(baseMinutes: number, followups: number, liveBlocks: num
     case "signature": return "Signature Session";
     default: return "Custom Session";
   }
-}
-
-function isP2002(e: unknown): boolean {
-  return typeof e === "object" && e !== null && "code" in e && (e as any).code === "P2002";
-}
-
-async function resolveCanonicalStudent(
-  tx: Prisma.TransactionClient,
-  args: { discordId?: string | null; discordName?: string | null; riotTag: string }
-) {
-  const { discordId, discordName, riotTag } = args;
-
-  let student =
-    (discordId ? await tx.student.findUnique({ where: { discordId } }) : null) ??
-    (await tx.student.findUnique({ where: { riotTag } }));
-
-  if (!student) {
-const baseName = riotTag ? riotTag.split("#")[0] : "Student";
-    let name = baseName;
-    for (let i = 0; i < 5; i++) {
-      try {
-        student = await tx.student.create({
-          data: {
-            name,
-            riotTag: riotTag || null,
-            discordId: discordId ?? null,
-            discordName: discordName ?? null,
-          },
-        });
-        break;
-      } catch (e) {
-        if (isP2002(e)) {
-          name = `${baseName}-${Math.floor(Math.random() * 1000)}`;
-          continue;
-        }
-        throw e;
-      }
-    }
-    if (!student) throw new Error("failed_to_create_student");
-  }
-
-  if (discordId && discordId !== student.discordId) {
-    try {
-      student = await tx.student.update({ where: { id: student.id }, data: { discordId } });
-    } catch (e) {
-      if (!isP2002(e)) throw e;
-      const conflict = await tx.student.findUnique({ where: { discordId } });
-      if (conflict && conflict.id !== student.id) {
-        await tx.student.update({ where: { id: conflict.id }, data: { discordId: null } });
-      }
-      student = await tx.student.update({ where: { id: student.id }, data: { discordId } });
-    }
-  }
-
-  if (discordName && discordName !== student.discordName)
-    student = await tx.student.update({ where: { id: student.id }, data: { discordName } });
-
-  if (riotTag && riotTag !== student.riotTag) {
-    try {
-      student = await tx.student.update({ where: { id: student.id }, data: { riotTag } });
-    } catch (e) {
-      if (!isP2002(e)) throw e;
-      const conflict = await tx.student.findUnique({ where: { riotTag } });
-      if (conflict && conflict.id !== student.id) {
-        await tx.student.update({ where: { id: conflict.id }, data: { riotTag: null } });
-      }
-      student = await tx.student.update({ where: { id: student.id }, data: { riotTag } });
-    }
-  }
-
-  return student;
 }
 
 export async function finalizeBooking(
@@ -172,10 +101,9 @@ export async function finalizeBooking(
     waiverAccepted && !sessionRow.waiverAccepted ? new Date() : sessionRow.waiverAcceptedAt || undefined;
   const waiverIp = sessionRow.waiverIp || (meta.waiverIp || undefined);
 
+  const student = await resolveCanonicalStudent(prisma, { discordId, discordName, riotTag });
+
   await prisma.$transaction(async (tx) => {
-
-    const student = await resolveCanonicalStudent(tx, { discordId, discordName, riotTag });
-
     await tx.session.update({
       where: { id: sessionRow.id },
       data: {
