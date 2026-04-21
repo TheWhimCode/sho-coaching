@@ -27,7 +27,7 @@ export default function SpeedReviewAdmin() {
   const [config, setConfig] = React.useState<Config | null>(null);
   const [rows, setRows] = React.useState<QueueRow[]>([]);
   const [q, setQ] = React.useState("");
-  const [status, setStatus] = React.useState<string>("");
+  const [status, setStatus] = React.useState<string>("Pending");
   const [paid, setPaid] = React.useState<string>("");
   const [nextInput, setNextInput] = React.useState("");
   const [msg, setMsg] = React.useState<string | null>(null);
@@ -177,8 +177,8 @@ export default function SpeedReviewAdmin() {
             onChange={(e) => setStatus(e.target.value)}
             className="rounded bg-white/5 border border-white/15 px-2 py-1 text-sm"
           >
-            <option value="">All statuses</option>
             <option value="Pending">Pending</option>
+            <option value="">All statuses</option>
             <option value="Done">Done</option>
           </select>
           <select

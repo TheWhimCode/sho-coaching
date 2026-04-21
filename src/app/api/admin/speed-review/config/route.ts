@@ -12,15 +12,17 @@ export async function GET() {
   if (!row) {
     const created = await prisma.speedReviewConfig.create({
       data: { id: "default" },
-      select: { nextSessionAt: true, updatedAt: true },
+      select: { nextSessionAt: true, reminder24hSent: true, updatedAt: true },
     });
     return NextResponse.json({
       nextSessionAt: created.nextSessionAt?.toISOString() ?? null,
+      reminder24hSent: created.reminder24hSent,
       updatedAt: created.updatedAt.toISOString(),
     });
   }
   return NextResponse.json({
     nextSessionAt: row.nextSessionAt?.toISOString() ?? null,
+    reminder24hSent: row.reminder24hSent,
     updatedAt: row.updatedAt.toISOString(),
   });
 }
@@ -45,15 +47,24 @@ export async function PATCH(req: Request) {
     next = body.nextSessionAt === null ? null : new Date(body.nextSessionAt);
   }
 
+  const hasNextSessionUpdate = next !== undefined;
+
   const row = await prisma.speedReviewConfig.upsert({
     where: { id: "default" },
-    create: { id: "default", nextSessionAt: next ?? null },
-    update: { ...(next !== undefined ? { nextSessionAt: next } : {}) },
-    select: { nextSessionAt: true, updatedAt: true },
+    create: {
+      id: "default",
+      nextSessionAt: next ?? null,
+      reminder24hSent: false,
+    },
+    update: {
+      ...(hasNextSessionUpdate ? { nextSessionAt: next, reminder24hSent: false } : {}),
+    },
+    select: { nextSessionAt: true, reminder24hSent: true, updatedAt: true },
   });
 
   return NextResponse.json({
     nextSessionAt: row.nextSessionAt?.toISOString() ?? null,
+    reminder24hSent: row.reminder24hSent,
     updatedAt: row.updatedAt.toISOString(),
   });
 }

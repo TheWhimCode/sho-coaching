@@ -27,6 +27,14 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
+  const current = await prisma.speedReviewQueue.findUnique({
+    where: { id },
+    select: { reviewStatus: true },
+  });
+  if (!current) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
   const data: Prisma.SpeedReviewQueueUpdateInput = {};
   if (body.discordName !== undefined) data.discordName = body.discordName;
   if (body.discordId !== undefined) data.discordId = body.discordId;
@@ -37,6 +45,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (body.previousReviews !== undefined) data.previousReviews = body.previousReviews;
   if (body.paidPriority !== undefined) data.paidPriority = body.paidPriority;
   if (body.reviewStatus !== undefined) data.reviewStatus = body.reviewStatus as SpeedReviewStatus;
+  if (
+    body.reviewStatus === "Done" &&
+    current.reviewStatus !== "Done" &&
+    body.previousReviews === undefined
+  ) {
+    data.previousReviews = { increment: 1 };
+  }
 
   try {
     const row = await prisma.speedReviewQueue.update({
