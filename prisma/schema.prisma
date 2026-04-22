@@ -267,6 +267,7 @@ model SpeedReviewQueue {
   queueDate       DateTime            @default(now())
   previousReviews Int                 @default(0)
   paidPriority    Boolean             @default(false)
+  optOut          Boolean             @default(false)
   reviewStatus    SpeedReviewStatus   @default(Pending)
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt

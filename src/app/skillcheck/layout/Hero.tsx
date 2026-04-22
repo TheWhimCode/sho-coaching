@@ -16,8 +16,6 @@ export default function Hero({
   const backgroundUrl = `/skillcheck/${backgroundPath}`;
 
   useEffect(() => {
-    setImagesReady(false);
-
     const root = rootRef.current;
     if (!root) {
       setImagesReady(true);
@@ -59,9 +57,8 @@ export default function Hero({
     });
 
     return () => cleanup.forEach((fn) => fn());
-    // Only re-run when hero changes (e.g. game mode). Don't reset when content
-    // changes (e.g. result screen appears) or we hide everything and wait again.
-  }, [hero]);
+    // Run once on first mount to avoid brief re-hides when parent re-renders.
+  }, []);
 
   return (
     <div ref={rootRef} className="w-full flex flex-col">
