@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 
-type DiscordIdentity = { id: string; username?: string | null };
+type DiscordIdentity = { id: string; globalName?: string | null; username?: string | null };
 
 type Props = {
   riotTag?: string;

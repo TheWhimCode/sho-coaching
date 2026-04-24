@@ -16,6 +16,7 @@ export async function GET() {
     where: { reviewStatus: "Pending" },
     orderBy: speedReviewQueueOrderBy,
     select: {
+      globalName: true,
       discordName: true,
       role: true,
     },
@@ -23,6 +24,7 @@ export async function GET() {
 
   const queue = rows.map((r, i) => ({
     position: i + 1,
+    globalName: r.globalName ?? "",
     discordName: r.discordName ?? "—",
     role: r.role,
   }));

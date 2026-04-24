@@ -260,6 +260,7 @@ model Coupon {
 model SpeedReviewQueue {
   id              String              @id @default(cuid())
   discordId       String              @unique
+  globalName      String?
   discordName     String?
   riotTag         String
   puuid           String?

@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 const BodyZ = z.object({
   discordId: z.string().min(1).max(32),
+  globalName: z.string().max(64).nullable().optional(),
   discordName: z.string().max(64).nullable().optional(),
   riotTag: z.string().min(3).max(64),
   role: z.string().min(1).max(32),
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
   }
 
   const discordId = body.discordId.trim();
+  const globalName = body.globalName?.trim() || null;
   const discordName = body.discordName?.trim() || null;
   const riotTag = body.riotTag.trim();
   const role = body.role.trim();
@@ -67,6 +69,7 @@ export async function POST(req: Request) {
       const row = await prisma.speedReviewQueue.update({
         where: { id: byDiscord.id },
         data: {
+          globalName,
           discordName,
           riotTag,
           puuid,
@@ -87,6 +90,7 @@ export async function POST(req: Request) {
         await tx.speedReviewQueue.update({
           where: { id: byDiscord.id },
           data: {
+            globalName,
             discordName,
             riotTag,
             puuid,
@@ -113,6 +117,7 @@ export async function POST(req: Request) {
       const row = await prisma.speedReviewQueue.update({
         where: { id: byDiscord.id },
         data: {
+          globalName,
           discordName,
           riotTag,
           puuid,
@@ -132,6 +137,7 @@ export async function POST(req: Request) {
         where: { id: byPuuid.id },
         data: {
           discordId,
+          globalName,
           discordName,
           riotTag,
           puuid,
@@ -149,6 +155,7 @@ export async function POST(req: Request) {
     const row = await prisma.speedReviewQueue.create({
       data: {
         discordId,
+        globalName,
         discordName,
         riotTag,
         puuid,

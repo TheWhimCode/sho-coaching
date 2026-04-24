@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PatchZ = z.object({
+  globalName: z.string().max(64).nullable().optional(),
   discordName: z.string().max(64).nullable().optional(),
   discordId: z.string().min(1).max(32).optional(),
   riotTag: z.string().min(1).max(64).optional(),
@@ -36,6 +37,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   }
 
   const data: Prisma.SpeedReviewQueueUpdateInput = {};
+  if (body.globalName !== undefined) data.globalName = body.globalName;
   if (body.discordName !== undefined) data.discordName = body.discordName;
   if (body.discordId !== undefined) data.discordId = body.discordId;
   if (body.riotTag !== undefined) data.riotTag = body.riotTag;

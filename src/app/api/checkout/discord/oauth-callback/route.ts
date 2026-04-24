@@ -95,6 +95,7 @@ export async function GET(req: NextRequest) {
     const me = await meRes.json();
     const user = {
       id: String(me.id),
+      globalName: me.global_name ?? null,
       username: me.username ?? null,   // username only
       avatar: me.avatar ?? null,
     };

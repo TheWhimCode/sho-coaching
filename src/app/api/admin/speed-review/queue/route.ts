@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
 
   if (q) {
     where.OR = [
+      { globalName: { contains: q, mode: "insensitive" } },
       { discordName: { contains: q, mode: "insensitive" } },
       { riotTag: { contains: q, mode: "insensitive" } },
       { discordId: { contains: q } },
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
     select: {
       id: true,
       discordId: true,
+      globalName: true,
       discordName: true,
       riotTag: true,
       puuid: true,

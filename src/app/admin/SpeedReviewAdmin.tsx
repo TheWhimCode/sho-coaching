@@ -11,6 +11,7 @@ type Config = {
 type QueueRow = {
   id: string;
   discordId: string;
+  globalName: string | null;
   discordName: string | null;
   riotTag: string;
   puuid: string | null;
@@ -283,7 +284,7 @@ function QueueRowView({
   }
 
   function copyDiscord(e: React.MouseEvent) {
-    const text = row.discordName?.trim();
+    const text = row.globalName?.trim() || row.discordName?.trim();
     if (!text) return;
     void navigator.clipboard.writeText(text);
     setCursorPopup({ x: e.clientX, y: e.clientY });
@@ -312,13 +313,14 @@ function QueueRowView({
           onClick={copyDiscord}
           className={`text-left max-w-[140px] truncate ${
             row.discordName
+              || row.globalName
               ? "font-medium text-white hover:text-cyan-300 hover:underline"
               : "text-white/50 cursor-default"
           }`}
-          disabled={!row.discordName}
-          title={row.discordName ? "Copy Discord name" : undefined}
+          disabled={!row.globalName && !row.discordName}
+          title={row.globalName || row.discordName ? "Copy Discord name" : undefined}
         >
-          {row.discordName ?? "—"}
+          {row.globalName ?? row.discordName ?? "—"}
         </button>
       </td>
       <td className="p-2 align-middle">

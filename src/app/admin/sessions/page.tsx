@@ -9,6 +9,7 @@ import { SessionData } from "./SessionData"; // type
 // PAGE
 // ============================================================
 export default function AdminSessionsPage() {
+  const UPCOMING_GRACE_MS = 10 * 60 * 60 * 1000;
   const [rows, setRows] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [log, setLog] = useState("");
@@ -41,12 +42,13 @@ export default function AdminSessionsPage() {
 
   // ------------------ split upcoming & past ------------------
   const now = Date.now();
+  const upcomingCutoff = now - UPCOMING_GRACE_MS;
   const upcoming = rows
-    .filter((r) => new Date(r.scheduledStart).getTime() >= now)
+    .filter((r) => new Date(r.scheduledStart).getTime() >= upcomingCutoff)
     .sort((a, b) => +new Date(a.scheduledStart) - +new Date(b.scheduledStart));
 
   const past = rows
-    .filter((r) => new Date(r.scheduledStart).getTime() < now)
+    .filter((r) => new Date(r.scheduledStart).getTime() < upcomingCutoff)
     .sort((a, b) => +new Date(b.scheduledStart) - +new Date(a.scheduledStart));
 
   // ------------------ reschedule handler ------------------

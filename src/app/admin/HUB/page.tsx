@@ -20,11 +20,13 @@ type Student = {
 };
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const UPCOMING_GRACE_MS = 10 * 60 * 60 * 1000;
 
 export default function AdminHubPage() {
   // ---- Sessions ----
   const [bookings, setBookings] = useState<SessionData[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const [log, setLog] = useState("");
 
   // ---- Movers ----
 const [movers, setMovers] = useState<{ student: Student; delta: number }[]>([]);
@@ -107,10 +109,28 @@ useEffect(() => {
   };
 }, []);
 
+  async function onReschedule(id: string, newStartISO: string) {
+    try {
+      const res = await fetch("/api/admin/availability/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, newStart: newStartISO }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+
+      setBookings((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, scheduledStart: newStartISO } : r)),
+      );
+    } catch (e: any) {
+      setLog(`Reschedule failed: ${e?.message ?? e}`);
+    }
+  }
+
 
   const nextThree = useMemo(() => {
+    const upcomingCutoff = Date.now() - UPCOMING_GRACE_MS;
     return [...bookings]
-      .filter((b) => new Date(b.scheduledStart).getTime() >= Date.now())
+      .filter((b) => new Date(b.scheduledStart).getTime() >= upcomingCutoff)
       .sort(
         (a, b) =>
           +new Date(a.scheduledStart) - +new Date(b.scheduledStart),
@@ -168,7 +188,7 @@ useEffect(() => {
               ) : (
                 <ul className="divide-y divide-white/10">
                   {nextThree.map((r) => (
-                    <SessionRowItem key={r.id} r={r} onReschedule={async () => {}} />
+                    <SessionRowItem key={r.id} r={r} onReschedule={onReschedule} />
                   ))}
                 </ul>
               )}
@@ -200,6 +220,12 @@ useEffect(() => {
               </div>
             </div>
           </section>
+
+          {log && (
+            <pre className="bg-black/30 rounded-lg p-3 text-sm text-white/80 whitespace-pre-wrap">
+              {log}
+            </pre>
+          )}
         </div>
       </div>
     </main>

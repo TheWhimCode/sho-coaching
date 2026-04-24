@@ -24,6 +24,7 @@ const SPEED_ROLE_ITEMS = ROLES.map((r) => ({
 
 type QueueRow = {
   position: number;
+  globalName: string;
   discordName: string;
   role: string;
 };
@@ -56,6 +57,7 @@ export default function SpeedReviewsClient() {
   const [notes, setNotes] = React.useState("");
   const [discordIdentity, setDiscordIdentity] = React.useState<{
     id: string;
+    globalName?: string | null;
     username?: string | null;
   } | null>(null);
   const [contactErr, setContactErr] = React.useState<string | null>(null);
@@ -126,6 +128,7 @@ export default function SpeedReviewsClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           discordId: discordIdentity.id,
+          globalName: discordIdentity.globalName ?? null,
           discordName: discordIdentity.username ?? null,
           riotTag: riotTag.trim(),
           role,
@@ -260,11 +263,13 @@ export default function SpeedReviewsClient() {
             <ul className="space-y-2">
               {data.queue.map((r) => (
                 <li
-                  key={`${r.position}-${r.discordName}-${r.role}`}
+                  key={`${r.position}-${r.globalName}-${r.discordName}-${r.role}`}
                   className="flex items-center justify-between rounded-lg bg-white/[.04] px-3 py-2 text-sm"
                 >
                   <span className="text-white/50 w-8">#{r.position}</span>
-                  <span className="flex-1 font-medium truncate">{r.discordName}</span>
+                  <span className="flex-1 font-medium truncate">
+                    {r.globalName || r.discordName}
+                  </span>
                   <span className="flex w-10 shrink-0 items-center justify-end" title={r.role}>
                     <img
                       src={speedReviewRoleIconUrl(r.role)}
