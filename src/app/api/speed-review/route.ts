@@ -19,6 +19,7 @@ export async function GET() {
       globalName: true,
       discordName: true,
       role: true,
+      previousReviews: true,
     },
   });
 
@@ -27,6 +28,7 @@ export async function GET() {
     globalName: r.globalName ?? "",
     discordName: r.discordName ?? "—",
     role: r.role,
+    previousReviews: r.previousReviews,
   }));
 
   return NextResponse.json(

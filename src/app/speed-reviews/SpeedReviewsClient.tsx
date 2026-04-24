@@ -27,6 +27,7 @@ type QueueRow = {
   globalName: string;
   discordName: string;
   role: string;
+  previousReviews: number;
 };
 
 type PublicPayload = {
@@ -264,11 +265,14 @@ export default function SpeedReviewsClient() {
               {data.queue.map((r) => (
                 <li
                   key={`${r.position}-${r.globalName}-${r.discordName}-${r.role}`}
-                  className="flex items-center justify-between rounded-lg bg-white/[.04] px-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-3 rounded-lg bg-white/[.04] px-3 py-2 text-sm"
                 >
                   <span className="text-white/50 w-8">#{r.position}</span>
-                  <span className="flex-1 font-medium truncate">
+                  <span className="min-w-0 flex-1 font-medium truncate">
                     {r.globalName || r.discordName}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-white/30">
+                    Reviewed {r.previousReviews}x
                   </span>
                   <span className="flex w-10 shrink-0 items-center justify-end" title={r.role}>
                     <img
