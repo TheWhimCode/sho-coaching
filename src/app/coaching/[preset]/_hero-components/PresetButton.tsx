@@ -79,7 +79,7 @@ export default function PresetButton({
           </div>
 
           {preset === "rush" ? (
- <div className="mr-3 flex items-center gap-2 self-center">
+ <div className="mr-3 flex items-baseline gap-2">
   <span className="text-[21px] font-bold leading-none">
     {price}
   </span>

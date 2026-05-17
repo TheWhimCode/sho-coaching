@@ -261,7 +261,7 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
               )}
 
               {item.slug === "rush" ? (
-                <span className="ml-auto font-semibold flex items-center gap-2">
+                <span className="ml-auto font-semibold flex items-baseline gap-2">
                   <span
                     className="
                       inline-flex items-center
