@@ -20,7 +20,7 @@ function clampStep(n: number): number {
 
 /**
  * Split the price into base minutes, in-game block minutes, and followups.
- * Uses same ladder as computePriceEUR (60m = €40, ±€10/15m, +€15/follow-up).
+ * Uses same ladder as computePriceEUR (€7.50/15m live, +€12.50/follow-up).
  */
 export function buildBreakdown(
   totalMinutes: number,
@@ -35,13 +35,14 @@ export function buildBreakdown(
 
   const priceBaseOnly = computePriceEUR(baseMinutes, 0).priceEUR;
   const priceTotalNoFU = computePriceEUR(t, 0).priceEUR;
+  const priceWithFU = computePriceEUR(t, followups).priceEUR;
 
-  const minutesEUR = Math.round(priceBaseOnly);
-  const inGameEUR = Math.round(priceTotalNoFU - priceBaseOnly);
-  const followupsEUR = Math.round(
-    computePriceEUR(t, followups).priceEUR - priceTotalNoFU
-  );
-  const total = minutesEUR + inGameEUR + followupsEUR;
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+
+  const minutesEUR = priceBaseOnly;
+  const inGameEUR = round2(priceTotalNoFU - priceBaseOnly);
+  const followupsEUR = round2(priceWithFU - priceTotalNoFU);
+  const total = priceWithFU;
 
   return { minutesEUR, inGameEUR, followupsEUR, total };
 }

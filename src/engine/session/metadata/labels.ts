@@ -7,7 +7,6 @@ export const titlesByPreset: Record<Preset, string> = {
   vod: "VOD Review",
   custom: "Custom Session",
   rush: "Elo Rush",
-  bundle_bootcamp: "Bootcamp Coaching",
 };
 
 export const taglinesByPreset: Record<Preset, string> = {
@@ -16,5 +15,4 @@ export const taglinesByPreset: Record<Preset, string> = {
   vod: "Rewind. Analyze. Improve.",
   custom: "Your goals, your path",
   rush: "Your improvement arc starts today",
-  bundle_bootcamp: "Intensive multi-session transformation",
 };

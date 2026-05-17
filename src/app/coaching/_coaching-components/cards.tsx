@@ -5,7 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { Scroll, Lightning, PuzzlePiece, Signature, StackPlus } from "@phosphor-icons/react";
 import type { Preset } from "@/engine/session/rules/preset";
-import { colorsByPreset } from "@/engine/session";
+import { colorsByPreset, computePriceEUR, formatPriceEUR } from "@/engine/session";
+import { products, RUSH_BUNDLE_COMPARE_AT_EUR } from "@/engine/session/model/product";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 import { motion, type Variants } from "framer-motion";
 import { useNavChrome } from "@/app/_components/navChrome";
@@ -31,7 +32,7 @@ const DEFAULT_ITEMS: Item[] = [
     duration: "60 min",
     badge: "Most informative",
     image: "/images/sessions/VOD7.png",
-    price: 40,
+    price: computePriceEUR(60, 0).priceEUR,
   },
   {
     slug: "signature",
@@ -40,7 +41,7 @@ const DEFAULT_ITEMS: Item[] = [
     duration: "45 min + Follow-up",
     badge: "Best overall",
     image: "/images/sessions/Signature3.png",
-    price: 45,
+    price: computePriceEUR(45, 1).priceEUR,
   },
   {
     slug: "rush",
@@ -49,7 +50,7 @@ const DEFAULT_ITEMS: Item[] = [
     duration: "60 min ×4",
     badge: "Best value",
     image: "/images/sessions/Rush.png",
-    price: 110,
+    price: products.rush.priceOverrideEUR ?? 90,
   },
 ];
 
@@ -260,7 +261,7 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
               )}
 
               {item.slug === "rush" ? (
-                <span className="ml-auto font-semibold flex items-baseline gap-2">
+                <span className="ml-auto font-semibold flex items-center gap-2">
                   <span
                     className="
                       inline-flex items-center
@@ -269,14 +270,14 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
                       drop-shadow-[0_0_6px_rgba(30,159,255,0.6),0_0_12px_rgba(255,140,0,0.5)]
                     "
                   >
-                    €{item.price}
+                    €{formatPriceEUR(item.price)}
                   </span>
                   <span className="text-[14px] font-semibold line-through leading-none opacity-60">
-                    €160
+                    €{RUSH_BUNDLE_COMPARE_AT_EUR}
                   </span>
                 </span>
               ) : (
-                <span className="ml-auto font-semibold">€{item.price}</span>
+                <span className="ml-auto font-semibold">€{formatPriceEUR(item.price)}</span>
               )}
             </div>
           </div>

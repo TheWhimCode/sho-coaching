@@ -42,11 +42,4 @@ export const stepsByPreset: Record<Preset, Step[]> = {
     { title: "Refine your macro & micro" },
     { title: "Observe real, long-term improvement" },
   ],
-
-  bundle_bootcamp: [
-    { title: "4 intensive training sessions" },
-    { title: "Deep mechanical and macro analysis" },
-    { title: "Structured drilling & correction" },
-    { title: "Goal-based improvement plan" },
-  ],
 };

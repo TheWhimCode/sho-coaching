@@ -4,6 +4,11 @@ import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { colorsByPreset, type Preset } from "@/engine/session";
 import { iconsByPreset } from "@/engine/session";
+import {
+  RUSH_BUNDLE_COMPARE_AT_EUR,
+  RUSH_BUNDLE_SESSION_PRICES_EUR,
+  rushBundleDiscountPercent,
+} from "@/engine/session/model/product";
 
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const Icon = iconsByPreset[preset].icon;
@@ -74,13 +79,13 @@ export default function PresetButton({
           </div>
 
           {preset === "rush" ? (
- <div className="mr-3 flex items-baseline gap-2">
+ <div className="mr-3 flex items-center gap-2 self-center">
   <span className="text-[21px] font-bold leading-none">
     {price}
   </span>
 
   <span className="text-[14px] font-semibold line-through leading-none opacity-60">
-    €160
+    €{RUSH_BUNDLE_COMPARE_AT_EUR}
   </span>
 </div>
 
@@ -123,12 +128,10 @@ export default function PresetButton({
                   />
 
                   <div className="relative space-y-2">
-                    {[
-                      ["Session 1", "€35", "-12%"],
-                      ["Session 2", "€30", "-25%"],
-                      ["Session 3", "€25", "-37%"],
-                      ["Session 4", "€20", "-50%"],
-                    ].map(([label, price, discount], i) => {
+                    {RUSH_BUNDLE_SESSION_PRICES_EUR.map((sessionPrice, i) => {
+                      const label = `Session ${i + 1}`;
+                      const price = `€${sessionPrice}`;
+                      const discount = `-${rushBundleDiscountPercent(sessionPrice)}%`;
                       const level = i + 1;
                       const size =
                         level === 1

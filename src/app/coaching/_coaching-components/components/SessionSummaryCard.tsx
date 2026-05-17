@@ -3,7 +3,7 @@
 
 import React from "react";
 import type { Preset } from "@/lib/survey/presets";
-import { colorsByPreset } from "@/engine/session";
+import { colorsByPreset, computePriceEUR, formatPriceEUR } from "@/engine/session";
 
 type Props = {
   preset: Preset;
@@ -25,7 +25,7 @@ const DETAILS: Record<Preset, Detail> = {
     desc:
       "Structured and designed by Sho to help you climb the maximum amount. Learn how to fix your most impactful bad habits. Progress. And then request your follow-up recording to stay focused and motivated.",
     img: "/images/sessions/Signature3.png",
-    price: "€45",
+    price: `€${formatPriceEUR(computePriceEUR(45, 1).priceEUR)}`,
     duration: "45 min + Follow-up",
   },
   vod: {
@@ -33,7 +33,7 @@ const DETAILS: Record<Preset, Detail> = {
     desc:
       "Go on a deep dive, analyze your bad habits and identify in which order to approach them. Learn about your champion, the map and the game and how to use them to your advantage.",
     img: "/images/sessions/VOD7.png",
-    price: "€40",
+    price: `€${formatPriceEUR(computePriceEUR(60, 0).priceEUR)}`,
     duration: "60 min",
   },
   instant: {
@@ -41,7 +41,7 @@ const DETAILS: Record<Preset, Detail> = {
     desc:
       "Short, targeted session to unlock a specific bottleneck. Perfect at the start of a tilt spiral or to sanity-check a matchup or specific game period. Also amazing if you're a beginner and want some direction.",
     img: "/images/sessions/Instant4.png",
-    price: "€20",
+    price: `€${formatPriceEUR(computePriceEUR(30, 0).priceEUR)}`,
     duration: "30 min",
   },
   custom: {

@@ -7,7 +7,6 @@ import CustomizeDrawer from "./_hero-components/CustomizeDrawer";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { SessionConfig } from "@/engine/session/model/session";
 import { fetchSlots, type Slot as ApiSlot } from "@/utils/api";
-import { computePriceEUR } from "@/engine/session";
 import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { titlesByPreset } from "@/engine/session/metadata/labels";
 import { useSearchParams } from "next/navigation";
@@ -230,9 +229,6 @@ export default function Client({ preset }: { preset: string }) {
       }
     };
   }, [session.liveMin, session.liveBlocks, userHoldKey, activePreset]);
-
-  const totalMinutes = session.liveMin + session.liveBlocks * 45;
-  const { priceEUR } = computePriceEUR(totalMinutes, session.followups);
 
   useEffect(() => {
     if (canonicalPreset === "custom" && wantsCustomize) {

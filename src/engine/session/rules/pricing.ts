@@ -1,22 +1,28 @@
 // engine/session/rules/pricing.ts
-// Single source of truth: session ladder (60m = €40, ±€10/15m, +€15/follow-up) and product overrides.
+// Single source of truth: €7.50 per 15m live time, +€12.50/follow-up; product overrides for bundles.
 
 import type { SessionConfig } from "../model/session";
 import { MIN_MINUTES, MAX_MINUTES } from "../model/session";
 
-/**
- * Pricing anchor (the reference product)
- * Changing this automatically updates every ladder step.
- */
-export const BASE_MINUTES = 60;
-export const BASE_PRICE_EUR = 40;
-
-/**
- * Step rules
- */
 export const STEP_MIN = 15;
-export const STEP_EUR = 10;
-export const FOLLOWUP_EUR = 15;
+export const PRICE_PER_15_MIN_EUR = 7.5;
+export const FOLLOWUP_EUR = 12.5;
+
+/** Reference 60m live price (4 × €7.50) — used for bundle discount labels, etc. */
+export const BASE_MINUTES = 60;
+export const BASE_PRICE_EUR = (BASE_MINUTES / STEP_MIN) * PRICE_PER_15_MIN_EUR;
+
+/** Live coaching: always (minutes ÷ 15) × €7.50. */
+export function liveMinutesPriceEUR(minutes: number): number {
+  return (minutes / STEP_MIN) * PRICE_PER_15_MIN_EUR;
+}
+
+/** € display: whole euros when possible, otherwise two decimals (e.g. 7.50). */
+export function formatPriceEUR(eur: number): string {
+  const cents = Math.round(eur * 100);
+  if (cents % 100 === 0) return String(cents / 100);
+  return (cents / 100).toFixed(2);
+}
 
 /**
  * Convert a session config into a structured price breakdown.
@@ -25,23 +31,22 @@ export const FOLLOWUP_EUR = 15;
 export function computeSessionPrice(c: SessionConfig) {
   const minutes = c.liveMin + c.liveBlocks * 45;
 
-  const minutesPrice =
-    BASE_PRICE_EUR + ((minutes - BASE_MINUTES) / STEP_MIN) * STEP_EUR;
-
+  const minutesPrice = liveMinutesPriceEUR(minutes);
   const followupsPrice = c.followups * FOLLOWUP_EUR;
 
-  const priceEUR = Math.round(minutesPrice + followupsPrice);
+  const amountCents = Math.round((minutesPrice + followupsPrice) * 100);
+  const priceEUR = amountCents / 100;
 
   return {
     minutes,
     priceEUR,
     breakdown: {
-      minutesPrice: Math.round(minutesPrice),
+      minutesPrice: Math.round(minutesPrice * 100) / 100,
       followupsPrice,
       followups: c.followups,
-      liveBlocks: c.liveBlocks
+      liveBlocks: c.liveBlocks,
     },
-    amountCents: priceEUR * 100
+    amountCents,
   };
 }
 
@@ -58,7 +63,7 @@ export function computePriceEUR(liveMinutes: number, followups = 0) {
   const result = computeSessionPrice({
     liveMin: mins,
     liveBlocks: 0,
-    followups: fu
+    followups: fu,
   });
   return { priceEUR: result.priceEUR, amountCents: result.amountCents };
 }

@@ -7,7 +7,7 @@ import type { ProductId } from "@/engine/session/model/product";
 type WithProductId = { productId?: ProductId | null };
 
 /**
- * True when the session is shown as a single bundle line in summary (e.g. rush, bundle_bootcamp).
+ * True when the session is shown as a single bundle line in summary (e.g. Elo Rush).
  * Matches current UI: productId starts with "rush".
  */
 export function isBundleDisplay(payload: WithProductId): boolean {

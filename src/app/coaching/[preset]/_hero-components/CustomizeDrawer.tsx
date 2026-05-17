@@ -6,9 +6,12 @@ import {
   SessionConfig,
   clamp,
   colorsByPreset,
+  computePriceEUR,
+  formatPriceEUR,
   getPreset,
   type Preset,
 } from "@/engine/session";
+import { products } from "@/engine/session/model/product";
 import { iconsByPreset } from "@/engine/session";
 import { X } from "@phosphor-icons/react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
@@ -266,7 +269,7 @@ function Content({
         <div className="text-[15px] md:text-[16px] font-semibold mb-2">Presets</div>
         <div className="grid gap-2">
           <PresetButton
-            label="VOD Review" sub="60 min" price="€40" preset="vod"
+            label="VOD Review" sub="60 min" price={`€${formatPriceEUR(computePriceEUR(60, 0).priceEUR)}`} preset="vod"
             active={!isBundle && currentPreset === "vod"}
             onClick={() => applyPreset("vod")}
             onHover={setHoverPreset}
@@ -274,7 +277,7 @@ function Content({
           />
 
           <PresetButton
-            label="Signature" sub="45 min + 15 min follow-up" price="€45" preset="signature"
+            label="Signature" sub="45 min + 15 min follow-up" price={`€${formatPriceEUR(computePriceEUR(45, 1).priceEUR)}`} preset="signature"
             active={!isBundle && currentPreset === "signature"}
             onClick={() => applyPreset("signature")}
             onHover={setHoverPreset}
@@ -282,7 +285,7 @@ function Content({
           />
 
           <PresetButton
-            label="Instant Insight" sub="30 min" price="€20" preset="instant"
+            label="Instant Insight" sub="30 min" price={`€${formatPriceEUR(computePriceEUR(30, 0).priceEUR)}`} preset="instant"
             active={!isBundle && currentPreset === "instant"}
             onClick={() => applyPreset("instant")}
             onHover={setHoverPreset}
@@ -300,7 +303,7 @@ price={
   drop-shadow-[0_0_6px_rgba(30,159,255,0.6),0_0_12px_rgba(255,140,0,0.5)]
 ">
   
-    €110
+    €{products.rush.priceOverrideEUR ?? 90}
   </span>
 }            preset="rush"
             active={isBundle}

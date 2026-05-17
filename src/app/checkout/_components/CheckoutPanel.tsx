@@ -7,7 +7,7 @@ import SessionBlock from "@/app/coaching/[preset]/_hero-components/SessionBlock"
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import { FooterProvider, useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { computePriceWithProduct, type SessionConfig } from "@/engine/session";
+import { computePriceWithProduct, formatPriceEUR, type SessionConfig } from "@/engine/session";
 import { sessionFromCheckoutPayload, STEP_PAYMENT } from "@/engine/checkout";
 
 function BottomBar({
@@ -152,18 +152,18 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
                             animate={{ opacity: 1, x: 0 }}
                             className="text-[var(--color-lightblue)] text-sm font-semibold"
                           >
-                            €{discountedTotal.toFixed(0)}
+                            €{formatPriceEUR(discountedTotal)}
                           </motion.span>
                           <motion.span
                             initial={{ opacity: 0, x: 4 }}
                             animate={{ opacity: 0.8, x: 0 }}
                             className="line-through text-white/80 text-sm"
                           >
-                            €{baseTotal.toFixed(0)}
+                            €{formatPriceEUR(baseTotal)}
                           </motion.span>
                         </>
                       ) : (
-                        <span className="text-white">€{baseTotal.toFixed(0)}</span>
+                        <span className="text-white">€{formatPriceEUR(baseTotal)}</span>
                       )}
                     </div>
                   </div>

@@ -12,7 +12,6 @@ import GlassPanel from "@/app/_components/panels/GlassPanel";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
 import { X } from "lucide-react";
 import { speedReviewRoleIconUrl } from "@/lib/speedReview/roleIcons";
-import SpeedReviewsPriorityListener from "./SpeedReviewsPriorityListener";
 
 const ROLES = ["TOP", "JUNGLE", "MID", "BOTTOM", "SUPPORT"] as const;
 
@@ -167,7 +166,6 @@ export default function SpeedReviewsClient() {
 
   return (
     <>
-      <SpeedReviewsPriorityListener onPrioritySuccess={load} />
       <div className="mx-auto w-full max-w-3xl px-4 sm:px-6 pt-10 pb-36 text-white md:pt-14">
         <div className="mb-10 text-center">
           <h1 className="text-5xl font-bold tracking-tight">Speed Reviews</h1>

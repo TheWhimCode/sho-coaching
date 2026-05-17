@@ -39,9 +39,4 @@ export const iconsByPreset: Record<Preset, IconMeta> = {
     icon: StackPlus,
     weight: "fill",
   },
-
-  bundle_bootcamp: {
-    icon: PuzzlePiece,
-    weight: "fill",
-  },
 };

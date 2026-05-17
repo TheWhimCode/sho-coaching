@@ -25,9 +25,10 @@ export function computePriceWithProduct(c: SessionConfig) {
   const p = c.productId ? products[c.productId] : undefined;
 
   if (p?.priceOverrideEUR !== undefined) {
+    const amountCents = Math.round(p.priceOverrideEUR * 100);
     return {
-      priceEUR: p.priceOverrideEUR,
-      amountCents: p.priceOverrideEUR * 100,
+      priceEUR: amountCents / 100,
+      amountCents,
     };
   }
 

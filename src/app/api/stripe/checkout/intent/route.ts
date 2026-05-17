@@ -131,8 +131,8 @@ export async function POST(req: Request) {
         followups,
         productId,
       });
-      const { priceEUR } = computePriceWithProduct(sessionConfig);
-      amountCents = Math.max(priceEUR * 100 - discount * 100, 0);
+      const { amountCents: productCents } = computePriceWithProduct(sessionConfig);
+      amountCents = Math.max(productCents - discount * 100, 0);
     } else {
       const base = computePriceEUR(liveMinutes, followups);
       amountCents = Math.max(base.amountCents - discount * 100, 0);

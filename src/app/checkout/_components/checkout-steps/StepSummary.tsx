@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
-import { computePriceWithProduct } from "@/engine/session";
+import { computePriceWithProduct, formatPriceEUR } from "@/engine/session";
 import type { ProductId } from "@/engine/session/model/product";
 import type { PayMethod, Breakdown } from "@/engine/checkout";
 import { sessionFromCheckoutPayload, isBundleDisplay } from "@/engine/checkout";
@@ -69,7 +69,7 @@ export default function StepSummary({
           {isBundle ? (
             <div className="flex items-center justify-between">
               <dt className="text-white/80">{sessionBlockTitle}</dt>
-              <dd className="text-white/90">€{priceEUR.toFixed(0)}</dd>
+              <dd className="text-white/90">€{formatPriceEUR(priceEUR)}</dd>
             </div>
           ) : (
             <>
@@ -77,7 +77,7 @@ export default function StepSummary({
                 <dt className="text-white/80">
                   ⬩ {payload.baseMinutes} min coaching
                 </dt>
-                <dd className="text-white/90">€{b.minutesEUR.toFixed(0)}</dd>
+                <dd className="text-white/90">€{formatPriceEUR(b.minutesEUR)}</dd>
               </div>
 
               {payload.liveBlocks > 0 && (
@@ -86,7 +86,7 @@ export default function StepSummary({
                     ⬩ {payload.liveBlocks * 45} min in-game coaching
                   </dt>
                   <dd className="text-white/90">
-                    €{b.inGameEUR.toFixed(0)}
+                    €{formatPriceEUR(b.inGameEUR)}
                   </dd>
                 </div>
               )}
@@ -97,7 +97,7 @@ export default function StepSummary({
                     ⬩ {payload.followups}× Follow-up
                   </dt>
                   <dd className="text-white/90">
-                    €{b.followupsEUR.toFixed(0)}
+                    €{formatPriceEUR(b.followupsEUR)}
                   </dd>
                 </div>
               )}

@@ -33,11 +33,4 @@ export const colorsByPreset: Record<Preset, ColorStyle> = {
       "linear-gradient(90deg, #D08A2A 0%, #E1A653 25%, #F1C97F 50%, #E1A653 75%, #C07827 100%)",
     glow: "rgba(225,166,83,0.55)",
   },
-
-  bundle_bootcamp: {
-    ring: "#10B981",
-    gradient:
-      "linear-gradient(90deg, #10B981 0%, #42D1AB 25%, #85E5C8 50%, #42D1AB 75%, #0F9E6E 100%)",
-    glow: "rgba(52,211,153,0.55)",
-  },
 };

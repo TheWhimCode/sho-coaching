@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 
 import {
   computePriceWithProduct,
+  formatPriceEUR,
   totalMinutes,
   titlesByPreset,
   colorsByPreset,
@@ -148,7 +149,7 @@ export default function SessionBlock({
           )}
         </span>
 
-        <span className="text-white/90">€{sessionPrice}</span>
+        <span className="text-white/90">€{formatPriceEUR(sessionPrice)}</span>
       </div>
 
       <div className="mt-3">
