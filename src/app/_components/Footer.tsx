@@ -59,7 +59,7 @@ export default function Footer() {
           </a>
 
           <a
-            href="https://tiktok.com"
+            href="https://www.tiktok.com/@itsMinoooo"
             target="_blank"
             aria-label="TikTok"
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"

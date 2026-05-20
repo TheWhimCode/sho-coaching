@@ -96,6 +96,37 @@ html, body {
   pointer-events: none;
 }
 
+/* Link tree: visible on mobile immediately; staggered fade-in on desktop only */
+@keyframes linktree-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .linktree-enter-item {
+    animation: linktree-item-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .linktree-bg {
+    animation: linktree-bg-in 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+}
+
+@keyframes linktree-bg-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .hud-grid {
   background-image: linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
   background-size: 24px 24px;

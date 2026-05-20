@@ -1,0 +1,23 @@
+import type { MetadataRoute } from "next";
+
+const BASE = "https://sho-coaching.com";
+
+const COACHING_PRESETS = ["vod", "signature", "instant", "custom", "rush"] as const;
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const lastModified = new Date();
+
+  return [
+    { url: BASE, lastModified, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE}/coaching`, lastModified, changeFrequency: "weekly", priority: 0.95 },
+    ...COACHING_PRESETS.map((preset) => ({
+      url: `${BASE}/coaching/${preset}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.85,
+    })),
+    { url: `${BASE}/skillcheck`, lastModified, changeFrequency: "daily", priority: 0.7 },
+    { url: `${BASE}/speed-reviews`, lastModified, changeFrequency: "weekly", priority: 0.5 },
+    { url: `${BASE}/coaching/prepare`, lastModified, changeFrequency: "yearly", priority: 0.4 },
+  ];
+}

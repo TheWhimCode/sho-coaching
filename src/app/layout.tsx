@@ -7,9 +7,21 @@ import { NavChromeProvider } from "@/app/_components/navChrome"; // <-- adjust p
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const siteUrl = "https://sho-coaching.com";
+
 export const metadata: Metadata = {
-  title: "Sho Coaching",
-  description: "Coaching & courses",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Sho Coaching — League of Legends coaching",
+    template: "%s · Sho Coaching",
+  },
+  description:
+    "Book 1-on-1 League of Legends coaching with Sho, or try Skillcheck — daily LoL knowledge challenges.",
+  openGraph: {
+    siteName: "Sho Coaching",
+    type: "website",
+    locale: "en",
+  },
 };
 
 /** Set to `process.env.NEXT_PUBLIC_MAINTENANCE === "true"` to show the full-site maintenance screen. */

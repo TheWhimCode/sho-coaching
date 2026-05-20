@@ -26,11 +26,11 @@ export async function generateMetadata({
   };
 
   const descriptions: Record<string, string> = {
-    vod: "Get an in-depth analysis of your gameplay. All your questions will be answered.",
-    instant: "Fast, detailed answers on a budget. Same-day scheduling enabled, available today.",
-    signature: "My take on the perfect coaching session. No information overload, yet highly informative.",
-    custom: "A session tailored exactly to your needs.",
-    rush: "Four-session bundle at a massive discount. Improvement plan included.",
+    vod: "League of Legends VOD review coaching — in-depth analysis of your gameplay with answers to your specific questions.",
+    instant: "Quick LoL coaching for focused questions. Same-day scheduling when slots are open.",
+    signature: "Sho’s signature League coaching session — structured, informative, without overload.",
+    custom: "Custom League of Legends coaching tailored to your rank, role, and goals.",
+    rush: "Four-session LoL coaching bundle at a discount, with a climb plan across the series.",
   };
 
   const ogImages: Record<string, string> = {
@@ -40,8 +40,9 @@ export async function generateMetadata({
     rush: "/images/sessions/banner/RushBanner.png",
   };
 
-  const title = `${titles[preset] ?? preset} | Sho`;
-  const description = descriptions[preset] ?? "Book a session tailored to your goals.";
+  const title = titles[preset] ?? preset;
+  const description =
+    descriptions[preset] ?? "Book League of Legends coaching tailored to your goals.";
 
   const ogImage = ogImages[preset]
     ? `https://sho-coaching.com${ogImages[preset]}`
@@ -50,6 +51,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: {
+      canonical: `/coaching/${preset}`,
+    },
     openGraph: {
       title,
       description,

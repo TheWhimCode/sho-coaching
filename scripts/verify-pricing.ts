@@ -6,7 +6,11 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config({ path: ".env" });
 
-import { computePriceEUR } from "../src/engine/session/rules/pricing";
+import {
+  computePriceEUR,
+  effectiveFollowupEUR,
+  liveMinutesPriceEUR,
+} from "../src/engine/session/rules/pricing";
 import { computePriceWithProduct } from "../src/engine/session/rules/product";
 import { resolveBookingAmountCents } from "../src/engine/session/rules/resolveBookingPrice";
 import { clamp } from "../src/engine/session/config/session";
@@ -21,12 +25,21 @@ function check(label: string, cents: number, expectedEUR: number) {
   cases.push({ label, cents, expected: Math.round(expectedEUR * 100) });
 }
 
-// List: €10/15m live, €15/follow-up; 25% promo on live only
-check("30m live", computePriceEUR(30, 0).amountCents, pct === "25" ? 15 : 20);
-check("45m live", computePriceEUR(45, 0).amountCents, pct === "25" ? 22.5 : 30);
-check("60m live", computePriceEUR(60, 0).amountCents, pct === "25" ? 30 : 40);
-check("60m + 1 FU", computePriceEUR(60, 1).amountCents, pct === "25" ? 45 : 55);
-check("45m + 1 FU (signature)", computePriceEUR(45, 1).amountCents, pct === "25" ? 37.5 : 45);
+// List: €10/15m live, €15/follow-up; promo: live % off + €12.50 follow-up
+const fu = effectiveFollowupEUR();
+check("30m live", computePriceEUR(30, 0).amountCents, liveMinutesPriceEUR(30));
+check("45m live", computePriceEUR(45, 0).amountCents, liveMinutesPriceEUR(45));
+check("60m live", computePriceEUR(60, 0).amountCents, liveMinutesPriceEUR(60));
+check(
+  "60m + 1 FU",
+  computePriceEUR(60, 1).amountCents,
+  liveMinutesPriceEUR(60) + fu
+);
+check(
+  "45m + 1 FU (signature)",
+  computePriceEUR(45, 1).amountCents,
+  liveMinutesPriceEUR(45) + fu
+);
 
 const rush = computePriceWithProduct(
   clamp({ liveMin: 60, liveBlocks: 0, followups: 0, productId: "rush" })

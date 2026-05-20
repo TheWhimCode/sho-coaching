@@ -1,5 +1,5 @@
 // engine/session/rules/pricing.ts
-// Optional PRICING_DISCOUNT_PERCENT applies to live time only (also exposed to client via next.config).
+// PRICING_DISCOUNT_PERCENT applies to live time; when active, follow-ups are €12.50 (list €15).
 import type { SessionConfig } from "../model/session";
 import { MIN_MINUTES, MAX_MINUTES } from "../model/session";
 
@@ -8,10 +8,13 @@ export const STEP_MIN = 15;
 /** Public list price per 15 minutes of live coaching. */
 export const LIST_PRICE_PER_15_MIN_EUR = 10;
 
-/** Fixed price per 15-minute follow-up (not affected by site-wide live promo). */
+/** List price per 15-minute follow-up. */
 export const FOLLOWUP_EUR = 15;
 
-/** @deprecated Same as FOLLOWUP_EUR — follow-ups are not promo-discounted. */
+/** Follow-up price while site-wide promo (PRICING_DISCOUNT_PERCENT) is active. */
+export const FOLLOWUP_PROMO_EUR = 12.5;
+
+/** @deprecated Use FOLLOWUP_EUR. */
 export const LIST_FOLLOWUP_EUR = FOLLOWUP_EUR;
 
 /** Reference 60m session length for bundle compare labels. */
@@ -65,7 +68,7 @@ export function baseListPriceEUR(minutes = BASE_MINUTES): number {
 }
 
 export function effectiveFollowupEUR(): number {
-  return FOLLOWUP_EUR;
+  return hasPromoDiscount() ? FOLLOWUP_PROMO_EUR : FOLLOWUP_EUR;
 }
 
 export function liveMinutesListPriceEUR(minutes: number): number {
@@ -104,7 +107,7 @@ export function computeSessionPrice(c: SessionConfig) {
   const minutesListPrice = liveMinutesListPriceEUR(minutes);
   const minutesPrice = applyPricingDiscount(minutesListPrice);
   const followupsListPrice = c.followups * FOLLOWUP_EUR;
-  const followupsPrice = followupsListPrice;
+  const followupsPrice = c.followups * effectiveFollowupEUR();
 
   const listPriceEUR =
     Math.round((minutesListPrice + followupsListPrice) * 100) / 100;

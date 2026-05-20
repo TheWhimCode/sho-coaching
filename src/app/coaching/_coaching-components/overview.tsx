@@ -37,7 +37,7 @@ const DEFAULT_ITEMS: Item[] = [
 const NOTES_IMG_SRC = "/images/coaching/overview/notes.png";
 
 export default function Overview({
-  eyebrow = "Benefits",
+  eyebrow = "League coaching",
   heading = "Why my coaching works",
   items = DEFAULT_ITEMS,
   className = "",

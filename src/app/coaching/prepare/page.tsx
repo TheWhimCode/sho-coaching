@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Prepare for Your Session | Sho Coaching",
-  description: "How to get ready for your coaching session.",
+  title: "Prepare for Your Session",
+  description: "How to get ready for your League of Legends coaching session on Discord.",
 };
 
 export default function PreparePage() {

@@ -25,7 +25,10 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const isSpeedReviews = p === "/speed-reviews" || p.startsWith("/speed-reviews/");
 
+  const isHome = p === "/";
+
   const logoOnly =
+    isHome ||
     isSkillcheck ||
     isCoachingDetail ||
     isCheckout ||
@@ -35,7 +38,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const showNavBar = true;
 
-const showFooter = !(isCoachingDetail || isCheckout || isQuickbook);
+const showFooter = !(isHome || isCoachingDetail || isCheckout || isQuickbook);
   const showNavSpacer = showNavBar && !logoOnly;
 
   return (

@@ -124,7 +124,7 @@ export default function NavBar({
     >
       {/* LOGO */}
       <Link
-        href="/coaching/"
+        href="/"
         className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 hidden md:flex items-center"
       >
         <Image
@@ -206,7 +206,7 @@ export default function NavBar({
                   <FaYoutube className="h-5 w-5" />
                 </Link>
                 <Link
-                  href="https://tiktok.com"
+                  href="https://www.tiktok.com/@itsMinoooo"
                   target="_blank"
                   aria-label="TikTok"
                   className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"

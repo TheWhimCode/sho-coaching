@@ -137,7 +137,7 @@ export default function MobileNav() {
                 },
                 {
                   key: "tiktok",
-                  href: "https://tiktok.com",
+                  href: "https://www.tiktok.com/@itsMinoooo",
                   label: "TikTok",
                   Icon: FaTiktok,
                 },

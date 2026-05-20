@@ -6,8 +6,8 @@ import { Suspense } from "react";
 import CheckoutClient from "./CheckoutClient";
 
 export const metadata = {
-  title: "Checkout | Sho",
-  description: "Secure checkout for a coaching session with Sho. Fast, easy, and safe payment processing.",
+  title: "Checkout",
+  description: "Secure checkout for your League of Legends coaching session with Sho.",
 };
 
 export default function Page() {
