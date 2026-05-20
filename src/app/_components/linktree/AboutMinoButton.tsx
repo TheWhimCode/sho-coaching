@@ -14,6 +14,13 @@ import {
   ABOUT_MINO_ICON_GRADIENT,
   type AboutMinoAchievement,
 } from "./aboutMinoAchievements";
+import {
+  LINKTREE_BUTTON_INNER,
+  LINKTREE_DESCRIPTION,
+  LINKTREE_ICON_TILE,
+  LINKTREE_TILE_ICON,
+  LINKTREE_TITLE,
+} from "./linktreeUi";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const EXPAND_EASE = [0.16, 1, 0.3, 1] as const;
@@ -135,7 +142,7 @@ export default function AboutMinoButton({ index }: Props) {
 
   return (
     <li
-      className="linktree-enter-item"
+      className="linktree-enter-item w-full"
       style={{ animationDelay: `${120 + index * 80}ms` }}
     >
       <div className={shellClass} style={shellStyle}>
@@ -159,20 +166,20 @@ export default function AboutMinoButton({ index }: Props) {
             active={hovering}
           />
           <motion.div
-            className="group relative z-10 flex w-full items-center gap-4 px-4 py-4 md:px-5 md:py-[1.15rem]"
+            className={LINKTREE_BUTTON_INNER}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.985 }}
             transition={{ duration: 0.22, ease: EASE }}
           >
             <div
-              className="relative flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl shadow-lg transition-transform duration-300 group-hover:scale-105"
+              className={LINKTREE_ICON_TILE}
               style={{
                 background: ABOUT_MINO_ICON_GRADIENT,
                 boxShadow: `0 8px 24px -6px ${ABOUT_MINO_GLOW}`,
               }}
             >
               <Trophy
-                className="h-6 w-6 md:h-7 md:w-7 text-white"
+                className={`${LINKTREE_TILE_ICON} text-white`}
                 strokeWidth={2.25}
                 style={{
                   filter:
@@ -183,13 +190,13 @@ export default function AboutMinoButton({ index }: Props) {
             </div>
 
             <div className="min-w-0 flex-1 text-left">
-              <div className="text-lg md:text-xl font-semibold text-white tracking-tight">
+              <div className={LINKTREE_TITLE}>
                 About Mino{" "}
                 <span aria-hidden className="inline-block">
                   🌸
                 </span>
               </div>
-              <div className="mt-0.5 text-sm text-white/55 group-hover:text-white/70 transition-colors">
+              <div className={LINKTREE_DESCRIPTION}>
                 Main champs and peak ranks
               </div>
             </div>
@@ -200,7 +207,7 @@ export default function AboutMinoButton({ index }: Props) {
               className="shrink-0 text-white/40"
               aria-hidden
             >
-              <ChevronDown className="h-5 w-5" />
+              <ChevronDown className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem] lg:h-5 lg:w-5" />
             </motion.span>
           </motion.div>
         </button>

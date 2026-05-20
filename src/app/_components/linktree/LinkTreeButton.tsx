@@ -6,6 +6,14 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { LinkTreeLink } from "./linkTreeLinks";
 import ButtonParticleTrail from "./ButtonParticleTrail";
+import {
+  LINKTREE_BUTTON_INNER,
+  LINKTREE_DESCRIPTION,
+  LINKTREE_ICON_TILE,
+  LINKTREE_SHELL,
+  LINKTREE_TILE_ICON,
+  LINKTREE_TITLE,
+} from "./linktreeUi";
 
 type Props = {
   link: LinkTreeLink;
@@ -16,7 +24,7 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 function LinkTreeTileIcon({ link }: { link: LinkTreeLink }) {
   const { Icon } = link;
-  const sizeClass = "h-6 w-6 md:h-7 md:w-7";
+  const sizeClass = LINKTREE_TILE_ICON;
   const stops = link.iconRadiantStops;
 
   if (stops?.length) {
@@ -89,13 +97,13 @@ export default function LinkTreeButton({ link, index }: Props) {
         active={hovering}
       />
       <motion.div
-        className="group relative z-10 flex w-full items-center gap-4 px-4 py-4 md:px-5 md:py-[1.15rem]"
+        className={LINKTREE_BUTTON_INNER}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.985 }}
         transition={{ duration: 0.22, ease: EASE }}
       >
         <div
-          className="relative flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl shadow-lg transition-transform duration-300 group-hover:scale-105"
+          className={LINKTREE_ICON_TILE}
           style={{
             background: link.iconGradient,
             boxShadow: `0 8px 24px -6px ${link.glow}`,
@@ -105,16 +113,12 @@ export default function LinkTreeButton({ link, index }: Props) {
         </div>
 
         <div className="min-w-0 flex-1 text-left">
-          <div className="text-lg md:text-xl font-semibold text-white tracking-tight">
-            {link.label}
-          </div>
-          <div className="mt-0.5 text-sm text-white/55 group-hover:text-white/70 transition-colors">
-            {link.description}
-          </div>
+          <div className={LINKTREE_TITLE}>{link.label}</div>
+          <div className={LINKTREE_DESCRIPTION}>{link.description}</div>
         </div>
 
         <ArrowUpRight
-          className="h-5 w-5 shrink-0 text-white/40 transition-all duration-300 group-hover:text-[var(--link-accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          className="h-4 w-4 shrink-0 text-white/40 transition-all duration-300 group-hover:text-[var(--link-accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 sm:h-[1.125rem] sm:w-[1.125rem] lg:h-5 lg:w-5"
           style={{ ["--link-accent" as string]: link.accent }}
           aria-hidden
         />
@@ -122,8 +126,7 @@ export default function LinkTreeButton({ link, index }: Props) {
     </>
   );
 
-  const shellClass =
-    "relative block overflow-hidden rounded-2xl border border-white/10 bg-[#0B1220]/55 backdrop-blur-md outline-none transition-[border-color,box-shadow] duration-300 focus-visible:ring-2 focus-visible:ring-[var(--link-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050B18] hover:border-[color-mix(in_srgb,var(--link-accent)_45%,transparent)] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--link-accent)_35%,transparent),0_12px_40px_-8px_var(--link-glow),0_0_48px_-12px_var(--link-glow)]";
+  const shellClass = LINKTREE_SHELL;
 
   const shellStyle = {
     ["--link-accent" as string]: link.accent,
@@ -132,7 +135,7 @@ export default function LinkTreeButton({ link, index }: Props) {
 
   return (
     <li
-      className="linktree-enter-item"
+      className="linktree-enter-item w-full"
       style={{ animationDelay: `${120 + index * 80}ms` }}
     >
       {link.external ? (
