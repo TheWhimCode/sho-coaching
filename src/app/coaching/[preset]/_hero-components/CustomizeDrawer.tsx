@@ -7,11 +7,12 @@ import {
   clamp,
   colorsByPreset,
   computePriceEUR,
+  computePriceWithProduct,
   formatPriceEUR,
   getPreset,
   type Preset,
 } from "@/engine/session";
-import { products } from "@/engine/session/model/product";
+import PromoPrice from "@/components/PromoPrice";
 import { iconsByPreset } from "@/engine/session";
 import { X } from "@phosphor-icons/react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
@@ -201,6 +202,16 @@ function Content({
   setHoverPreset: (p: Preset | null) => void;
 }) {
   const isBundle = session.productId === "rush";
+  const rushPrice = useMemo(
+    () =>
+      computePriceWithProduct({
+        liveMin: 60,
+        followups: 0,
+        liveBlocks: 0,
+        productId: "rush",
+      }).priceEUR,
+    []
+  );
   const [customOpen, setCustomOpen] = useState(!isBundle);
 
   useEffect(() => {
@@ -269,7 +280,11 @@ function Content({
         <div className="text-[15px] md:text-[16px] font-semibold mb-2">Presets</div>
         <div className="grid gap-2">
           <PresetButton
-            label="VOD Review" sub="60 min" price={`€${formatPriceEUR(computePriceEUR(60, 0).priceEUR)}`} preset="vod"
+            label="VOD Review" sub="60 min"
+            price={
+              <PromoPrice {...computePriceEUR(60, 0)} />
+            }
+            preset="vod"
             active={!isBundle && currentPreset === "vod"}
             onClick={() => applyPreset("vod")}
             onHover={setHoverPreset}
@@ -277,7 +292,11 @@ function Content({
           />
 
           <PresetButton
-            label="Signature" sub="45 min + 15 min follow-up" price={`€${formatPriceEUR(computePriceEUR(45, 1).priceEUR)}`} preset="signature"
+            label="Signature" sub="45 min + 15 min follow-up"
+            price={
+              <PromoPrice {...computePriceEUR(45, 1)} />
+            }
+            preset="signature"
             active={!isBundle && currentPreset === "signature"}
             onClick={() => applyPreset("signature")}
             onHover={setHoverPreset}
@@ -285,7 +304,11 @@ function Content({
           />
 
           <PresetButton
-            label="Instant Insight" sub="30 min" price={`€${formatPriceEUR(computePriceEUR(30, 0).priceEUR)}`} preset="instant"
+            label="Instant Insight" sub="30 min"
+            price={
+              <PromoPrice {...computePriceEUR(30, 0)} />
+            }
+            preset="instant"
             active={!isBundle && currentPreset === "instant"}
             onClick={() => applyPreset("instant")}
             onHover={setHoverPreset}
@@ -303,7 +326,7 @@ price={
   drop-shadow-[0_0_6px_rgba(30,159,255,0.6),0_0_12px_rgba(255,140,0,0.5)]
 ">
   
-    €{products.rush.priceOverrideEUR ?? 90}
+    €{formatPriceEUR(rushPrice)}
   </span>
 }            preset="rush"
             active={isBundle}

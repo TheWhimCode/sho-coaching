@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { CheckoutZ } from "@/engine/checkout";
-import { computePriceEUR } from "@/engine/session/rules/pricing";
+import { resolveBookingAmountCents } from "@/engine/session/rules/resolveBookingPrice";
+import type { ProductId } from "@/engine/session/model/product";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,13 @@ export async function POST(req: Request) {
   const couponCode: string | null = body.couponCode ?? null;
   const couponDiscount: number = body.couponDiscount ?? 0;
 
+  const productIdRaw = (body.productId ?? null) as string | null;
+  const productId =
+    productIdRaw && productIdRaw.trim() ? (productIdRaw.trim() as ProductId) : null;
+  const liveBlocks = Number.isFinite(Number(body.liveBlocks))
+    ? Math.max(0, Math.min(2, parseInt(String(body.liveBlocks), 10)))
+    : 0;
+
   const waiverAccepted = body.waiverAccepted === true || body.waiver === true;
   const waiverIp = waiverAccepted ? ip : null;
   const waiverAcceptedAt = waiverAccepted ? new Date() : null;
@@ -68,7 +76,12 @@ export async function POST(req: Request) {
   // canonical start = first held slot
   const scheduledStart = heldSlots[0].startTime;
 
-  const { amountCents } = computePriceEUR(liveMinutes, followups);
+  const amountCents = resolveBookingAmountCents({
+    liveMinutes,
+    followups,
+    liveBlocks,
+    productId,
+  });
 
   const existing = await prisma.session.findFirst({
     where: { slotId, status: "unpaid" },
@@ -84,6 +97,7 @@ export async function POST(req: Request) {
           sessionType,
           liveMinutes,
           followups,
+          liveBlocks,
           riotTag,
           discordId,
           discordName,
@@ -115,6 +129,7 @@ export async function POST(req: Request) {
         slotId,
         liveMinutes,
         followups,
+        liveBlocks,
         riotTag,
         discordId,
         discordName,

@@ -3,13 +3,10 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { CheckoutZ } from "@/engine/checkout";
-import { computePriceEUR } from "@/engine/session/rules/pricing";
+import { resolveBookingAmountCentsAfterCoupon } from "@/engine/session/rules/resolveBookingPrice";
+import type { ProductId } from "@/engine/session/model/product";
 import { rateLimit } from "@/lib/rateLimit";
 import { CFG_SERVER } from "@/lib/config.server";
-import { SlotStatus } from "@prisma/client";
-import { computePriceWithProduct } from "@/engine/session/rules/product";
-import { clamp } from "@/engine/session/config/session";
-import type { ProductId } from "@/engine/session/model/product";
 import { getStripePaymentMethodTypes } from "@/engine/checkout";
 
 export const runtime = "nodejs";
@@ -38,6 +35,16 @@ function makeIdempotencyKey(
   return `${hash}:${amount}:${holdKey}:${payMethod}`;
 }
 
+function parseProductId(raw: unknown): ProductId | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  return raw.trim() as ProductId;
+}
+
+function parseLiveBlocks(raw: unknown): number {
+  if (!Number.isFinite(Number(raw))) return 0;
+  return Math.max(0, Math.min(2, parseInt(String(raw), 10)));
+}
+
 export async function POST(req: Request) {
   try {
     const ip =
@@ -56,7 +63,7 @@ export async function POST(req: Request) {
 
     const {
       payMethod = "card",
-      productId,
+      productId: bodyProductId,
       holdKey,
     } = body as {
       payMethod?: "card" | "paypal" | "revolut_pay" | "klarna";
@@ -71,6 +78,9 @@ export async function POST(req: Request) {
     let slotId: string;
     let liveMinutes: number;
     let followups: number;
+    let liveBlocks: number;
+    let productId: ProductId | null;
+    let couponDiscountEUR = 0;
     let sessionType: string;
     let riotTag: string | null = null;
     let booking = null;
@@ -82,9 +92,11 @@ export async function POST(req: Request) {
           slotId: true,
           liveMinutes: true,
           followups: true,
+          liveBlocks: true,
           sessionType: true,
           riotTag: true,
           waiverAccepted: true,
+          couponDiscount: true,
         },
       });
 
@@ -95,6 +107,9 @@ export async function POST(req: Request) {
       slotId = booking.slotId;
       liveMinutes = booking.liveMinutes;
       followups = booking.followups;
+      liveBlocks = booking.liveBlocks ?? 0;
+      productId = parseProductId(bodyProductId);
+      couponDiscountEUR = booking.couponDiscount ?? 0;
       sessionType = booking.sessionType?.trim() || "";
       riotTag = booking.riotTag ?? null;
     } else {
@@ -107,38 +122,22 @@ export async function POST(req: Request) {
       slotId = d.slotId;
       liveMinutes = d.liveMinutes;
       followups = d.followups ?? 0;
+      liveBlocks = parseLiveBlocks((body as { liveBlocks?: number }).liveBlocks);
+      productId = parseProductId(bodyProductId);
       sessionType =
         ((body as { sessionType?: string }).sessionType ?? "").trim();
       riotTag =
         ((body as { riotTag?: string }).riotTag ?? "").trim() || null;
     }
 
-    // ---- pricing unchanged ----
-    let discount = 0;
-    if (bookingId) {
-      const couponData = await prisma.session.findUnique({
-        where: { id: bookingId },
-        select: { couponDiscount: true },
-      });
-      discount = couponData?.couponDiscount ?? 0;
-    }
+    const amountCents = resolveBookingAmountCentsAfterCoupon({
+      liveMinutes,
+      followups,
+      liveBlocks,
+      productId,
+      couponDiscountEUR,
+    });
 
-    let amountCents: number;
-    if (productId) {
-      const sessionConfig = clamp({
-        liveMin: liveMinutes,
-        liveBlocks: 0,
-        followups,
-        productId,
-      });
-      const { amountCents: productCents } = computePriceWithProduct(sessionConfig);
-      amountCents = Math.max(productCents - discount * 100, 0);
-    } else {
-      const base = computePriceEUR(liveMinutes, followups);
-      amountCents = Math.max(base.amountCents - discount * 100, 0);
-    }
-
-    // ---- validate hold (ENGINE-OWNED) ----
     const heldSlots = await prisma.slot.findMany({
       where: {
         holdKey,
@@ -201,7 +200,6 @@ export async function POST(req: Request) {
     });
     res.headers.set("Cache-Control", "no-store");
     return res;
-
   } catch (err) {
     console.error("INTENT_ERROR", err);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });

@@ -5,8 +5,11 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { Scroll, Lightning, PuzzlePiece, Signature, StackPlus } from "@phosphor-icons/react";
 import type { Preset } from "@/engine/session/rules/preset";
-import { colorsByPreset, computePriceEUR, formatPriceEUR } from "@/engine/session";
-import { products, RUSH_BUNDLE_COMPARE_AT_EUR } from "@/engine/session/model/product";
+import { colorsByPreset, computePriceEUR, computePriceWithProduct, formatPriceEUR } from "@/engine/session";
+import {
+  RUSH_BUNDLE_COMPARE_AT_EUR,
+} from "@/engine/session/model/product";
+import PromoPrice from "@/components/PromoPrice";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 import { motion, type Variants } from "framer-motion";
 import { useNavChrome } from "@/app/_components/navChrome";
@@ -50,7 +53,12 @@ const DEFAULT_ITEMS: Item[] = [
     duration: "60 min ×4",
     badge: "Best value",
     image: "/images/sessions/Rush.png",
-    price: products.rush.priceOverrideEUR ?? 90,
+    price: computePriceWithProduct({
+      liveMin: 60,
+      followups: 0,
+      liveBlocks: 0,
+      productId: "rush",
+    }).priceEUR,
   },
 ];
 
@@ -128,6 +136,13 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
     ["--ring" as const]: c.ring,
     ["--glow" as const]: c.glow,
   } as React.CSSProperties;
+
+  const priceQuote =
+    item.slug === "signature"
+      ? computePriceEUR(45, 1)
+      : item.slug === "vod"
+        ? computePriceEUR(60, 0)
+        : computePriceEUR(30, 0);
 
   useEffect(() => {
     cancelledRef.current = false;
@@ -273,11 +288,16 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
                     €{formatPriceEUR(item.price)}
                   </span>
                   <span className="text-[14px] font-semibold line-through leading-none opacity-60">
-                    €{RUSH_BUNDLE_COMPARE_AT_EUR}
+                    €{formatPriceEUR(RUSH_BUNDLE_COMPARE_AT_EUR)}
                   </span>
                 </span>
               ) : (
-                <span className="ml-auto font-semibold">€{formatPriceEUR(item.price)}</span>
+                <PromoPrice
+                  className="ml-auto font-semibold"
+                  priceEUR={priceQuote.priceEUR}
+                  listPriceEUR={priceQuote.listPriceEUR}
+                  discountPercent={priceQuote.discountPercent}
+                />
               )}
             </div>
           </div>

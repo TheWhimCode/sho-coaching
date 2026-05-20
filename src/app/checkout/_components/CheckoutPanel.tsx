@@ -9,6 +9,7 @@ import { FooterProvider, useFooter } from "@/app/checkout/_components/checkout-s
 import { AnimatePresence, motion } from "framer-motion";
 import { computePriceWithProduct, formatPriceEUR, type SessionConfig } from "@/engine/session";
 import { sessionFromCheckoutPayload, STEP_PAYMENT } from "@/engine/checkout";
+import PromoPrice from "@/components/PromoPrice";
 
 function BottomBar({
   step,
@@ -28,9 +29,10 @@ function BottomBar({
   const [coupon, setCoupon] = useState("");
   const [couponMsg, setCouponMsg] = useState<{ type: "error" | "success"; msg: string } | null>(null);
 
-const { priceEUR } = computePriceWithProduct(session);
+const { priceEUR, listPriceEUR, discountPercent } = computePriceWithProduct(session);
 const baseTotal = priceEUR;
 const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
+const promoActive = discountPercent > 0 && listPriceEUR > priceEUR;
 
   const blockedByWaiver = flow.step === 3 && !flow.waiver;
   const disabled = footer.disabled || footer.loading || blockedByWaiver;
@@ -161,7 +163,24 @@ const discountedTotal = priceEUR - (flow.couponDiscount ?? 0);
                           >
                             €{formatPriceEUR(baseTotal)}
                           </motion.span>
+                          {promoActive && (
+                            <motion.span
+                              initial={{ opacity: 0, x: 4 }}
+                              animate={{ opacity: 0.6, x: 0 }}
+                              className="line-through text-white/50 text-xs"
+                            >
+                              €{formatPriceEUR(listPriceEUR)}
+                            </motion.span>
+                          )}
                         </>
+                      ) : promoActive ? (
+                        <PromoPrice
+                          priceEUR={baseTotal}
+                          listPriceEUR={listPriceEUR}
+                          discountPercent={discountPercent}
+                          priceClassName="text-white text-sm font-semibold"
+                          listClassName="line-through text-white/80 text-sm"
+                        />
                       ) : (
                         <span className="text-white">€{formatPriceEUR(baseTotal)}</span>
                       )}

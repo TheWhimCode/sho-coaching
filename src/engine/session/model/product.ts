@@ -1,5 +1,5 @@
 import type { Preset } from "../rules/preset";
-import { BASE_PRICE_EUR } from "../rules/pricing";
+import { BASE_MINUTES, baseListPriceEUR } from "../rules/pricing";
 
 export type ProductId =
   | "vod"
@@ -12,6 +12,7 @@ export type Product = {
   preset: Preset;
   customizationAllowed: boolean;
   durationOverrideMin?: number;
+  /** Fixed charge for bundles (Elo Rush); not affected by site-wide live promo. */
   priceOverrideEUR?: number;
   isBundle?: boolean;
   sessionsCount?: number;
@@ -43,17 +44,20 @@ export const products: Record<ProductId, Product> = {
     isBundle: true,
     customizationAllowed: false,
     durationOverrideMin: 60,
-    priceOverrideEUR: 90,
     sessionsCount: 4,
+    priceOverrideEUR: 90,
   },
 };
 
-/** Per-session list prices in Elo Rush UI (vs single 60m session). */
-export const RUSH_BUNDLE_SESSION_PRICES_EUR = [30, 25, 20, 15] as const;
+/** Per-session tier labels in Elo Rush UI (display only). */
+export const RUSH_BUNDLE_SESSION_PRICES_EUR = [40, 35, 30, 25] as const;
 
-/** Strikethrough compare-at: 4 × €30 (list price of session 1 in the bundle). */
-export const RUSH_BUNDLE_COMPARE_AT_EUR = RUSH_BUNDLE_SESSION_PRICES_EUR[0] * 4;
+/** Compare-at strikethrough: 4 × €40 single-session list (€160). */
+export const RUSH_BUNDLE_COMPARE_AT_EUR = baseListPriceEUR(BASE_MINUTES) * 4;
 
+/** Tier discount vs session 1 list price (€40). */
 export function rushBundleDiscountPercent(sessionPriceEUR: number): number {
-  return Math.round((1 - sessionPriceEUR / BASE_PRICE_EUR) * 100);
+  return Math.round(
+    (1 - sessionPriceEUR / RUSH_BUNDLE_SESSION_PRICES_EUR[0]) * 100
+  );
 }

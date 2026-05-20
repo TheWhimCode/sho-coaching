@@ -3,7 +3,8 @@
 
 import React from "react";
 import type { Preset } from "@/lib/survey/presets";
-import { colorsByPreset, computePriceEUR, formatPriceEUR } from "@/engine/session";
+import { colorsByPreset, computePriceEUR } from "@/engine/session";
+import PromoPrice from "@/components/PromoPrice";
 
 type Props = {
   preset: Preset;
@@ -15,7 +16,8 @@ type Detail = {
   title: string;
   desc: string;
   img: string;
-  price: string;
+  liveMinutes: number;
+  followups: number;
   duration: string;
 };
 
@@ -25,7 +27,8 @@ const DETAILS: Record<Preset, Detail> = {
     desc:
       "Structured and designed by Sho to help you climb the maximum amount. Learn how to fix your most impactful bad habits. Progress. And then request your follow-up recording to stay focused and motivated.",
     img: "/images/sessions/Signature3.png",
-    price: `€${formatPriceEUR(computePriceEUR(45, 1).priceEUR)}`,
+    liveMinutes: 45,
+    followups: 1,
     duration: "45 min + Follow-up",
   },
   vod: {
@@ -33,7 +36,8 @@ const DETAILS: Record<Preset, Detail> = {
     desc:
       "Go on a deep dive, analyze your bad habits and identify in which order to approach them. Learn about your champion, the map and the game and how to use them to your advantage.",
     img: "/images/sessions/VOD7.png",
-    price: `€${formatPriceEUR(computePriceEUR(60, 0).priceEUR)}`,
+    liveMinutes: 60,
+    followups: 0,
     duration: "60 min",
   },
   instant: {
@@ -41,7 +45,8 @@ const DETAILS: Record<Preset, Detail> = {
     desc:
       "Short, targeted session to unlock a specific bottleneck. Perfect at the start of a tilt spiral or to sanity-check a matchup or specific game period. Also amazing if you're a beginner and want some direction.",
     img: "/images/sessions/Instant4.png",
-    price: `€${formatPriceEUR(computePriceEUR(30, 0).priceEUR)}`,
+    liveMinutes: 30,
+    followups: 0,
     duration: "30 min",
   },
   custom: {
@@ -49,13 +54,16 @@ const DETAILS: Record<Preset, Detail> = {
     desc:
       "Customize your session. Whether it's in-game coaching, a two hour session or multiple follow-ups, you can adjust the session to match exactly what you're looking for. Perfect for unique requests.",
     img: "/images/sessions/Custom2.png",
-    price: "Varies",
+    liveMinutes: 0,
+    followups: 0,
     duration: "Flexible",
   },
 };
 
 export default function SessionSummaryCard({ preset, onRetake, onSchedule }: Props) {
-  const { title, desc, img, price, duration } = DETAILS[preset];
+  const { title, desc, img, liveMinutes, followups, duration } = DETAILS[preset];
+  const priceQuote =
+    preset === "custom" ? null : computePriceEUR(liveMinutes, followups);
 
   // Pull brand colors, but override to pure white for Custom.
   const brand = colorsByPreset[preset];
@@ -97,7 +105,17 @@ export default function SessionSummaryCard({ preset, onRetake, onSchedule }: Pro
               </div>
               <div className="flex items-baseline gap-2 text-[13px] md:text-sm">
                 <span className="inline-flex items-center rounded-lg border border-white/15 bg-black/25 px-2.5 py-1 text-white/90 leading-none">
-                  {price}
+                  {priceQuote ? (
+                    <PromoPrice
+                      priceEUR={priceQuote.priceEUR}
+                      listPriceEUR={priceQuote.listPriceEUR}
+                      discountPercent={priceQuote.discountPercent}
+                      className="inline-flex items-baseline gap-1.5"
+                      listClassName="text-[12px] line-through opacity-60"
+                    />
+                  ) : (
+                    "Varies"
+                  )}
                 </span>
                 <span className="inline-flex items-center rounded-lg border border-white/15 bg-black/25 px-2.5 py-1 text-white/90 leading-none whitespace-nowrap">
                   {duration}

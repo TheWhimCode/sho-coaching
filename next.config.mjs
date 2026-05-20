@@ -51,6 +51,11 @@ const csp = cspParts.join("; ");
 const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
 
+  env: {
+    PRICING_DISCOUNT_PERCENT: process.env.PRICING_DISCOUNT_PERCENT,
+    RUSH_BUNDLE_PRICE_EUR: process.env.RUSH_BUNDLE_PRICE_EUR,
+  },
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "ddragon.leagueoflegends.com" },

@@ -9,6 +9,7 @@ import {
   RUSH_BUNDLE_SESSION_PRICES_EUR,
   rushBundleDiscountPercent,
 } from "@/engine/session/model/product";
+import { formatPriceEUR } from "@/engine/session";
 
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const Icon = iconsByPreset[preset].icon;
@@ -79,16 +80,12 @@ export default function PresetButton({
           </div>
 
           {preset === "rush" ? (
- <div className="mr-3 flex items-baseline gap-2">
-  <span className="text-[21px] font-bold leading-none">
-    {price}
-  </span>
-
-  <span className="text-[14px] font-semibold line-through leading-none opacity-60">
-    €{RUSH_BUNDLE_COMPARE_AT_EUR}
-  </span>
-</div>
-
+            <div className="mr-3 flex items-baseline gap-2">
+              <span className="text-[21px] font-bold leading-none">{price}</span>
+              <span className="text-[14px] font-semibold line-through leading-none opacity-60">
+                €{formatPriceEUR(RUSH_BUNDLE_COMPARE_AT_EUR)}
+              </span>
+            </div>
           ) : (
             <div className="mr-3 text-base font-semibold">{price}</div>
           )}
@@ -130,7 +127,6 @@ export default function PresetButton({
                   <div className="relative space-y-2">
                     {RUSH_BUNDLE_SESSION_PRICES_EUR.map((sessionPrice, i) => {
                       const label = `Session ${i + 1}`;
-                      const price = `€${sessionPrice}`;
                       const discount = `-${rushBundleDiscountPercent(sessionPrice)}%`;
                       const level = i + 1;
                       const size =
@@ -161,9 +157,9 @@ export default function PresetButton({
                           </span>
 
                           <span
-                            className={`${size} ${opacity} font-semibold flex items-center gap-1`}
+                            className={`${size} ${opacity} font-semibold flex items-baseline gap-1`}
                           >
-                            {price}
+                            €{formatPriceEUR(sessionPrice)}
                             <span
                               className="text-xs font-semibold"
                               style={{ color: ring }}

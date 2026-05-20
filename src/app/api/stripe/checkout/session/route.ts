@@ -2,30 +2,29 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { computePriceEUR } from "@/engine/session/rules/pricing";
-import { computePriceWithProduct } from "@/engine/session/rules/product";
-import { clamp } from "@/engine/session/config/session";
+import { resolveBookingAmountCentsAfterCoupon } from "@/engine/session/rules/resolveBookingPrice";
 import type { ProductId } from "@/engine/session/model/product";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
 
+function parseProductId(raw: unknown): ProductId | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  return raw.trim() as ProductId;
+}
+
 export async function POST(req: Request) {
-  // slotIds from client for card flow; productId for bundle pricing; amountCents only used when no bookingId
   let {
     method,
     amountCents: bodyAmountCents,
     bookingId,
     slotIds: bodySlotIds,
-    productId,
+    productId: bodyProductId,
   } = await req.json().catch(() => ({}));
 
   console.log("[checkout/session] body", { method, bookingId });
 
-  // ⭐ SAFETY FIX:
-  // If bookingId missing (because front-end forgot to send it),
-  // recover it by checking if the user already has an unpaid booking.
   if (!bookingId) {
     try {
       const unpaid = await prisma.session.findFirst({
@@ -61,6 +60,7 @@ export async function POST(req: Request) {
         couponDiscount: true,
         liveMinutes: true,
         followups: true,
+        liveBlocks: true,
       },
     });
 
@@ -71,23 +71,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "booking_not_found" }, { status: 404 });
     }
 
-    // Single source of truth: compute amount from booking and apply coupon discount (same logic as intent route)
-    const discount = s.couponDiscount ?? 0;
-    let amountCents: number;
-    if (productId) {
-      const sessionConfig = clamp({
-        liveMin: s.liveMinutes,
-        liveBlocks: 0,
-        followups: s.followups,
-        productId: productId as ProductId,
-      });
-      const { amountCents: productCents } = computePriceWithProduct(sessionConfig);
-      amountCents = Math.max(productCents - discount * 100, 0);
-    } else {
-      const base = computePriceEUR(s.liveMinutes, s.followups);
-      amountCents = Math.max(base.amountCents - discount * 100, 0);
-    }
-    finalAmountCents = amountCents;
+    finalAmountCents = resolveBookingAmountCentsAfterCoupon({
+      liveMinutes: s.liveMinutes,
+      followups: s.followups,
+      liveBlocks: s.liveBlocks ?? 0,
+      productId: parseProductId(bodyProductId),
+      couponDiscountEUR: s.couponDiscount ?? 0,
+    });
 
     const slotIdsCsv =
       typeof bodySlotIds === "string" && bodySlotIds.trim()

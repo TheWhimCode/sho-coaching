@@ -3,10 +3,11 @@
 import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useFooter } from "@/app/checkout/_components/checkout-steps/FooterContext";
-import { computePriceWithProduct, formatPriceEUR } from "@/engine/session";
+import { computePriceWithProduct } from "@/engine/session";
 import type { ProductId } from "@/engine/session/model/product";
 import type { PayMethod, Breakdown } from "@/engine/checkout";
 import { sessionFromCheckoutPayload, isBundleDisplay } from "@/engine/checkout";
+import PromoPrice from "@/components/PromoPrice";
 
 type Props = {
   goBack: () => void;
@@ -20,6 +21,25 @@ type Props = {
   payMethod: PayMethod;
   sessionBlockTitle: string;
 };
+
+function SummaryPrice({
+  priceEUR,
+  listPriceEUR,
+  discountPercent,
+}: {
+  priceEUR: number;
+  listPriceEUR: number;
+  discountPercent: number;
+}) {
+  return (
+    <PromoPrice
+      priceEUR={priceEUR}
+      listPriceEUR={listPriceEUR}
+      discountPercent={discountPercent}
+      priceClassName="text-white/90"
+    />
+  );
+}
 
 export default function StepSummary({
   goBack,
@@ -41,12 +61,12 @@ export default function StepSummary({
   }, [setFooter]);
 
   const session = sessionFromCheckoutPayload(payload);
-  const { priceEUR } = computePriceWithProduct(session);
+  const { priceEUR, listPriceEUR, discountPercent } =
+    computePriceWithProduct(session);
   const isBundle = isBundleDisplay(payload);
 
   return (
     <div className="flex flex-col h-full md:pt-2">
-      {/* Header */}
       <div className="mb-3">
         <div className="relative h-7 flex items-center justify-center">
           <button
@@ -61,15 +81,18 @@ export default function StepSummary({
         <div className="mt-2 border-t border-white/10" />
       </div>
 
-      {/* Scrollable summary */}
       <div className="flex-1 min-h-0 overflow-y-auto px-1 space-y-3">
         <dl className="text-base space-y-3">
-
-          {/* ✔ For bundles we override the whole breakdown */}
           {isBundle ? (
             <div className="flex items-center justify-between">
               <dt className="text-white/80">{sessionBlockTitle}</dt>
-              <dd className="text-white/90">€{formatPriceEUR(priceEUR)}</dd>
+              <dd>
+                <SummaryPrice
+                  priceEUR={priceEUR}
+                  listPriceEUR={listPriceEUR}
+                  discountPercent={discountPercent}
+                />
+              </dd>
             </div>
           ) : (
             <>
@@ -77,7 +100,13 @@ export default function StepSummary({
                 <dt className="text-white/80">
                   ⬩ {payload.baseMinutes} min coaching
                 </dt>
-                <dd className="text-white/90">€{formatPriceEUR(b.minutesEUR)}</dd>
+                <dd>
+                  <SummaryPrice
+                    priceEUR={b.minutesEUR}
+                    listPriceEUR={b.minutesListEUR}
+                    discountPercent={b.discountPercent}
+                  />
+                </dd>
               </div>
 
               {payload.liveBlocks > 0 && (
@@ -85,8 +114,12 @@ export default function StepSummary({
                   <dt className="text-white/80">
                     ⬩ {payload.liveBlocks * 45} min in-game coaching
                   </dt>
-                  <dd className="text-white/90">
-                    €{formatPriceEUR(b.inGameEUR)}
+                  <dd>
+                    <SummaryPrice
+                      priceEUR={b.inGameEUR}
+                      listPriceEUR={b.inGameListEUR}
+                      discountPercent={b.discountPercent}
+                    />
                   </dd>
                 </div>
               )}
@@ -96,8 +129,12 @@ export default function StepSummary({
                   <dt className="text-white/80">
                     ⬩ {payload.followups}× Follow-up
                   </dt>
-                  <dd className="text-white/90">
-                    €{formatPriceEUR(b.followupsEUR)}
+                  <dd>
+                    <SummaryPrice
+                      priceEUR={b.followupsEUR}
+                      listPriceEUR={b.followupsListEUR}
+                      discountPercent={b.discountPercent}
+                    />
                   </dd>
                 </div>
               )}

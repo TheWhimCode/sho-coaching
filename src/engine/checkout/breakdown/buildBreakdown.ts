@@ -8,9 +8,14 @@ const STEP = 15;
 
 export type Breakdown = {
   minutesEUR: number;
+  minutesListEUR: number;
   inGameEUR: number;
+  inGameListEUR: number;
   followupsEUR: number;
+  followupsListEUR: number;
   total: number;
+  totalList: number;
+  discountPercent: number;
 };
 
 function clampStep(n: number): number {
@@ -18,10 +23,6 @@ function clampStep(n: number): number {
   return Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, s));
 }
 
-/**
- * Split the price into base minutes, in-game block minutes, and followups.
- * Uses same ladder as computePriceEUR (€7.50/15m live, +€12.50/follow-up).
- */
 export function buildBreakdown(
   totalMinutes: number,
   followups: number,
@@ -31,18 +32,30 @@ export function buildBreakdown(
   const blocks = Math.max(0, Math.min(2, liveBlocks | 0));
   const inGameMin = blocks * LIVEBLOCK_MIN;
 
-  let baseMinutes = clampStep(t - inGameMin);
+  const baseMinutes = clampStep(t - inGameMin);
 
-  const priceBaseOnly = computePriceEUR(baseMinutes, 0).priceEUR;
-  const priceTotalNoFU = computePriceEUR(t, 0).priceEUR;
-  const priceWithFU = computePriceEUR(t, followups).priceEUR;
+  const baseOnly = computePriceEUR(baseMinutes, 0);
+  const totalNoFU = computePriceEUR(t, 0);
+  const withFU = computePriceEUR(t, followups);
 
   const round2 = (n: number) => Math.round(n * 100) / 100;
 
-  const minutesEUR = priceBaseOnly;
-  const inGameEUR = round2(priceTotalNoFU - priceBaseOnly);
-  const followupsEUR = round2(priceWithFU - priceTotalNoFU);
-  const total = priceWithFU;
+  const minutesEUR = baseOnly.priceEUR;
+  const minutesListEUR = baseOnly.listPriceEUR;
+  const inGameEUR = round2(totalNoFU.priceEUR - baseOnly.priceEUR);
+  const inGameListEUR = round2(totalNoFU.listPriceEUR - baseOnly.listPriceEUR);
+  const followupsEUR = round2(withFU.priceEUR - totalNoFU.priceEUR);
+  const followupsListEUR = round2(withFU.listPriceEUR - totalNoFU.listPriceEUR);
 
-  return { minutesEUR, inGameEUR, followupsEUR, total };
+  return {
+    minutesEUR,
+    minutesListEUR,
+    inGameEUR,
+    inGameListEUR,
+    followupsEUR,
+    followupsListEUR,
+    total: withFU.priceEUR,
+    totalList: withFU.listPriceEUR,
+    discountPercent: withFU.discountPercent,
+  };
 }

@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
+import PromoPrice from "@/components/PromoPrice";
 import {
   computePriceWithProduct,
-  formatPriceEUR,
   totalMinutes,
   titlesByPreset,
   colorsByPreset,
@@ -49,7 +49,11 @@ export default function SessionBlock({
   const isBundle = preset === "rush";
 
   const total = totalMinutes(session);
-  const { priceEUR: sessionPrice } = computePriceWithProduct(session);
+  const {
+    priceEUR: sessionPrice,
+    listPriceEUR: sessionListPrice,
+    discountPercent,
+  } = computePriceWithProduct(session);
   const title = titlesByPreset[preset];
 
   const p = session.productId ? products[session.productId] : undefined;
@@ -149,7 +153,12 @@ export default function SessionBlock({
           )}
         </span>
 
-        <span className="text-white/90">€{formatPriceEUR(sessionPrice)}</span>
+        <PromoPrice
+          priceEUR={sessionPrice}
+          listPriceEUR={sessionListPrice}
+          discountPercent={discountPercent}
+          priceClassName="text-white/90"
+        />
       </div>
 
       <div className="mt-3">

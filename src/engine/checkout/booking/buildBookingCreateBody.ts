@@ -34,6 +34,7 @@ export type BookingCreateBody = {
   couponDiscount: number;
   holdKey: string;
   productId: string | null;
+  liveBlocks: number;
   champions: string[];
 };
 
@@ -41,7 +42,10 @@ export type BookingCreateBody = {
  * Build the JSON body for POST /api/booking/create from payload + contact + waiver + coupon + champions.
  */
 export function buildBookingCreateBody(
-  payload: Pick<Payload, "slotId" | "holdKey" | "productId" | "followups">,
+  payload: Pick<
+    Payload,
+    "slotId" | "holdKey" | "productId" | "followups" | "liveBlocks"
+  >,
   sessionBlockTitle: string,
   totalLiveMinutes: number,
   contact: BookingCreateContact,
@@ -64,6 +68,7 @@ export function buildBookingCreateBody(
     couponDiscount: coupon.discount,
     holdKey: payload.holdKey,
     productId: payload.productId ?? null,
+    liveBlocks: payload.liveBlocks ?? 0,
     champions,
   };
 }

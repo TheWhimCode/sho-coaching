@@ -13,6 +13,7 @@ import DividerWithLogo from "@/app/_components/small/Divider-logo";
 const BG_FADE_DURATION = 3;
 const EASE = [0.22, 1, 0.36, 1] as const;
 const TAKING_TOO_LONG_MS = 5000;
+const SHOW_PREPARE_LINK = false;
 
 type BookingInfo = {
   id: string;
@@ -290,7 +291,7 @@ export default function SuccessClient() {
             >
               <h2 className="text-xl font-semibold mb-2">What&apos;s next?</h2>
               <p className="text-base text-white/80 leading-relaxed mb-4">
-                You&apos;ll receive a confirmation DM from Axom via Discord. Join the server, if you haven&apos;t already.
+                You&apos;ll receive a confirmation DM from Axom via Discord. Join the server, if you haven&apos;t already. Make sure you read his DMs.
               </p>
               <div className="flex flex-col items-stretch sm:flex-row sm:items-start justify-between gap-4">
                 <div className="relative h-14 w-full sm:w-56 shrink-0 overflow-hidden rounded-xl">
@@ -319,10 +320,30 @@ export default function SuccessClient() {
             >
               <h2 className="text-xl font-semibold mb-2">Quick reminder</h2>
               <ul className="text-base text-white/80 space-y-1 list-disc list-outside pl-5">
-                <li>Make sure you played games on this patch to review.</li>
-                <li>Check your mic & audio before the session to avoid disaster.</li>
-                <li>Don't tilt.</li>
+                <li>
+                  Download{" "}
+                  <a
+                    href="https://www.tryascent.gg"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold text-[#8089FF] no-underline transition-colors hover:text-[#9BA3FF]"
+                  >
+                    Ascent
+                  </a>{" "}
+                  to record your POVs for the session
+                </li>
+                <li>Without POV, make sure your replay is from current patch</li>
+                <li>Check your mic & audio before the session</li>
+
               </ul>
+              {SHOW_PREPARE_LINK && (
+                <Link
+                  href="/coaching/prepare"
+                  className="mt-3 inline-block text-base font-bold text-[#8089FF] no-underline transition-colors hover:text-[#9BA3FF]"
+                >
+                  More info on how to prepare effectively
+                </Link>
+              )}
 
             </GlassPanel>
           )}
