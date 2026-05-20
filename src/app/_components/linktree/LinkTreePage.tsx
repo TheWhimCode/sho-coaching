@@ -2,6 +2,7 @@
 
 import LinkTreeBackground from "./LinkTreeBackground";
 import LinkTreeButton from "./LinkTreeButton";
+import AboutMinoButton from "./AboutMinoButton";
 import { LINK_TREE_LINKS } from "./linkTreeLinks";
 
 export default function LinkTreePage() {
@@ -14,6 +15,7 @@ export default function LinkTreePage() {
           {LINK_TREE_LINKS.map((link, i) => (
             <LinkTreeButton key={link.id} link={link} index={i} />
           ))}
+          <AboutMinoButton index={LINK_TREE_LINKS.length} />
         </ul>
       </div>
     </section>

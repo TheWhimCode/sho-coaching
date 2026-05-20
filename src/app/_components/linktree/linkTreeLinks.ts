@@ -1,5 +1,5 @@
 import type { ComponentType, CSSProperties } from "react";
-import { FaDiscord, FaTiktok, FaTwitch } from "react-icons/fa6";
+import { FaDiscord, FaTwitch } from "react-icons/fa6";
 import { GraduationCap, Swords } from "lucide-react";
 
 export type LinkTreeIconProps = {
@@ -86,18 +86,5 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     iconGradient:
       "linear-gradient(145deg, #431407 0%, #7C2D12 42%, #9A3412 70%, #C2410C 90%, #EA580C 100%)",
     iconColor: "#ffffff",
-  },
-  {
-    id: "tiktok",
-    label: "TikTok",
-    description: "Tips, highlights and stuff I post",
-    href: "https://www.tiktok.com/@itsMinooooo",
-    external: true,
-    Icon: FaTiktok,
-    accent: "#9CA3AF",
-    glow: "rgba(156, 163, 175, 0.28)",
-    iconGradient:
-      "linear-gradient(145deg, #0a0a0a 0%, #171717 42%, #2a2a2a 72%, #404040 100%)",
-    iconColor: "#f5f5f5",
   },
 ];
