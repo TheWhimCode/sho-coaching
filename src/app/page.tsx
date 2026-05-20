@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import LinkTreePage from "@/app/_components/linktree/LinkTreePage";
 
 export const metadata: Metadata = {
-  title: "Coaching, Streams & Skillcheck",
+  title: "Mino, Coaching & Skillcheck",
   description:
-    "Sho’s home on the web — book League of Legends coaching, join the Discord, watch streams, or play daily Skillcheck.",
+    "Mino’s website — book League of Legends coaching, play daily challenges and learn more about Mino.",
   alternates: {
     canonical: "/",
   },
