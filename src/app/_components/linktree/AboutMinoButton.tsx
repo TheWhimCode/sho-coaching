@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Trophy } from "lucide-react";
 import { championAvatarByName, rankMiniCrestSvg } from "@/lib/league/datadragon";
 import { ROLE_ICONS } from "@/lib/datadragon/roles";
 import ButtonParticleTrail from "./ButtonParticleTrail";
+import { useLinkTreePointerTrail } from "./useLinkTreePointerTrail";
 import {
   ABOUT_MINO_ACCENT,
   ABOUT_MINO_ACHIEVEMENTS,
@@ -109,24 +110,10 @@ function AchievementRow({ achievement }: { achievement: AboutMinoAchievement }) 
 
 export default function AboutMinoButton({ index }: Props) {
   const [open, setOpen] = useState(false);
-  const [hovering, setHovering] = useState(false);
-  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
-
-  const updatePointer = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setPointer({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  }, []);
-
-  const clearHover = useCallback(() => {
-    setHovering(false);
-    setPointer(null);
-  }, []);
+  const { trailRef, pointerHandlers } = useLinkTreePointerTrail();
 
   const shellClass = [
-    "relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0B1220]/55 backdrop-blur-md outline-none transition-[border-color,box-shadow] duration-300",
+    "group relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0B1220]/55 backdrop-blur-md outline-none transition-[border-color,box-shadow] duration-300",
     open
       ? "shadow-[0_12px_40px_-8px_var(--link-glow),0_0_48px_-12px_var(--link-glow)]"
       : [
@@ -152,25 +139,10 @@ export default function AboutMinoButton({ index }: Props) {
           aria-controls="about-mino-panel"
           onClick={() => setOpen((v) => !v)}
           className="relative block w-full cursor-pointer text-left outline-none focus:outline-none focus-visible:outline-none"
-          onPointerEnter={(e) => {
-            setHovering(true);
-            updatePointer(e);
-          }}
-          onPointerMove={updatePointer}
-          onPointerLeave={clearHover}
-          onPointerCancel={clearHover}
+          {...pointerHandlers}
         >
-          <ButtonParticleTrail
-            color={ABOUT_MINO_ACCENT}
-            point={pointer}
-            active={hovering}
-          />
-          <motion.div
-            className={LINKTREE_BUTTON_INNER}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.985 }}
-            transition={{ duration: 0.22, ease: EASE }}
-          >
+          <ButtonParticleTrail ref={trailRef} color={ABOUT_MINO_ACCENT} />
+          <div className={LINKTREE_BUTTON_INNER}>
             <div
               className={LINKTREE_ICON_TILE}
               style={{
@@ -209,7 +181,7 @@ export default function AboutMinoButton({ index }: Props) {
             >
               <ChevronDown className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem] lg:h-5 lg:w-5" />
             </motion.span>
-          </motion.div>
+          </div>
         </button>
 
         <AnimatePresence initial={false}>
