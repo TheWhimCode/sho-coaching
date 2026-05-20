@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaDiscord, FaYoutube, FaTiktok, FaEnvelope } from "react-icons/fa";
+import { FaDiscord, FaTiktok, FaEnvelope } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
 export default function Footer() {
@@ -50,16 +50,7 @@ export default function Footer() {
           </a>
 
           <a
-            href="https://www.youtube.com/@ShoCoaching"
-            target="_blank"
-            aria-label="YouTube"
-            className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
-          >
-            <FaYoutube className="h-6 w-6" />
-          </a>
-
-          <a
-            href="https://www.tiktok.com/@itsMinoooo"
+            href="https://www.tiktok.com/@itsMinooooo"
             target="_blank"
             aria-label="TikTok"
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
