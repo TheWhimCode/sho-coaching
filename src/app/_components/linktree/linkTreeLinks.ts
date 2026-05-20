@@ -5,6 +5,7 @@ import { GraduationCap, Swords } from "lucide-react";
 export type LinkTreeIconProps = {
   className?: string;
   style?: CSSProperties;
+  stroke?: string;
   "aria-hidden"?: boolean;
 };
 
