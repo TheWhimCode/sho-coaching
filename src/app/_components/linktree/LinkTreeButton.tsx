@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import type { LinkTreeLink } from "./linkTreeLinks";
 import ButtonParticleTrail from "./ButtonParticleTrail";
+import { useLinkTreePointerTrail } from "./useLinkTreePointerTrail";
 import {
   LINKTREE_BUTTON_INNER,
   LINKTREE_DESCRIPTION,
@@ -19,8 +18,6 @@ type Props = {
   link: LinkTreeLink;
   index: number;
 };
-
-const EASE = [0.22, 1, 0.36, 1] as const;
 
 function LinkTreeTileIcon({ link }: { link: LinkTreeLink }) {
   const { Icon } = link;
@@ -63,45 +60,12 @@ function LinkTreeTileIcon({ link }: { link: LinkTreeLink }) {
 }
 
 export default function LinkTreeButton({ link, index }: Props) {
-  const [hovering, setHovering] = useState(false);
-  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
-
-  const updatePointer = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setPointer({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  }, []);
-
-  const clearHover = useCallback(() => {
-    setHovering(false);
-    setPointer(null);
-  }, []);
-
-  const pointerHandlers = {
-    onPointerEnter: (e: React.PointerEvent<HTMLElement>) => {
-      setHovering(true);
-      updatePointer(e);
-    },
-    onPointerMove: updatePointer,
-    onPointerLeave: clearHover,
-    onPointerCancel: clearHover,
-  };
+  const { trailRef, pointerHandlers } = useLinkTreePointerTrail();
 
   const inner = (
     <>
-      <ButtonParticleTrail
-        color={link.accent}
-        point={pointer}
-        active={hovering}
-      />
-      <motion.div
-        className={LINKTREE_BUTTON_INNER}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.985 }}
-        transition={{ duration: 0.22, ease: EASE }}
-      >
+      <ButtonParticleTrail ref={trailRef} color={link.accent} />
+      <div className={LINKTREE_BUTTON_INNER}>
         <div
           className={LINKTREE_ICON_TILE}
           style={{
@@ -122,7 +86,7 @@ export default function LinkTreeButton({ link, index }: Props) {
           style={{ ["--link-accent" as string]: link.accent }}
           aria-hidden
         />
-      </motion.div>
+      </div>
     </>
   );
 
