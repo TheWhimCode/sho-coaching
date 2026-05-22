@@ -1,9 +1,9 @@
 /** Coaching page images — shared for preload hints and UI */
 
 export const COACHING_CARD_IMAGES = [
-  "/images/sessions/VOD7.png",
-  "/images/sessions/Signature3.png",
-  "/images/sessions/Rush.png",
+  "/images/sessions/VOD7.webp",
+  "/images/sessions/Signature3.webp",
+  "/images/sessions/Rush.webp",
 ] as const;
 
 export const COACHING_EXAMPLE_IMAGES = [

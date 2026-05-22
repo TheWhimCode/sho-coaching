@@ -35,7 +35,7 @@ const DEFAULT_ITEMS: Item[] = [
       "The classic. Get a full in-depth breakdown of your gameplay with insights on each stage of the game.",
     duration: "60 min",
     badge: "Most informative",
-    image: "/images/sessions/VOD7.png",
+    image: "/images/sessions/VOD7.webp",
     price: computePriceEUR(60, 0).priceEUR,
   },
   {
