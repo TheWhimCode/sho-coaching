@@ -10,6 +10,8 @@ export type SquareButtonProps = {
   href: string;
   src: string;   // e.g. "/images/squarebuttons/Syndra8.png"
   size?: number; // px
+  /** High-priority load for above-the-fold coaching examples */
+  eager?: boolean;
 };
 
 export default function SquareButton({
@@ -17,6 +19,7 @@ export default function SquareButton({
   href,
   src,
   size = 160,
+  eager = false,
 }: SquareButtonProps) {
   return (
     <Link
@@ -43,6 +46,9 @@ export default function SquareButton({
         alt={`${role} preview`}
         fill
         sizes={`${size}px`}
+        priority={eager}
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
         // keep your hover values; add always-on color boost
         className="object-cover select-none pointer-events-none
                    filter brightness-[1.08] contrast-[1.10] saturate-[1.22]

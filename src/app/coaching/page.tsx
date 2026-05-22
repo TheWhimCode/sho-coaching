@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CoachingPageClient from "./CoachingPageClient";
+import { COACHING_PRELOAD_IMAGES } from "./coachingPageAssets";
 
 const title = "League of Legends Coaching";
 const description =
@@ -20,5 +21,12 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <CoachingPageClient />;
+  return (
+    <>
+      {COACHING_PRELOAD_IMAGES.map((href) => (
+        <link key={href} rel="preload" as="image" href={href} />
+      ))}
+      <CoachingPageClient />
+    </>
+  );
 }

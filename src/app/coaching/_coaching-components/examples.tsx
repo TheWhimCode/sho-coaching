@@ -3,19 +3,20 @@
 
 import React from "react";
 import SquareButton from "@/app/_components/small/SquareButton";
+import { COACHING_EXAMPLE_IMAGES } from "@/app/coaching/coachingPageAssets";
 
 type ExampleItem = {
   role: "Top" | "Jungle" | "Mid" | "ADC" | "Support";
   href: string;
-  src: string; // single composite image for the button
+  src: string;
 };
 
 const items: ExampleItem[] = [
-  { role: "Top",     href: "https://www.patreon.com/posts/144158074",                             src: "/images/squarebuttons/Irelia.png" },
-  { role: "Jungle",  href: "https://www.patreon.com/posts/108659798",                             src: "/images/squarebuttons/Shyvana7.png" },
-  { role: "Mid",     href: "https://www.patreon.com/posts/syndra-emerald-113265874",              src: "/images/squarebuttons/Syndra8.png" },
-  { role: "ADC",     href: "https://www.patreon.com/posts/144983179",                src: "/images/squarebuttons/Aphelios.svg" },
-  { role: "Support", href: "https://www.patreon.com/posts/nami-diamond-2-113193138",              src: "/images/squarebuttons/Nami.png" },
+  { role: "Top", href: "https://www.patreon.com/posts/144158074", src: COACHING_EXAMPLE_IMAGES[0] },
+  { role: "Jungle", href: "https://www.patreon.com/posts/108659798", src: COACHING_EXAMPLE_IMAGES[1] },
+  { role: "Mid", href: "https://www.patreon.com/posts/syndra-emerald-113265874", src: COACHING_EXAMPLE_IMAGES[2] },
+  { role: "ADC", href: "https://www.patreon.com/posts/144983179", src: COACHING_EXAMPLE_IMAGES[3] },
+  { role: "Support", href: "https://www.patreon.com/posts/nami-diamond-2-113193138", src: COACHING_EXAMPLE_IMAGES[4] },
 ];
 export default function CoachingExamples() {
   return (
@@ -42,6 +43,7 @@ export default function CoachingExamples() {
                   href={item.href}
                   src={item.src}
                   size={120}
+                  eager
                 />
               ))}
             </div>
@@ -50,14 +52,14 @@ export default function CoachingExamples() {
             <div className="md:hidden mt-2 grid grid-cols-6 gap-4 justify-items-center">
               {items.slice(0, 3).map((item) => (
                 <div key={item.role} className="col-span-2">
-                  <SquareButton role={item.role} href={item.href} src={item.src} size={84} />
+                  <SquareButton role={item.role} href={item.href} src={item.src} size={84} eager />
                 </div>
               ))}
               <div className="col-start-2 col-span-2">
-                <SquareButton role={items[3].role} href={items[3].href} src={items[3].src} size={84} />
+                <SquareButton role={items[3].role} href={items[3].href} src={items[3].src} size={84} eager />
               </div>
               <div className="col-start-4 col-span-2">
-                <SquareButton role={items[4].role} href={items[4].href} src={items[4].src} size={84} />
+                <SquareButton role={items[4].role} href={items[4].href} src={items[4].src} size={84} eager />
               </div>
             </div>
           </div>

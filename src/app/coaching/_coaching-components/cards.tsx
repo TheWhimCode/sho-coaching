@@ -13,6 +13,7 @@ import PromoPrice from "@/components/PromoPrice";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 import { motion, type Variants } from "framer-motion";
 import { useNavChrome } from "@/app/_components/navChrome";
+import { COACHING_CARD_IMAGES } from "@/app/coaching/coachingPageAssets";
 
 type PresetSlug = "vod" | "signature" | "rush";
 
@@ -42,8 +43,8 @@ const DEFAULT_ITEMS: Item[] = [
     title: "Signature Session",
     subtitle: "Sho’s recommendation. Focused, structured and designed to make you climb.",
     duration: "45 min + Follow-up",
-    badge: "Best overall",
-    image: "/images/sessions/Signature3.png",
+    badge: "Most popular",
+    image: COACHING_CARD_IMAGES[1],
     price: computePriceEUR(45, 1).priceEUR,
   },
   {
@@ -52,7 +53,7 @@ const DEFAULT_ITEMS: Item[] = [
     subtitle: "4 sessions with built-in momentum. Best value if you're serious about climbing.",
     duration: "60 min ×4",
     badge: "Best value",
-    image: "/images/sessions/Rush.png",
+    image: COACHING_CARD_IMAGES[2],
     price: computePriceWithProduct({
       liveMin: 60,
       followups: 0,
@@ -92,6 +93,35 @@ function GlowRing({ preset, className = "" }: { preset: Preset; className?: stri
         boxShadow: `0 0 0 1px rgba(255,255,255,.08) inset, 0 6px 24px -10px ${c.glow}`,
       }}
     />
+  );
+}
+
+function CardBadge({
+  badge,
+  preset,
+  compact = false,
+}: {
+  badge: string;
+  preset: Preset;
+  compact?: boolean;
+}) {
+  const c = colorsByPreset[preset] ?? colorsByPreset.custom;
+  return (
+    <span
+      className={
+        compact
+          ? "pointer-events-none inline-flex max-w-[5.5rem] items-center justify-center rounded-full border px-1 py-0.5 text-center text-[7px] font-bold uppercase leading-tight tracking-wide backdrop-blur-md"
+          : "pointer-events-none inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md sm:text-[11px] sm:px-3"
+      }
+      style={{
+        color: c.ring,
+        borderColor: `color-mix(in srgb, ${c.ring} 55%, transparent)`,
+        background: `color-mix(in srgb, ${c.ring} 16%, rgba(11, 15, 26, 0.82))`,
+        boxShadow: `0 0 14px -2px ${c.glow}`,
+      }}
+    >
+      {badge}
+    </span>
   );
 }
 
@@ -192,16 +222,22 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
   return (
     <>
       <motion.div
-        className="relative group"
+        className="relative group cursor-pointer outline-none transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none"
         role="link"
         tabIndex={0}
         onClick={handleNavigate}
         onKeyDown={handleKeyDown}
         variants={cardVariants}
       >
+        {item.badge ? (
+          <div className="pointer-events-none absolute top-4 left-4 z-20 max-sm:hidden">
+            <CardBadge badge={item.badge} preset={item.slug as Preset} />
+          </div>
+        ) : null}
+
         <article
           style={cssVars}
-          className="relative flex flex-col h-full overflow-hidden rounded-3xl border border-white/10 bg-white/[.03] backdrop-blur-md transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-[var(--ring)] hover:shadow-[0_0_10px_1px_var(--glow)] focus-visible:outline-none focus-visible:border-[var(--ring)] focus-visible:shadow-[0_0_10px_1px_var(--glow)]"
+          className="relative flex flex-col h-full overflow-hidden rounded-3xl border border-white/10 bg-white/[.03] backdrop-blur-md transition-[border-color,box-shadow] duration-300 group-hover:border-[var(--ring)] group-hover:shadow-[0_0_10px_1px_var(--glow)] group-focus-visible:border-[var(--ring)] group-focus-visible:shadow-[0_0_10px_1px_var(--glow)]"
         >
           {/* Desktop/Tablet media */}
           <div className="relative w-full aspect-square overflow-hidden rounded-t-3xl max-sm:hidden">
@@ -211,7 +247,8 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
               fill
               className="object-cover"
               sizes="(max-width: 1200px) 50vw, 33vw"
-              priority={false}
+              priority
+              fetchPriority="high"
             />
           </div>
 
@@ -243,7 +280,19 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
 
               {/* Right image column (mobile) */}
               <div className="sm:hidden relative h-full aspect-square overflow-hidden max-sm:rounded-tr-3xl self-stretch">
-                <Image src={item.image} alt={item.title} fill className="object-cover" priority={false} />
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  className="object-cover"
+                  priority
+                  fetchPriority="high"
+                />
+                {item.badge ? (
+                  <div className="pointer-events-none absolute top-2 left-2 z-10">
+                    <CardBadge badge={item.badge} preset={item.slug as Preset} compact />
+                  </div>
+                ) : null}
               </div>
             </div>
 

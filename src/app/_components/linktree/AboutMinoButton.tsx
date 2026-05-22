@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Trophy } from "lucide-react";
@@ -21,6 +21,9 @@ import {
   LINKTREE_TILE_ICON,
   LINKTREE_TITLE,
 } from "./linktreeUi";
+import { ABOUT_MINO_PRELOAD_IMAGES } from "./aboutMinoPreload";
+
+const EAGER_ICON = { loading: "eager" as const, fetchPriority: "high" as const };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const EXPAND_EASE = [0.16, 1, 0.3, 1] as const;
@@ -59,6 +62,7 @@ function ChampionIcons({ champions }: { champions: string[] }) {
             height={32}
             className="h-full w-full object-cover scale-[1.12]"
             unoptimized
+            {...EAGER_ICON}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src =
                 "/images/coaching/reviews/placeholder-avatar.png";
@@ -85,6 +89,7 @@ function AchievementRow({ achievement }: { achievement: AboutMinoAchievement }) 
           height={36}
           className="h-8 w-8 object-contain"
           unoptimized
+          {...EAGER_ICON}
         />
         <span className="sr-only">
           {tierName} {roleName}
@@ -101,6 +106,7 @@ function AchievementRow({ achievement }: { achievement: AboutMinoAchievement }) 
           height={24}
           className="h-6 w-6 object-contain opacity-90"
           unoptimized
+          {...EAGER_ICON}
         />
       </span>
     </li>
@@ -123,6 +129,13 @@ export default function AboutMinoButton({ index }: Props) {
   const clearHover = useCallback(() => {
     setHovering(false);
     setPointer(null);
+  }, []);
+
+  useEffect(() => {
+    for (const href of ABOUT_MINO_PRELOAD_IMAGES) {
+      const img = new window.Image();
+      img.src = href;
+    }
   }, []);
 
   const shellClass = [
