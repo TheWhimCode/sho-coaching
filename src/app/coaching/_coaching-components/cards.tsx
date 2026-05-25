@@ -23,6 +23,7 @@ type Item = {
   subtitle: string;
   duration: string;
   badge?: string;
+  featured?: boolean;
   image: string;
   price: number;
 };
@@ -34,7 +35,7 @@ const DEFAULT_ITEMS: Item[] = [
     subtitle:
       "The classic. Get a full in-depth breakdown of your gameplay with insights on each stage of the game.",
     duration: "60 min",
-    badge: "Most informative",
+    badge: "Most analytical",
     image: "/images/sessions/VOD7.webp",
     price: computePriceEUR(60, 0).priceEUR,
   },
@@ -44,6 +45,7 @@ const DEFAULT_ITEMS: Item[] = [
     subtitle: "Sho’s recommendation. Focused, structured and designed to make you climb.",
     duration: "45 min + Follow-up",
     badge: "Most popular",
+    featured: true,
     image: COACHING_CARD_IMAGES[1],
     price: computePriceEUR(45, 1).priceEUR,
   },
@@ -237,7 +239,13 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
 
         <article
           style={cssVars}
-          className="relative flex flex-col h-full overflow-hidden rounded-3xl border border-white/10 bg-white/[.03] backdrop-blur-md transition-[border-color,box-shadow] duration-300 group-hover:border-[var(--ring)] group-hover:shadow-[0_0_10px_1px_var(--glow)] group-focus-visible:border-[var(--ring)] group-focus-visible:shadow-[0_0_10px_1px_var(--glow)]"
+          className={[
+            "relative flex flex-col h-full overflow-hidden rounded-3xl border bg-white/[.03] backdrop-blur-md transition-[border-color,box-shadow] duration-300",
+            item.featured
+              ? "border-[color-mix(in_srgb,var(--ring)_48%,rgba(255,255,255,0.14))] shadow-[0_0_32px_-14px_var(--glow)]"
+              : "border-white/10",
+            "group-hover:border-[var(--ring)] group-hover:shadow-[0_0_10px_1px_var(--glow)] group-focus-visible:border-[var(--ring)] group-focus-visible:shadow-[0_0_10px_1px_var(--glow)]",
+          ].join(" ")}
         >
           {/* Desktop/Tablet media */}
           <div className="relative w-full aspect-square overflow-hidden rounded-t-3xl max-sm:hidden">
