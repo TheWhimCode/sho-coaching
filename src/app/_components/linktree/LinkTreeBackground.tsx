@@ -12,7 +12,6 @@ export default function LinkTreeBackground() {
         loop
         playsInline
         preload="metadata"
-        decoding="async"
         className="hidden md:block h-full w-full object-cover object-left md:object-center"
       />
       <video
@@ -22,7 +21,6 @@ export default function LinkTreeBackground() {
         loop
         playsInline
         preload="metadata"
-        decoding="async"
         className="block md:hidden h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-black/20" />
