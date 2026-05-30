@@ -39,7 +39,7 @@ export default function WithdrawalPage() {
             </p>
             <p>
               To exercise your right of withdrawal, you must inform me (
-              <span className="font-medium">Tim Bäumler / Sho Coaching</span>) by means of a clear
+              <span className="font-medium">Tim Bäumler / Mino</span>) by means of a clear
               statement (e.g. a letter sent by post or email). You may use the model withdrawal form below, but this is
               not obligatory.
             </p>
@@ -72,7 +72,7 @@ export default function WithdrawalPage() {
             </p>
 
             <div className="p-4 bg-black/30 rounded-lg border border-white/10 text-sm leading-relaxed">
-              <p>— To Tim Bäumler – Sho Coaching, Emsdettener Straße 18, 48268 Greven, Germany, E-Mail: im.sho@yahoo.com</p>
+              <p>— To Tim Bäumler – Mino, Emsdettener Straße 18, 48268 Greven, Germany, E-Mail: im.sho@yahoo.com</p>
               <p>
                 — I/We (*) hereby give notice that I/We (*) withdraw from my/our (*) contract of sale of the following
                 service (*)
