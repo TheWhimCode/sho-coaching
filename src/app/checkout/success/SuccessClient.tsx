@@ -210,7 +210,7 @@ export default function SuccessClient() {
                 <p className="text-sm font-medium">Finalizing your session</p>
                 {takingTooLong && (
                   <p className="absolute bottom-4 left-0 right-0 text-sm text-white/70 text-center px-4">
-                    This is taking a while… please reach out to Sho.
+                    This is taking a while… please reach out to Mino.
                   </p>
                 )}
               </div>

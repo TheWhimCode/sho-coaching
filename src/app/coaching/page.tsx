@@ -4,7 +4,7 @@ import { COACHING_PRELOAD_IMAGES } from "./coachingPageAssets";
 
 const title = "League of Legends Coaching";
 const description =
-  "Book 1-on-1 LoL coaching with Sho — VOD reviews, live sessions on Discord, and follow-ups tailored to your rank and goals.";
+  "Book 1-on-1 LoL coaching with Mino — VOD reviews, live sessions on Discord, and follow-ups tailored to your rank and goals.";
 
 export const metadata: Metadata = {
   title,

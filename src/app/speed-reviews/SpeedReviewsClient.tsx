@@ -240,7 +240,7 @@ export default function SpeedReviewsClient() {
                 </a>{" "}
                 during the event and watch other players reviews
               </li>
-              <li>When it&apos;s your turn, Sho will confirm you&apos;re around and review your game</li>
+              <li>When it&apos;s your turn, Mino will confirm you&apos;re around and review your game</li>
               <li>If you can&apos;t make it to an event, you won&apos;t be removed from the queue</li>
             </ul>
           </section>

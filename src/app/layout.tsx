@@ -12,13 +12,13 @@ const siteUrl = "https://sho-coaching.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Sho Coaching — League of Legends coaching",
-    template: "%s · Sho Coaching",
+    default: "Mino — League of Legends coaching",
+    template: "%s · Mino",
   },
   description:
-    "Book 1-on-1 League of Legends coaching with Sho, or try Skillcheck — daily LoL knowledge challenges.",
+    "Book 1-on-1 League of Legends coaching with Mino, or try Skillcheck — daily LoL knowledge challenges.",
   openGraph: {
-    siteName: "Sho Coaching",
+    siteName: "Mino",
     type: "website",
     locale: "en",
   },

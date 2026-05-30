@@ -70,7 +70,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <p className="mt-10 text-center text-xs md:text-sm text-white/40 tracking-wide">
-          © {new Date().getFullYear()} Sho Coaching — All rights reserved.
+          © {new Date().getFullYear()} Mino — All rights reserved.
         </p>
       </div>
     </footer>

@@ -306,7 +306,7 @@ export default function DraftAuthorMain({
             Draft submitted 🎉
           </h2>
           <p className="text-white/70 mb-1">
-            Sho will approve it asap (if it&apos;s good)
+            Mino will approve it asap (if it&apos;s good)
           </p>
           <p className="text-white/70">
             {successMode === "admin"
