@@ -33,7 +33,7 @@ export default function ImpressumPage() {
 Legal information according to §5 TMG (German Telemedia Act)            </p>
 
             <p>
-              <span className="font-medium">Tim Bäumler / Sho Coaching</span> 
+              <span className="font-medium">Tim Bäumler / Mino</span> 
               <br />
               Emsdettener Straße 18<br />
               48268 Greven<br />

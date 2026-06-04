@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import SpeedReviewsClient from "./SpeedReviewsClient";
 
 export const metadata: Metadata = {
-  title: "Speed Reviews | Sho Coaching",
+  title: "Speed Reviews | Mino",
   description: "Sign up for weekly free speed reviews on Discord.",
 };
 

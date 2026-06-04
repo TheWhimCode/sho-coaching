@@ -25,7 +25,7 @@ const DETAILS: Record<Preset, Detail> = {
   signature: {
     title: "Signature",
     desc:
-      "Structured and designed by Sho to help you climb the maximum amount. Learn how to fix your most impactful bad habits. Progress. And then request your follow-up recording to stay focused and motivated.",
+      "Structured and designed by Mino to help you climb the maximum amount. Learn how to fix your most impactful bad habits. Progress. And then request your follow-up recording to stay focused and motivated.",
     img: "/images/sessions/Signature3.webp",
     liveMinutes: 45,
     followups: 1,

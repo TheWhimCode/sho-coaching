@@ -42,7 +42,7 @@ const DEFAULT_ITEMS: Item[] = [
   {
     slug: "signature",
     title: "Signature Session",
-    subtitle: "Sho’s recommendation. Focused, structured and designed to make you climb.",
+    subtitle: "Mino’s recommendation. Focused, structured and designed to make you climb.",
     duration: "45 min + Follow-up",
     badge: "Most popular",
     featured: true,

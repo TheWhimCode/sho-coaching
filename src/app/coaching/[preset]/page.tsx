@@ -28,7 +28,7 @@ export async function generateMetadata({
   const descriptions: Record<string, string> = {
     vod: "League of Legends VOD review coaching — in-depth analysis of your gameplay with answers to your specific questions.",
     instant: "Quick LoL coaching for focused questions. Same-day scheduling when slots are open.",
-    signature: "Sho’s signature League coaching session — structured, informative, without overload.",
+    signature: "Mino’s signature League coaching session — structured, informative, without overload.",
     custom: "Custom League of Legends coaching tailored to your rank, role, and goals.",
     rush: "Four-session LoL coaching bundle at a discount, with a climb plan across the series.",
   };
@@ -58,7 +58,7 @@ export async function generateMetadata({
       title,
       description,
       url: `https://sho-coaching.com/coaching/${preset}`,
-      siteName: "Sho Coaching",
+      siteName: "Mino",
       type: "website",
       images: [
         {

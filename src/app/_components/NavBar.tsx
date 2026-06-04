@@ -129,7 +129,7 @@ export default function NavBar({
       >
         <Image
           src="/images/Logo_blue.png"
-          alt="Sho Coaching Logo"
+          alt="Mino logo"
           width={38}
           height={38}
           priority

@@ -15,7 +15,7 @@ export const REVIEWS: Review[] = [
   {
     name: "Yokah",
     text:
-      "Thanks to Sho's coaching, I was truly able to reach a Grandmaster level. He helped me realize some major issues that were holding me back from climbing in Elo.",
+      "Thanks to Mino's coaching, I was truly able to reach a Grandmaster level. He helped me realize some major issues that were holding me back from climbing in Elo.",
     rankFrom: "Master",
     rankTo: "Grandmaster",
     champion: "Akali",
@@ -39,7 +39,7 @@ export const REVIEWS: Review[] = [
   {
     name: "Redemption",
     text:
-      "Sho took my scattered and vague approach to the game that is so common in the lower elos and helped sharpen it into something much more focused and intentional.",
+      "Mino took my scattered and vague approach to the game that is so common in the lower elos and helped sharpen it into something much more focused and intentional.",
     rankFrom: "Bronze I",
     rankTo: "Platinum IV",
     champion: "Lux",
@@ -47,7 +47,7 @@ export const REVIEWS: Review[] = [
   {
     name: "Toby",
     text:
-      "I did not realize how much of an impact a terrible mentality had on my games. Sho taught me macro, micro, but most importantly: how to actually try to win every day. I recommend!",
+      "I did not realize how much of an impact a terrible mentality had on my games. Mino taught me macro, micro, but most importantly: how to actually try to win every day. I recommend!",
     rankFrom: "Diamond I",
     rankTo: "Challenger",
     champion: "Draven",

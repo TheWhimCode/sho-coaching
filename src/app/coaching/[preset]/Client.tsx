@@ -134,7 +134,7 @@ export default function Client({ preset }: { preset: string }) {
   // Sync document title with current preset (e.g. "VOD Review" → "Instant Insights" when duration changes)
   useEffect(() => {
     const label = titlesByPreset[activePreset] ?? activePreset;
-    document.title = `${label} | Sho`;
+    document.title = `${label} | Mino`;
   }, [activePreset]);
 
   // ✅ Keep URL in sync with session changes, including the /vod|/signature part.

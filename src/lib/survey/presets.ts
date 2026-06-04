@@ -23,7 +23,7 @@ export const SURVEY: SurveyQuestion[] = [
     question: "What kind of advice are you looking for?",
     options: [
       { label: "I wanna just start a session and see where it goes", value: "t_custom", preset: "custom" },
-      { label: "I want Sho to figure out my biggest mistakes", value: "t_sig", preset: "signature" },
+      { label: "I want Mino to figure out my biggest mistakes", value: "t_sig", preset: "signature" },
       { label: "I want an analysis on my early, mid and lategame", value: "t_60", preset: "vod" },
       { label: "I just have some questions", value: "t_30", preset: "instant" },
     ],
