@@ -78,5 +78,13 @@ export const REVIEWS: Review[] = [
     rankTo: "Master",
     champion: "Qiyana",
   },
+  {
+    name: "Eqwips",
+    text:
+      "Three sessions with Mino. Helped me understand my weaknesses and fundamentals. Took my decision making to a whole new level on punishing the enemy jungler and pushing my lead.",
+    rankFrom: "Silver I",
+    rankTo: "Diamond IV",
+    champion: "Lillia",
+  },
 
 ];
