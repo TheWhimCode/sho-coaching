@@ -9,6 +9,7 @@ import {
   LINKTREE_BUTTON_INNER,
   LINKTREE_DESCRIPTION,
   LINKTREE_ICON_TILE,
+  LINKTREE_CHEVRON,
   LINKTREE_SHELL,
   LINKTREE_TILE_ICON,
   LINKTREE_TITLE,
@@ -82,7 +83,7 @@ export default function LinkTreeButton({ link, index }: Props) {
         </div>
 
         <ArrowUpRight
-          className="h-4 w-4 shrink-0 text-white/40 transition-all duration-300 group-hover:text-[var(--link-accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 sm:h-[1.125rem] sm:w-[1.125rem] lg:h-5 lg:w-5"
+          className={`${LINKTREE_CHEVRON} transition-all duration-300 group-hover:text-[var(--link-accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5`}
           style={{ ["--link-accent" as string]: link.accent }}
           aria-hidden
         />

@@ -17,6 +17,7 @@ import {
 } from "./aboutMinoAchievements";
 import {
   LINKTREE_BUTTON_INNER,
+  LINKTREE_CHEVRON,
   LINKTREE_DESCRIPTION,
   LINKTREE_ICON_TILE,
   LINKTREE_TILE_ICON,
@@ -192,7 +193,7 @@ export default function AboutMinoButton({ index }: Props) {
               className="shrink-0 text-white/40"
               aria-hidden
             >
-              <ChevronDown className="h-4 w-4 sm:h-[1.125rem] sm:w-[1.125rem] lg:h-5 lg:w-5" />
+              <ChevronDown className={LINKTREE_CHEVRON} />
             </motion.span>
           </div>
         </button>
