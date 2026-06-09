@@ -35,7 +35,9 @@ export const CFG_SERVER = Object.freeze({
   }),
 });
 
+import { SITE_URL } from "./site";
+
 export const CFG_PUBLIC = Object.freeze({
-  SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? "",
+  SITE_URL,
   STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
 });

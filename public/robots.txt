@@ -2,4 +2,4 @@ User-agent: *
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://sho-coaching.com/sitemap.xml
+Sitemap: https://its-mino.com/sitemap.xml

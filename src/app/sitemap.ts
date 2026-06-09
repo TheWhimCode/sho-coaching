@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 
-const BASE = "https://sho-coaching.com";
+const BASE = SITE_URL;
 
 const COACHING_PRESETS = ["vod", "signature", "instant", "custom", "rush"] as const;
 

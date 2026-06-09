@@ -1,4 +1,5 @@
 import Client from "./Client";
+import { SITE_URL } from "@/lib/site";
 
 export default async function Page({
   params,
@@ -45,8 +46,8 @@ export async function generateMetadata({
     descriptions[preset] ?? "Book League of Legends coaching tailored to your goals.";
 
   const ogImage = ogImages[preset]
-    ? `https://sho-coaching.com${ogImages[preset]}`
-    : "https://sho-coaching.com/default-og.png";
+    ? `${SITE_URL}${ogImages[preset]}`
+    : `${SITE_URL}/default-og.png`;
 
   return {
     title,
@@ -57,7 +58,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://sho-coaching.com/coaching/${preset}`,
+      url: `${SITE_URL}/coaching/${preset}`,
       siteName: "Mino",
       type: "website",
       images: [

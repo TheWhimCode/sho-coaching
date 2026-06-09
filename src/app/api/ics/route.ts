@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
 import { verify } from "@/lib/sign";
+import { SITE_URL } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,20 +66,18 @@ export async function GET(req: Request) {
 
   const start = b.scheduledStart;
   const end = new Date(start.getTime() + b.scheduledMinutes * 60_000);
-  const site =
-    (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "") ||
-    "https://sho.example";
+  const site = SITE_URL;
   const summary = b.sessionType || "Coaching Session";
   const description = `Booking #${b.id} • Follow-ups: ${b.followups ?? 0}`;
 
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//sho-coaching//calendar//EN",
+    "PRODID:-//its-mino.com//calendar//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:${b.id}@sho-coaching`,
+    `UID:${b.id}@its-mino.com`,
     `DTSTAMP:${fmtUTC(new Date())}`,
     `DTSTART:${fmtUTC(start)}`,
     `DTEND:${fmtUTC(end)}`,
