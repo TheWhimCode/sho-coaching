@@ -12,7 +12,6 @@ import { usePathname } from "next/navigation";
 
 const NAV = [
   { label: "Coaching", href: "/coaching" },
-  { label: "Speed Reviews", href: "/speed-reviews" },
   { label: "Skillcheck", href: "/skillcheck" },
   { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
 ];

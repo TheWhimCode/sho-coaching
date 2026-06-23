@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rateLimit";
 import { resolveRiotTagToPuuid } from "@/lib/speedReview/resolveRiotTag";
+import { SPEED_REVIEWS_PUBLIC_ENABLED } from "@/lib/speedReview/publicAccess";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,10 @@ const queueSelect = {
 } as const;
 
 export async function POST(req: Request) {
+  if (!SPEED_REVIEWS_PUBLIC_ENABLED) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!rateLimit(`speed-review:join:${ip}`, 20, 60_000)) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });

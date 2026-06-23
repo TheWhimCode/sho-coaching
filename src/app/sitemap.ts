@@ -18,7 +18,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85,
     })),
     { url: `${BASE}/skillcheck`, lastModified, changeFrequency: "daily", priority: 0.7 },
-    { url: `${BASE}/speed-reviews`, lastModified, changeFrequency: "weekly", priority: 0.5 },
     { url: `${BASE}/coaching/prepare`, lastModified, changeFrequency: "yearly", priority: 0.4 },
   ];
 }

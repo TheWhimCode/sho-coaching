@@ -11,7 +11,6 @@ const EXIT_DURATION = 0.35;
 
 const NAV = [
   { label: "Coaching", href: "/coaching" },
-  { label: "Speed Reviews", href: "/speed-reviews" },
   { label: "Skillcheck", href: "/skillcheck" },
   { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
 ];
