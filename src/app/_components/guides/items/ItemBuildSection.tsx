@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Fragment, createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type TransitionEvent } from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type TransitionEvent } from "react";
 import { createPortal } from "react-dom";
 import type {
   GuideItemPageData,
@@ -14,7 +14,11 @@ import type {
   SerializedGuideItemTab,
 } from "@/lib/guides/itemGuideTypes";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
+import GuideImage from "@/app/_components/guides/GuideImage";
+import { ItemBuildSectionSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
+import { collectItemSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import { guideChampionIconImgClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 
 const GuideTextIconsContext = createContext<Record<string, string>>({});
@@ -221,7 +225,7 @@ function ItemTile({
         }
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <GuideImage
           src={item.icon}
           alt={item.name}
           className="h-full w-full object-cover"
@@ -823,7 +827,7 @@ function ChampionIcon({
       title={champion.name}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={champion.icon} alt={champion.name} className={guideChampionIconImgClass} />
+      <GuideImage src={champion.icon} alt={champion.name} className={guideChampionIconImgClass} loading="lazy" />
     </div>
   );
 }
@@ -1206,6 +1210,8 @@ export default function ItemBuildSection({
     return initial;
   });
   const [laneGapPx, setLaneGapPx] = useState<number | null>(null);
+  const itemImageUrls = useMemo(() => collectItemSectionImageUrls(data), [data]);
+  const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(itemImageUrls);
   const activeTab = data.tabs.find((t) => t.id === activeTabId) ?? data.tabs[0];
 
   const handleLaneGapMeasure = useCallback((widthPx: number) => {
@@ -1280,7 +1286,28 @@ export default function ItemBuildSection({
 
   return (
     <GuideTextIconsContext.Provider value={guideTextIcons}>
-    <section id="items" className="scroll-mt-24 overflow-visible">
+    <section ref={sectionRef} id="items" className="scroll-mt-24 overflow-visible">
+      {!shouldLoad ? (
+        <ItemBuildSectionSkeleton data={data} />
+      ) : (
+      <div className="grid">
+        <div
+          className={clsx(
+            "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+            shouldLoad && imagesReady ? "pointer-events-none opacity-0" : "opacity-100"
+          )}
+        >
+          <ItemBuildSectionSkeleton data={data} />
+        </div>
+
+        <div
+          className={clsx(
+            "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+            shouldLoad && imagesReady ? "opacity-100" : "opacity-0"
+          )}
+          aria-hidden={!(shouldLoad && imagesReady)}
+          aria-busy={shouldLoad && !imagesReady}
+        >
       <div className="mb-6 flex items-center gap-4 sm:gap-5">
         <h2 className={guideSectionTitleClass}>
           {data.heading}
@@ -1294,10 +1321,11 @@ export default function ItemBuildSection({
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <GuideImage
                 src={data.headerIcon.icon}
                 alt={data.headerIcon.name}
                 className="h-full w-full object-cover"
+                loading="lazy"
               />
               <GuideCrossOverlay />
             </div>
@@ -1380,6 +1408,9 @@ export default function ItemBuildSection({
           />
         ) : null}
       </div>
+        </div>
+      </div>
+      )}
     </section>
     </GuideTextIconsContext.Provider>
   );

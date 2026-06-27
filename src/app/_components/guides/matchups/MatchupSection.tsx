@@ -2,7 +2,11 @@
 
 import clsx from "clsx";
 import { useMemo, useState } from "react";
+import GuideImage from "@/app/_components/guides/GuideImage";
+import { MatchupSectionSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
+import { collectMatchupSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import type {
   GuideMatchupPageData,
   SerializedGuideMatchup,
@@ -57,17 +61,15 @@ function MatchupCard({
     >
       <div
         className={clsx(
-          "relative shrink-0 overflow-hidden rounded-full ring-2 transition-all duration-300 ease-out",
+          "relative shrink-0 overflow-hidden rounded-full bg-[#352839]/80 ring-2 transition-all duration-300 ease-out",
           accent.iconRing,
           selected ? "h-9 w-9 sm:h-10 sm:w-10" : "h-8 w-8 sm:h-9 sm:w-9"
         )}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <GuideImage
           src={matchup.icon}
           alt={matchup.name}
           loading="lazy"
-          decoding="async"
           className={guideChampionIconImgClass}
         />
       </div>
@@ -123,15 +125,44 @@ export default function MatchupSection({
     id: hardColumn.matchups[0]?.id ?? "",
   });
 
+  const matchupImageUrls = useMemo(() => collectMatchupSectionImageUrls(data), [data]);
+  const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(matchupImageUrls);
+
   const selectedMatchup = useMemo(() => {
     const column = selection.tone === "hard" ? hardColumn : easyColumn;
     return column.matchups.find((matchup) => matchup.id === selection.id) ?? hardColumn.matchups[0];
   }, [easyColumn, hardColumn, selection.id, selection.tone]);
 
   const selectedAccent = TONE[selection.tone];
+  const showContent = shouldLoad && imagesReady;
 
   return (
-    <section id="matchups" className="scroll-mt-24 w-full">
+    <section
+      ref={sectionRef}
+      id="matchups"
+      className="scroll-mt-24 w-full"
+      aria-busy={shouldLoad && !imagesReady}
+    >
+      {!shouldLoad ? (
+        <MatchupSectionSkeleton data={data} />
+      ) : (
+      <div className="grid">
+        <div
+          className={clsx(
+            "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+            showContent ? "pointer-events-none opacity-0" : "opacity-100"
+          )}
+        >
+          <MatchupSectionSkeleton data={data} />
+        </div>
+
+        <div
+          className={clsx(
+            "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+            showContent ? "opacity-100" : "opacity-0"
+          )}
+          aria-hidden={!showContent}
+        >
       <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
         {[hardColumn, easyColumn].map((column) => {
           const accent = TONE[column.tone];
@@ -176,16 +207,14 @@ export default function MatchupSection({
           <div className="flex items-start gap-4 sm:gap-5">
             <div
               className={clsx(
-                "relative h-[4.2rem] w-[4.2rem] shrink-0 overflow-hidden rounded-lg ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
+                "relative h-[4.2rem] w-[4.2rem] shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
                 selection.tone === "hard" ? "ring-[#F87171]/35" : "ring-[#7AADD6]/35"
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <GuideImage
                 src={selectedMatchup.icon}
                 alt={selectedMatchup.name}
                 loading="lazy"
-                decoding="async"
                 className={guideChampionIconImgClass}
               />
             </div>
@@ -209,6 +238,9 @@ export default function MatchupSection({
           </div>
         </div>
       ) : null}
+        </div>
+      </div>
+      )}
     </section>
   );
 }

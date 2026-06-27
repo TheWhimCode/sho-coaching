@@ -7,6 +7,7 @@ import { buildGuideMatchupPageData } from "@/lib/guides/buildGuideMatchupPageDat
 import { buildGuideConventionalBuildPageData } from "@/lib/guides/buildGuideConventionalBuildPageData";
 import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 import { buildGuideViegoAbilityIcons } from "@/lib/guides/buildGuideViegoAbilityIcons";
+import { collectGuideCriticalPreloadUrls } from "@/lib/guides/preloadGuideImages";
 import { VIEGO_RUNE_BUILD } from "./viegoRunes";
 import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
@@ -44,17 +45,23 @@ export default async function ViegoGuidePage() {
   const matchupData = buildGuideMatchupPageData(VIEGO_MATCHUP_SECTION);
   const conventionalBuildData = buildGuideConventionalBuildPageData(VIEGO_CONVENTIONAL_BUILD);
   const championIcon = champSquareUrlById("Viego");
+  const preloadImageUrls = collectGuideCriticalPreloadUrls(runeData, championIcon);
 
   return (
-    <ViegoGuideClient
-      runeData={runeData}
-      itemData={itemData}
-      conventionalBuildData={conventionalBuildData}
-      guideTextIcons={guideTextIcons}
-      matchupData={matchupData}
-      comboData={VIEGO_COMBO_SECTION}
-      viegoAbilityIcons={viegoAbilityIcons}
-      championIcon={championIcon}
-    />
+    <>
+      {preloadImageUrls.map((href) => (
+        <link key={href} rel="preload" as="image" href={href} />
+      ))}
+      <ViegoGuideClient
+        runeData={runeData}
+        itemData={itemData}
+        conventionalBuildData={conventionalBuildData}
+        guideTextIcons={guideTextIcons}
+        matchupData={matchupData}
+        comboData={VIEGO_COMBO_SECTION}
+        viegoAbilityIcons={viegoAbilityIcons}
+        championIcon={championIcon}
+      />
+    </>
   );
 }

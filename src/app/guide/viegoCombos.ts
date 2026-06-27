@@ -5,6 +5,14 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
   subtitle: "Clips and when to use each combo",
   combos: [
     {
+      id: "w-tap-burst",
+      label: "W tap burst",
+      sequence: ["Wtap", "AA", "Q", "AA"],
+      videoSrc: "/videos/guide/w%20tap%20burst.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameWtapburst.webm",
+      explanation: "Bread and butter. You walk up with E and do the basic burst combo. On 3 items this kills squishies.",
+    },
+    {
       id: "q-extension",
       label: "Q extension",
       sequence: ["Wtap", "Q"],
@@ -28,19 +36,19 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       explanation: "W > R extends the R range immediately. This only works with W, if you Lucian E > R your R will just have the normal range. Wait until the dash is completed before you R on other champions.",
     },
     {
+      id: "r-extension-burst",
+      label: "R extension burst",
+      sequence: ["Wtap", "R", "Q", "AA"],
+      videoSrc: "/videos/guide/R%20extension%20burst.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameRextensionburst.webm",
+      explanation: "Get in range quickly, Q first to apply the mark for the auto. Through with HOB your Q animation gets so fast after the first auto, it barely matters which order you do it in.",
+    },
+    {
       id: "burst-combo",
       label: "Burst combo",
       sequence: ["Wcharge", "E", "AA", "Q", "R", "AA"],
       videoSrc: "/videos/guide/BurstCombo.webm",
       explanation: "Use this to oneshot mobile squishies. Great against stuff like Ekko, Akali, Qiyana to kill them before they can dash away. Even works if they have mercs! You just need enough damage (usually with LDR + cloack).",
-    },
-    {
-      id: "w-tap-burst",
-      label: "W tap burst",
-      sequence: ["Wtap", "AA", "Q", "AA"],
-      videoSrc: "/videos/guide/w%20tap%20burst.webm",
-      ingameExampleVideoSrc: "/videos/guide/ingameWtapburst.webm",
-      explanation: "Bread and butter. You walk up with E and do the basic burst combo. On 3 items this kills squishies.",
     },
     {
       id: "extended-combo",
@@ -50,19 +58,19 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       explanation: "Same as burst combo, but you use an extra auto before R. This will allow people to Flash out of your ult if they have tenacity or you lack attackspeed (low alacrity stacks without E active), but against champs like Talon/Akali you need to do the auto before your R. Otherwise they instantly go invis.",
     },
     {
+      id: "ranged-stun-combo",
+      label: "Ranged stun combo",
+      sequence: ["Wcharge", "R", "Q", "AA"],
+      videoSrc: "/videos/guide/RangedStun.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameRangedStun.webm",
+      explanation: "Usually you use this from fog over a wall. You can't get in range to auto, so the moment you know the stun connects you just ult and send it.",
+    },
+    {
       id: "hob-combo-in-wave",
       label: "HOB combo in wave",
       sequence: ["AA", "AA", "AA", "Wtap", "AA"],
       videoSrc: "/videos/guide/HOB%20auto%20combo.webm",
       explanation: "Sometimes you can't hit W because you're getting body blocked, so you just use all HOB autos and then W auto reset for a fourth hit.",
-    },
-    {
-      id: "r-extension-burst",
-      label: "R extension burst",
-      sequence: ["Wtap", "R", "Q", "AA"],
-      videoSrc: "/videos/guide/R%20extension%20burst.webm",
-      ingameExampleVideoSrc: "/videos/guide/ingameRextensionburst.webm",
-      explanation: "Get in range quickly, Q first to apply the mark for the auto. Through with HOB your Q animation gets so fast after the first auto, it barely matters which order you do it in.",
     },
     {
       id: "squishy-burst",
@@ -77,14 +85,6 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       sequence: ["E", "Wcharge"],
       videoSrc: "/videos/guide/Hidden%20stun%20initiator.webm",
       explanation: "Don't overuse this. If you hit it, the enemy dies, but often they will retreat immediately when they see your E and you're just wasting time/exposing yourself. I like to use this when I'm against someone that wants to fight me, or when I'm desperate for a pick on a mobile/tanky champion. Also if you're on a ward, you're about to get baited.",
-    },
-    {
-      id: "ranged-stun-combo",
-      label: "Ranged stun combo",
-      sequence: ["Wcharge", "R", "Q", "AA"],
-      videoSrc: "/videos/guide/RangedStun.webm",
-      ingameExampleVideoSrc: "/videos/guide/ingameRangedStun.webm",
-      explanation: "Usually you use this from fog over a wall. You can't get in range to auto, so the moment you know the stun connects you just ult and send it.",
     },
   ],
 };

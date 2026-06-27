@@ -8,11 +8,11 @@ import {
   guideSectionTitleClass,
 } from "@/lib/guides/guideTheme";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
+import GuideImage from "@/app/_components/guides/GuideImage";
+import { RunePageSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
-import {
-  collectRuneSectionImageUrls,
-  preloadGuideImages,
-} from "@/lib/guides/preloadGuideImages";
+import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
+import { collectRuneSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import type {
   GuideRunePageData,
   SerializedRune,
@@ -48,19 +48,17 @@ function RuneIcon({
   return (
     <div
       className={clsx(
-        "relative aspect-square shrink-0 flex-none overflow-hidden rounded-full border-2 transition",
+        "relative aspect-square shrink-0 flex-none overflow-hidden rounded-full border-2 bg-[#352839]/80 transition",
         size,
         selected ? accent.border : "border-transparent opacity-35 grayscale"
       )}
       title={rune.name}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <GuideImage
         src={rune.icon}
         alt={rune.name}
         className="h-full w-full object-cover"
         loading="eager"
-        decoding="async"
       />
     </div>
   );
@@ -70,20 +68,18 @@ function StatShardIcon({ shard, selected }: { shard: SerializedRune; selected: b
   return (
     <div
       className={clsx(
-        "relative aspect-square size-7 shrink-0 flex-none overflow-hidden rounded-full border-2 transition sm:size-8",
+        "relative aspect-square size-7 shrink-0 flex-none overflow-hidden rounded-full border-2 bg-[#352839]/80 transition sm:size-8",
         selected
           ? "border-[#F5E6D3]/40 shadow-[0_0_8px_rgba(245,230,211,0.14)]"
           : "border-transparent opacity-35 grayscale"
       )}
       title={shard.name}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <GuideImage
         src={shard.icon}
         alt={shard.name}
         className="h-full w-full object-cover"
         loading="eager"
-        decoding="async"
       />
     </div>
   );
@@ -174,7 +170,6 @@ function ExplanationPanel({
   body: string;
   runeIcon?: string | null;
   accent: TreeMode;
-  /** Smaller artwork inside the same bordered circle — used for tree icons. */
   compactIcon?: boolean;
   className?: string;
   guideTextIcons?: Record<string, string>;
@@ -192,16 +187,14 @@ function ExplanationPanel({
         {runeIcon ? (
           <div
             className={clsx(
-              "relative flex aspect-square size-10 shrink-0 flex-none items-center justify-center overflow-hidden rounded-full border-2",
+              "relative flex aspect-square size-10 shrink-0 flex-none items-center justify-center overflow-hidden rounded-full border-2 bg-[#352839]/80",
               accentStyles.border
             )}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <GuideImage
               src={runeIcon}
               alt=""
               loading="eager"
-              decoding="async"
               className={clsx(
                 "block object-cover",
                 compactIcon ? "size-7 object-contain" : "h-full w-full object-cover"
@@ -232,40 +225,20 @@ function findRuneIcon(tree: SerializedRuneTree, perkId: number): string | null {
 export default function RunePageSection({
   data,
   guideTextIcons = {},
-  onImagesReady,
 }: {
   data: GuideRunePageData;
   guideTextIcons?: Record<string, string>;
-  onImagesReady?: () => void;
 }) {
   const { build, primaryTree, secondaryTree, statShardRows, headerIcon } = data;
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const [leftPanelHeight, setLeftPanelHeight] = useState<number | null>(null);
-  const [imagesReady, setImagesReady] = useState(false);
   const runeImageUrls = useMemo(() => collectRuneSectionImageUrls(data), [data]);
-  const onImagesReadyRef = useRef(onImagesReady);
-  onImagesReadyRef.current = onImagesReady;
+  const { sectionRef, imagesReady } = useGuideSectionImages(runeImageUrls, { eager: true });
 
   const hailOfBladesExplanation = build.explanations[0];
   const hailOfBladesIcon = hailOfBladesExplanation
     ? findRuneIcon(primaryTree, hailOfBladesExplanation.perkId)
     : null;
-
-  useEffect(() => {
-    let cancelled = false;
-    setImagesReady(false);
-
-    void preloadGuideImages(runeImageUrls).then(() => {
-      if (!cancelled) {
-        setImagesReady(true);
-        onImagesReadyRef.current?.();
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [runeImageUrls]);
 
   useEffect(() => {
     if (!imagesReady) return;
@@ -292,97 +265,109 @@ export default function RunePageSection({
 
   return (
     <section
+      ref={sectionRef}
       id="runes"
-      className={clsx("scroll-mt-24", !imagesReady && "hidden")}
+      className="scroll-mt-24"
       aria-busy={!imagesReady}
       aria-label={!imagesReady ? "Loading runes" : undefined}
     >
-      {imagesReady ? (
-        <>
-      <div className="mb-6 flex items-center gap-4 sm:gap-5">
-        <h2 className={guideSectionTitleClass}>
-          {build.heading}
-        </h2>
-        {headerIcon ? (
-          <div className="relative shrink-0">
-            <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg ring-1 ring-transparent sm:h-16 sm:w-16">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={headerIcon.icon}
-                alt={headerIcon.name}
-                className="h-full w-full scale-[1.2] object-cover"
-                loading="eager"
-                decoding="async"
-              />
-              <GuideCrossOverlay />
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <div className={guideRuneOuterPanelClass}>
+      <div className="grid">
         <div
           className={clsx(
-            "flex flex-col lg:flex-row lg:items-stretch",
-            guideRuneLayoutGapClass
+            "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+            imagesReady ? "pointer-events-none opacity-0" : "opacity-100"
           )}
         >
-          <div ref={leftPanelRef} className="w-full shrink-0 p-4 sm:p-5 lg:w-auto lg:flex-1">
+          <RunePageSkeleton data={data} />
+        </div>
+
+        <div
+          className={clsx(
+            "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+            imagesReady ? "opacity-100" : "opacity-0"
+          )}
+          aria-hidden={!imagesReady}
+        >
+          <div className="mb-6 flex items-center gap-4 sm:gap-5">
+            <h2 className={guideSectionTitleClass}>{build.heading}</h2>
+            {headerIcon ? (
+              <div className="relative shrink-0">
+                <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 ring-transparent sm:h-16 sm:w-16">
+                  <GuideImage
+                    src={headerIcon.icon}
+                    alt={headerIcon.name}
+                    className="h-full w-full scale-[1.2] object-cover"
+                    loading="eager"
+                  />
+                  <GuideCrossOverlay />
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className={guideRuneOuterPanelClass}>
             <div
               className={clsx(
-                "flex flex-col sm:flex-row",
+                "flex flex-col lg:flex-row lg:items-stretch",
                 guideRuneLayoutGapClass
               )}
             >
-              <RuneTreePanel
-                tree={primaryTree}
-                selectedIds={build.primaryPerkIds}
-                mode="primary"
-              />
-              <div className="hidden w-px shrink-0 bg-[#F0ABCF]/15 sm:block" />
-              <RuneTreePanel
-                tree={secondaryTree}
-                selectedIds={build.secondaryPerkIds}
-                mode="secondary"
-                hideKeystone
-                statShardRows={statShardRows}
-              />
+              <div ref={leftPanelRef} className="w-full shrink-0 p-4 sm:p-5 lg:w-auto lg:flex-1">
+                <div
+                  className={clsx(
+                    "flex flex-col sm:flex-row",
+                    guideRuneLayoutGapClass
+                  )}
+                >
+                  <RuneTreePanel
+                    tree={primaryTree}
+                    selectedIds={build.primaryPerkIds}
+                    mode="primary"
+                  />
+                  <div className="hidden w-px shrink-0 bg-[#F0ABCF]/15 sm:block" />
+                  <RuneTreePanel
+                    tree={secondaryTree}
+                    selectedIds={build.secondaryPerkIds}
+                    mode="secondary"
+                    hideKeystone
+                    statShardRows={statShardRows}
+                  />
+                </div>
+              </div>
+
+              <div
+                className="flex min-w-0 flex-col gap-4 lg:flex-1"
+                style={leftPanelHeight != null ? { height: leftPanelHeight } : undefined}
+              >
+                {hailOfBladesExplanation ? (
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <ExplanationPanel
+                      title={hailOfBladesExplanation.title}
+                      body={hailOfBladesExplanation.body}
+                      runeIcon={hailOfBladesIcon}
+                      accent="primary"
+                      guideTextIcons={guideTextIcons}
+                    />
+                  </div>
+                ) : null}
+
+                {build.precisionSection ? (
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <ExplanationPanel
+                      title={build.precisionSection.title}
+                      body={build.precisionSection.body}
+                      runeIcon={secondaryTree.icon}
+                      accent="secondary"
+                      compactIcon
+                      guideTextIcons={guideTextIcons}
+                    />
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-
-          <div
-            className="flex min-w-0 flex-col gap-4 lg:flex-1"
-            style={leftPanelHeight != null ? { height: leftPanelHeight } : undefined}
-          >
-            {hailOfBladesExplanation ? (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <ExplanationPanel
-                  title={hailOfBladesExplanation.title}
-                  body={hailOfBladesExplanation.body}
-                  runeIcon={hailOfBladesIcon}
-                  accent="primary"
-                  guideTextIcons={guideTextIcons}
-                />
-              </div>
-            ) : null}
-
-            {build.precisionSection ? (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <ExplanationPanel
-                  title={build.precisionSection.title}
-                  body={build.precisionSection.body}
-                  runeIcon={secondaryTree.icon}
-                  accent="secondary"
-                  compactIcon
-                  guideTextIcons={guideTextIcons}
-                />
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
-        </>
-      ) : null}
     </section>
   );
 }

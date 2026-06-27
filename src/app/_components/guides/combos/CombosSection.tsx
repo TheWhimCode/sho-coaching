@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import ComboSequenceBar from "@/app/_components/guides/combos/ComboSequenceBar";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { guideInnerPanelClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
@@ -32,29 +32,102 @@ type VideoOverlay = "play" | "replay";
 
 const FIRST_FRAME_TIME = 0.001;
 
+function useComboVideoPoster(
+  videoRef: RefObject<HTMLVideoElement | null>,
+  videoSrc: string,
+  setPosterReady: (ready: boolean) => void
+) {
+  useLayoutEffect(() => {
+    setPosterReady(false);
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    let cancelled = false;
+    let seekFallbackTimer: number | undefined;
+    let clearSeekListener: (() => void) | undefined;
+    const removeMediaListeners: Array<() => void> = [];
+
+    const cleanup = () => {
+      cancelled = true;
+      window.clearTimeout(seekFallbackTimer);
+      clearSeekListener?.();
+      removeMediaListeners.forEach((remove) => remove());
+    };
+
+    const markReady = () => {
+      if (cancelled) return;
+      window.clearTimeout(seekFallbackTimer);
+      clearSeekListener?.();
+      clearSeekListener = undefined;
+      setPosterReady(true);
+    };
+
+    const seekToFirstFrame = () => {
+      if (cancelled) return;
+
+      clearSeekListener?.();
+
+      const onSeeked = () => {
+        markReady();
+      };
+
+      video.addEventListener("seeked", onSeeked);
+      clearSeekListener = () => video.removeEventListener("seeked", onSeeked);
+
+      seekFallbackTimer = window.setTimeout(markReady, 750);
+
+      try {
+        if (
+          video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+          Math.abs(video.currentTime - FIRST_FRAME_TIME) < 0.0005
+        ) {
+          markReady();
+          return;
+        }
+        video.currentTime = FIRST_FRAME_TIME;
+      } catch {
+        markReady();
+      }
+    };
+
+    const tryPreparePoster = () => {
+      if (cancelled) return;
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        seekToFirstFrame();
+        return true;
+      }
+      return false;
+    };
+
+    if (!tryPreparePoster()) {
+      const onLoadedData = () => {
+        tryPreparePoster();
+      };
+
+      video.addEventListener("loadeddata", onLoadedData);
+      removeMediaListeners.push(() => video.removeEventListener("loadeddata", onLoadedData));
+
+      const rafId = requestAnimationFrame(() => {
+        tryPreparePoster();
+      });
+      removeMediaListeners.push(() => cancelAnimationFrame(rafId));
+    }
+
+    return cleanup;
+  }, [videoSrc, setPosterReady, videoRef]);
+}
+
 function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [overlay, setOverlay] = useState<VideoOverlay | null>("play");
   const [posterReady, setPosterReady] = useState(false);
 
+  useComboVideoPoster(videoRef, videoSrc, setPosterReady);
+
   useEffect(() => {
-    setPosterReady(false);
     setOverlay("play");
   }, [videoSrc]);
-
-  const showFirstFrame = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.currentTime = FIRST_FRAME_TIME;
-  };
-
-  const handleLoadedData = () => {
-    showFirstFrame();
-  };
-
-  const handleSeeked = () => {
-    setPosterReady(true);
-  };
 
   const handleOverlayClick = () => {
     const video = videoRef.current;
@@ -67,7 +140,9 @@ function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
     video.muted = false;
     setOverlay(null);
 
-    void video.play().catch(() => {
+    void video.play().then(() => {
+      setPosterReady(true);
+    }).catch(() => {
       setOverlay(overlay);
     });
   };
@@ -99,9 +174,7 @@ function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
         src={videoSrc}
         muted
         playsInline
-        preload="metadata"
-        onLoadedData={handleLoadedData}
-        onSeeked={handleSeeked}
+        preload="auto"
         onClick={handleVideoClick}
         onEnded={handleEnded}
         className={clsx(
@@ -177,6 +250,10 @@ export default function CombosSection({
   const [selectedId, setSelectedId] = useState(data.combos[0]?.id ?? "");
   const selected =
     data.combos.find((combo) => combo.id === selectedId) ?? data.combos[0];
+
+  useEffect(() => {
+    if (selected) prefetchGuideComboVideos(selected);
+  }, [selected]);
 
   if (!selected) return null;
 

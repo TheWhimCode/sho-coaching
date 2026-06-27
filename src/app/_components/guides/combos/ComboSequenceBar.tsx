@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { Swords } from "lucide-react";
+import GuideImage from "@/app/_components/guides/GuideImage";
 import type { GuideComboAbilityKey, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 
 export const guideComboAbilityIconClass =
@@ -64,11 +65,10 @@ function ComboAbilityStep({
         </div>
       ) : (
         <>
-          <img
+          <GuideImage
             src={abilityIcons[resolved.spellKey]}
             alt={resolved.alt}
             loading="lazy"
-            decoding="async"
             className={guideComboAbilityIconClass}
           />
           {resolved.wVariant ? <WVariantLabel variant={resolved.wVariant} /> : null}
