@@ -32,14 +32,15 @@ export const metadata: Metadata = {
   },
 };
 
+export const revalidate = 3600;
+
 export default async function ViegoGuidePage() {
-  const [trees, itemData, guideTextIcons, viegoAbilityIcons] = await Promise.all([
-    fetchRunesTrees(),
+  const [runeData, itemData, guideTextIcons, viegoAbilityIcons] = await Promise.all([
+    fetchRunesTrees().then((trees) => buildGuideRunePageData(VIEGO_RUNE_BUILD, trees)),
     buildGuideItemPageData(VIEGO_ITEM_SECTION),
     buildGuideTextIcons(),
     buildGuideViegoAbilityIcons(),
   ]);
-  const runeData = await buildGuideRunePageData(VIEGO_RUNE_BUILD, trees);
   const matchupData = buildGuideMatchupPageData(VIEGO_MATCHUP_SECTION);
   const conventionalBuildData = buildGuideConventionalBuildPageData(VIEGO_CONVENTIONAL_BUILD);
   const championIcon = champSquareUrlById("Viego");

@@ -67,6 +67,8 @@ function ComboAbilityStep({
           <img
             src={abilityIcons[resolved.spellKey]}
             alt={resolved.alt}
+            loading="lazy"
+            decoding="async"
             className={guideComboAbilityIconClass}
           />
           {resolved.wVariant ? <WVariantLabel variant={resolved.wVariant} /> : null}

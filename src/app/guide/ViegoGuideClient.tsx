@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { FaTwitch } from "react-icons/fa6";
 import RunePageSection from "@/app/_components/guides/runes/RunePageSection";
@@ -38,6 +39,8 @@ export default function ViegoGuideClient({
   championIcon: string;
   guideTextIcons: Record<string, string>;
 }) {
+  const [runesReady, setRunesReady] = useState(false);
+
   return (
     <div className="relative min-h-screen" style={{ color: GUIDE.text }}>
       <div
@@ -94,27 +97,35 @@ export default function ViegoGuideClient({
           </a>
         </header>
 
-        <RunePageSection data={runeData} guideTextIcons={guideTextIcons} />
+        <RunePageSection
+          data={runeData}
+          guideTextIcons={guideTextIcons}
+          onImagesReady={() => setRunesReady(true)}
+        />
 
-        <div className="mt-16">
-          <ItemBuildSection data={itemData} guideTextIcons={guideTextIcons} />
-        </div>
+        {runesReady ? (
+          <>
+            <div className="mt-16">
+              <ItemBuildSection data={itemData} guideTextIcons={guideTextIcons} />
+            </div>
 
-        <div className="mt-16">
-          <ConventionalBuildSection data={conventionalBuildData} guideTextIcons={guideTextIcons} />
-        </div>
+            <div className="mt-16">
+              <ConventionalBuildSection data={conventionalBuildData} guideTextIcons={guideTextIcons} />
+            </div>
 
-        <div className="mt-16">
-          <MatchupSection data={matchupData} guideTextIcons={guideTextIcons} />
-        </div>
+            <div className="mt-16">
+              <MatchupSection data={matchupData} guideTextIcons={guideTextIcons} />
+            </div>
 
-        <div className="mt-16">
-          <CombosSection
-            data={comboData}
-            abilityIcons={viegoAbilityIcons}
-            guideTextIcons={guideTextIcons}
-          />
-        </div>
+            <div className="mt-16">
+              <CombosSection
+                data={comboData}
+                abilityIcons={viegoAbilityIcons}
+                guideTextIcons={guideTextIcons}
+              />
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );

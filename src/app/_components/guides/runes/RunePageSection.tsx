@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   guideRuneLayoutGapClass,
   guideRuneOuterPanelClass,
@@ -9,6 +9,10 @@ import {
 } from "@/lib/guides/guideTheme";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import {
+  collectRuneSectionImageUrls,
+  preloadGuideImages,
+} from "@/lib/guides/preloadGuideImages";
 import type {
   GuideRunePageData,
   SerializedRune,
@@ -55,7 +59,8 @@ function RuneIcon({
         src={rune.icon}
         alt={rune.name}
         className="h-full w-full object-cover"
-        loading="lazy"
+        loading="eager"
+        decoding="async"
       />
     </div>
   );
@@ -77,7 +82,8 @@ function StatShardIcon({ shard, selected }: { shard: SerializedRune; selected: b
         src={shard.icon}
         alt={shard.name}
         className="h-full w-full object-cover"
-        loading="lazy"
+        loading="eager"
+        decoding="async"
       />
     </div>
   );
@@ -194,6 +200,8 @@ function ExplanationPanel({
             <img
               src={runeIcon}
               alt=""
+              loading="eager"
+              decoding="async"
               className={clsx(
                 "block object-cover",
                 compactIcon ? "size-7 object-contain" : "h-full w-full object-cover"
@@ -224,13 +232,19 @@ function findRuneIcon(tree: SerializedRuneTree, perkId: number): string | null {
 export default function RunePageSection({
   data,
   guideTextIcons = {},
+  onImagesReady,
 }: {
   data: GuideRunePageData;
   guideTextIcons?: Record<string, string>;
+  onImagesReady?: () => void;
 }) {
   const { build, primaryTree, secondaryTree, statShardRows, headerIcon } = data;
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const [leftPanelHeight, setLeftPanelHeight] = useState<number | null>(null);
+  const [imagesReady, setImagesReady] = useState(false);
+  const runeImageUrls = useMemo(() => collectRuneSectionImageUrls(data), [data]);
+  const onImagesReadyRef = useRef(onImagesReady);
+  onImagesReadyRef.current = onImagesReady;
 
   const hailOfBladesExplanation = build.explanations[0];
   const hailOfBladesIcon = hailOfBladesExplanation
@@ -238,6 +252,24 @@ export default function RunePageSection({
     : null;
 
   useEffect(() => {
+    let cancelled = false;
+    setImagesReady(false);
+
+    void preloadGuideImages(runeImageUrls).then(() => {
+      if (!cancelled) {
+        setImagesReady(true);
+        onImagesReadyRef.current?.();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [runeImageUrls]);
+
+  useEffect(() => {
+    if (!imagesReady) return;
+
     const el = leftPanelRef.current;
     if (!el) return;
 
@@ -256,10 +288,17 @@ export default function RunePageSection({
       observer.disconnect();
       window.removeEventListener("resize", syncHeight);
     };
-  }, []);
+  }, [imagesReady]);
 
   return (
-    <section id="runes" className="scroll-mt-24">
+    <section
+      id="runes"
+      className={clsx("scroll-mt-24", !imagesReady && "hidden")}
+      aria-busy={!imagesReady}
+      aria-label={!imagesReady ? "Loading runes" : undefined}
+    >
+      {imagesReady ? (
+        <>
       <div className="mb-6 flex items-center gap-4 sm:gap-5">
         <h2 className={guideSectionTitleClass}>
           {build.heading}
@@ -272,6 +311,8 @@ export default function RunePageSection({
                 src={headerIcon.icon}
                 alt={headerIcon.name}
                 className="h-full w-full scale-[1.2] object-cover"
+                loading="eager"
+                decoding="async"
               />
               <GuideCrossOverlay />
             </div>
@@ -340,6 +381,8 @@ export default function RunePageSection({
           </div>
         </div>
       </div>
+        </>
+      ) : null}
     </section>
   );
 }

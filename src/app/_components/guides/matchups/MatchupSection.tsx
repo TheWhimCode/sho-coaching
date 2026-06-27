@@ -66,6 +66,8 @@ function MatchupCard({
         <img
           src={matchup.icon}
           alt={matchup.name}
+          loading="lazy"
+          decoding="async"
           className={guideChampionIconImgClass}
         />
       </div>
@@ -182,6 +184,8 @@ export default function MatchupSection({
               <img
                 src={selectedMatchup.icon}
                 alt={selectedMatchup.name}
+                loading="lazy"
+                decoding="async"
                 className={guideChampionIconImgClass}
               />
             </div>

@@ -1,10 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ComboSequenceBar from "@/app/_components/guides/combos/ComboSequenceBar";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { guideInnerPanelClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
+import { prefetchGuideComboVideos } from "@/lib/guides/prefetchGuideVideo";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 
 const comboListButtonClass =
@@ -29,16 +30,38 @@ function ReplayIcon({ className }: { className?: string }) {
 
 type VideoOverlay = "play" | "replay";
 
+const FIRST_FRAME_TIME = 0.001;
+
 function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [overlay, setOverlay] = useState<VideoOverlay | null>("play");
+  const [posterReady, setPosterReady] = useState(false);
+
+  useEffect(() => {
+    setPosterReady(false);
+    setOverlay("play");
+  }, [videoSrc]);
+
+  const showFirstFrame = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = FIRST_FRAME_TIME;
+  };
+
+  const handleLoadedData = () => {
+    showFirstFrame();
+  };
+
+  const handleSeeked = () => {
+    setPosterReady(true);
+  };
 
   const handleOverlayClick = () => {
     const video = videoRef.current;
     if (!video || !overlay) return;
 
     if (overlay === "replay") {
-      video.currentTime = 0;
+      video.currentTime = FIRST_FRAME_TIME;
     }
 
     video.muted = false;
@@ -58,26 +81,43 @@ function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
   };
 
   const handleEnded = () => {
-    videoRef.current?.pause();
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.currentTime = FIRST_FRAME_TIME;
+    }
     setOverlay("replay");
   };
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#F0ABCF]/15 bg-black ring-1 ring-[#B8D8EA]/10">
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#F0ABCF]/15 bg-[#1E1724] ring-1 ring-[#B8D8EA]/10">
+      {!posterReady ? (
+        <div className="absolute inset-0 animate-pulse bg-[#2A1F2E]/70" aria-hidden />
+      ) : null}
       <video
         ref={videoRef}
         src={videoSrc}
+        muted
         playsInline
         preload="metadata"
+        onLoadedData={handleLoadedData}
+        onSeeked={handleSeeked}
         onClick={handleVideoClick}
         onEnded={handleEnded}
-        className={clsx("h-full w-full object-contain", !overlay && "cursor-pointer")}
+        className={clsx(
+          "h-full w-full object-contain transition-opacity duration-200",
+          posterReady ? "opacity-100" : "opacity-0",
+          !overlay && "cursor-pointer"
+        )}
       />
       {overlay ? (
         <button
           type="button"
           onClick={handleOverlayClick}
-          className="absolute inset-0 flex items-center justify-center bg-black/35 transition hover:bg-black/45"
+          className={clsx(
+            "absolute inset-0 flex items-center justify-center transition hover:bg-black/45",
+            posterReady ? "bg-black/35" : "bg-black/20"
+          )}
           aria-label={overlay === "play" ? "Play combo video" : "Replay combo video"}
         >
           <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[#F0ABCF]/40 bg-[#2A1F2E]/85 text-[#FAD4E8] ring-1 ring-[#B8D8EA]/20 transition hover:scale-105 sm:h-20 sm:w-20">
@@ -163,6 +203,8 @@ export default function CombosSection({
                     key={combo.id}
                     type="button"
                     onClick={() => setSelectedId(combo.id)}
+                    onMouseEnter={() => prefetchGuideComboVideos(combo)}
+                    onFocus={() => prefetchGuideComboVideos(combo)}
                     className={clsx(
                       comboListButtonClass,
                       active
