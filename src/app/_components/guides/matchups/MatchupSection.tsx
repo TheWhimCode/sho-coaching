@@ -19,11 +19,11 @@ const TONE = {
     nameSelected: "text-[#F87171]",
   },
   easy: {
-    title: "text-[#4ADE80]",
-    iconRing: "ring-[#4ADE80]/70",
-    cardSelected: "border-[#4ADE80]/55 bg-[#4ADE80]/8 ring-1 ring-[#4ADE80]/25",
-    cardIdle: "border-[#4ADE80]/22 bg-[#1E1724]/55 hover:border-[#4ADE80]/35 hover:bg-[#4ADE80]/5",
-    nameSelected: "text-[#4ADE80]",
+    title: "text-[#7AADD6]",
+    iconRing: "ring-[#7AADD6]/70",
+    cardSelected: "border-[#7AADD6]/55 bg-[#7AADD6]/8 ring-1 ring-[#7AADD6]/25",
+    cardIdle: "border-[#7AADD6]/22 bg-[#1E1724]/55 hover:border-[#7AADD6]/35 hover:bg-[#7AADD6]/5",
+    nameSelected: "text-[#7AADD6]",
   },
 } as const;
 
@@ -177,7 +177,7 @@ export default function MatchupSection({
             <div
               className={clsx(
                 "relative h-[4.2rem] w-[4.2rem] shrink-0 overflow-hidden rounded-lg ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
-                selection.tone === "hard" ? "ring-[#F87171]/35" : "ring-[#4ADE80]/35"
+                selection.tone === "hard" ? "ring-[#F87171]/35" : "ring-[#7AADD6]/35"
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

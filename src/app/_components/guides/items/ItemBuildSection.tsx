@@ -30,6 +30,8 @@ const ITEM_SECONDARY_SECTION = "w-full py-5 sm:py-6";
 
 const ITEM_DETAIL_SECTION = "w-full py-8 sm:py-10";
 
+const BUILD_DETAIL_FADE_MS = 220;
+
 const ITEM_SECONDARY_PAD_X = "px-6 sm:px-10 lg:px-14";
 
 const ITEM_PRIMARY_MAIN =
@@ -910,6 +912,49 @@ function BuildDetailSection({
   );
 }
 
+function BuildDetailCrossfade({
+  buildKey,
+  variant,
+}: {
+  buildKey: string;
+  variant: SerializedGuideItemVariant;
+}) {
+  const [displayed, setDisplayed] = useState({ key: buildKey, variant });
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    if (buildKey === displayed.key) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplayed({ key: buildKey, variant });
+      setFading(false);
+      return;
+    }
+
+    setFading(true);
+    const timeout = window.setTimeout(() => {
+      setDisplayed({ key: buildKey, variant });
+      setFading(false);
+    }, BUILD_DETAIL_FADE_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [buildKey, variant, displayed.key]);
+
+  return (
+    <div
+      className={clsx(
+        ITEM_DETAIL_SECTION,
+        ITEM_SECONDARY_PAD_X,
+        "rounded-b-2xl transition-opacity ease-out motion-reduce:transition-none",
+        fading ? "opacity-0" : "opacity-100"
+      )}
+      style={{ transitionDuration: `${BUILD_DETAIL_FADE_MS}ms` }}
+    >
+      <BuildDetailSection activeVariant={displayed.variant} />
+    </div>
+  );
+}
+
 function ItemSharedPathsLayout({
   sharedPath,
   onLaneGapMeasure,
@@ -1329,9 +1374,10 @@ export default function ItemBuildSection({
         </div>
 
         {activeVariant ? (
-          <div className={clsx(ITEM_DETAIL_SECTION, ITEM_SECONDARY_PAD_X, "rounded-b-2xl")}>
-            <BuildDetailSection activeVariant={activeVariant} />
-          </div>
+          <BuildDetailCrossfade
+            buildKey={`${activeTabId}:${activeVariantId}`}
+            variant={activeVariant}
+          />
         ) : null}
       </div>
     </section>
