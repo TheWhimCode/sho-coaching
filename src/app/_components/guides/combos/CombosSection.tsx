@@ -207,7 +207,7 @@ export default function CombosSection({
             </div>
             <div className="mt-5">
               <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
-                Ingame examples
+                Ingame example
               </p>
               <ComboVideoPanel
                 key={`${selected.id}-ingame`}

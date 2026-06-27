@@ -161,6 +161,13 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "3036" },
   },
   { patterns: ["Hubris"], matchKey: "hubris", color: GUIDE_HUBRIS_BROWN, icon: { kind: "item", id: "6697" } },
+  {
+    patterns: ["Hail of Blades"],
+    matchKey: "hail-of-blades",
+    color: GUIDE_SHIELDBOW_RED,
+    icon: { kind: "rune", id: 9923 },
+    iconShape: "round",
+  },
   { patterns: ["Conqueror", "Conq"], matchKey: "conqueror", color: GUIDE_CONQUEROR_ORANGE, icon: { kind: "rune", id: 8010 }, iconShape: "round" },
   {
     patterns: ["lethality"],
@@ -190,6 +197,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "stat", name: "attack damage" },
   },
   { patterns: ["exposure"], matchKey: "exposure", boldOnly: true },
+  { patterns: ["\\bHOB\\b"], matchKey: "hob", color: GUIDE_SHIELDBOW_RED, icon: { kind: "rune", id: 9923 }, iconShape: "round" },
   { patterns: ["\\bLDR\\b"], matchKey: "ldr", color: GUIDE_LDR_GRAY, icon: { kind: "item", id: "3036" } },
   { patterns: ["\\bIE\\b"], matchKey: "ie", color: GUIDE_KRAKEN_GOLD, icon: { kind: "item", id: "3031" } },
   { patterns: ["\\bDD\\b"], matchKey: "dd", color: GUIDE_CONQUEROR_ORANGE, icon: { kind: "item", id: "6333" } },
@@ -201,7 +209,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     color: GUIDE_SHIELDBOW_RED,
     icon: { kind: "item", id: "2055" },
   },
-  { patterns: ["Flash"], matchKey: "flash", icon: { kind: "spell", id: 4 } },
+  { patterns: ["Flash"], matchKey: "flash", color: "#FFE566", icon: { kind: "spell", id: 4 } },
   {
     patterns: ["Ignite"],
     matchKey: "ignite",
