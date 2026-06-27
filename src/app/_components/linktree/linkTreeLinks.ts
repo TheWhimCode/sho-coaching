@@ -1,6 +1,6 @@
 import type { ComponentType, CSSProperties } from "react";
-import { FaDiscord, FaTwitch } from "react-icons/fa6";
-import { BookOpen, GraduationCap, Swords } from "lucide-react";
+import { FaDiscord, FaTwitch, FaXTwitter } from "react-icons/fa6";
+import { GraduationCap, BookOpen } from "lucide-react";
 
 export type LinkTreeIconProps = {
   className?: string;
@@ -75,29 +75,28 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     iconColor: "#ffffff",
   },
   {
-    id: "skillcheck",
-    label: "Skillcheck",
-    description: "Daily knowledge check game I made",
-    href: "/skillcheck",
-    external: false,
-    Icon: Swords,
-    accent: "#EA580C",
-    glow: "rgba(234, 88, 12, 0.48)",
+    id: "x",
+    label: "X",
+    description: "I post about League, femboys and Vtubing",
+    href: "https://x.com/itsMinooooo_",
+    external: true,
+    Icon: FaXTwitter,
+    accent: "#e7e9ea",
+    glow: "rgba(231, 233, 234, 0.28)",
     iconGradient:
-      "linear-gradient(145deg, #431407 0%, #7C2D12 42%, #9A3412 70%, #C2410C 90%, #EA580C 100%)",
+      "linear-gradient(145deg, #000000 0%, #0a0a0a 40%, #171717 70%, #262626 100%)",
     iconColor: "#ffffff",
   },
   {
     id: "viego-guide",
     label: "Viego Guide",
-    description: "Runes, builds & tips for Viego jungle",
+    description: "My Lethality & Hail of Blades Viego guide",
     href: "/guide",
     external: false,
     Icon: BookOpen,
     accent: "#F0ABCF",
     glow: "rgba(240, 171, 207, 0.45)",
-    iconGradient:
-      "linear-gradient(145deg, #2A1F2E 0%, #4A354F 35%, #B8D8EA 62%, #F0ABCF 88%, #FAD4E8 100%)",
+    iconGradient: "transparent",
     iconColor: "#F5E6D3",
   },
 ];

@@ -5,12 +5,14 @@ import { FaTwitch } from "react-icons/fa6";
 import RunePageSection from "@/app/_components/guides/runes/RunePageSection";
 import ItemBuildSection from "@/app/_components/guides/items/ItemBuildSection";
 import MatchupSection from "@/app/_components/guides/matchups/MatchupSection";
+import CombosSection from "@/app/_components/guides/combos/CombosSection";
 import ConventionalBuildSection from "@/app/_components/guides/conventional/ConventionalBuildSection";
 import { LINK_TREE_LINKS } from "@/app/_components/linktree/linkTreeLinks";
 import { guideChampionIconImgClass, guidePageBg, GUIDE } from "@/lib/guides/guideTheme";
 import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
 import type { GuideItemPageData } from "@/lib/guides/itemGuideTypes";
 import type { GuideMatchupPageData } from "@/lib/guides/matchupGuideTypes";
+import type { GuideComboPageData } from "@/lib/guides/comboGuideTypes";
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
 
 const TWITCH_URL =
@@ -22,6 +24,7 @@ export default function ViegoGuideClient({
   itemData,
   conventionalBuildData,
   matchupData,
+  comboData,
   championIcon,
   guideTextIcons,
 }: {
@@ -29,6 +32,7 @@ export default function ViegoGuideClient({
   itemData: GuideItemPageData;
   conventionalBuildData: GuideConventionalBuildPageData;
   matchupData: GuideMatchupPageData;
+  comboData: GuideComboPageData;
   championIcon: string;
   guideTextIcons: Record<string, string>;
 }) {
@@ -100,6 +104,10 @@ export default function ViegoGuideClient({
 
         <div className="mt-16">
           <MatchupSection data={matchupData} guideTextIcons={guideTextIcons} />
+        </div>
+
+        <div className="mt-16">
+          <CombosSection data={comboData} guideTextIcons={guideTextIcons} />
         </div>
       </div>
     </div>

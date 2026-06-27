@@ -155,7 +155,6 @@ export default function AboutMinoButton({ index }: Props) {
           className="relative block w-full cursor-pointer text-left outline-none focus:outline-none focus-visible:outline-none"
           {...pointerHandlers}
         >
-          <ButtonParticleTrail ref={trailRef} color={ABOUT_MINO_ACCENT} />
           <div className={LINKTREE_BUTTON_INNER}>
             <div
               className={LINKTREE_ICON_TILE}
@@ -196,6 +195,7 @@ export default function AboutMinoButton({ index }: Props) {
               <ChevronDown className={LINKTREE_CHEVRON} />
             </motion.span>
           </div>
+          <ButtonParticleTrail ref={trailRef} color={ABOUT_MINO_ACCENT} />
         </button>
 
         <AnimatePresence initial={false}>

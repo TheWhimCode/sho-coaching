@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   guideRuneLayoutGapClass,
   guideRuneOuterPanelClass,
+  guideSectionTitleClass,
 } from "@/lib/guides/guideTheme";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
@@ -260,7 +261,7 @@ export default function RunePageSection({
   return (
     <section id="runes" className="scroll-mt-24">
       <div className="mb-6 flex items-center gap-4 sm:gap-5">
-        <h2 className="text-3xl font-bold tracking-tight text-[#F5E6D3] sm:text-4xl lg:text-5xl">
+        <h2 className={guideSectionTitleClass}>
           {build.heading}
         </h2>
         {headerIcon ? (

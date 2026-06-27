@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { LinkTreeLink } from "./linkTreeLinks";
+import { ViegoGuideTileSplit } from "./ViegoGuideIcon";
 import ButtonParticleTrail from "./ButtonParticleTrail";
 import { useLinkTreePointerTrail } from "./useLinkTreePointerTrail";
 import {
@@ -65,16 +66,24 @@ export default function LinkTreeButton({ link, index }: Props) {
 
   const inner = (
     <>
-      <ButtonParticleTrail ref={trailRef} color={link.accent} />
       <div className={LINKTREE_BUTTON_INNER}>
         <div
           className={LINKTREE_ICON_TILE}
           style={{
-            background: link.iconGradient,
+            background: link.id === "viego-guide" ? undefined : link.iconGradient,
             boxShadow: `0 8px 24px -6px ${link.glow}`,
           }}
         >
-          <LinkTreeTileIcon link={link} />
+          {link.id === "viego-guide" ? (
+            <>
+              <ViegoGuideTileSplit className="absolute inset-0 overflow-hidden rounded-xl" />
+              <div className="relative z-10">
+                <LinkTreeTileIcon link={link} />
+              </div>
+            </>
+          ) : (
+            <LinkTreeTileIcon link={link} />
+          )}
         </div>
 
         <div className="min-w-0 flex-1 text-left">
@@ -88,6 +97,7 @@ export default function LinkTreeButton({ link, index }: Props) {
           aria-hidden
         />
       </div>
+      <ButtonParticleTrail ref={trailRef} color={link.accent} />
     </>
   );
 

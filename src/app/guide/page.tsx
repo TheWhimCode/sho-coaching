@@ -10,6 +10,7 @@ import { VIEGO_RUNE_BUILD } from "./viegoRunes";
 import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
 import { VIEGO_CONVENTIONAL_BUILD } from "./viegoConventionalBuild";
+import { VIEGO_COMBO_SECTION } from "./viegoCombos";
 import ViegoGuideClient from "./ViegoGuideClient";
 
 const title = "Viego Guide";
@@ -48,6 +49,7 @@ export default async function ViegoGuidePage() {
       conventionalBuildData={conventionalBuildData}
       guideTextIcons={guideTextIcons}
       matchupData={matchupData}
+      comboData={VIEGO_COMBO_SECTION}
       championIcon={championIcon}
     />
   );

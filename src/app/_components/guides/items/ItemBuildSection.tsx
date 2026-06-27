@@ -15,7 +15,7 @@ import type {
 } from "@/lib/guides/itemGuideTypes";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
-import { guideChampionIconImgClass } from "@/lib/guides/guideTheme";
+import { guideChampionIconImgClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 
 const GuideTextIconsContext = createContext<Record<string, string>>({});
 
@@ -792,7 +792,7 @@ function PreBuildStrip({ preBuild }: { preBuild: SerializedGuideItemPreBuild }) 
           <ItemTile item={preBuild.fullBuild.buy} tileKey="pre-buy" compact />
         </div>
         <p className={PREBUILD_NOTE_CLASS}>
-          Sell boots for {preBuild.fullBuild.buy.title}
+          Sell boots for Youmuu's
         </p>
       </PreBuildColumn>
     </div>
@@ -1237,7 +1237,7 @@ export default function ItemBuildSection({
     <GuideTextIconsContext.Provider value={guideTextIcons}>
     <section id="items" className="scroll-mt-24 overflow-visible">
       <div className="mb-6 flex items-center gap-4 sm:gap-5">
-        <h2 className="text-3xl font-bold tracking-tight text-[#F5E6D3] sm:text-4xl lg:text-5xl">
+        <h2 className={guideSectionTitleClass}>
           {data.heading}
         </h2>
         {data.headerIcon ? (

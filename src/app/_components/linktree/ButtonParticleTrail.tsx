@@ -65,7 +65,7 @@ const ButtonParticleTrail = forwardRef<ParticleTrailControl | null, Props>(
     return (
       <div
         ref={wrapRef}
-        className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-2xl hidden md:block"
+        className="pointer-events-none absolute inset-0 z-20 overflow-hidden rounded-2xl hidden md:block"
         aria-hidden
       >
         <canvas ref={canvasRef} className="block h-full w-full" />
