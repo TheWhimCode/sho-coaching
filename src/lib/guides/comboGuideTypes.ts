@@ -1,8 +1,19 @@
+export type GuideComboAbilityKey = "Q" | "W" | "Wtap" | "Wcharge" | "E" | "R" | "AA";
+
+export type GuideViegoAbilityIcons = Record<"Q" | "W" | "E" | "R", string>;
+
 export type GuideComboEntry = {
   id: string;
   label: string;
-  /** Embed URL (YouTube iframe src, etc.) — omit for placeholder state. */
+  /** Ability order for this combo — use AA for auto attacks. */
+  sequence?: GuideComboAbilityKey[];
+  /** Local or remote video file (e.g. `/videos/guide/foo.webm`). */
+  videoSrc?: string | null;
+  /** Embed URL (YouTube iframe src, etc.). */
   videoEmbedUrl?: string | null;
+  /** Optional in-game example clip for the same combo. */
+  ingameExampleVideoSrc?: string | null;
+  ingameExampleVideoEmbedUrl?: string | null;
   explanation: string;
 };
 

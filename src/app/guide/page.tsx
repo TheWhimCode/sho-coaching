@@ -6,6 +6,7 @@ import { buildGuideItemPageData } from "@/lib/guides/buildGuideItemPageData";
 import { buildGuideMatchupPageData } from "@/lib/guides/buildGuideMatchupPageData";
 import { buildGuideConventionalBuildPageData } from "@/lib/guides/buildGuideConventionalBuildPageData";
 import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
+import { buildGuideViegoAbilityIcons } from "@/lib/guides/buildGuideViegoAbilityIcons";
 import { VIEGO_RUNE_BUILD } from "./viegoRunes";
 import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
@@ -32,10 +33,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ViegoGuidePage() {
-  const [trees, itemData, guideTextIcons] = await Promise.all([
+  const [trees, itemData, guideTextIcons, viegoAbilityIcons] = await Promise.all([
     fetchRunesTrees(),
     buildGuideItemPageData(VIEGO_ITEM_SECTION),
     buildGuideTextIcons(),
+    buildGuideViegoAbilityIcons(),
   ]);
   const runeData = await buildGuideRunePageData(VIEGO_RUNE_BUILD, trees);
   const matchupData = buildGuideMatchupPageData(VIEGO_MATCHUP_SECTION);
@@ -50,6 +52,7 @@ export default async function ViegoGuidePage() {
       guideTextIcons={guideTextIcons}
       matchupData={matchupData}
       comboData={VIEGO_COMBO_SECTION}
+      viegoAbilityIcons={viegoAbilityIcons}
       championIcon={championIcon}
     />
   );

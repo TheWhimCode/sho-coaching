@@ -12,7 +12,7 @@ import { guideChampionIconImgClass, guidePageBg, GUIDE } from "@/lib/guides/guid
 import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
 import type { GuideItemPageData } from "@/lib/guides/itemGuideTypes";
 import type { GuideMatchupPageData } from "@/lib/guides/matchupGuideTypes";
-import type { GuideComboPageData } from "@/lib/guides/comboGuideTypes";
+import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
 
 const TWITCH_URL =
@@ -25,6 +25,7 @@ export default function ViegoGuideClient({
   conventionalBuildData,
   matchupData,
   comboData,
+  viegoAbilityIcons,
   championIcon,
   guideTextIcons,
 }: {
@@ -33,6 +34,7 @@ export default function ViegoGuideClient({
   conventionalBuildData: GuideConventionalBuildPageData;
   matchupData: GuideMatchupPageData;
   comboData: GuideComboPageData;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
   championIcon: string;
   guideTextIcons: Record<string, string>;
 }) {
@@ -107,7 +109,11 @@ export default function ViegoGuideClient({
         </div>
 
         <div className="mt-16">
-          <CombosSection data={comboData} guideTextIcons={guideTextIcons} />
+          <CombosSection
+            data={comboData}
+            abilityIcons={viegoAbilityIcons}
+            guideTextIcons={guideTextIcons}
+          />
         </div>
       </div>
     </div>
