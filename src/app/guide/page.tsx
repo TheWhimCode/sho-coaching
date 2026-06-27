@@ -5,6 +5,7 @@ import { buildGuideRunePageData } from "@/lib/guides/buildGuideRunePageData";
 import { buildGuideItemPageData } from "@/lib/guides/buildGuideItemPageData";
 import { buildGuideMatchupPageData } from "@/lib/guides/buildGuideMatchupPageData";
 import { buildGuideConventionalBuildPageData } from "@/lib/guides/buildGuideConventionalBuildPageData";
+import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 import { VIEGO_RUNE_BUILD } from "./viegoRunes";
 import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
@@ -21,18 +22,19 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    url: "/guides/viego",
+    url: "/guide",
     type: "article",
   },
   alternates: {
-    canonical: "/guides/viego",
+    canonical: "/guide",
   },
 };
 
 export default async function ViegoGuidePage() {
-  const [trees, itemData] = await Promise.all([
+  const [trees, itemData, guideTextIcons] = await Promise.all([
     fetchRunesTrees(),
     buildGuideItemPageData(VIEGO_ITEM_SECTION),
+    buildGuideTextIcons(),
   ]);
   const runeData = await buildGuideRunePageData(VIEGO_RUNE_BUILD, trees);
   const matchupData = buildGuideMatchupPageData(VIEGO_MATCHUP_SECTION);
@@ -44,6 +46,7 @@ export default async function ViegoGuidePage() {
       runeData={runeData}
       itemData={itemData}
       conventionalBuildData={conventionalBuildData}
+      guideTextIcons={guideTextIcons}
       matchupData={matchupData}
       championIcon={championIcon}
     />

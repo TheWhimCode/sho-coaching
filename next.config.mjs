@@ -61,6 +61,16 @@ const nextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      {
+        source: "/guides/viego",
+        destination: "/guide",
+        permanent: true,
+      },
+    ];
+  },
+
   async headers() {
     const baseHeaders = [
       { key: "X-Frame-Options", value: "DENY" },

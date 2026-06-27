@@ -25,7 +25,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const isSpeedReviews = p === "/speed-reviews" || p.startsWith("/speed-reviews/");
 
-  const isViegoGuide = p === "/guides/viego" || p.startsWith("/guides/viego/");
+  const isGuide = p === "/guide" || p.startsWith("/guide/");
 
   const isHome = p === "/";
 
@@ -37,7 +37,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
     isCheckoutSuccess ||
     isQuickbook ||
     isSpeedReviews ||
-    isViegoGuide;
+    isGuide;
 
   const showNavBar = true;
 

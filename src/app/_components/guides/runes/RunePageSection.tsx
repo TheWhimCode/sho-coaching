@@ -7,6 +7,7 @@ import {
   guideRuneOuterPanelClass,
 } from "@/lib/guides/guideTheme";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
+import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import type {
   GuideRunePageData,
   SerializedRune,
@@ -160,6 +161,7 @@ function ExplanationPanel({
   accent,
   compactIcon = false,
   className,
+  guideTextIcons = {},
 }: {
   title: string;
   body: string;
@@ -168,6 +170,7 @@ function ExplanationPanel({
   /** Smaller artwork inside the same bordered circle — used for tree icons. */
   compactIcon?: boolean;
   className?: string;
+  guideTextIcons?: Record<string, string>;
 }) {
   const accentStyles = TREE_ACCENT[accent];
 
@@ -201,7 +204,9 @@ function ExplanationPanel({
           <h4 className="text-base font-semibold text-[#F5E6D3] sm:text-lg">{title}</h4>
         </div>
       </div>
-      <p className="mt-3 flex-1 text-sm leading-relaxed text-[#F5E6D3]/65 sm:text-base">{body}</p>
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-[#F5E6D3]/65 sm:text-base">
+        {renderGuideHighlightedText(body, guideTextIcons)}
+      </p>
     </article>
   );
 }
@@ -215,7 +220,13 @@ function findRuneIcon(tree: SerializedRuneTree, perkId: number): string | null {
   return null;
 }
 
-export default function RunePageSection({ data }: { data: GuideRunePageData }) {
+export default function RunePageSection({
+  data,
+  guideTextIcons = {},
+}: {
+  data: GuideRunePageData;
+  guideTextIcons?: Record<string, string>;
+}) {
   const { build, primaryTree, secondaryTree, statShardRows, headerIcon } = data;
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const [leftPanelHeight, setLeftPanelHeight] = useState<number | null>(null);
@@ -308,6 +319,7 @@ export default function RunePageSection({ data }: { data: GuideRunePageData }) {
                   body={hailOfBladesExplanation.body}
                   runeIcon={hailOfBladesIcon}
                   accent="primary"
+                  guideTextIcons={guideTextIcons}
                 />
               </div>
             ) : null}
@@ -320,6 +332,7 @@ export default function RunePageSection({ data }: { data: GuideRunePageData }) {
                   runeIcon={secondaryTree.icon}
                   accent="secondary"
                   compactIcon
+                  guideTextIcons={guideTextIcons}
                 />
               </div>
             ) : null}

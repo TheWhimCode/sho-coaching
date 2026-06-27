@@ -7,7 +7,7 @@ import ItemBuildSection from "@/app/_components/guides/items/ItemBuildSection";
 import MatchupSection from "@/app/_components/guides/matchups/MatchupSection";
 import ConventionalBuildSection from "@/app/_components/guides/conventional/ConventionalBuildSection";
 import { LINK_TREE_LINKS } from "@/app/_components/linktree/linkTreeLinks";
-import { guidePageBg, GUIDE } from "@/lib/guides/guideTheme";
+import { guideChampionIconImgClass, guidePageBg, GUIDE } from "@/lib/guides/guideTheme";
 import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
 import type { GuideItemPageData } from "@/lib/guides/itemGuideTypes";
 import type { GuideMatchupPageData } from "@/lib/guides/matchupGuideTypes";
@@ -23,12 +23,14 @@ export default function ViegoGuideClient({
   conventionalBuildData,
   matchupData,
   championIcon,
+  guideTextIcons,
 }: {
   runeData: GuideRunePageData;
   itemData: GuideItemPageData;
   conventionalBuildData: GuideConventionalBuildPageData;
   matchupData: GuideMatchupPageData;
   championIcon: string;
+  guideTextIcons: Record<string, string>;
 }) {
   return (
     <div className="relative min-h-screen" style={{ color: GUIDE.text }}>
@@ -58,7 +60,7 @@ export default function ViegoGuideClient({
                   src={championIcon}
                   alt="Viego"
                   fill
-                  className="object-cover"
+                  className={guideChampionIconImgClass}
                   sizes="96px"
                   priority
                 />
@@ -86,18 +88,18 @@ export default function ViegoGuideClient({
           </a>
         </header>
 
-        <RunePageSection data={runeData} />
+        <RunePageSection data={runeData} guideTextIcons={guideTextIcons} />
 
         <div className="mt-16">
-          <ItemBuildSection data={itemData} />
+          <ItemBuildSection data={itemData} guideTextIcons={guideTextIcons} />
         </div>
 
         <div className="mt-16">
-          <ConventionalBuildSection data={conventionalBuildData} />
+          <ConventionalBuildSection data={conventionalBuildData} guideTextIcons={guideTextIcons} />
         </div>
 
         <div className="mt-16">
-          <MatchupSection data={matchupData} />
+          <MatchupSection data={matchupData} guideTextIcons={guideTextIcons} />
         </div>
       </div>
     </div>

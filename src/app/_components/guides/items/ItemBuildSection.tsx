@@ -1,7 +1,8 @@
 "use client";
 
 import clsx from "clsx";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type TransitionEvent } from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject, type TransitionEvent } from "react";
+import { createPortal } from "react-dom";
 import type {
   GuideItemPageData,
   SerializedGuideItem,
@@ -13,6 +14,14 @@ import type {
   SerializedGuideItemTab,
 } from "@/lib/guides/itemGuideTypes";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
+import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { guideChampionIconImgClass } from "@/lib/guides/guideTheme";
+
+const GuideTextIconsContext = createContext<Record<string, string>>({});
+
+function useGuideTextIcons() {
+  return useContext(GuideTextIconsContext);
+}
 
 const ITEM_PANEL_OUTER =
   "w-full overflow-visible rounded-2xl border border-[#F0ABCF]/15 bg-[#16121A]/95 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm";
@@ -40,15 +49,22 @@ const ITEM_TILE_COMPACT_CLASS =
 function ItemExplanationPanel({
   item,
   open,
+  position,
+  tipId,
   onTransitionEnd,
 }: {
   item: SerializedGuideItem;
   open: boolean;
+  position: { top: number; left: number };
+  tipId: string;
   onTransitionEnd?: (event: TransitionEvent<HTMLDivElement>) => void;
 }) {
+  const guideTextIcons = useGuideTextIcons();
   return (
     <div
-      className="pointer-events-none absolute left-full top-1/2 z-[80] ml-[11px] -translate-y-1/2"
+      id={tipId}
+      className="pointer-events-none fixed z-[200] -translate-y-1/2"
+      style={{ top: position.top, left: position.left }}
       role="tooltip"
     >
       <div
@@ -71,7 +87,9 @@ function ItemExplanationPanel({
         >
           <div className="relative px-5 py-4 sm:px-6 sm:py-5">
             <p className="text-sm font-semibold tracking-wide text-[#FAD4E8]">{item.title}</p>
-            <p className="mt-2 text-sm leading-[1.65] text-[#F5E6D3]/72">{item.explanation}</p>
+            <p className="mt-2 text-sm leading-[1.65] text-[#F5E6D3]/72">
+              {renderGuideHighlightedText(item.explanation, guideTextIcons)}
+            </p>
           </div>
         </div>
       </div>
@@ -99,14 +117,46 @@ function ItemTile({
   compactSpacing?: "normal" | "tight";
   onSelect?: () => void;
 }) {
+  const tileRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
   const [tipVisible, setTipVisible] = useState(false);
+  const [tipPosition, setTipPosition] = useState<{ top: number; left: number } | null>(null);
+  const [portalMounted, setPortalMounted] = useState(false);
   const interactive = Boolean(onSelect);
-  const showHover = hovered && !inactive;
+  const hoverEnabled = !inactive && !crossed;
+  const showHover = hovered && hoverEnabled;
+  const showTip = showHover || tipVisible;
 
-  useEffect(() => {
+  useEffect(() => setPortalMounted(true), []);
+
+  useLayoutEffect(() => {
     if (showHover) setTipVisible(true);
   }, [showHover]);
+
+  useLayoutEffect(() => {
+    if (!showTip) {
+      setTipPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const el = tileRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setTipPosition({
+        top: rect.top + rect.height / 2,
+        left: rect.right + 11,
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [showTip]);
 
   const handleTipTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
     if (event.propertyName !== "opacity" || showHover) return;
@@ -124,11 +174,11 @@ function ItemTile({
 
   return (
     <div
+      ref={tileRef}
       data-item-tile={tileKey}
       className={clsx(
         "relative z-[2] shrink-0 outline-none transition-[opacity,filter] duration-300 ease-out",
         compact ? compactMargin : "mx-2 sm:mx-3",
-        (showHover || tipVisible) && "z-[70]",
         inactive && "opacity-[0.32] saturate-[0.35]"
       )}
     >
@@ -146,14 +196,14 @@ function ItemTile({
           !inactive &&
             "focus-visible:ring-[#F0ABCF]/55 focus-visible:shadow-[0_0_16px_rgba(240,171,207,0.2)]"
         )}
-        aria-describedby={`item-tip-${tileKey ?? item.id}`}
+        aria-describedby={hoverEnabled ? `item-tip-${tileKey ?? item.id}` : undefined}
         aria-pressed={interactive ? !inactive : undefined}
         onMouseEnter={() => {
-          if (!inactive) setHovered(true);
+          if (hoverEnabled) setHovered(true);
         }}
         onMouseLeave={() => setHovered(false)}
         onFocus={() => {
-          if (!inactive) setHovered(true);
+          if (hoverEnabled) setHovered(true);
         }}
         onBlur={() => setHovered(false)}
         onClick={onSelect}
@@ -177,13 +227,18 @@ function ItemTile({
         />
         {crossed ? <GuideCrossOverlay /> : null}
       </div>
-      <div id={`item-tip-${tileKey ?? item.id}`}>
-        <ItemExplanationPanel
-          item={item}
-          open={showHover}
-          onTransitionEnd={handleTipTransitionEnd}
-        />
-      </div>
+      {portalMounted && showTip && tipPosition
+        ? createPortal(
+            <ItemExplanationPanel
+              item={item}
+              open={showHover}
+              position={tipPosition}
+              tipId={`item-tip-${tileKey ?? item.id}`}
+              onTransitionEnd={handleTipTransitionEnd}
+            />,
+            document.body
+          )
+        : null}
     </div>
   );
 }
@@ -766,7 +821,7 @@ function ChampionIcon({
       title={champion.name}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={champion.icon} alt={champion.name} className="h-full w-full object-cover" />
+      <img src={champion.icon} alt={champion.name} className={guideChampionIconImgClass} />
     </div>
   );
 }
@@ -829,15 +884,20 @@ function BuildDetailSection({
 }: {
   activeVariant: SerializedGuideItemVariant;
 }) {
+  const guideTextIcons = useGuideTextIcons();
   return (
     <div className="flex flex-row items-stretch gap-8 sm:gap-10 lg:gap-12">
       <div className="min-w-0 flex-[3]">
         <h3 className="text-xl font-bold tracking-tight text-[#FAD4E8]/90 sm:text-2xl">
           {activeVariant.header}
         </h3>
-        <p className="mt-5 text-sm leading-[1.75] text-[#F5E6D3]/62 sm:mt-6 sm:text-base">
-          {activeVariant.description}
-        </p>
+        <div className="mt-5 min-h-[14em] text-sm leading-[1.75] text-[#F5E6D3]/62 sm:mt-6 sm:min-h-[11em] sm:text-base">
+          {activeVariant.description.split("\n").map((paragraph, index) => (
+            <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
+              {renderGuideHighlightedText(paragraph, guideTextIcons)}
+            </p>
+          ))}
+        </div>
         <GoodAgainstRow champions={activeVariant.goodAgainst} />
       </div>
 
@@ -1084,7 +1144,13 @@ function TabBuildContent({
   );
 }
 
-export default function ItemBuildSection({ data }: { data: GuideItemPageData }) {
+export default function ItemBuildSection({
+  data,
+  guideTextIcons = {},
+}: {
+  data: GuideItemPageData;
+  guideTextIcons?: Record<string, string>;
+}) {
   const [activeTabId, setActiveTabId] = useState(data.tabs[0]?.id ?? "main");
   const [variantByTab, setVariantByTab] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
@@ -1168,6 +1234,7 @@ export default function ItemBuildSection({ data }: { data: GuideItemPageData }) 
   } as CSSProperties;
 
   return (
+    <GuideTextIconsContext.Provider value={guideTextIcons}>
     <section id="items" className="scroll-mt-24 overflow-visible">
       <div className="mb-6 flex items-center gap-4 sm:gap-5">
         <h2 className="text-3xl font-bold tracking-tight text-[#F5E6D3] sm:text-4xl lg:text-5xl">
@@ -1267,5 +1334,6 @@ export default function ItemBuildSection({ data }: { data: GuideItemPageData }) 
         ) : null}
       </div>
     </section>
+    </GuideTextIconsContext.Provider>
   );
 }

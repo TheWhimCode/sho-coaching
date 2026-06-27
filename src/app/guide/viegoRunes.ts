@@ -29,15 +29,15 @@ export const VIEGO_RUNE_BUILD: GuideRuneBuild = {
     {
       order: 1,
       perkId: 9923,
-      title: "Fast Three-Hit Burst",
+      title: "Insane burst setup",
       treeLabel: "DOMINATION",
       body:
-        "Loads attack speed into your first three hits — proc with W into Q for burst trades and quick kills.",
+        "This allows you to play without attackspeed in your build. Essential. It makes your combo super fast (even Q animation scales with attackspeed).",
     },
   ],
   precisionSection: {
-    title: "Precision Secondary",
+    title: "Precision tree",
     body:
-      "Triumph heals on takedowns during reset chains. Legend: Alacrity adds bonus attack speed for snappier Q resets.",
+      "Triumph is just too good and Alacrity helps with clearing in the midgame. I used to run cashback, but this is just better.",
   },
 };

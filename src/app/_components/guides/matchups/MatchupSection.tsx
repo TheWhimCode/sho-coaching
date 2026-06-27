@@ -2,11 +2,13 @@
 
 import clsx from "clsx";
 import { useMemo, useState } from "react";
+import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import type {
   GuideMatchupPageData,
   SerializedGuideMatchup,
   SerializedGuideMatchupColumn,
 } from "@/lib/guides/matchupGuideTypes";
+import { guideChampionIconImgClass } from "@/lib/guides/guideTheme";
 
 const TONE = {
   hard: {
@@ -64,7 +66,7 @@ function MatchupCard({
         <img
           src={matchup.icon}
           alt={matchup.name}
-          className="h-full w-full object-cover"
+          className={guideChampionIconImgClass}
         />
       </div>
       <span
@@ -103,7 +105,13 @@ function MatchupGroup({
   );
 }
 
-export default function MatchupSection({ data }: { data: GuideMatchupPageData }) {
+export default function MatchupSection({
+  data,
+  guideTextIcons = {},
+}: {
+  data: GuideMatchupPageData;
+  guideTextIcons?: Record<string, string>;
+}) {
   const hardColumn = data.columns.find((column) => column.tone === "hard") ?? data.columns[0];
   const easyColumn =
     data.columns.find((column) => column.tone === "easy") ?? data.columns[1] ?? hardColumn;
@@ -163,12 +171,33 @@ export default function MatchupSection({ data }: { data: GuideMatchupPageData })
 
       {selectedMatchup ? (
         <div className="mt-5 w-full rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:p-5">
-          <p className={clsx("text-sm font-semibold sm:text-base", selectedAccent.nameSelected)}>
-            {selectedMatchup.name}
-          </p>
-          <p className="mt-2 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:text-base">
-            {selectedMatchup.explanation}
-          </p>
+          <div className="flex items-start gap-4 sm:gap-5">
+            <div
+              className={clsx(
+                "relative h-[4.2rem] w-[4.2rem] shrink-0 overflow-hidden rounded-lg ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
+                selection.tone === "hard" ? "ring-[#F87171]/35" : "ring-[#4ADE80]/35"
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedMatchup.icon}
+                alt={selectedMatchup.name}
+                className={guideChampionIconImgClass}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className={clsx("text-sm font-semibold sm:text-base", selectedAccent.nameSelected)}>
+                {selectedMatchup.name}
+              </p>
+              <div className="mt-2 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:text-base">
+                {selectedMatchup.explanation.split("\n").map((paragraph, index) => (
+                  <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
+                    {renderGuideHighlightedText(paragraph, guideTextIcons)}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
     </section>

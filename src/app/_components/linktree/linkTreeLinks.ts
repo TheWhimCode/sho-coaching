@@ -91,7 +91,7 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     id: "viego-guide",
     label: "Viego Guide",
     description: "Runes, builds & tips for Viego jungle",
-    href: "/guides/viego",
+    href: "/guide",
     external: false,
     Icon: BookOpen,
     accent: "#F0ABCF",

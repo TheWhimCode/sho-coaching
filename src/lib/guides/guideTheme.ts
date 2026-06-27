@@ -43,3 +43,6 @@ export const guideSectionSubClass =
 
 export const guideNavPillClass =
   "rounded-full bg-[#F0ABCF]/18 px-4 py-1.5 font-medium text-[#FAD4E8] ring-1 ring-[#F0ABCF]/35 transition hover:bg-[#F0ABCF]/28";
+
+/** Champion portrait inside a fixed frame — 10% zoom, container size unchanged. */
+export const guideChampionIconImgClass = "h-full w-full scale-110 object-cover";
