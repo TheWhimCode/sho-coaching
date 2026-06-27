@@ -65,8 +65,32 @@ const SHARD_BASENAME: Record<number, string> = {
   5007: "statmodscdrscalingicon",
   5002: "statmodsarmoricon",
   5003: "statmodsmagicresicon",
-  5001: "statmodshealthscalingicon",
+  5001: "statmodshealthplusicon",
+  5010: "statmodsmovementspeedicon",
+  5011: "statmodshealthscalingicon",
+  5013: "statmodstenacityicon",
 };
+
+/** In-client row order: offense → flex → defense (3 options each). */
+export const STAT_SHARD_ROW_OPTIONS: readonly (readonly number[])[] = [
+  [5008, 5005, 5007],
+  [5008, 5010, 5001],
+  [5011, 5013, 5001],
+] as const;
+
+const SHARD_NAMES: Record<number, string> = {
+  5001: "Health Scaling",
+  5005: "Attack Speed",
+  5007: "Ability Haste",
+  5008: "Adaptive Force",
+  5010: "Move Speed",
+  5011: "Health",
+  5013: "Tenacity and Slow Resist",
+};
+
+export function getStatShardName(shardId: number) {
+  return SHARD_NAMES[shardId] ?? "";
+}
 
 function statShardIconUrl(id: number) {
   const name = SHARD_BASENAME[id];
@@ -106,6 +130,45 @@ export async function fetchKeystoneRunes(patch?: string, locale: string = "en_US
   }
   keystoneList = list;
   return list;
+}
+
+let runesTreesCache: RunesTree[] | null = null;
+
+/** Full rune trees from runesReforged.json (all slots + perk metadata). */
+export async function fetchRunesTrees(
+  patch?: string,
+  locale: string = "en_US"
+): Promise<RunesTree[]> {
+  if (runesTreesCache) return runesTreesCache;
+
+  await ensureLiveDDragonPatch();
+  const p = patch ?? currentPatch;
+  const url = `https://ddragon.leagueoflegends.com/cdn/${p}/data/${locale}/runesReforged.json`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`runesReforged fetch failed: ${res.status}`);
+
+  const trees: RunesTree[] = await res.json();
+  if (!Array.isArray(trees)) return [];
+
+  for (const tree of trees) {
+    if (tree?.id && tree?.icon) {
+      styleIdToIconPath[tree.id] = tree.icon;
+    }
+    for (const slot of tree.slots ?? []) {
+      for (const rune of slot.runes ?? []) {
+        if (rune?.id && rune?.icon) {
+          perkIdToIconPath[rune.id] = rune.icon;
+        }
+      }
+    }
+  }
+
+  runesTreesCache = trees;
+  return trees;
+}
+
+export function getStatShardIconUrl(shardId: number) {
+  return statShardIconUrl(shardId);
 }
 
 export function runeIconsFromPerks(perks: RunePerks | null | undefined): RuneIconSet {

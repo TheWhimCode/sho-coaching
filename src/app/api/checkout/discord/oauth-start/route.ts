@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { discordOAuthRedirectUri } from "@/lib/discord/oauthRedirectUri";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   // Build redirect URI from the current request origin so it works on previews
   const origin = new URL(req.url).origin;
-  const REDIRECT_URI = `${origin}/api/checkout/discord/oauth-callback`;
+  const REDIRECT_URI = discordOAuthRedirectUri(req);
 
   const state = crypto.randomUUID();
 

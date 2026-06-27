@@ -1,6 +1,6 @@
-// app/api/checkout/discord/oauth-callback/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { Buffer } from "buffer";
+import { discordOAuthRedirectUri } from "@/lib/discord/oauthRedirectUri";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ function htmlCloseWithMessage(origin: string, type: string, payload?: unknown) {
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const origin = url.origin;
-  const REDIRECT_URI = `${origin}/api/checkout/discord/oauth-callback`;
+  const REDIRECT_URI = discordOAuthRedirectUri(req);
 
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");

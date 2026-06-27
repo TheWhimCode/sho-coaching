@@ -25,6 +25,8 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   const isSpeedReviews = p === "/speed-reviews" || p.startsWith("/speed-reviews/");
 
+  const isViegoGuide = p === "/guides/viego" || p.startsWith("/guides/viego/");
+
   const isHome = p === "/";
 
   const logoOnly =
@@ -34,7 +36,8 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
     isCheckout ||
     isCheckoutSuccess ||
     isQuickbook ||
-    isSpeedReviews;
+    isSpeedReviews ||
+    isViegoGuide;
 
   const showNavBar = true;
 

@@ -1,6 +1,6 @@
 import type { ComponentType, CSSProperties } from "react";
 import { FaDiscord, FaTwitch } from "react-icons/fa6";
-import { GraduationCap, Swords } from "lucide-react";
+import { BookOpen, GraduationCap, Swords } from "lucide-react";
 
 export type LinkTreeIconProps = {
   className?: string;
@@ -86,5 +86,18 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     iconGradient:
       "linear-gradient(145deg, #431407 0%, #7C2D12 42%, #9A3412 70%, #C2410C 90%, #EA580C 100%)",
     iconColor: "#ffffff",
+  },
+  {
+    id: "viego-guide",
+    label: "Viego Guide",
+    description: "Runes, builds & tips for Viego jungle",
+    href: "/guides/viego",
+    external: false,
+    Icon: BookOpen,
+    accent: "#F0ABCF",
+    glow: "rgba(240, 171, 207, 0.45)",
+    iconGradient:
+      "linear-gradient(145deg, #2A1F2E 0%, #4A354F 35%, #B8D8EA 62%, #F0ABCF 88%, #FAD4E8 100%)",
+    iconColor: "#F5E6D3",
   },
 ];
