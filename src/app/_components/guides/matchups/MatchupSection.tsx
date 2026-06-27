@@ -186,7 +186,12 @@ export default function MatchupSection({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className={clsx("text-sm font-semibold sm:text-base", selectedAccent.nameSelected)}>
+              <p
+                className={clsx(
+                  "text-sm font-semibold leading-none sm:text-base",
+                  selectedAccent.nameSelected
+                )}
+              >
                 {selectedMatchup.name}
               </p>
               <div className="mt-2 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:text-base">

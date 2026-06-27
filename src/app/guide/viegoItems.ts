@@ -203,7 +203,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Cyclosword",
           header: "The twink crusher.",
           description:
-            "This item hits HARD against low armor. Maximum lethality, stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhen you don't need the scaling or need earlygame power because you'll get invaded or fell behind hard, Cyclosword is great.",
+            "This item hits HARD against low armor. Maximum lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhen you don't need the scaling or need earlygame power because you'll get invaded or fell behind hard, Cyclosword is great.",
           activeChoiceIds: [6699],
           teamComp: {
             ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],

@@ -1,7 +1,7 @@
 "use client";
 
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
-import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { GuidePawIcon, renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 
 const conventionalPanelClass =
   "overflow-hidden rounded-2xl border border-[#F0ABCF]/15 bg-[#2A1F2E]/75 px-6 py-8 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:px-10 sm:py-10 lg:px-14 lg:py-12";
@@ -26,6 +26,7 @@ export default function ConventionalBuildSection({
               className="text-sm leading-[1.75] text-[#F5E6D3]/62 sm:text-base"
             >
               {renderGuideHighlightedText(paragraph, guideTextIcons)}
+              {paragraph.trimEnd().endsWith("Meow.") ? <GuidePawIcon /> : null}
             </p>
           ))}
         </div>

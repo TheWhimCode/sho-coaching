@@ -1281,6 +1281,7 @@ export default function ItemBuildSection({
                     "px-5 py-3.5 text-sm font-semibold tracking-wide transition sm:px-6",
                     "ring-1 ring-inset",
                     index === 0 && "rounded-tl-2xl",
+                    index === data.tabs.length - 1 && "rounded-br-2xl",
                     active
                       ? "text-[#FAD4E8] ring-[#F0ABCF]/35"
                       : "text-[#F5E6D3]/38 ring-[#F0ABCF]/12 hover:text-[#F5E6D3]/62 hover:ring-[#F0ABCF]/20"
