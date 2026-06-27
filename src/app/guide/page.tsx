@@ -16,7 +16,7 @@ import ViegoGuideClient from "./ViegoGuideClient";
 
 const title = "Viego Guide";
 const description =
-  "Runes, builds, and tips for Viego jungle — Domination primary with Precision secondary.";
+  "Mino's Lethality, Hail of Blades Viego guide.";
 
 export const metadata: Metadata = {
   title,
