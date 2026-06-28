@@ -19,7 +19,7 @@ import { ItemBuildSectionSkeleton } from "@/app/_components/guides/GuideSectionS
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import { collectItemSectionImageUrls } from "@/lib/guides/preloadGuideImages";
-import { guideChampionIconImgClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
+import { guideChampionIconImgClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 
 const GuideTextIconsContext = createContext<Record<string, string>>({});
 
@@ -28,7 +28,7 @@ function useGuideTextIcons() {
 }
 
 const ITEM_PANEL_OUTER =
-  "w-full overflow-visible rounded-2xl border border-[#F0ABCF]/15 bg-[#16121A]/95 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm";
+  "w-full min-w-0 max-w-full overflow-x-hidden rounded-none border border-[#F0ABCF]/15 border-x-0 bg-[#16121A]/95 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:overflow-visible sm:rounded-2xl sm:border-x";
 
 const ITEM_SECONDARY_SECTION = "w-full py-5 sm:py-6";
 
@@ -39,12 +39,17 @@ const BUILD_DETAIL_FADE_MS = 220;
 const ITEM_SECONDARY_PAD_X = "px-6 sm:px-10 lg:px-14";
 
 const ITEM_PRIMARY_MAIN =
-  "relative w-full overflow-hidden rounded-2xl border-y border-[#F0ABCF]/15 bg-[#2A1F2E]/92";
+  "relative w-full overflow-hidden rounded-none border-y border-[#F0ABCF]/15 bg-[#2A1F2E]/92 sm:rounded-2xl";
 
 const ITEM_PRIMARY_BODY =
-  "overflow-visible px-6 py-10 sm:px-10 sm:py-12 lg:px-14 lg:py-14";
+  "min-w-0 max-w-full overflow-x-auto px-6 py-10 sm:overflow-visible sm:px-10 sm:py-12 lg:px-14 lg:py-14";
 const ITEM_LANE_SPACER_H =
   "flex min-w-0 flex-1 items-center justify-center px-3 sm:px-5 md:px-6";
+
+const ITEM_MOBILE_PATH_MAX_W = "max-w-[24rem]";
+const ITEM_MOBILE_PATH_COL_GAP = "gap-x-6";
+const ITEM_MOBILE_PATH_ROW_GAP = "gap-[var(--item-lane-gap,3rem)]";
+const ITEM_MOBILE_DIVERGE_PAIR_GAP = "gap-1.5";
 
 const ITEM_TILE_CLASS =
   "aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/30 sm:h-16 sm:w-16";
@@ -56,12 +61,14 @@ function ItemExplanationPanel({
   item,
   open,
   position,
+  placement,
   tipId,
   onTransitionEnd,
 }: {
   item: SerializedGuideItem;
   open: boolean;
   position: { top: number; left: number };
+  placement: "right" | "below";
   tipId: string;
   onTransitionEnd?: (event: TransitionEvent<HTMLDivElement>) => void;
 }) {
@@ -69,15 +76,20 @@ function ItemExplanationPanel({
   return (
     <div
       id={tipId}
-      className="pointer-events-none fixed z-[200] -translate-y-1/2"
+      className={clsx(
+        "pointer-events-none fixed z-[200]",
+        placement === "right" && "-translate-y-1/2",
+        placement === "below" && "-translate-x-1/2"
+      )}
       style={{ top: position.top, left: position.left }}
       role="tooltip"
     >
       <div
         onTransitionEnd={onTransitionEnd}
         className={clsx(
-          "translate-x-0 transition-opacity duration-200 ease-out",
-          open && "animate-item-tip-in opacity-100",
+          "transition-opacity duration-200 ease-out",
+          open && placement === "right" && "animate-item-tip-in opacity-100",
+          open && placement === "below" && "animate-item-tip-in-below opacity-100",
           !open && "opacity-0"
         )}
       >
@@ -85,10 +97,18 @@ function ItemExplanationPanel({
           className={clsx(
             "relative w-72 overflow-visible rounded-xl border border-[#F0ABCF]/25 sm:w-80",
             "bg-[#2A1F2E] shadow-[0_12px_40px_rgba(30,23,36,0.55)] ring-1 ring-[#B8D8EA]/10 backdrop-blur-md",
-            "before:pointer-events-none before:absolute before:left-0 before:top-1/2 before:-translate-x-full before:-translate-y-1/2 before:content-['']",
-            "before:border-y-[10px] before:border-r-[11px] before:border-y-transparent before:border-r-[#F0ABCF]/25",
-            "after:pointer-events-none after:absolute after:left-0 after:top-1/2 after:-translate-x-[calc(100%-1px)] after:-translate-y-1/2 after:content-['']",
-            "after:border-y-[9px] after:border-r-[10px] after:border-y-transparent after:border-r-[#2A1F2E]"
+            placement === "right" && [
+              "before:pointer-events-none before:absolute before:left-0 before:top-1/2 before:-translate-x-full before:-translate-y-1/2 before:content-['']",
+              "before:border-y-[10px] before:border-r-[11px] before:border-y-transparent before:border-r-[#F0ABCF]/25",
+              "after:pointer-events-none after:absolute after:left-0 after:top-1/2 after:-translate-x-[calc(100%-1px)] after:-translate-y-1/2 after:content-['']",
+              "after:border-y-[9px] after:border-r-[10px] after:border-y-transparent after:border-r-[#2A1F2E]",
+            ],
+            placement === "below" && [
+              "before:pointer-events-none before:absolute before:bottom-full before:left-1/2 before:-translate-x-1/2 before:content-['']",
+              "before:border-x-[10px] before:border-b-[11px] before:border-x-transparent before:border-b-[#F0ABCF]/25",
+              "after:pointer-events-none after:absolute after:bottom-full after:left-1/2 after:-translate-x-1/2 after:mb-px after:content-['']",
+              "after:border-x-[9px] after:border-b-[10px] after:border-x-transparent after:border-b-[#2A1F2E]",
+            ]
           )}
         >
           <div className="relative px-5 py-4 sm:px-6 sm:py-5">
@@ -126,7 +146,11 @@ function ItemTile({
   const tileRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
   const [tipVisible, setTipVisible] = useState(false);
-  const [tipPosition, setTipPosition] = useState<{ top: number; left: number } | null>(null);
+  const [tipLayout, setTipLayout] = useState<{
+    top: number;
+    left: number;
+    placement: "right" | "below";
+  } | null>(null);
   const [portalMounted, setPortalMounted] = useState(false);
   const interactive = Boolean(onSelect);
   const hoverEnabled = !inactive && !crossed;
@@ -141,25 +165,50 @@ function ItemTile({
 
   useLayoutEffect(() => {
     if (!showTip) {
-      setTipPosition(null);
+      setTipLayout(null);
       return;
     }
+
+    const dismissTip = () => {
+      setHovered(false);
+      if (tileRef.current?.contains(document.activeElement)) {
+        (document.activeElement as HTMLElement).blur();
+      }
+    };
 
     const updatePosition = () => {
       const el = tileRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      setTipPosition({
+      const below = window.matchMedia("(max-width: 639px)").matches;
+
+      if (below) {
+        const panelHalfWidth = 144;
+        const edgePad = 12;
+        const centerX = Math.min(
+          Math.max(rect.left + rect.width / 2, panelHalfWidth + edgePad),
+          window.innerWidth - panelHalfWidth - edgePad
+        );
+        setTipLayout({
+          top: rect.bottom + 11,
+          left: centerX,
+          placement: "below",
+        });
+        return;
+      }
+
+      setTipLayout({
         top: rect.top + rect.height / 2,
         left: rect.right + 11,
+        placement: "right",
       });
     };
 
     updatePosition();
-    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("scroll", dismissTip, true);
     window.addEventListener("resize", updatePosition);
     return () => {
-      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("scroll", dismissTip, true);
       window.removeEventListener("resize", updatePosition);
     };
   }, [showTip]);
@@ -233,12 +282,13 @@ function ItemTile({
         />
         {crossed ? <GuideCrossOverlay /> : null}
       </div>
-      {portalMounted && showTip && tipPosition
+      {portalMounted && showTip && tipLayout
         ? createPortal(
             <ItemExplanationPanel
               item={item}
               open={showHover}
-              position={tipPosition}
+              position={tipLayout}
+              placement={tipLayout.placement}
               tipId={`item-tip-${tileKey ?? item.id}`}
               onTransitionEnd={handleTipTransitionEnd}
             />,
@@ -270,6 +320,18 @@ function connectorPath(
 ) {
   const bendX = start.x + (end.x - start.x) * 0.55;
   return `M ${start.x} ${start.y} C ${bendX} ${start.y}, ${bendX} ${end.y}, ${end.x} ${end.y}`;
+}
+
+/** Single-bend curve — one control point at the axis corner (no S-shape). */
+function connectorPathCorner(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  bend: "vertical-first" | "horizontal-first" = "vertical-first"
+) {
+  if (bend === "vertical-first") {
+    return `M ${start.x} ${start.y} Q ${start.x} ${end.y} ${end.x} ${end.y}`;
+  }
+  return `M ${start.x} ${start.y} Q ${end.x} ${start.y} ${end.x} ${end.y}`;
 }
 
 function collectTileRefs(row: HTMLElement): Map<string, HTMLElement> {
@@ -348,6 +410,101 @@ function buildConnectorPaths(
         tilePoint(i + 1, right.items[0].id, "left")
       );
     }
+  }
+
+  return paths;
+}
+
+function isThreeChoiceFixedPath(steps: SerializedGuideItemStep[]): boolean {
+  if (steps.length < 2) return false;
+  const first = steps[0];
+  if (first.type !== "choice" || first.items.length !== 3) return false;
+  return steps.slice(1).every((step) => step.type === "fixed" && step.items.length > 0);
+}
+
+function tileEdgePoint(
+  el: HTMLElement | undefined,
+  containerRect: DOMRect,
+  edge: "left" | "right" | "top" | "bottom"
+): { x: number; y: number } | null {
+  if (!el) return null;
+  const rect = el.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2 - containerRect.left;
+  const centerY = rect.top + rect.height / 2 - containerRect.top;
+
+  switch (edge) {
+    case "left":
+      return { x: rect.left - containerRect.left, y: centerY };
+    case "right":
+      return { x: rect.right - containerRect.left, y: centerY };
+    case "top":
+      return { x: centerX, y: rect.top - containerRect.top };
+    case "bottom":
+      return { x: centerX, y: rect.bottom - containerRect.top };
+  }
+}
+
+function buildMobileThreeChoiceFixedConnectors(
+  steps: SerializedGuideItemStep[],
+  containerRect: DOMRect,
+  tileRefs: Map<string, HTMLElement>,
+  activeChoiceIds?: number[] | null
+): ConnectorSegment[] {
+  const paths: ConnectorSegment[] = [];
+  const choiceStep = steps[0];
+  if (choiceStep.type !== "choice" || choiceStep.items.length !== 3) return paths;
+
+  const pushPath = (
+    start: { x: number; y: number } | null,
+    end: { x: number; y: number } | null,
+    inactive = false,
+    bend?: "vertical-first" | "horizontal-first"
+  ) => {
+    if (!start || !end) return;
+    paths.push({
+      d: bend ? connectorPathCorner(start, end, bend) : connectorPath(start, end),
+      inactive,
+    });
+  };
+
+  const point = (key: string, edge: "left" | "right" | "top" | "bottom") =>
+    tileEdgePoint(tileRefs.get(key), containerRect, edge);
+
+  const collectorStep = steps[1];
+  if (collectorStep.type !== "fixed") return paths;
+
+  const collectorId = collectorStep.items[0].id;
+  const collectorKey = `1-${collectorId}`;
+
+  const [leftChoice, centerChoice, rightChoice] = choiceStep.items;
+
+  pushPath(
+    point(`0-${leftChoice.id}`, "bottom"),
+    point(collectorKey, "left"),
+    isChoiceItemInactive(leftChoice.id, activeChoiceIds),
+    "vertical-first"
+  );
+  pushPath(
+    point(`0-${centerChoice.id}`, "bottom"),
+    point(collectorKey, "top"),
+    isChoiceItemInactive(centerChoice.id, activeChoiceIds)
+  );
+  pushPath(
+    point(`0-${rightChoice.id}`, "bottom"),
+    point(collectorKey, "right"),
+    isChoiceItemInactive(rightChoice.id, activeChoiceIds),
+    "vertical-first"
+  );
+
+  for (let stepIndex = 1; stepIndex < steps.length - 1; stepIndex++) {
+    const from = steps[stepIndex];
+    const to = steps[stepIndex + 1];
+    if (from.type !== "fixed" || to.type !== "fixed") continue;
+
+    pushPath(
+      point(`${stepIndex}-${from.items[0].id}`, "bottom"),
+      point(`${stepIndex + 1}-${to.items[0].id}`, "top")
+    );
   }
 
   return paths;
@@ -716,15 +873,15 @@ function PreBuildCaret() {
   );
 }
 
-const PREBUILD_SECTION_DIVIDER = "border-r border-[#F0ABCF]/14";
-
 function PreBuildColumn({
   span,
   showDivider,
+  className,
   children,
 }: {
   span: 1 | 2;
   showDivider?: boolean;
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -732,10 +889,13 @@ function PreBuildColumn({
       className={clsx(
         "flex min-w-0 justify-center",
         span === 2 ? "col-span-2" : "col-span-1",
-        showDivider && PREBUILD_SECTION_DIVIDER
+        showDivider && "sm:border-r sm:border-[#F0ABCF]/14",
+        className
       )}
     >
-      <div className="flex w-fit max-w-full flex-col items-start">{children}</div>
+      <div className="flex w-fit max-w-full flex-col items-start max-sm:items-center max-sm:mx-auto">
+        {children}
+      </div>
     </div>
   );
 }
@@ -745,8 +905,8 @@ const PREBUILD_NOTE_CLASS =
 
 function PreBuildStrip({ preBuild }: { preBuild: SerializedGuideItemPreBuild }) {
   return (
-    <div className="grid grid-cols-4 items-stretch py-2 sm:py-2.5">
-      <PreBuildColumn span={1} showDivider>
+    <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-4 px-4 py-2 sm:grid-cols-4 sm:gap-0 sm:px-0 sm:py-2.5">
+      <PreBuildColumn span={1} showDivider className="col-start-1 row-start-1">
         <p className={PREBUILD_HEADER_CLASS}>Starting</p>
         <div className="flex flex-row flex-nowrap items-center gap-0.5 pt-2">
           {preBuild.starting.map((item, index) => (
@@ -771,9 +931,20 @@ function PreBuildStrip({ preBuild }: { preBuild: SerializedGuideItemPreBuild }) 
         ) : null}
       </PreBuildColumn>
 
-      <PreBuildColumn span={2} showDivider>
+      <PreBuildColumn span={1} className="col-start-2 row-start-1 sm:col-start-4">
+        <p className={PREBUILD_HEADER_CLASS}>Full build</p>
+        <div className="flex flex-row flex-nowrap items-center gap-0.5 pt-2">
+          <ItemTile item={preBuild.fullBuild.sell} tileKey="pre-sell" crossed compact flushEdge="start" />
+          <ItemTile item={preBuild.fullBuild.buy} tileKey="pre-buy" compact />
+        </div>
+        <p className={PREBUILD_NOTE_CLASS}>
+          Sell boots for Youmuu's
+        </p>
+      </PreBuildColumn>
+
+      <PreBuildColumn span={2} showDivider className="col-span-2 row-start-2 sm:col-start-2 sm:row-start-1">
         <p className={PREBUILD_HEADER_CLASS}>Boots</p>
-        <div className="flex max-w-full flex-row flex-nowrap items-center pt-2">
+        <div className="flex max-w-full flex-row flex-nowrap items-center pt-2 max-sm:justify-center">
           <ItemTile item={preBuild.bootsBase} tileKey="pre-boots-base" compact flushEdge="start" />
           <PreBuildCaret />
           {preBuild.boots.map((item) => (
@@ -787,19 +958,8 @@ function PreBuildStrip({ preBuild }: { preBuild: SerializedGuideItemPreBuild }) 
           ))}
         </div>
         {preBuild.bootsSubheading ? (
-          <p className={PREBUILD_NOTE_CLASS}>{preBuild.bootsSubheading}</p>
+          <p className={clsx(PREBUILD_NOTE_CLASS, "max-sm:text-center")}>{preBuild.bootsSubheading}</p>
         ) : null}
-      </PreBuildColumn>
-
-      <PreBuildColumn span={1}>
-        <p className={PREBUILD_HEADER_CLASS}>Full build</p>
-        <div className="flex flex-row flex-nowrap items-center gap-0.5 pt-2">
-          <ItemTile item={preBuild.fullBuild.sell} tileKey="pre-sell" crossed compact flushEdge="start" />
-          <ItemTile item={preBuild.fullBuild.buy} tileKey="pre-buy" compact />
-        </div>
-        <p className={PREBUILD_NOTE_CLASS}>
-          Sell boots for Youmuu's
-        </p>
       </PreBuildColumn>
     </div>
   );
@@ -834,11 +994,11 @@ function ChampionIcon({
 
 function GoodAgainstRow({ champions }: { champions: SerializedGuideItemVariant["goodAgainst"] }) {
   return (
-    <div className="mt-8 sm:mt-10">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-sm">
+    <div className="mt-8 min-w-0 max-w-full sm:mt-10">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 max-sm:text-center sm:text-sm">
         Good against
       </p>
-      <div className="flex flex-wrap gap-2.5 sm:gap-3">
+      <div className="flex flex-wrap gap-2.5 max-sm:justify-center sm:gap-3">
         {champions.map((champion) => (
           <ChampionIcon key={champion.id} champion={champion} side="enemy" size="md" />
         ))}
@@ -892,14 +1052,14 @@ function BuildDetailSection({
 }) {
   const guideTextIcons = useGuideTextIcons();
   return (
-    <div className="flex flex-row items-stretch gap-8 sm:gap-10 lg:gap-12">
-      <div className="min-w-0 flex-[3]">
-        <h3 className="text-xl font-bold tracking-tight text-[#FAD4E8]/90 sm:text-2xl">
+    <div className="flex w-full min-w-0 max-w-full flex-col items-stretch gap-8 sm:flex-row sm:gap-10 lg:gap-12">
+      <div className="min-w-0 w-full max-w-full flex-[3]">
+        <h3 className="break-words text-center text-xl font-bold tracking-tight text-[#FAD4E8]/90 sm:text-left sm:text-2xl">
           {activeVariant.header}
         </h3>
-        <div className="mt-5 min-h-[14em] text-sm leading-[1.75] text-[#F5E6D3]/62 sm:mt-6 sm:min-h-[11em] sm:text-base">
+        <div className="mt-5 min-w-0 max-w-full break-words text-left text-sm leading-[1.75] text-[#F5E6D3]/62 [overflow-wrap:anywhere] sm:mt-6 sm:min-h-[11em] sm:text-base">
           {activeVariant.description.split("\n").map((paragraph, index) => (
-            <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
+            <p key={index} className={clsx("min-w-0 max-w-full", index > 0 && "mt-[0.5em]")}>
               {renderGuideHighlightedText(paragraph, guideTextIcons)}
             </p>
           ))}
@@ -907,9 +1067,9 @@ function BuildDetailSection({
         <GoodAgainstRow champions={activeVariant.goodAgainst} />
       </div>
 
-      <div aria-hidden className="w-px shrink-0 self-stretch bg-[#F0ABCF]/14" />
+      <div aria-hidden className="w-px shrink-0 self-stretch bg-[#F0ABCF]/14 max-sm:hidden" />
 
-      <div className="flex min-w-0 flex-[2] items-center justify-center">
+      <div className="flex min-w-0 flex-[2] items-center justify-center max-sm:hidden">
         <TeamCompDisplay teamComp={activeVariant.teamComp} />
       </div>
     </div>
@@ -949,12 +1109,278 @@ function BuildDetailCrossfade({
       className={clsx(
         ITEM_DETAIL_SECTION,
         ITEM_SECONDARY_PAD_X,
-        "rounded-b-2xl transition-opacity ease-out motion-reduce:transition-none",
+        "min-w-0 max-w-full overflow-x-hidden rounded-none transition-opacity ease-out motion-reduce:transition-none sm:overflow-visible sm:rounded-b-2xl",
         fading ? "opacity-0" : "opacity-100"
       )}
       style={{ transitionDuration: `${BUILD_DETAIL_FADE_MS}ms` }}
     >
       <BuildDetailSection activeVariant={displayed.variant} />
+    </div>
+  );
+}
+
+function isMobileForkMergeSharedPath(sharedPath: SerializedGuideItemSharedPath): boolean {
+  if (sharedPath.paths.length !== 2) return false;
+
+  const [path0, path1] = sharedPath.paths;
+  if (path0.items.length === 0 || path1.items.length === 0) return false;
+  if (path0.diverge?.length || !path1.diverge?.length) return false;
+  if (path0.items[0].id !== path1.items[0].id) return false;
+
+  return true;
+}
+
+function buildMobileForkMergeSharedPathConnectors(
+  sharedPath: SerializedGuideItemSharedPath,
+  containerRect: DOMRect,
+  tileRefs: Map<string, HTMLElement>,
+  activePathIndex?: number | null,
+  activeChoiceIds?: number[] | null
+): ConnectorSegment[] {
+  const [path0, path1] = sharedPath.paths;
+  const paths: ConnectorSegment[] = [];
+
+  const point = (key: string, edge: "left" | "right" | "top" | "bottom") =>
+    tileEdgePoint(tileRefs.get(key), containerRect, edge);
+
+  const pushPath = (
+    start: { x: number; y: number } | null,
+    end: { x: number; y: number } | null,
+    inactive = false,
+    bend?: "vertical-first" | "horizontal-first"
+  ) => {
+    if (!start || !end) return;
+    paths.push({
+      d: bend ? connectorPathCorner(start, end, bend) : connectorPath(start, end),
+      inactive,
+    });
+  };
+
+  const path0Inactive = activePathIndex != null && activePathIndex !== 0;
+  const path1Inactive = activePathIndex != null && activePathIndex !== 1;
+
+  const originKey = `shared-${sharedPath.origin.id}`;
+  const path0LdrKey = sharedPathTileKey(0, 0, path0.items[0].id);
+
+  pushPath(
+    point(originKey, "right"),
+    point(path0LdrKey, "top"),
+    path0Inactive,
+    "horizontal-first"
+  );
+
+  if (path1.diverge?.length === 2) {
+    const [serpents, cyclo] = path1.diverge;
+    const serpentsKey = sharedPathDivergeKey(1, serpents.id);
+    const cycloKey = sharedPathDivergeKey(1, cyclo.id);
+    const path1LdrKey = sharedPathTileKey(1, 0, path1.items[0].id);
+
+    pushPath(point(originKey, "left"), point(serpentsKey, "top"), path1Inactive, "horizontal-first");
+    pushPath(point(originKey, "bottom"), point(cycloKey, "top"), path1Inactive);
+    pushPath(
+      point(serpentsKey, "bottom"),
+      point(path1LdrKey, "top"),
+      isChoiceItemInactive(serpents.id, activeChoiceIds, path1Inactive)
+    );
+    pushPath(
+      point(cycloKey, "bottom"),
+      point(path1LdrKey, "top"),
+      isChoiceItemInactive(cyclo.id, activeChoiceIds, path1Inactive)
+    );
+  }
+
+  for (let stepIndex = 0; stepIndex < path0.items.length - 1; stepIndex++) {
+    pushPath(
+      point(
+        sharedPathTileKey(0, stepIndex, path0.items[stepIndex].id),
+        "bottom"
+      ),
+      point(
+        sharedPathTileKey(0, stepIndex + 1, path0.items[stepIndex + 1].id),
+        "top"
+      ),
+      path0Inactive
+    );
+  }
+
+  for (let stepIndex = 0; stepIndex < path1.items.length - 1; stepIndex++) {
+    pushPath(
+      point(
+        sharedPathTileKey(1, stepIndex, path1.items[stepIndex].id),
+        "bottom"
+      ),
+      point(
+        sharedPathTileKey(1, stepIndex + 1, path1.items[stepIndex + 1].id),
+        "top"
+      ),
+      path1Inactive
+    );
+  }
+
+  return paths;
+}
+
+function ItemSharedPathsLayoutMobile({
+  sharedPath,
+  onLaneGapMeasure,
+  activeChoiceIds,
+  activePathIndex,
+  onChoiceSelect,
+  onPathSelect,
+}: {
+  sharedPath: SerializedGuideItemSharedPath;
+  onLaneGapMeasure?: (widthPx: number) => void;
+  activeChoiceIds?: number[] | null;
+  activePathIndex?: number | null;
+  onChoiceSelect?: (itemId: number) => void;
+  onPathSelect?: (pathIndex: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const groupRef = useRef<SVGGElement>(null);
+  const onLaneGapMeasureRef = useRef(onLaneGapMeasure);
+  onLaneGapMeasureRef.current = onLaneGapMeasure;
+
+  const path0 = sharedPath.paths[0];
+  const path1 = sharedPath.paths[1];
+  const diverge = path1.diverge ?? [];
+  const hasSelection = Boolean(activeChoiceIds && activeChoiceIds.length > 0);
+  const path0Inactive = activePathIndex != null && activePathIndex !== 0;
+  const path1Inactive = activePathIndex != null && activePathIndex !== 1;
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const svg = svgRef.current;
+    const group = groupRef.current;
+    if (!container || !svg || !group) return;
+
+    const syncConnectors = () => {
+      const containerRect = container.getBoundingClientRect();
+      const width = Math.round(containerRect.width);
+      const height = Math.round(containerRect.height);
+      if (width <= 0 || height <= 0) return;
+
+      svg.setAttribute("width", String(width));
+      svg.setAttribute("height", String(height));
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      paintConnectorPaths(
+        group,
+        buildMobileForkMergeSharedPathConnectors(
+          sharedPath,
+          containerRect,
+          collectTileRefs(container),
+          activePathIndex,
+          activeChoiceIds
+        )
+      );
+
+      const measureLaneGap = onLaneGapMeasureRef.current;
+      if (measureLaneGap) {
+        const tile = container.querySelector<HTMLElement>("[data-item-tile]");
+        if (tile) {
+          measureLaneGap(Math.max(32, Math.round(tile.getBoundingClientRect().height * 0.72)));
+        }
+      }
+    };
+
+    syncConnectors();
+    requestAnimationFrame(syncConnectors);
+
+    const observer = new ResizeObserver(syncConnectors);
+    observer.observe(container);
+    container.addEventListener("load", syncConnectors, true);
+    window.addEventListener("resize", syncConnectors);
+
+    return () => {
+      observer.disconnect();
+      container.removeEventListener("load", syncConnectors, true);
+      window.removeEventListener("resize", syncConnectors);
+    };
+  }, [sharedPath, activePathIndex, activeChoiceIds]);
+
+  const choiceInactive = (itemId: number, rowInactive: boolean) =>
+    rowInactive || (hasSelection && !activeChoiceIds!.includes(itemId));
+
+  return (
+    <div className="flex w-full justify-center">
+      <div
+        ref={containerRef}
+        className={clsx("relative w-fit max-w-full", ITEM_MOBILE_PATH_MAX_W)}
+      >
+        <div className={clsx("flex flex-col items-center", ITEM_MOBILE_PATH_ROW_GAP)}>
+          <ItemTile
+            item={sharedPath.origin}
+            tileKey={`shared-${sharedPath.origin.id}`}
+            compact
+          />
+
+          <div className={clsx("grid w-full grid-cols-2 items-start", ITEM_MOBILE_PATH_COL_GAP)}>
+            <div
+              className={clsx(
+                "flex flex-col items-center transition-[opacity,filter] duration-300 ease-out",
+                ITEM_MOBILE_PATH_ROW_GAP,
+                path1Inactive && "opacity-[0.32] saturate-[0.35]"
+              )}
+            >
+              {diverge.length === 2 ? (
+                <div className={clsx("flex flex-row items-center", ITEM_MOBILE_DIVERGE_PAIR_GAP)}>
+                  <ItemTile
+                    item={diverge[0]}
+                    tileKey={sharedPathDivergeKey(1, diverge[0].id)}
+                    compact
+                    compactSpacing="tight"
+                    inactive={choiceInactive(diverge[0].id, path1Inactive)}
+                    onSelect={
+                      onChoiceSelect ? () => onChoiceSelect(diverge[0].id) : undefined
+                    }
+                  />
+                  <ItemTile
+                    item={diverge[1]}
+                    tileKey={sharedPathDivergeKey(1, diverge[1].id)}
+                    compact
+                    compactSpacing="tight"
+                    inactive={choiceInactive(diverge[1].id, path1Inactive)}
+                    onSelect={
+                      onChoiceSelect ? () => onChoiceSelect(diverge[1].id) : undefined
+                    }
+                  />
+                </div>
+              ) : null}
+
+              {path1.items.map((item, stepIndex) => (
+                <ItemTile
+                  key={sharedPathTileKey(1, stepIndex, item.id)}
+                  item={item}
+                  tileKey={sharedPathTileKey(1, stepIndex, item.id)}
+                  compact
+                  onSelect={onPathSelect ? () => onPathSelect(1) : undefined}
+                />
+              ))}
+            </div>
+
+            <div
+              className={clsx(
+                "flex flex-col items-center transition-[opacity,filter] duration-300 ease-out",
+                ITEM_MOBILE_PATH_ROW_GAP,
+                path0Inactive && "opacity-[0.32] saturate-[0.35]"
+              )}
+            >
+              {path0.items.map((item, stepIndex) => (
+                <ItemTile
+                  key={sharedPathTileKey(0, stepIndex, item.id)}
+                  item={item}
+                  tileKey={sharedPathTileKey(0, stepIndex, item.id)}
+                  compact
+                  onSelect={onPathSelect ? () => onPathSelect(0) : undefined}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <ConnectorSvg svgRef={svgRef} groupRef={groupRef} />
+      </div>
     </div>
   );
 }
@@ -1034,31 +1460,185 @@ function ItemSharedPathsLayout({
     };
   }, [sharedPath, activePathIndex, activeChoiceIds]);
 
+  const useMobileLayout = isMobileForkMergeSharedPath(sharedPath);
+
   return (
-    <div className="w-full max-w-full overflow-visible">
-      <div
-        ref={containerRef}
-        className="relative flex w-full min-w-0 items-stretch overflow-visible"
-      >
-        <div className="flex shrink-0 items-center self-stretch px-1 sm:px-2">
-          <ItemTile
-            item={sharedPath.origin}
-            tileKey={`shared-${sharedPath.origin.id}`}
+    <>
+      {useMobileLayout ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemSharedPathsLayoutMobile
+            sharedPath={sharedPath}
+            onLaneGapMeasure={onLaneGapMeasure}
+            activeChoiceIds={activeChoiceIds}
+            activePathIndex={activePathIndex}
+            onChoiceSelect={onChoiceSelect}
+            onPathSelect={onPathSelect}
           />
         </div>
+      ) : null}
 
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
-          {sharedPath.paths.map((path, pathIndex) => (
-            <SharedPathRow
-              key={pathIndex}
-              pathIndex={pathIndex}
-              path={path}
-              activeChoiceIds={activeChoiceIds}
-              activePathIndex={activePathIndex}
-              onChoiceSelect={onChoiceSelect}
-              onPathSelect={onPathSelect}
+      <div className={clsx("w-full max-w-full overflow-visible", useMobileLayout && "hidden sm:block")}>
+        <div
+          ref={containerRef}
+          className="relative flex w-full min-w-0 items-stretch overflow-visible"
+        >
+          <div className="flex shrink-0 items-center self-stretch px-1 sm:px-2">
+            <ItemTile
+              item={sharedPath.origin}
+              tileKey={`shared-${sharedPath.origin.id}`}
             />
-          ))}
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
+            {sharedPath.paths.map((path, pathIndex) => (
+              <SharedPathRow
+                key={pathIndex}
+                pathIndex={pathIndex}
+                path={path}
+                activeChoiceIds={activeChoiceIds}
+                activePathIndex={activePathIndex}
+                onChoiceSelect={onChoiceSelect}
+                onPathSelect={onPathSelect}
+              />
+            ))}
+          </div>
+
+          <ConnectorSvg svgRef={svgRef} groupRef={groupRef} />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ItemBuildPathMobile({
+  steps,
+  onLaneGapMeasure,
+  activeChoiceIds,
+  onChoiceSelect,
+}: {
+  steps: SerializedGuideItemStep[];
+  onLaneGapMeasure?: (widthPx: number) => void;
+  activeChoiceIds?: number[] | null;
+  onChoiceSelect?: (itemId: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const groupRef = useRef<SVGGElement>(null);
+  const onLaneGapMeasureRef = useRef(onLaneGapMeasure);
+  onLaneGapMeasureRef.current = onLaneGapMeasure;
+
+  const choiceStep = steps[0];
+  const fixedSteps = steps.slice(1);
+  const hasSelection = Boolean(activeChoiceIds && activeChoiceIds.length > 0);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const svg = svgRef.current;
+    const group = groupRef.current;
+    if (!container || !svg || !group) return;
+
+    const syncConnectors = () => {
+      const containerRect = container.getBoundingClientRect();
+      const width = Math.round(containerRect.width);
+      const height = Math.round(containerRect.height);
+      if (width <= 0 || height <= 0) return;
+
+      svg.setAttribute("width", String(width));
+      svg.setAttribute("height", String(height));
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      paintConnectorPaths(
+        group,
+        buildMobileThreeChoiceFixedConnectors(
+          steps,
+          containerRect,
+          collectTileRefs(container),
+          activeChoiceIds
+        )
+      );
+
+      const measureLaneGap = onLaneGapMeasureRef.current;
+      if (measureLaneGap) {
+        const tile = container.querySelector<HTMLElement>("[data-item-tile]");
+        if (tile) {
+          measureLaneGap(Math.max(32, Math.round(tile.getBoundingClientRect().height * 0.72)));
+        }
+      }
+    };
+
+    syncConnectors();
+    requestAnimationFrame(syncConnectors);
+
+    const observer = new ResizeObserver(syncConnectors);
+    observer.observe(container);
+    container.addEventListener("load", syncConnectors, true);
+    window.addEventListener("resize", syncConnectors);
+
+    return () => {
+      observer.disconnect();
+      container.removeEventListener("load", syncConnectors, true);
+      window.removeEventListener("resize", syncConnectors);
+    };
+  }, [steps, activeChoiceIds]);
+
+  if (choiceStep.type !== "choice" || choiceStep.items.length !== 3) return null;
+
+  const [leftChoice, centerChoice, rightChoice] = choiceStep.items;
+
+  const choiceInactive = (itemId: number) =>
+    hasSelection && !activeChoiceIds!.includes(itemId);
+
+  return (
+    <div className="flex w-full justify-center">
+      <div
+        ref={containerRef}
+        className={clsx("relative w-fit max-w-full", ITEM_MOBILE_PATH_MAX_W)}
+      >
+        <div className={clsx("grid grid-cols-[1fr_auto_1fr] items-start", ITEM_MOBILE_PATH_COL_GAP)}>
+          <div className="flex justify-end self-start pr-1">
+            <ItemTile
+              item={leftChoice}
+              tileKey={`0-${leftChoice.id}`}
+              compact
+              flushEdge="end"
+              inactive={choiceInactive(leftChoice.id)}
+              onSelect={onChoiceSelect ? () => onChoiceSelect(leftChoice.id) : undefined}
+            />
+          </div>
+
+          <div className={clsx("flex flex-col items-center", ITEM_MOBILE_PATH_ROW_GAP)}>
+            <ItemTile
+              item={centerChoice}
+              tileKey={`0-${centerChoice.id}`}
+              compact
+              inactive={choiceInactive(centerChoice.id)}
+              onSelect={onChoiceSelect ? () => onChoiceSelect(centerChoice.id) : undefined}
+            />
+            {fixedSteps.map((step, stepIndex) => {
+              if (step.type !== "fixed") return null;
+              const item = step.items[0];
+              const index = stepIndex + 1;
+              return (
+                <ItemTile
+                  key={item.id}
+                  item={item}
+                  tileKey={`${index}-${item.id}`}
+                  compact
+                />
+              );
+            })}
+          </div>
+
+          <div className="flex justify-start self-start pl-1">
+            <ItemTile
+              item={rightChoice}
+              tileKey={`0-${rightChoice.id}`}
+              compact
+              flushEdge="start"
+              inactive={choiceInactive(rightChoice.id)}
+              onSelect={onChoiceSelect ? () => onChoiceSelect(rightChoice.id) : undefined}
+            />
+          </div>
         </div>
 
         <ConnectorSvg svgRef={svgRef} groupRef={groupRef} />
@@ -1132,28 +1712,43 @@ function ItemBuildPath({
     };
   }, [steps, activeChoiceIds]);
 
+  const useMobileLayout = isThreeChoiceFixedPath(steps);
+
   return (
-    <div className="w-full max-w-full overflow-visible">
-      <div
-        ref={rowRef}
-        className="relative flex w-full min-w-0 items-stretch overflow-visible"
-      >
-        {steps.map((step, idx) => (
-          <Fragment key={idx}>
-            {idx > 0 ? (
-              <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
-            ) : null}
-            <ItemStepColumn
-              step={step}
-              stepIndex={idx}
-              activeChoiceIds={activeChoiceIds}
-              onChoiceSelect={onChoiceSelect}
-            />
-          </Fragment>
-        ))}
-        <ConnectorSvg svgRef={svgRef} groupRef={groupRef} />
+    <>
+      {useMobileLayout ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemBuildPathMobile
+            steps={steps}
+            onLaneGapMeasure={onLaneGapMeasure}
+            activeChoiceIds={activeChoiceIds}
+            onChoiceSelect={onChoiceSelect}
+          />
+        </div>
+      ) : null}
+
+      <div className={clsx("w-full max-w-full overflow-visible", useMobileLayout && "hidden sm:block")}>
+        <div
+          ref={rowRef}
+          className="relative flex w-full min-w-0 items-stretch overflow-visible"
+        >
+          {steps.map((step, idx) => (
+            <Fragment key={idx}>
+              {idx > 0 ? (
+                <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
+              ) : null}
+              <ItemStepColumn
+                step={step}
+                stepIndex={idx}
+                activeChoiceIds={activeChoiceIds}
+                onChoiceSelect={onChoiceSelect}
+              />
+            </Fragment>
+          ))}
+          <ConnectorSvg svgRef={svgRef} groupRef={groupRef} />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -1286,7 +1881,7 @@ export default function ItemBuildSection({
 
   return (
     <GuideTextIconsContext.Provider value={guideTextIcons}>
-    <section ref={sectionRef} id="items" className="scroll-mt-24 overflow-visible">
+    <section ref={sectionRef} id="items" className="scroll-mt-24 min-w-0 max-w-full overflow-x-hidden sm:overflow-visible">
       {!shouldLoad ? (
         <ItemBuildSectionSkeleton data={data} />
       ) : (
@@ -1308,7 +1903,7 @@ export default function ItemBuildSection({
           aria-hidden={!(shouldLoad && imagesReady)}
           aria-busy={shouldLoad && !imagesReady}
         >
-      <div className="mb-6 flex items-center gap-4 sm:gap-5">
+      <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
         <h2 className={guideSectionTitleClass}>
           {data.heading}
         </h2>
@@ -1335,7 +1930,7 @@ export default function ItemBuildSection({
 
       <div className={ITEM_PANEL_OUTER} style={panelStyle}>
         {data.preBuild ? (
-          <div className={clsx(ITEM_SECONDARY_SECTION, "rounded-t-2xl py-0")}>
+          <div className={clsx(ITEM_SECONDARY_SECTION, "py-0 sm:rounded-t-2xl")}>
             <PreBuildStrip preBuild={data.preBuild} />
           </div>
         ) : null}
@@ -1353,8 +1948,8 @@ export default function ItemBuildSection({
                   className={clsx(
                     "px-5 py-3.5 text-sm font-semibold tracking-wide transition sm:px-6",
                     "ring-1 ring-inset",
-                    index === 0 && "rounded-tl-2xl",
-                    index === data.tabs.length - 1 && "rounded-br-2xl",
+                    index === 0 && "sm:rounded-tl-2xl",
+                    index === data.tabs.length - 1 && "sm:rounded-br-2xl",
                     active
                       ? "text-[#FAD4E8] ring-[#F0ABCF]/35"
                       : "text-[#F5E6D3]/38 ring-[#F0ABCF]/12 hover:text-[#F5E6D3]/62 hover:ring-[#F0ABCF]/20"
@@ -1368,7 +1963,7 @@ export default function ItemBuildSection({
           </div>
 
           <div className={ITEM_PRIMARY_BODY}>
-            <div className="grid">
+            <div className="grid min-w-0 w-full max-w-full">
               {data.tabs.map((tab) => {
                 const isActive = tab.id === activeTabId;
                 const tabVariantId =
@@ -1381,8 +1976,8 @@ export default function ItemBuildSection({
                   <div
                     key={tab.id}
                     className={clsx(
-                      "col-start-1 row-start-1 flex w-full items-center overflow-visible",
-                      isActive ? "relative z-10" : "invisible pointer-events-none"
+                      "col-start-1 row-start-1 flex w-full min-w-0 max-w-full items-center",
+                      isActive ? "relative z-10" : "hidden"
                     )}
                     aria-hidden={!isActive}
                   >

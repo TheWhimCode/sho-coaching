@@ -4,12 +4,122 @@ import clsx from "clsx";
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import ComboSequenceBar from "@/app/_components/guides/combos/ComboSequenceBar";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
-import { guideInnerPanelClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
+import { guideInnerPanelClass, guideMobileFlushPanelClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 import { prefetchGuideComboVideos } from "@/lib/guides/prefetchGuideVideo";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 
 const comboListButtonClass =
   "w-full rounded-xl border px-3 py-2.5 text-left text-xs font-semibold tracking-wide transition sm:px-4 sm:py-3 sm:text-sm";
+
+const comboMobileGridButtonClass =
+  "flex w-full min-h-[3.5rem] items-center justify-center border border-[#F0ABCF]/12 px-2 py-3 text-center text-xs font-semibold tracking-wide transition";
+
+function comboGridCellClass({
+  index,
+  active,
+}: {
+  index: number;
+  active: boolean;
+}) {
+  const colIdx = index % 2;
+  const isLeftCol = colIdx === 0;
+  const isRightCol = colIdx === 1;
+
+  return clsx(
+    comboMobileGridButtonClass,
+    isLeftCol && "border-l-0",
+    isRightCol && "border-r-0",
+    active
+      ? "relative z-[1] bg-[#F0ABCF]/10 text-[#FAD4E8] ring-1 ring-inset ring-[#F0ABCF]/25"
+      : "bg-[#16121A]/40 text-[#F5E6D3]/55"
+  );
+}
+
+function ComboListSidebar({
+  combos,
+  selectedId,
+  onSelect,
+}: {
+  combos: GuideComboPageData["combos"];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const paddedCount = combos.length + (combos.length % 2);
+
+  return (
+    <>
+      <p className="mb-3 hidden text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:block sm:text-xs">
+        Select combo
+      </p>
+
+      <div className="relative left-1/2 w-screen max-w-none -translate-x-1/2 sm:static sm:w-full sm:max-w-full sm:translate-x-0">
+        <div className="grid grid-cols-2 isolate sm:hidden">
+        {Array.from({ length: paddedCount }, (_, index) => {
+          const combo = combos[index];
+          if (!combo) {
+            const colIdx = index % 2;
+            const isLeftCol = colIdx === 0;
+            const isRightCol = colIdx === 1;
+
+            return (
+              <div
+                key={`combo-grid-pad-${index}`}
+                aria-hidden
+                className={clsx(
+                  "min-h-[3.5rem] border border-[#F0ABCF]/12 bg-[#16121A]/20",
+                  isLeftCol && "border-l-0",
+                  isRightCol && "border-r-0"
+                )}
+              />
+            );
+          }
+
+          const active = combo.id === selectedId;
+          return (
+            <button
+              key={combo.id}
+              type="button"
+              onClick={() => onSelect(combo.id)}
+              onFocus={() => prefetchGuideComboVideos(combo)}
+              className={comboGridCellClass({
+                index,
+                active,
+              })}
+              aria-pressed={active}
+            >
+              {combo.label}
+            </button>
+          );
+        })}
+        </div>
+      </div>
+
+      <div className="hidden flex-col gap-2 sm:flex">
+        {combos.map((combo) => {
+          const active = combo.id === selectedId;
+          return (
+            <button
+              key={combo.id}
+              type="button"
+              onClick={() => onSelect(combo.id)}
+              onMouseEnter={() => prefetchGuideComboVideos(combo)}
+              onFocus={() => prefetchGuideComboVideos(combo)}
+              className={clsx(
+                comboListButtonClass,
+                active
+                  ? "border-[#F0ABCF]/40 bg-[#F0ABCF]/10 text-[#FAD4E8] ring-1 ring-[#F0ABCF]/25"
+                  : "border-[#F0ABCF]/12 bg-[#16121A]/40 text-[#F5E6D3]/55 hover:border-[#F0ABCF]/22 hover:bg-[#F0ABCF]/5 hover:text-[#F5E6D3]/78"
+              )}
+              aria-pressed={active}
+            >
+              {combo.label}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
 
 function PlayIcon({ className }: { className?: string }) {
   return (
@@ -258,46 +368,31 @@ export default function CombosSection({
   if (!selected) return null;
 
   return (
-    <section id="combos" className="scroll-mt-24">
-      <div className="mb-6">
+    <section id="combos" className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible">
+      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
         <h2 className={guideSectionTitleClass}>{data.heading}</h2>
         {data.subtitle ? (
           <p className="mt-2 text-sm text-[#F5E6D3]/55 sm:text-base">{data.subtitle}</p>
         ) : null}
       </div>
 
-      <div className={clsx(guideInnerPanelClass, "overflow-hidden p-0 sm:p-0")}>
+      <div
+        className={clsx(
+          guideInnerPanelClass,
+          guideMobileFlushPanelClass,
+          "overflow-hidden max-sm:!border-0 max-sm:!bg-transparent max-sm:!p-0 sm:p-0"
+        )}
+      >
         <div className="flex flex-col lg:flex-row">
-          <div className="border-b border-[#F0ABCF]/12 p-4 sm:p-5 lg:w-[min(100%,16rem)] lg:shrink-0 lg:border-b-0 lg:border-r xl:w-64">
-            <p className="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
-              Select combo
-            </p>
-            <div className="flex flex-col gap-2">
-              {data.combos.map((combo) => {
-                const active = combo.id === selected.id;
-                return (
-                  <button
-                    key={combo.id}
-                    type="button"
-                    onClick={() => setSelectedId(combo.id)}
-                    onMouseEnter={() => prefetchGuideComboVideos(combo)}
-                    onFocus={() => prefetchGuideComboVideos(combo)}
-                    className={clsx(
-                      comboListButtonClass,
-                      active
-                        ? "border-[#F0ABCF]/40 bg-[#F0ABCF]/10 text-[#FAD4E8] ring-1 ring-[#F0ABCF]/25"
-                        : "border-[#F0ABCF]/12 bg-[#16121A]/40 text-[#F5E6D3]/55 hover:border-[#F0ABCF]/22 hover:bg-[#F0ABCF]/5 hover:text-[#F5E6D3]/78"
-                    )}
-                    aria-pressed={active}
-                  >
-                    {combo.label}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="max-sm:p-0 sm:border-b sm:border-[#F0ABCF]/12 sm:p-5 lg:w-[min(100%,16rem)] lg:shrink-0 lg:border-b-0 lg:border-r xl:w-64">
+            <ComboListSidebar
+              combos={data.combos}
+              selectedId={selected.id}
+              onSelect={setSelectedId}
+            />
           </div>
 
-          <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+          <div className={clsx("min-w-0 flex-1 pb-4 pt-4 sm:p-6 lg:p-8", guideSectionHeaderPadClass)}>
             {selected.sequence?.length ? (
               <ComboSequenceBar sequence={selected.sequence} abilityIcons={abilityIcons} />
             ) : null}

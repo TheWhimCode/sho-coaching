@@ -3,9 +3,15 @@ import { Fragment, type ReactNode } from "react";
 import {
   guideRuneLayoutGapClass,
   guideRuneOuterPanelClass,
+  guideSectionHeaderPadClass,
   guideSectionTitleClass,
+  guideMobileFlushPanelClass,
 } from "@/lib/guides/guideTheme";
-import type { GuideItemPageData, SerializedGuideItemStep } from "@/lib/guides/itemGuideTypes";
+import type {
+  GuideItemPageData,
+  SerializedGuideItemSharedPath,
+  SerializedGuideItemStep,
+} from "@/lib/guides/itemGuideTypes";
 import type { GuideMatchupPageData } from "@/lib/guides/matchupGuideTypes";
 import type {
   GuideRunePageData,
@@ -20,7 +26,7 @@ const ITEM_TILE_COMPACT_CLASS =
   "aspect-square h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/30 sm:h-12 sm:w-12";
 
 const ITEM_PANEL_OUTER =
-  "w-full overflow-visible rounded-2xl border border-[#F0ABCF]/15 bg-[#16121A]/95 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm";
+  "w-full min-w-0 max-w-full overflow-x-hidden rounded-none border border-[#F0ABCF]/15 border-x-0 bg-[#16121A]/95 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:overflow-visible sm:rounded-2xl sm:border-x";
 
 const ITEM_SECONDARY_SECTION = "w-full py-5 sm:py-6";
 
@@ -29,18 +35,16 @@ const ITEM_DETAIL_SECTION = "w-full py-8 sm:py-10";
 const ITEM_SECONDARY_PAD_X = "px-6 sm:px-10 lg:px-14";
 
 const ITEM_PRIMARY_MAIN =
-  "relative w-full overflow-hidden rounded-2xl border-y border-[#F0ABCF]/15 bg-[#2A1F2E]/92";
+  "relative w-full overflow-hidden rounded-none border-y border-[#F0ABCF]/15 bg-[#2A1F2E]/92 sm:rounded-2xl";
 
 const ITEM_PRIMARY_BODY =
-  "overflow-visible px-6 py-10 sm:px-10 sm:py-12 lg:px-14 lg:py-14";
+  "min-w-0 max-w-full overflow-x-auto px-6 py-10 sm:overflow-visible sm:px-10 sm:py-12 lg:px-14 lg:py-14";
 
 const ITEM_LANE_SPACER_H =
   "flex min-w-0 flex-1 items-center justify-center px-3 sm:px-5 md:px-6";
 
 const PREBUILD_HEADER_CLASS =
   "text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#B8D8EA]/55";
-
-const PREBUILD_SECTION_DIVIDER = "border-r border-[#F0ABCF]/14";
 
 function SkeletonCircle({ className }: { className?: string }) {
   return (
@@ -91,20 +95,50 @@ function TextLineSkeletons({ body, className }: { body: string; className?: stri
   );
 }
 
+function StatShardSkeletonGrid({
+  rows,
+  className,
+}: {
+  rows: SerializedStatShardRow[];
+  className?: string;
+}) {
+  return (
+    <div
+      className={clsx(
+        "mt-1 flex flex-col gap-2 border-t border-[#F0ABCF]/15 pt-3 sm:gap-3.5",
+        className
+      )}
+    >
+      {rows.map((row, rowIdx) => (
+        <div
+          key={rowIdx}
+          className="flex items-center justify-center gap-2 sm:gap-3.5"
+        >
+          {row.shards.map((shard) => (
+            <SkeletonCircle key={shard.id} className="size-6 sm:size-8" />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RuneTreeSkeletonPanel({
   tree,
   hideKeystone = false,
   statShardRows,
+  statShardClassName,
 }: {
   tree: SerializedRuneTree;
   hideKeystone?: boolean;
   statShardRows?: SerializedStatShardRow[];
+  statShardClassName?: string;
 }) {
   const slots = hideKeystone ? tree.slots.slice(1) : tree.slots;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2.5 sm:gap-4">
         {slots.map((row, rowIdx) => {
           const isKeystoneRow = !hideKeystone && rowIdx === 0;
           return (
@@ -112,14 +146,16 @@ function RuneTreeSkeletonPanel({
               key={`${tree.id}-row-${rowIdx}`}
               className={clsx(
                 "flex items-center justify-center",
-                isKeystoneRow ? "gap-2 sm:gap-2.5" : "gap-3.5 sm:gap-4"
+                isKeystoneRow ? "gap-1.5 sm:gap-2.5" : "gap-1 sm:gap-3.5 lg:gap-4"
               )}
             >
               {row.map((rune) => (
                 <div key={rune.id} className="flex flex-none items-center justify-center">
                   <SkeletonCircle
                     className={
-                      isKeystoneRow ? "size-16 sm:size-[4.5rem]" : "size-11 sm:size-12"
+                      isKeystoneRow
+                        ? "size-14 sm:size-16 lg:size-[4.5rem]"
+                        : "size-9 sm:size-11 lg:size-12"
                     }
                   />
                 </div>
@@ -130,18 +166,7 @@ function RuneTreeSkeletonPanel({
       </div>
 
       {statShardRows && statShardRows.length > 0 ? (
-        <div className="mt-1 flex flex-col gap-3 border-t border-[#F0ABCF]/15 pt-3 sm:gap-3.5">
-          {statShardRows.map((row, rowIdx) => (
-            <div
-              key={rowIdx}
-              className="flex items-center justify-center gap-3 sm:gap-3.5"
-            >
-              {row.shards.map((shard) => (
-                <SkeletonCircle key={shard.id} className="size-7 sm:size-8" />
-              ))}
-            </div>
-          ))}
-        </div>
+        <StatShardSkeletonGrid rows={statShardRows} className={statShardClassName} />
       ) : null}
     </div>
   );
@@ -165,29 +190,30 @@ export function RunePageSkeleton({ data }: { data: GuideRunePageData }) {
 
   return (
     <div aria-hidden>
-      <div className="mb-6 flex items-center gap-4 sm:gap-5">
+      <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
         <h2 className={clsx(guideSectionTitleClass, "text-[#F5E6D3]/20")}>{build.heading}</h2>
         {headerIcon ? (
           <SkeletonTile className="relative shrink-0 rounded-lg" />
         ) : null}
       </div>
 
-      <div className={guideRuneOuterPanelClass}>
+      <div className={clsx(guideRuneOuterPanelClass, guideMobileFlushPanelClass)}>
         <div
           className={clsx(
             "flex flex-col lg:flex-row lg:items-stretch",
             guideRuneLayoutGapClass
           )}
         >
-          <div className="w-full shrink-0 p-4 sm:p-5 lg:w-auto lg:flex-1">
-            <div className={clsx("flex flex-col sm:flex-row", guideRuneLayoutGapClass)}>
-              <RuneTreeSkeletonPanel tree={primaryTree} />
-              <div className="hidden w-px shrink-0 bg-[#F0ABCF]/15 sm:block" />
-              <RuneTreeSkeletonPanel
-                tree={secondaryTree}
-                hideKeystone
-                statShardRows={statShardRows}
-              />
+          <div className="w-full shrink-0 p-3 sm:p-5 lg:w-auto lg:flex-1">
+            <div className="flex flex-col">
+              <div className="flex flex-row items-start gap-1.5 sm:gap-6">
+                <RuneTreeSkeletonPanel tree={primaryTree} />
+                <RuneTreeSkeletonPanel
+                  tree={secondaryTree}
+                  hideKeystone
+                  statShardRows={statShardRows}
+                />
+              </div>
             </div>
           </div>
 
@@ -219,10 +245,12 @@ export function RunePageSkeleton({ data }: { data: GuideRunePageData }) {
 function PreBuildColumnSkeleton({
   span,
   showDivider,
+  className,
   children,
 }: {
   span: 1 | 2;
   showDivider?: boolean;
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -230,10 +258,13 @@ function PreBuildColumnSkeleton({
       className={clsx(
         "flex min-w-0 justify-center",
         span === 2 ? "col-span-2" : "col-span-1",
-        showDivider && PREBUILD_SECTION_DIVIDER
+        showDivider && "sm:border-r sm:border-[#F0ABCF]/14",
+        className
       )}
     >
-      <div className="flex w-fit max-w-full flex-col items-start">{children}</div>
+      <div className="flex w-fit max-w-full flex-col items-start max-sm:items-center max-sm:mx-auto">
+        {children}
+      </div>
     </div>
   );
 }
@@ -244,8 +275,8 @@ function PreBuildStripSkeleton({
   preBuild: NonNullable<GuideItemPageData["preBuild"]>;
 }) {
   return (
-    <div className="grid grid-cols-4 items-stretch py-2 sm:py-2.5">
-      <PreBuildColumnSkeleton span={1} showDivider>
+    <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-4 px-4 py-2 sm:grid-cols-4 sm:gap-0 sm:px-0 sm:py-2.5">
+      <PreBuildColumnSkeleton span={1} showDivider className="col-start-1 row-start-1">
         <p className={PREBUILD_HEADER_CLASS}>Starting</p>
         <div className="flex flex-row flex-nowrap items-center gap-0.5 pt-2">
           {preBuild.starting.map((_, index) => (
@@ -261,9 +292,18 @@ function PreBuildStripSkeleton({
         ) : null}
       </PreBuildColumnSkeleton>
 
-      <PreBuildColumnSkeleton span={2} showDivider>
+      <PreBuildColumnSkeleton span={1} className="col-start-2 row-start-1 sm:col-start-4">
+        <p className={PREBUILD_HEADER_CLASS}>Full build</p>
+        <div className="flex flex-row flex-nowrap items-center gap-0.5 pt-2">
+          <SkeletonTile compact className="ml-0 mr-1 sm:mr-1.5" />
+          <SkeletonTile compact className="mx-1 sm:mx-1.5" />
+        </div>
+        <div className="mt-1.5 h-3 w-28 animate-pulse rounded bg-[#352839]/45" />
+      </PreBuildColumnSkeleton>
+
+      <PreBuildColumnSkeleton span={2} showDivider className="col-span-2 row-start-2 sm:col-start-2 sm:row-start-1">
         <p className={PREBUILD_HEADER_CLASS}>Boots</p>
-        <div className="flex max-w-full flex-row flex-nowrap items-center pt-2">
+        <div className="flex max-w-full flex-row flex-nowrap items-center pt-2 max-sm:justify-center">
           <SkeletonTile compact className="ml-0 mr-1 sm:mr-1.5" />
           <span aria-hidden className="shrink-0 px-1.5 text-base text-[#F0ABCF]/20 sm:px-2 sm:text-lg">
             ›
@@ -273,17 +313,8 @@ function PreBuildStripSkeleton({
           ))}
         </div>
         {preBuild.bootsSubheading ? (
-          <div className="mt-1.5 h-3 w-full max-w-[12rem] animate-pulse rounded bg-[#352839]/45" />
+          <div className="mt-1.5 h-3 w-full max-w-[12rem] animate-pulse rounded bg-[#352839]/45 max-sm:mx-auto" />
         ) : null}
-      </PreBuildColumnSkeleton>
-
-      <PreBuildColumnSkeleton span={1}>
-        <p className={PREBUILD_HEADER_CLASS}>Full build</p>
-        <div className="flex flex-row flex-nowrap items-center gap-0.5 pt-2">
-          <SkeletonTile compact className="ml-0 mr-1 sm:mr-1.5" />
-          <SkeletonTile compact className="mx-1 sm:mx-1.5" />
-        </div>
-        <div className="mt-1.5 h-3 w-28 animate-pulse rounded bg-[#352839]/45" />
       </PreBuildColumnSkeleton>
     </div>
   );
@@ -331,18 +362,166 @@ function ItemStepColumnSkeleton({ step }: { step: SerializedGuideItemStep }) {
   );
 }
 
-function ItemBuildPathSkeleton({ steps }: { steps: SerializedGuideItemStep[] }) {
+function isThreeChoiceFixedPath(steps: SerializedGuideItemStep[]): boolean {
+  if (steps.length < 2) return false;
+  const first = steps[0];
+  if (first.type !== "choice" || first.items.length !== 3) return false;
+  return steps.slice(1).every((step) => step.type === "fixed" && step.items.length > 0);
+}
+
+function isMobileForkMergeSharedPath(sharedPath: SerializedGuideItemSharedPath): boolean {
+  if (sharedPath.paths.length !== 2) return false;
+
+  const [path0, path1] = sharedPath.paths;
+  if (path0.items.length === 0 || path1.items.length === 0) return false;
+  if (path0.diverge?.length || !path1.diverge?.length) return false;
+  if (path0.items[0].id !== path1.items[0].id) return false;
+
+  return true;
+}
+
+function ItemSharedPathsLayoutMobileSkeleton({
+  sharedPath,
+}: {
+  sharedPath: SerializedGuideItemSharedPath;
+}) {
+  const path0 = sharedPath.paths[0];
+  const path1 = sharedPath.paths[1];
+  const diverge = path1.diverge ?? [];
+
   return (
-    <div className="w-full max-w-full overflow-visible">
-      <div className="relative flex w-full min-w-0 items-stretch overflow-visible">
-        {steps.map((step, index) => (
-          <Fragment key={index}>
-            {index > 0 ? <div className={ITEM_LANE_SPACER_H} aria-hidden /> : null}
-            <ItemStepColumnSkeleton step={step} />
-          </Fragment>
-        ))}
+    <div className="flex w-full justify-center">
+      <div className="relative w-fit max-w-[24rem]">
+        <div className="flex flex-col items-center gap-[var(--item-lane-gap,3rem)]">
+          <SkeletonTile compact className="mx-1" />
+
+          <div className="grid w-full grid-cols-2 items-start gap-x-6">
+            <div className="flex flex-col items-center gap-[var(--item-lane-gap,3rem)]">
+              {diverge.length === 2 ? (
+                <div className="flex flex-row items-center gap-1.5">
+                  <SkeletonTile compact className="mx-0" />
+                  <SkeletonTile compact className="mx-0" />
+                </div>
+              ) : null}
+              {path1.items.map((item) => (
+                <SkeletonTile key={item.id} compact className="mx-1" />
+              ))}
+            </div>
+
+            <div className="flex flex-col items-center gap-[var(--item-lane-gap,3rem)]">
+              {path0.items.map((item) => (
+                <SkeletonTile key={item.id} compact className="mx-1" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+function ItemSharedPathsLayoutSkeleton({
+  sharedPath,
+}: {
+  sharedPath: SerializedGuideItemSharedPath;
+}) {
+  const useMobileLayout = isMobileForkMergeSharedPath(sharedPath);
+
+  return (
+    <>
+      {useMobileLayout ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemSharedPathsLayoutMobileSkeleton sharedPath={sharedPath} />
+        </div>
+      ) : null}
+
+      <div className={clsx("flex w-full min-w-0 items-stretch overflow-visible", useMobileLayout && "hidden sm:block")}>
+        <ItemStepColumnSkeleton step={{ type: "fixed", items: [sharedPath.origin] }} />
+        <div className={ITEM_LANE_SPACER_H} aria-hidden />
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
+          {sharedPath.paths.map((path, pathIndex) => (
+            <div
+              key={pathIndex}
+              className="relative flex w-full min-w-0 items-stretch overflow-visible"
+            >
+              {path.diverge ? (
+                <>
+                  <ItemStepColumnSkeleton step={{ type: "choice", items: path.diverge }} />
+                  <div className={ITEM_LANE_SPACER_H} aria-hidden />
+                </>
+              ) : null}
+              <div className="flex shrink-0 items-stretch self-stretch overflow-visible px-1 sm:px-2">
+                <div className="flex h-full flex-col items-center justify-center self-stretch">
+                  {path.items.map((item, index) => (
+                    <Fragment key={item.id}>
+                      {index > 0 ? (
+                        <div
+                          className="w-full shrink-0 [height:var(--item-lane-gap,2rem)]"
+                          aria-hidden
+                        />
+                      ) : null}
+                      <SkeletonTile className="mx-2 sm:mx-3" />
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ItemBuildPathMobileSkeleton({ steps }: { steps: SerializedGuideItemStep[] }) {
+  const fixedSteps = steps.slice(1);
+
+  return (
+    <div className="flex w-full justify-center">
+      <div className={clsx("relative w-fit max-w-full", "max-w-[24rem]")}>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-6">
+          <div className="flex justify-end pr-1">
+            <SkeletonTile compact className="ml-1 mr-0" />
+          </div>
+          <div className="flex flex-col items-center gap-[var(--item-lane-gap,3rem)]">
+            <SkeletonTile compact className="mx-1" />
+            {fixedSteps.map((step) =>
+              step.type === "fixed" ? (
+                <SkeletonTile key={step.items[0].id} compact className="mx-1" />
+              ) : null
+            )}
+          </div>
+          <div className="flex justify-start pl-1">
+            <SkeletonTile compact className="ml-0 mr-1" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ItemBuildPathSkeleton({ steps }: { steps: SerializedGuideItemStep[] }) {
+  const useMobileLayout = isThreeChoiceFixedPath(steps);
+
+  return (
+    <>
+      {useMobileLayout ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemBuildPathMobileSkeleton steps={steps} />
+        </div>
+      ) : null}
+
+      <div className={clsx("w-full max-w-full overflow-visible", useMobileLayout && "hidden sm:block")}>
+        <div className="relative flex w-full min-w-0 items-stretch overflow-visible">
+          {steps.map((step, index) => (
+            <Fragment key={index}>
+              {index > 0 ? <div className={ITEM_LANE_SPACER_H} aria-hidden /> : null}
+              <ItemStepColumnSkeleton step={step} />
+            </Fragment>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -364,21 +543,21 @@ function BuildDetailSkeleton({
   variant: GuideItemPageData["tabs"][number]["variants"][number];
 }) {
   return (
-    <div className={clsx(ITEM_DETAIL_SECTION, ITEM_SECONDARY_PAD_X, "rounded-b-2xl")}>
-      <div className="flex flex-row items-stretch gap-8 sm:gap-10 lg:gap-12">
-        <div className="min-w-0 flex-[3]">
-          <h3 className="text-xl font-bold tracking-tight text-[#FAD4E8]/20 sm:text-2xl">
+    <div className={clsx(ITEM_DETAIL_SECTION, ITEM_SECONDARY_PAD_X, "min-w-0 max-w-full overflow-x-hidden rounded-none sm:overflow-visible sm:rounded-b-2xl")}>
+      <div className="flex w-full min-w-0 max-w-full flex-col items-stretch gap-8 sm:flex-row sm:gap-10 lg:gap-12">
+        <div className="min-w-0 w-full max-w-full flex-[3]">
+          <h3 className="break-words text-center text-xl font-bold tracking-tight text-[#FAD4E8]/20 sm:text-left sm:text-2xl">
             {variant.header}
           </h3>
           <TextLineSkeletons
             body={variant.description}
-            className="mt-5 min-h-[14em] sm:mt-6 sm:min-h-[11em]"
+            className="mt-5 sm:mt-6 sm:min-h-[11em]"
           />
           <div className="mt-8 sm:mt-10">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/35 sm:text-sm">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/35 max-sm:text-center sm:text-sm">
               Good against
             </p>
-            <div className="flex flex-wrap gap-2.5 sm:gap-3">
+            <div className="flex flex-wrap gap-2.5 max-sm:justify-center sm:gap-3">
               {variant.goodAgainst.map((champion) => (
                 <ChampionIconSkeleton key={champion.id} />
               ))}
@@ -386,9 +565,9 @@ function BuildDetailSkeleton({
           </div>
         </div>
 
-        <div aria-hidden className="w-px shrink-0 self-stretch bg-[#F0ABCF]/14" />
+        <div aria-hidden className="w-px shrink-0 self-stretch bg-[#F0ABCF]/14 max-sm:hidden" />
 
-        <div className="flex min-w-0 flex-[2] items-center justify-center">
+        <div className="flex min-w-0 flex-[2] items-center justify-center max-sm:hidden">
           <div className="flex h-full items-center justify-center gap-5 sm:gap-7">
             <div className="flex flex-col items-center">
               <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/35 sm:text-[0.65rem]">
@@ -428,7 +607,7 @@ export function ItemBuildSectionSkeleton({ data }: { data: GuideItemPageData }) 
 
   return (
     <div aria-hidden>
-      <div className="mb-6 flex items-center gap-4 sm:gap-5">
+      <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
         <h2 className={clsx(guideSectionTitleClass, "text-[#F5E6D3]/20")}>{data.heading}</h2>
         {data.headerIcon ? <SkeletonTile className="relative shrink-0" /> : null}
       </div>
@@ -465,44 +644,7 @@ export function ItemBuildSectionSkeleton({ data }: { data: GuideItemPageData }) 
               {defaultTab?.steps.length ? (
                 <ItemBuildPathSkeleton steps={defaultTab.steps} />
               ) : defaultTab?.sharedPath ? (
-                <div className="flex w-full min-w-0 items-stretch overflow-visible">
-                  <ItemStepColumnSkeleton
-                    step={{ type: "fixed", items: [defaultTab.sharedPath.origin] }}
-                  />
-                  <div className={ITEM_LANE_SPACER_H} aria-hidden />
-                  <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
-                    {defaultTab.sharedPath.paths.map((path, pathIndex) => (
-                      <div
-                        key={pathIndex}
-                        className="relative flex w-full min-w-0 items-stretch overflow-visible"
-                      >
-                        {path.diverge ? (
-                          <>
-                            <ItemStepColumnSkeleton
-                              step={{ type: "choice", items: path.diverge }}
-                            />
-                            <div className={ITEM_LANE_SPACER_H} aria-hidden />
-                          </>
-                        ) : null}
-                        <div className="flex shrink-0 items-stretch self-stretch overflow-visible px-1 sm:px-2">
-                          <div className="flex h-full flex-col items-center justify-center self-stretch">
-                            {path.items.map((item, index) => (
-                              <Fragment key={item.id}>
-                                {index > 0 ? (
-                                  <div
-                                    className="w-full shrink-0 [height:var(--item-lane-gap,2rem)]"
-                                    aria-hidden
-                                  />
-                                ) : null}
-                                <SkeletonTile className="mx-2 sm:mx-3" />
-                              </Fragment>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <ItemSharedPathsLayoutSkeleton sharedPath={defaultTab.sharedPath} />
               ) : null}
             </div>
           </div>
@@ -529,20 +671,47 @@ function MatchupCardSkeleton({
   return (
     <div
       className={clsx(
-        "flex min-h-[5.75rem] min-w-0 flex-col items-center justify-center rounded-lg border px-1 sm:min-h-[6.25rem]",
-        selected ? "flex-[1.35] py-2.5" : "flex-1 py-2",
+        "flex min-w-0 flex-col items-center justify-center rounded-lg border px-1",
+        "min-h-[4.25rem] max-sm:w-full sm:min-h-[6.25rem]",
+        selected ? "max-sm:py-2 sm:flex-[1.35] sm:py-2.5" : "max-sm:py-1.5 sm:flex-1 sm:py-2",
         accent
       )}
     >
       <SkeletonCircle
-        className={selected ? "size-9 sm:size-10" : "size-8 sm:size-9"}
+        className={selected ? "size-7 sm:size-10" : "size-6 sm:size-9"}
       />
       <div
         className={clsx(
-          "mt-1.5 animate-pulse rounded bg-[#352839]/70",
+          "mt-1 animate-pulse rounded bg-[#352839]/70",
           selected ? "h-3 w-12" : "h-3 w-10"
         )}
       />
+    </div>
+  );
+}
+
+function MatchupColumnSkeleton({ column }: { column: GuideMatchupPageData["columns"][number] }) {
+  const accent = column.tone === "hard" ? "text-[#F87171]/25" : "text-[#7AADD6]/25";
+
+  return (
+    <div className="min-w-0 w-full flex-1">
+      <h2
+        className={clsx(
+          "text-sm font-bold uppercase tracking-[0.14em] sm:hidden",
+          accent
+        )}
+      >
+        {column.label}
+      </h2>
+      <div className="mt-3 grid w-full min-w-0 grid-cols-3 gap-1.5 sm:mt-0 sm:flex sm:items-end sm:justify-between sm:gap-1.5">
+        {column.matchups.map((matchup, index) => (
+          <MatchupCardSkeleton
+            key={matchup.id}
+            tone={column.tone}
+            selected={column.tone === "hard" && index === 0}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -554,8 +723,8 @@ export function MatchupSectionSkeleton({ data }: { data: GuideMatchupPageData })
   const selectedMatchup = hardColumn.matchups[0];
 
   return (
-    <div aria-hidden>
-      <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
+    <div aria-hidden className="w-full min-w-0 max-w-full">
+      <div className={clsx("hidden w-full grid-cols-2 gap-8 sm:grid", guideSectionHeaderPadClass)}>
         {[hardColumn, easyColumn].map((column) => {
           const accent = column.tone === "hard" ? "text-[#F87171]/25" : "text-[#7AADD6]/25";
           return (
@@ -574,26 +743,23 @@ export function MatchupSectionSkeleton({ data }: { data: GuideMatchupPageData })
         })}
       </div>
 
-      <div className="mt-5 flex w-full items-end gap-2 sm:gap-3">
-        <div className="flex min-w-0 flex-1 items-end justify-between gap-1 sm:gap-1.5">
-          {hardColumn.matchups.map((matchup, index) => (
-            <MatchupCardSkeleton key={matchup.id} tone="hard" selected={index === 0} />
-          ))}
-        </div>
+      <div
+        className={clsx(
+          "mt-0 flex w-full min-w-0 max-w-full flex-col gap-4 sm:mt-5 sm:flex-row sm:items-end sm:gap-3",
+          guideSectionHeaderPadClass
+        )}
+      >
+        <MatchupColumnSkeleton column={hardColumn} />
 
-        <div aria-hidden className="mb-2 w-px shrink-0 self-stretch bg-[#F0ABCF]/14" />
+        <div aria-hidden className="mb-2 hidden w-px shrink-0 self-stretch bg-[#F0ABCF]/14 sm:block" />
 
-        <div className="flex min-w-0 flex-1 items-end justify-between gap-1 sm:gap-1.5">
-          {easyColumn.matchups.map((matchup) => (
-            <MatchupCardSkeleton key={matchup.id} tone="easy" selected={false} />
-          ))}
-        </div>
+        <MatchupColumnSkeleton column={easyColumn} />
       </div>
 
       {selectedMatchup ? (
-        <div className="mt-5 w-full rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:p-5">
-          <div className="flex items-start gap-4 sm:gap-5">
-            <SkeletonTile className="h-[4.2rem] w-[4.2rem] shrink-0 rounded-lg sm:h-[4.9rem] sm:w-[4.9rem]" />
+        <div className="mt-4 w-full min-w-0 max-w-full rounded-none border border-[#F0ABCF]/12 border-x-0 bg-[#1E1724]/55 px-6 py-4 sm:mt-5 sm:rounded-xl sm:border-x sm:p-5">
+          <div className="flex items-start gap-3 sm:gap-5">
+            <SkeletonTile className="h-12 w-12 shrink-0 rounded-lg sm:h-[4.9rem] sm:w-[4.9rem]" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold leading-none text-[#F87171]/25 sm:text-base">
                 {selectedMatchup.name}

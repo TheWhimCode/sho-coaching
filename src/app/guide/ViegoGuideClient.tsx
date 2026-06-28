@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import clsx from "clsx";
 import { FaTwitch } from "react-icons/fa6";
 import RunePageSection from "@/app/_components/guides/runes/RunePageSection";
 import ItemBuildSection from "@/app/_components/guides/items/ItemBuildSection";
@@ -18,6 +19,37 @@ import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBu
 const TWITCH_URL =
   LINK_TREE_LINKS.find((link) => link.id === "twitch")?.href ??
   "https://www.twitch.tv/itsMinooooo";
+
+const twitchButtonClass =
+  "inline-flex shrink-0 items-center gap-2 rounded-full border border-[#9146FF]/45 bg-[#9146FF]/10 px-4 py-2.5 text-sm font-semibold text-[#BF94FF] transition hover:border-[#9146FF]/70 hover:bg-[#9146FF]/18 hover:text-[#D9B8FF] sm:px-4 sm:py-2.5 sm:text-base";
+
+function MobileGuideFooter() {
+  return (
+    <footer className="mt-16 flex justify-center pb-4 sm:hidden">
+      <div className="grid w-max max-w-[calc(100%-3rem)] grid-cols-1 gap-3">
+        <a
+          href={TWITCH_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={clsx(twitchButtonClass, "group w-full justify-center")}
+        >
+          <FaTwitch
+            className="h-4 w-4 shrink-0 text-[#9146FF] transition group-hover:text-[#B794FF]"
+            aria-hidden
+          />
+          Watch me live
+        </a>
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="inline-flex w-full items-center justify-center rounded-full border border-white/70 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white/70 transition hover:border-white/90 hover:bg-white/10 hover:text-white/90"
+        >
+          Back to the top
+        </button>
+      </div>
+    </footer>
+  );
+}
 
 export default function ViegoGuideClient({
   runeData,
@@ -46,8 +78,8 @@ export default function ViegoGuideClient({
         style={{ background: guidePageBg }}
       />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-6 pb-20 pt-20 sm:px-10 sm:pt-24 lg:px-16 lg:pt-28 xl:px-24">
-        <header className="mb-12 flex items-center justify-between gap-4 sm:gap-6">
+      <div className="relative z-10 mx-auto min-w-0 max-w-6xl overflow-x-hidden px-0 pb-20 pt-20 sm:overflow-visible sm:px-10 sm:pt-24 lg:px-16 lg:pt-28 xl:px-24">
+        <header className="mb-12 flex items-center justify-between gap-4 px-6 sm:gap-6 sm:px-0">
           <div className="flex min-w-0 flex-1 flex-col pl-24 sm:pl-28">
             <p
               className="text-xs font-semibold uppercase tracking-[0.2em]"
@@ -87,7 +119,7 @@ export default function ViegoGuideClient({
             href={TWITCH_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-[#9146FF]/45 bg-[#9146FF]/10 px-3.5 py-2 text-sm font-semibold text-[#BF94FF] transition hover:border-[#9146FF]/70 hover:bg-[#9146FF]/18 hover:text-[#D9B8FF] sm:px-4 sm:py-2.5 sm:text-base"
+            className={clsx(twitchButtonClass, "group hidden sm:inline-flex")}
           >
             <FaTwitch className="h-4 w-4 shrink-0 text-[#9146FF] transition group-hover:text-[#B794FF] sm:h-5 sm:w-5" aria-hidden />
             Watch me live
@@ -115,6 +147,8 @@ export default function ViegoGuideClient({
             guideTextIcons={guideTextIcons}
           />
         </div>
+
+        <MobileGuideFooter />
       </div>
     </div>
   );

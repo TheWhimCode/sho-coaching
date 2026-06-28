@@ -1,17 +1,9 @@
 import type { GuideComboSectionConfig } from "@/lib/guides/comboGuideTypes";
 
 export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
-  heading: "Combos",
-  subtitle: "Clips and when to use each combo",
+  heading: "Combo Guide",
+  subtitle: "How and when to use each combo",
   combos: [
-    {
-      id: "w-tap-burst",
-      label: "W tap burst",
-      sequence: ["Wtap", "AA", "Q", "AA"],
-      videoSrc: "/videos/guide/w%20tap%20burst.webm",
-      ingameExampleVideoSrc: "/videos/guide/ingameWtapburst.webm",
-      explanation: "Bread and butter. You walk up with E and do the basic burst combo. On 3 items this kills squishies.",
-    },
     {
       id: "q-extension",
       label: "Q extension",
@@ -42,6 +34,14 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       videoSrc: "/videos/guide/R%20extension%20burst.webm",
       ingameExampleVideoSrc: "/videos/guide/ingameRextensionburst.webm",
       explanation: "Get in range quickly, Q first to apply the mark for the auto. Through with HOB your Q animation gets so fast after the first auto, it barely matters which order you do it in.",
+    },
+    {
+      id: "w-tap-burst",
+      label: "W tap burst",
+      sequence: ["Wtap", "AA", "Q", "AA"],
+      videoSrc: "/videos/guide/w%20tap%20burst.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameWtapburst.webm",
+      explanation: "Bread and butter. You walk up with E and do the basic burst combo. On 3 items this kills squishies.",
     },
     {
       id: "burst-combo",

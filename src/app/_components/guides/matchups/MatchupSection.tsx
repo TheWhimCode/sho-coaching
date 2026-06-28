@@ -12,7 +12,7 @@ import type {
   SerializedGuideMatchup,
   SerializedGuideMatchupColumn,
 } from "@/lib/guides/matchupGuideTypes";
-import { guideChampionIconImgClass } from "@/lib/guides/guideTheme";
+import { guideChampionIconImgClass, guideSectionHeaderPadClass } from "@/lib/guides/guideTheme";
 
 const TONE = {
   hard: {
@@ -54,8 +54,9 @@ function MatchupCard({
       type="button"
       onClick={onSelect}
       className={clsx(
-        "flex min-h-[5.75rem] min-w-0 flex-col items-center justify-center rounded-lg border px-1 transition-all duration-300 ease-out sm:min-h-[6.25rem]",
-        selected ? "flex-[1.35] py-2.5" : "flex-1 py-2",
+        "flex min-w-0 flex-col items-center justify-center rounded-lg border px-1 transition-all duration-300 ease-out",
+        "min-h-[4.25rem] max-sm:w-full sm:min-h-[6.25rem]",
+        selected ? "max-sm:py-2 sm:flex-[1.35] sm:py-2.5" : "max-sm:py-1.5 sm:flex-1 sm:py-2",
         selected ? accent.cardSelected : accent.cardIdle
       )}
     >
@@ -63,7 +64,9 @@ function MatchupCard({
         className={clsx(
           "relative shrink-0 overflow-hidden rounded-full bg-[#352839]/80 ring-2 transition-all duration-300 ease-out",
           accent.iconRing,
-          selected ? "h-9 w-9 sm:h-10 sm:w-10" : "h-8 w-8 sm:h-9 sm:w-9"
+          selected
+            ? "h-7 w-7 sm:h-10 sm:w-10"
+            : "h-6 w-6 sm:h-9 sm:w-9"
         )}
       >
         <GuideImage
@@ -75,8 +78,10 @@ function MatchupCard({
       </div>
       <span
         className={clsx(
-          "mt-1.5 line-clamp-2 w-full text-center font-medium leading-tight text-[#F5E6D3]/88 transition-all duration-300 ease-out",
-          selected ? "text-[0.62rem] sm:text-xs" : "text-[0.58rem] sm:text-[0.62rem]"
+          "mt-1 line-clamp-2 w-full text-center font-medium leading-tight text-[#F5E6D3]/88 transition-all duration-300 ease-out",
+          selected
+            ? "text-[0.55rem] sm:text-xs"
+            : "text-[0.5rem] sm:text-[0.62rem]"
         )}
       >
         {matchup.name}
@@ -85,7 +90,7 @@ function MatchupCard({
   );
 }
 
-function MatchupGroup({
+function MatchupColumn({
   column,
   selection,
   onSelect,
@@ -94,18 +99,35 @@ function MatchupGroup({
   selection: Selection;
   onSelect: (id: string) => void;
 }) {
+  const accent = TONE[column.tone];
+
   return (
-    <>
-      {column.matchups.map((matchup) => (
-        <MatchupCard
-          key={matchup.id}
-          matchup={matchup}
-          tone={column.tone}
-          selected={selection.tone === column.tone && selection.id === matchup.id}
-          onSelect={() => onSelect(matchup.id)}
-        />
-      ))}
-    </>
+    <div className="min-w-0 w-full flex-1">
+      <h2
+        className={clsx(
+          "text-sm font-bold uppercase tracking-[0.14em] sm:hidden",
+          accent.title
+        )}
+      >
+        {column.label}
+      </h2>
+
+      <div
+        className={clsx(
+          "mt-3 grid w-full min-w-0 grid-cols-3 gap-1.5 sm:mt-0 sm:flex sm:items-end sm:justify-between sm:gap-1.5"
+        )}
+      >
+        {column.matchups.map((matchup) => (
+          <MatchupCard
+            key={matchup.id}
+            matchup={matchup}
+            tone={column.tone}
+            selected={selection.tone === column.tone && selection.id === matchup.id}
+            onSelect={() => onSelect(matchup.id)}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -140,7 +162,7 @@ export default function MatchupSection({
     <section
       ref={sectionRef}
       id="matchups"
-      className="scroll-mt-24 w-full"
+      className="scroll-mt-24 w-full min-w-0 max-w-full"
       aria-busy={shouldLoad && !imagesReady}
     >
       {!shouldLoad ? (
@@ -163,7 +185,7 @@ export default function MatchupSection({
           )}
           aria-hidden={!showContent}
         >
-      <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
+      <div className={clsx("hidden w-full grid-cols-2 gap-8 sm:grid", guideSectionHeaderPadClass)}>
         {[hardColumn, easyColumn].map((column) => {
           const accent = TONE[column.tone];
           return (
@@ -182,32 +204,33 @@ export default function MatchupSection({
         })}
       </div>
 
-      <div className="mt-5 flex w-full items-end gap-2 sm:gap-3">
-        <div className="flex min-w-0 flex-1 items-end justify-between gap-1 sm:gap-1.5">
-          <MatchupGroup
-            column={hardColumn}
-            selection={selection}
-            onSelect={(id) => setSelection({ tone: "hard", id })}
-          />
-        </div>
+      <div
+        className={clsx(
+          "mt-0 flex w-full min-w-0 max-w-full flex-col gap-4 sm:mt-5 sm:flex-row sm:items-end sm:gap-3",
+          guideSectionHeaderPadClass
+        )}
+      >
+        <MatchupColumn
+          column={hardColumn}
+          selection={selection}
+          onSelect={(id) => setSelection({ tone: "hard", id })}
+        />
 
-        <div aria-hidden className="mb-2 w-px shrink-0 self-stretch bg-[#F0ABCF]/14" />
+        <div aria-hidden className="mb-2 hidden w-px shrink-0 self-stretch bg-[#F0ABCF]/14 sm:block" />
 
-        <div className="flex min-w-0 flex-1 items-end justify-between gap-1 sm:gap-1.5">
-          <MatchupGroup
-            column={easyColumn}
-            selection={selection}
-            onSelect={(id) => setSelection({ tone: "easy", id })}
-          />
-        </div>
+        <MatchupColumn
+          column={easyColumn}
+          selection={selection}
+          onSelect={(id) => setSelection({ tone: "easy", id })}
+        />
       </div>
 
       {selectedMatchup ? (
-        <div className="mt-5 w-full rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:p-5">
-          <div className="flex items-start gap-4 sm:gap-5">
+        <div className="mt-4 w-full min-w-0 max-w-full rounded-none border border-[#F0ABCF]/12 border-x-0 bg-[#1E1724]/55 px-6 py-4 sm:mt-5 sm:rounded-xl sm:border-x sm:p-5">
+          <div className="flex items-start gap-3 sm:gap-5">
             <div
               className={clsx(
-                "relative h-[4.2rem] w-[4.2rem] shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
+                "relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
                 selection.tone === "hard" ? "ring-[#F87171]/35" : "ring-[#7AADD6]/35"
               )}
             >
@@ -218,7 +241,7 @@ export default function MatchupSection({
                 className={guideChampionIconImgClass}
               />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 break-words">
               <p
                 className={clsx(
                   "text-sm font-semibold leading-none sm:text-base",
@@ -227,7 +250,7 @@ export default function MatchupSection({
               >
                 {selectedMatchup.name}
               </p>
-              <div className="mt-2 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:text-base">
+              <div className="mt-2 min-w-0 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:text-base">
                 {selectedMatchup.explanation.split("\n").map((paragraph, index) => (
                   <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
                     {renderGuideHighlightedText(paragraph, guideTextIcons)}

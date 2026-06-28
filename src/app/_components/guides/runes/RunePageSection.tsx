@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   guideRuneLayoutGapClass,
   guideRuneOuterPanelClass,
+  guideSectionHeaderPadClass,
   guideSectionTitleClass,
+  guideMobileFlushPanelClass,
 } from "@/lib/guides/guideTheme";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
 import GuideImage from "@/app/_components/guides/GuideImage";
@@ -43,7 +45,7 @@ function RuneIcon({
   large?: boolean;
 }) {
   const accent = TREE_ACCENT[mode];
-  const size = large ? "size-16 sm:size-[4.5rem]" : "size-11 sm:size-12";
+  const size = large ? "size-14 sm:size-16 lg:size-[4.5rem]" : "size-9 sm:size-11 lg:size-12";
 
   return (
     <div
@@ -68,7 +70,7 @@ function StatShardIcon({ shard, selected }: { shard: SerializedRune; selected: b
   return (
     <div
       className={clsx(
-        "relative aspect-square size-7 shrink-0 flex-none overflow-hidden rounded-full border-2 bg-[#352839]/80 transition sm:size-8",
+        "relative aspect-square size-6 shrink-0 flex-none overflow-hidden rounded-full border-2 bg-[#352839]/80 transition sm:size-8",
         selected
           ? "border-[#F5E6D3]/40 shadow-[0_0_8px_rgba(245,230,211,0.14)]"
           : "border-transparent opacity-35 grayscale"
@@ -85,13 +87,24 @@ function StatShardIcon({ shard, selected }: { shard: SerializedRune; selected: b
   );
 }
 
-function StatShardGrid({ rows }: { rows: SerializedStatShardRow[] }) {
+function StatShardGrid({
+  rows,
+  className,
+}: {
+  rows: SerializedStatShardRow[];
+  className?: string;
+}) {
   return (
-    <div className="mt-1 flex flex-col gap-3 border-t border-[#F0ABCF]/15 pt-3 sm:gap-3.5">
+    <div
+      className={clsx(
+        "mt-1 flex flex-col gap-2 border-t border-[#F0ABCF]/15 pt-3 sm:gap-3.5",
+        className
+      )}
+    >
       {rows.map((row, rowIdx) => (
         <div
           key={rowIdx}
-          className="flex items-center justify-center gap-3 sm:gap-3.5"
+          className="flex items-center justify-center gap-2 sm:gap-3.5"
         >
           {row.shards.map((shard) => (
             <StatShardIcon
@@ -112,19 +125,21 @@ function RuneTreePanel({
   mode,
   hideKeystone = false,
   statShardRows,
+  statShardClassName,
 }: {
   tree: SerializedRuneTree;
   selectedIds: number[];
   mode: TreeMode;
   hideKeystone?: boolean;
   statShardRows?: SerializedStatShardRow[];
+  statShardClassName?: string;
 }) {
   const selected = new Set(selectedIds);
   const slots = hideKeystone ? tree.slots.slice(1) : tree.slots;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2.5 sm:gap-4">
         {slots.map((row, rowIdx) => {
           const isKeystoneRow = !hideKeystone && rowIdx === 0;
           return (
@@ -132,7 +147,7 @@ function RuneTreePanel({
               key={`${tree.id}-row-${rowIdx}`}
               className={clsx(
                 "flex items-center justify-center",
-                isKeystoneRow ? "gap-2 sm:gap-2.5" : "gap-3.5 sm:gap-4"
+                isKeystoneRow ? "gap-1.5 sm:gap-2.5" : "gap-1 sm:gap-3.5 lg:gap-4"
               )}
             >
               {row.map((rune) => (
@@ -151,7 +166,7 @@ function RuneTreePanel({
       </div>
 
       {statShardRows && statShardRows.length > 0 ? (
-        <StatShardGrid rows={statShardRows} />
+        <StatShardGrid rows={statShardRows} className={statShardClassName} />
       ) : null}
     </div>
   );
@@ -288,7 +303,7 @@ export default function RunePageSection({
           )}
           aria-hidden={!imagesReady}
         >
-          <div className="mb-6 flex items-center gap-4 sm:gap-5">
+          <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
             <h2 className={guideSectionTitleClass}>{build.heading}</h2>
             {headerIcon ? (
               <div className="relative shrink-0">
@@ -305,33 +320,29 @@ export default function RunePageSection({
             ) : null}
           </div>
 
-          <div className={guideRuneOuterPanelClass}>
+          <div className={clsx(guideRuneOuterPanelClass, guideMobileFlushPanelClass)}>
             <div
               className={clsx(
                 "flex flex-col lg:flex-row lg:items-stretch",
                 guideRuneLayoutGapClass
               )}
             >
-              <div ref={leftPanelRef} className="w-full shrink-0 p-4 sm:p-5 lg:w-auto lg:flex-1">
-                <div
-                  className={clsx(
-                    "flex flex-col sm:flex-row",
-                    guideRuneLayoutGapClass
-                  )}
-                >
-                  <RuneTreePanel
-                    tree={primaryTree}
-                    selectedIds={build.primaryPerkIds}
-                    mode="primary"
-                  />
-                  <div className="hidden w-px shrink-0 bg-[#F0ABCF]/15 sm:block" />
-                  <RuneTreePanel
-                    tree={secondaryTree}
-                    selectedIds={build.secondaryPerkIds}
-                    mode="secondary"
-                    hideKeystone
-                    statShardRows={statShardRows}
-                  />
+              <div ref={leftPanelRef} className="w-full shrink-0 p-3 sm:p-5 lg:w-auto lg:flex-1">
+                <div className="flex flex-col">
+                  <div className="flex flex-row items-start gap-1.5 sm:gap-6">
+                    <RuneTreePanel
+                      tree={primaryTree}
+                      selectedIds={build.primaryPerkIds}
+                      mode="primary"
+                    />
+                    <RuneTreePanel
+                      tree={secondaryTree}
+                      selectedIds={build.secondaryPerkIds}
+                      mode="secondary"
+                      hideKeystone
+                      statShardRows={statShardRows}
+                    />
+                  </div>
                 </div>
               </div>
 

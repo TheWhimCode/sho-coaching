@@ -21,9 +21,16 @@ export const guidePageBg = [
   GUIDE.eggplantDeep,
 ].join(", ");
 
+/** Section titles sit inset on mobile while panels stay full-bleed. */
+export const guideSectionHeaderPadClass = "px-6 sm:px-0";
+
+/** Strip side radius/borders on mobile so panels span the viewport width. */
+export const guideMobileFlushPanelClass =
+  "max-sm:rounded-none max-sm:border-x-0 max-sm:ring-0";
+
 /** Outermost rune section shell — tight padding so inner panels get more room */
 export const guideRuneOuterPanelClass =
-  "overflow-hidden rounded-2xl border border-[#F0ABCF]/15 bg-[#2A1F2E]/75 p-3 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:p-4";
+  "overflow-hidden rounded-none border border-[#F0ABCF]/15 bg-[#2A1F2E]/75 p-3 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:rounded-2xl sm:p-4";
 
 /** Gap between rune columns and between runes ↔ explanations */
 export const guideRuneLayoutGapClass = "gap-6";
@@ -33,7 +40,7 @@ export const guidePanelClass =
   "overflow-hidden rounded-2xl border border-[#F0ABCF]/15 bg-[#2A1F2E]/75 p-4 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:p-6 lg:p-8";
 
 export const guideInnerPanelClass =
-  "rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:p-5";
+  "rounded-none border border-[#F0ABCF]/12 border-x-0 bg-[#1E1724]/55 p-4 sm:rounded-xl sm:border-x sm:p-5";
 
 export const guideSectionTitleClass =
   "text-2xl font-bold tracking-tight text-[#F5E6D3] sm:text-3xl";

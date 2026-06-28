@@ -107,12 +107,28 @@ html, body {
   }
 }
 
+@keyframes item-tip-in-below {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-item-tip-in {
   animation: item-tip-in 200ms ease-out both;
 }
 
+.animate-item-tip-in-below {
+  animation: item-tip-in-below 200ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-item-tip-in {
+  .animate-item-tip-in,
+  .animate-item-tip-in-below {
     animation: none;
   }
 }
