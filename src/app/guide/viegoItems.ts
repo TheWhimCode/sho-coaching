@@ -130,10 +130,6 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
         "Since you're building scaling, you lack skirmishing power early levels. Wards help you deal with those early invades and smoothen the game when you crossmap. Swap to sweeper when you're strong enough to oneshot",
     },
   ],
-  startingLink: {
-    label: "Green Smite TikTok",
-    href: "https://www.tiktok.com/@itsMinooooo",
-  },
   bootsBase: {
     id: 1001,
     title: "Boots",
