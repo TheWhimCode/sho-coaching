@@ -25,6 +25,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "R extension",
       sequence: ["Wtap", "R"],
       videoSrc: "/videos/guide/R%20extension.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameRextension.webm",
       explanation: "W > R extends the R range immediately. This only works with W, if you Lucian E > R your R will just have the normal range. Wait until the dash is completed before you R on other champions.",
     },
     {
@@ -32,7 +33,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "R extension burst",
       sequence: ["Wtap", "R", "Q", "AA"],
       videoSrc: "/videos/guide/R%20extension%20burst.webm",
-      ingameExampleVideoSrc: "/videos/guide/ingameRextensionburst.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameRExtensionBurst.webm",
       explanation: "Get in range quickly, Q first to apply the mark for the auto. Through with HOB your Q animation gets so fast after the first auto, it barely matters which order you do it in.",
     },
     {
@@ -40,7 +41,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "W tap burst",
       sequence: ["Wtap", "AA", "Q", "AA"],
       videoSrc: "/videos/guide/w%20tap%20burst.webm",
-      ingameExampleVideoSrc: "/videos/guide/ingameWtapburst.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameWtapburst.webm?v=2",
       explanation: "Bread and butter. You walk up with E and do the basic burst combo. On 3 items this kills squishies.",
     },
     {
@@ -77,6 +78,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Squishy burst",
       sequence: ["Wtap", "Q", "AA"],
       videoSrc: "/videos/guide/Squishy%20burst.webm",
+      ingameExampleVideoSrc: "/videos/guide/ingameSquishyBurst.webm",
       explanation: "Sometimes this is all it takes...",
     },
     {

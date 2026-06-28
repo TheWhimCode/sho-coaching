@@ -153,6 +153,9 @@ function useComboVideoPoster(
     const video = videoRef.current;
     if (!video) return;
 
+    video.pause();
+    video.load();
+
     let cancelled = false;
     let seekFallbackTimer: number | undefined;
     let clearSeekListener: (() => void) | undefined;
@@ -280,6 +283,7 @@ function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
         <div className="absolute inset-0 animate-pulse bg-[#2A1F2E]/70" aria-hidden />
       ) : null}
       <video
+        key={videoSrc}
         ref={videoRef}
         src={videoSrc}
         muted
