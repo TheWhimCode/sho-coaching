@@ -19,7 +19,7 @@ export const VIEGO_RUNE_BUILD: GuideRuneBuild = {
   statShards: {
     offense: 5005, // Attack Speed
     flex: 5008, // Adaptive Force
-    defense: 5013, // Tenacity and Slow Resist
+    defense: 5011, // Health
   },
   summonerSpells: {
     spellIds: [4, 11], // Flash, Smite
