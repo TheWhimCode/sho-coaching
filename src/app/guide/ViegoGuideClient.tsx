@@ -21,7 +21,7 @@ const TWITCH_URL =
   "https://www.twitch.tv/itsMinooooo";
 
 const twitchButtonClass =
-  "inline-flex shrink-0 items-center gap-2 rounded-full border border-[#9146FF]/45 bg-[#9146FF]/10 px-4 py-2.5 text-sm font-semibold text-[#BF94FF] transition hover:border-[#9146FF]/70 hover:bg-[#9146FF]/18 hover:text-[#D9B8FF] sm:px-4 sm:py-2.5 sm:text-base";
+  "shrink-0 items-center gap-2 rounded-full border border-[#9146FF]/45 bg-[#9146FF]/10 px-4 py-2.5 text-sm font-semibold text-[#BF94FF] transition hover:border-[#9146FF]/70 hover:bg-[#9146FF]/18 hover:text-[#D9B8FF] sm:px-4 sm:py-2.5 sm:text-base";
 
 function MobileGuideFooter() {
   return (
@@ -31,7 +31,7 @@ function MobileGuideFooter() {
           href={TWITCH_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className={clsx(twitchButtonClass, "group w-full justify-center")}
+          className={clsx(twitchButtonClass, "group inline-flex w-full justify-center")}
         >
           <FaTwitch
             className="h-4 w-4 shrink-0 text-[#9146FF] transition group-hover:text-[#B794FF]"
