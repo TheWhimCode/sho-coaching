@@ -22,8 +22,7 @@ export const metadata: Metadata = {
     default: "Mino — League of Legends coaching",
     template: "%s · Mino",
   },
-  description:
-    "Book 1-on-1 League of Legends coaching with Mino, or try Skillcheck — daily LoL knowledge challenges.",
+  description: "Some stuff about me :3",
   openGraph: {
     siteName: "Mino",
     type: "website",

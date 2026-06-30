@@ -4,8 +4,7 @@ import { ABOUT_MINO_PRELOAD_IMAGES } from "@/app/_components/linktree/aboutMinoP
 
 export const metadata: Metadata = {
   title: "Mino, Coaching & Skillcheck",
-  description:
-    "Mino’s website — book League of Legends coaching, play daily challenges and learn more about Mino.",
+  description: "Some stuff about me :3",
   alternates: {
     canonical: "/",
   },
