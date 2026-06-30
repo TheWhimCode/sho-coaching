@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
 @import "tailwindcss";
+@import "overlayscrollbars/styles/overlayscrollbars.css";
 @plugin "@tailwindcss/typography";
 
 @theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --color-bg:        #050B18;
   --color-panel:     linear-gradient(180deg, #0C162C 0%, #081126 100%);
   --color-divider:   rgb(255 255 255 / .10);
@@ -51,8 +52,7 @@
 }
 
 html, body {
-  @apply bg-bg text-[var(--color-fg)];
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-bg font-sans text-[var(--color-fg)];
 }
 
 .mask-x-fade {
@@ -511,6 +511,7 @@ html, body {
 }
 /* Hide native scrollbars while still allowing scrolling */
 #scroll-root.os-loading {
+  background-color: #050b18;
   scrollbar-width: none;          /* Firefox */
   -ms-overflow-style: none;       /* IE/old Edge */
 }

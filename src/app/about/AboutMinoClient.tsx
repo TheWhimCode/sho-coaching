@@ -6,23 +6,13 @@ import Link from "next/link";
 import clsx from "clsx";
 import {
   motion,
-  useInView,
   useMotionValue,
   useTransform,
   animate,
   type MotionValue,
 } from "framer-motion";
-import {
-  ArrowDown,
-  Sparkles,
-  Trophy,
-  Heart,
-  Star,
-  Mic2,
-  Gamepad2,
-} from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import TypingText from "@/app/_components/animations/TypingText";
-import GlassPanel from "@/app/_components/panels/GlassPanel";
 import { rankEmblemUrl } from "@/lib/league/datadragon";
 import {
   ABOUT_MINO_ACCENT,
@@ -34,6 +24,18 @@ import {
   getPinkSectionScrollMetrics,
   useOverlayScrollViewport,
 } from "@/lib/overlayScrollViewport";
+
+function AboutPawIcon({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={clsx(
+        "relative inline-block size-12 shrink-0 -rotate-[30deg] bg-[#F0ABCF] mask-[url(/images/guide/paw.png)] mask-contain mask-center mask-no-repeat md:size-14",
+        className
+      )}
+    />
+  );
+}
 
 const OverlayScrollRootContext = createContext<HTMLElement | null>(null);
 
@@ -131,6 +133,47 @@ function useTriggerAtViewportHeight(
   return triggered;
 }
 
+const PANEL_REVEAL_CENTER_Y = 600;
+const PANEL_REVEAL_DURATION_S = 0.65;
+
+/** One-shot panel entrance when the panel center crosses 600px in the scroll viewport. */
+function useOneShotPanelReveal(
+  ref: React.RefObject<HTMLElement | null>,
+  scrollRoot: HTMLElement | null,
+  presence: MotionValue<number>
+) {
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    if (!scrollRoot) return;
+
+    const check = () => {
+      if (doneRef.current) return;
+      const el = ref.current;
+      if (!el) return;
+
+      const containerRect = scrollRoot.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      const centerInViewport = rect.top + rect.height / 2 - containerRect.top;
+      const threshold = PANEL_REVEAL_CENTER_Y;
+
+      if (centerInViewport <= threshold) {
+        doneRef.current = true;
+        animate(presence, 1, { duration: PANEL_REVEAL_DURATION_S, ease: EASE });
+      }
+    };
+
+    scrollRoot.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    check();
+
+    return () => {
+      scrollRoot.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, [ref, scrollRoot, presence]);
+}
+
 function AboutPageBackgrounds({ pinkPresence }: { pinkPresence: MotionValue<number> }) {
   return (
     <div className={ABOUT_BG_Z} aria-hidden>
@@ -157,7 +200,7 @@ function AboutPageBackgrounds({ pinkPresence }: { pinkPresence: MotionValue<numb
         </div>
       </div>
       <motion.div
-        className="pointer-events-none fixed inset-0 z-0"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{ opacity: pinkPresence }}
         aria-hidden
       >
@@ -167,22 +210,47 @@ function AboutPageBackgrounds({ pinkPresence }: { pinkPresence: MotionValue<numb
   );
 }
 
+type PinkPanelStat = {
+  value: string;
+  label: string;
+};
+
 type PinkPanelCardProps = {
   eyebrow: string;
   title: string;
+  titlePaw?: boolean;
+  closingPaw?: boolean;
   body: string;
-  tags: string[];
+  bodyClosing?: string;
+  tags?: string[];
+  stats?: PinkPanelStat[];
+  cta?: { label: string; href: string };
+  footer?: string;
   demonMode: boolean;
 };
 
-function PinkPanelCard({ eyebrow, title, body, tags, demonMode }: PinkPanelCardProps) {
+function PinkPanelCard({
+  eyebrow,
+  title,
+  titlePaw = false,
+  closingPaw = false,
+  body,
+  bodyClosing,
+  tags = [],
+  stats = [],
+  cta,
+  footer,
+  demonMode,
+}: PinkPanelCardProps) {
+  const bodyParagraphs = body.split(/\n\n+/).filter(Boolean);
+
   return (
     <motion.div
       className={clsx(
-        "relative rounded-3xl p-5 backdrop-blur-xl md:p-7",
+        "relative rounded-3xl p-6 backdrop-blur-xl md:p-8",
         demonMode
           ? "border border-[#F472B6]/55 bg-transparent"
-          : "overflow-hidden border border-white/70 bg-white/72"
+          : "border border-white/70 bg-white/72"
       )}
       animate={{
         boxShadow: demonMode
@@ -193,7 +261,7 @@ function PinkPanelCard({ eyebrow, title, body, tags, demonMode }: PinkPanelCardP
     >
       <div className="relative">
         <motion.p
-          className="text-[11px] font-medium uppercase tracking-[0.22em]"
+          className="text-xs font-medium uppercase tracking-[0.22em] md:text-[13px]"
           animate={{ color: demonMode ? ABOUT_GOLD : "rgba(190, 24, 93, 0.8)" }}
           transition={{ duration: 0.4 }}
         >
@@ -203,38 +271,114 @@ function PinkPanelCard({ eyebrow, title, body, tags, demonMode }: PinkPanelCardP
           ) : null}
         </motion.p>
         <motion.h2
-          className="mt-2.5 text-xl font-semibold leading-snug md:mt-3 md:text-2xl"
+          className="mt-2.5 text-2xl font-semibold leading-snug md:mt-3 md:text-3xl"
           animate={{
             color: demonMode ? "#FDF2F8" : "#4A1D35",
           }}
           transition={{ duration: 0.4 }}
         >
           {title}
+          {titlePaw ? <AboutPawIcon className="-top-0.5 ml-4 align-middle md:-top-1 md:ml-5" /> : null}
         </motion.h2>
-        <motion.p
-          className="mt-3 text-sm leading-relaxed md:mt-4 md:text-base"
+        <motion.div
+          className="mt-3 space-y-[0.5lh] text-base leading-[1.75] md:mt-4 md:text-lg md:leading-relaxed"
           animate={{ color: demonMode ? "rgba(253, 242, 248, 0.82)" : "rgba(107, 40, 72, 0.88)" }}
           transition={{ duration: 0.4 }}
         >
-          {body}
-        </motion.p>
-        <div className="mt-5 flex flex-wrap gap-2 md:mt-6">
-          {tags.map((tag) => (
-            <motion.span
-              key={tag}
-              className="rounded-full px-3 py-1 text-xs font-medium"
-              animate={{
-                borderColor: demonMode ? "rgba(244,114,182,0.45)" : "rgba(249,168,212,0.5)",
-                backgroundColor: demonMode ? "transparent" : "rgba(253,242,248,0.8)",
-                color: demonMode ? "#F9A8D4" : "#9D174D",
-              }}
-              style={{ borderWidth: 1, borderStyle: "solid" }}
-              transition={{ duration: 0.4 }}
-            >
-              {tag}
-            </motion.span>
+          {bodyParagraphs.map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
           ))}
-        </div>
+          {bodyClosing ? (
+            <p className="flex items-end">
+              <span className="font-semibold">{bodyClosing}</span>
+              {closingPaw ? (
+                <AboutPawIcon className="-mb-2 ml-auto mr-[23%] size-14 translate-y-1 md:-mb-2.5 md:mr-[27%] md:size-16 md:translate-y-1.5" />
+              ) : null}
+            </p>
+          ) : null}
+        </motion.div>
+        {footer ? (
+          <motion.p
+            className="mt-4 text-base font-medium not-italic md:mt-5 md:text-lg"
+            animate={{ color: demonMode ? "rgba(249, 168, 212, 0.85)" : "rgba(74, 29, 53, 0.92)" }}
+            transition={{ duration: 0.4 }}
+          >
+            {footer}
+          </motion.p>
+        ) : null}
+        {tags.length > 0 ? (
+          <div className="mt-5 flex flex-wrap gap-2 md:mt-6">
+            {tags.map((tag) => (
+              <motion.span
+                key={tag}
+                className="rounded-full px-3.5 py-1.5 text-sm font-medium"
+                animate={{
+                  borderColor: demonMode ? "rgba(244,114,182,0.45)" : "rgba(249,168,212,0.5)",
+                  backgroundColor: demonMode ? "transparent" : "rgba(253,242,248,0.8)",
+                  color: demonMode ? "#F9A8D4" : "#9D174D",
+                }}
+                style={{ borderWidth: 1, borderStyle: "solid" }}
+                transition={{ duration: 0.4 }}
+              >
+                {tag}
+              </motion.span>
+            ))}
+          </div>
+        ) : null}
+        {stats.length > 0 ? (
+          <div className="mt-3 grid grid-cols-2 gap-2.5 md:mt-3.5 md:gap-3">
+            {stats.map((stat) => (
+              <motion.div
+                key={stat.label}
+                className="rounded-2xl px-3 py-3.5 text-center md:px-4 md:py-4"
+                animate={{
+                  borderColor: demonMode ? "rgba(244,114,182,0.4)" : "rgba(249,168,212,0.45)",
+                  backgroundColor: demonMode ? "transparent" : "rgba(253,242,248,0.85)",
+                }}
+                style={{ borderWidth: 1, borderStyle: "solid" }}
+                transition={{ duration: 0.4 }}
+              >
+                <motion.p
+                  className="text-xl font-extrabold tracking-tight md:text-2xl"
+                  animate={{ color: demonMode ? "#FDF2F8" : "#4A1D35" }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {stat.value}
+                </motion.p>
+                <motion.p
+                  className="mt-1 text-xs leading-snug md:text-sm"
+                  animate={{ color: demonMode ? "rgba(253, 242, 248, 0.72)" : "rgba(107, 40, 72, 0.8)" }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {stat.label}
+                </motion.p>
+              </motion.div>
+            ))}
+          </div>
+        ) : null}
+        {cta ? (
+          <motion.div className="mt-3 md:mt-3.5" transition={{ duration: 0.4 }}>
+            <Link
+              href={cta.href}
+              className={clsx(
+                "inline-flex w-full items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition md:text-base",
+                demonMode
+                  ? "border border-[#FBCFE8]/35 bg-transparent text-[#FDF2F8] hover:border-[#FBCFE8]/55 hover:bg-transparent"
+                  : "bg-white text-[#4A1D35] ring-1 ring-[#F9A8D4]/25 hover:bg-[#FDF2F8]"
+              )}
+              style={
+                demonMode
+                  ? undefined
+                  : {
+                      boxShadow:
+                        "0 12px 40px -6px rgba(244, 114, 182, 0.55), 0 4px 16px -2px rgba(251, 182, 206, 0.45)",
+                    }
+              }
+            >
+              {cta.label}
+            </Link>
+          </motion.div>
+        ) : null}
       </div>
     </motion.div>
   );
@@ -247,71 +391,6 @@ const ROLE_LABEL: Record<AboutMinoAchievement["role"], string> = {
   adc: "ADC",
   sup: "Support",
 };
-
-const STATS = [
-  { value: "5+", label: "Years coaching", icon: Trophy },
-  { value: "500+", label: "Student reviews", icon: Star },
-  { value: "4.9", label: "Average rating", icon: Sparkles },
-  { value: "3×", label: "Challenger peaks", icon: Gamepad2 },
-] as const;
-
-const MOODS = [
-  {
-    emoji: "🌸",
-    title: "Soft mode",
-    subtitle: "Enchanters · comfort picks",
-    body: "Gentle streams, cozy energy, and the kind of gameplay that feels like a warm blanket — still high elo, just softer around the edges.",
-  },
-  {
-    emoji: "✦",
-    title: "Spooky mode",
-    subtitle: "Viego · Pyke · the edgy picks",
-    body: "Same person, different soundtrack. Resets, picks, and chaos — talented demon kitten hours, if you know you know.",
-  },
-] as const;
-
-const VIBES = [
-  { emoji: "🎀", text: "Femboy · catboy · vtuber — it's part of the package, not the pitch" },
-  { emoji: "✨", text: "Five years of coaching behind the softness" },
-  { emoji: "💗", text: "Sometimes enchanters, sometimes something spicier — mood-dependent" },
-  { emoji: "🐾", text: "Warm sessions, honest feedback, zero ranked-demon cosplay" },
-] as const;
-
-function FadeUp({
-  children,
-  className = "",
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const ref = useRef(null);
-  const scrollRoot = useContext(OverlayScrollRootContext);
-  const scrollRootRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    scrollRootRef.current = scrollRoot;
-  }, [scrollRoot]);
-
-  const inView = useInView(ref, {
-    once: true,
-    amount: 0.25,
-    root: scrollRoot ? scrollRootRef : undefined,
-  });
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 28 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.65, ease: EASE, delay }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 function SectionLabel({
   children,
@@ -382,13 +461,12 @@ function RankEmblemSlab({
           style={{
             transform: "scale(6.5)",
             transformOrigin: "center",
-            filter: "drop-shadow(0 0 28px rgba(232,195,106,0.35))",
           }}
           unoptimized
         />
       </div>
 
-      <p className="mt-2 text-[9px] font-semibold uppercase tracking-[0.32em] text-[#E8C36A]/70 md:text-[10px]">
+      <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.3em] text-[#E8C36A]/70 md:tracking-[0.34em]">
         {roleName}
       </p>
     </motion.div>
@@ -397,15 +475,19 @@ function RankEmblemSlab({
 
 const CREST_REVEAL_STAGGER_S = 0.12;
 const CREST_REVEAL_DURATION_S = 0.65;
-const CREST_FINAL_DELAY_MS =
+const CREST_REVEAL_COMPLETE_MS =
   (CHALLENGER_PEAKS.length - 1) * CREST_REVEAL_STAGGER_S * 1000 +
   CREST_REVEAL_DURATION_S * 1000;
+const HEADLINE_AFTER_LAST_CREST_MS = 700;
+const CREST_TO_HEADLINE_GAP_MS = Math.round(
+  (CREST_REVEAL_COMPLETE_MS + HEADLINE_AFTER_LAST_CREST_MS) / 2
+);
 const DEMON_PINK_OUTLINE_MS = 2000;
 const CREST_AFTER_DEMON_MS = 450;
 
 const DEMON_TEXT_CLASS =
   "pointer-events-none absolute left-1/2 -translate-x-1/2 select-none font-black uppercase leading-none tracking-[-0.05em]";
-const DEMON_STACK_TOP = "top-16 md:top-20";
+const DEMON_STACK_TOP = "-top-7 md:-top-6";
 
 function RankDemonCredentials() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -413,6 +495,7 @@ function RankDemonCredentials() {
   const [demonFinal, setDemonFinal] = useState(false);
   const [showCrests, setShowCrests] = useState(false);
   const [showHeadline, setShowHeadline] = useState(false);
+  const [showPeakElo, setShowPeakElo] = useState(false);
 
   const demonTriggered = useTriggerAtViewportHeight(
     sectionRef,
@@ -425,16 +508,17 @@ function RankDemonCredentials() {
 
     const toFinal = window.setTimeout(() => setDemonFinal(true), DEMON_PINK_OUTLINE_MS);
     const crestsAt = DEMON_PINK_OUTLINE_MS + CREST_AFTER_DEMON_MS;
+    const headlineAt = crestsAt + CREST_TO_HEADLINE_GAP_MS;
+    const peakEloAt = headlineAt + CREST_TO_HEADLINE_GAP_MS;
     const toCrests = window.setTimeout(() => setShowCrests(true), crestsAt);
-    const toHeadline = window.setTimeout(
-      () => setShowHeadline(true),
-      crestsAt + CREST_FINAL_DELAY_MS + 1000
-    );
+    const toHeadline = window.setTimeout(() => setShowHeadline(true), headlineAt);
+    const toPeakElo = window.setTimeout(() => setShowPeakElo(true), peakEloAt);
 
     return () => {
       window.clearTimeout(toFinal);
       window.clearTimeout(toCrests);
       window.clearTimeout(toHeadline);
+      window.clearTimeout(toPeakElo);
     };
   }, [demonTriggered]);
 
@@ -443,6 +527,7 @@ function RankDemonCredentials() {
       ref={sectionRef}
       className="relative min-h-[100dvh] overflow-visible pt-14 md:pt-16"
     >
+      <div className="relative -translate-y-12 md:-translate-y-14">
       <motion.p
         className={clsx(
           DEMON_TEXT_CLASS,
@@ -470,7 +555,7 @@ function RankDemonCredentials() {
         className={clsx(
           DEMON_TEXT_CLASS,
           DEMON_STACK_TOP,
-          "z-10 text-[clamp(5rem,23vw,15rem)]"
+          "z-10 text-[clamp(5.35rem,24vw,16.25rem)]"
         )}
         style={{ color: "rgba(255,255,255,0.028)" }}
         initial={{ opacity: 0, scale: 1 }}
@@ -483,7 +568,7 @@ function RankDemonCredentials() {
         demon
       </motion.p>
 
-      <div className="relative z-20 mx-auto max-w-6xl overflow-visible px-5 pb-14 pt-10 md:pt-12">
+      <div className="relative z-20 mx-auto max-w-6xl overflow-visible px-5 pb-14 pt-2 md:pt-4">
         <div className="relative flex w-full flex-col items-center overflow-visible">
           <motion.div
             className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2 text-center"
@@ -498,7 +583,7 @@ function RankDemonCredentials() {
             >
               3<span style={{ color: ABOUT_GOLD }}>×</span>
             </p>
-            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.48em] text-[#F472B6]/85 md:tracking-[0.55em]">
+            <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.45em] text-[#F472B6]/85 md:tracking-[0.5em]">
               challenger
             </p>
           </motion.div>
@@ -515,121 +600,25 @@ function RankDemonCredentials() {
           </div>
 
           <motion.p
-            className="mt-8 text-center text-[10px] uppercase tracking-[0.42em] text-fg-muted/45 md:mt-10"
-            initial={{ opacity: 0 }}
-            animate={showHeadline ? { opacity: 1 } : {}}
-            transition={{ duration: 0.45, delay: 0.2, ease: EASE }}
+            className="mt-8 text-center text-[12px] uppercase tracking-[0.4em] text-fg-muted/45 md:mt-10"
+            initial={{ opacity: 0, y: 12 }}
+            animate={showPeakElo ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+            transition={{ duration: 0.55, ease: EASE }}
+            aria-hidden={!showPeakElo}
           >
             peak elo
           </motion.p>
         </div>
       </div>
-
-      <div
-        className="pointer-events-none absolute bottom-10 left-8 hidden md:block"
-        aria-hidden
-      >
-        <div className="h-14 w-px bg-gradient-to-b from-[#E8C36A]/50 to-transparent" />
-        <div className="h-px w-14 bg-gradient-to-r from-[#E8C36A]/50 to-transparent" />
       </div>
     </section>
   );
 }
 
-function StatCard({
-  value,
-  label,
-  icon: Icon,
-  index,
-}: {
-  value: string;
-  label: string;
-  icon: typeof Trophy;
-  index: number;
-}) {
-  return (
-    <FadeUp delay={index * 0.1}>
-      <GlassPanel className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 p-6 text-center">
-        <span
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-white/10"
-          style={{
-            background: `color-mix(in srgb, ${ABOUT_MINO_ACCENT} 18%, transparent)`,
-            boxShadow: `0 0 24px -8px ${ABOUT_MINO_GLOW}`,
-          }}
-        >
-          <Icon className="h-5 w-5" style={{ color: ABOUT_MINO_ACCENT }} />
-        </span>
-        <p className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">{value}</p>
-        <p className="text-sm text-fg-muted/85">{label}</p>
-      </GlassPanel>
-    </FadeUp>
-  );
-}
-
-function MoodCard({
-  mood,
-  index,
-}: {
-  mood: (typeof MOODS)[number];
-  index: number;
-}) {
-  return (
-    <FadeUp delay={index * 0.12}>
-      <div className="relative overflow-hidden rounded-3xl border border-[#FBCFE8]/25 bg-[#FDF2F8]/[0.06] p-6 backdrop-blur-sm md:p-7">
-        <motion.span
-          className="text-3xl md:text-4xl"
-          animate={{ rotate: [0, -6, 6, 0] }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            repeatDelay: 1.5 + index,
-            ease: "easeInOut",
-          }}
-          aria-hidden
-        >
-          {mood.emoji}
-        </motion.span>
-        <h3 className="mt-4 text-xl font-semibold text-[#FDF2F8] md:text-2xl">{mood.title}</h3>
-        <p className="mt-1 text-sm text-[#FBCFE8]/90">{mood.subtitle}</p>
-        <p className="mt-3 text-sm leading-relaxed text-[#FDF2F8]/75 md:text-base">{mood.body}</p>
-      </div>
-    </FadeUp>
-  );
-}
-
-function VibeRow({
-  emoji,
-  text,
-  index,
-}: {
-  emoji: string;
-  text: string;
-  index: number;
-}) {
-  return (
-    <FadeUp delay={index * 0.07}>
-      <div className="flex items-start gap-4 rounded-3xl border border-[#FBCFE8]/20 bg-[#FDF2F8]/[0.07] px-4 py-4 transition-colors duration-300 hover:border-[#FBCFE8]/35 hover:bg-[#FDF2F8]/[0.1]">
-        <motion.span
-          className="select-none text-2xl md:text-3xl"
-          animate={{ rotate: [0, -6, 6, 0] }}
-          transition={{
-            duration: 4.5,
-            repeat: Infinity,
-            repeatDelay: 2 + index * 0.4,
-            ease: "easeInOut",
-          }}
-          aria-hidden
-        >
-          {emoji}
-        </motion.span>
-        <p className="pt-1 text-sm leading-relaxed text-[#FDF2F8]/82 md:text-base">{text}</p>
-      </div>
-    </FadeUp>
-  );
-}
-
 export default function AboutMinoClient() {
   const pinkZoneRef = useRef<HTMLDivElement>(null);
+  const panel1Ref = useRef<HTMLDivElement>(null);
+  const panel2Ref = useRef<HTMLDivElement>(null);
   const prevZoneRef = useRef<"pink" | "dark">("pink");
   const animDirectionRef = useRef<"out" | "in" | null>(null);
   const metricsRef = useRef({ reveal: 0, exit: 0 });
@@ -639,10 +628,14 @@ export default function AboutMinoClient() {
   const pinkReveal = useMotionValue(0);
   const pinkExit = useMotionValue(0);
   const pinkPresence = useMotionValue(0);
-  const panelPresence = useMotionValue(0);
+  const panel1Presence = useMotionValue(0);
+  const panel2Presence = useMotionValue(0);
   const [panelDemonMode, setPanelDemonMode] = useState(false);
   const setPanelDemonModeRef = useRef(setPanelDemonMode);
   setPanelDemonModeRef.current = setPanelDemonMode;
+
+  useOneShotPanelReveal(panel1Ref, scrollViewport, panel1Presence);
+  useOneShotPanelReveal(panel2Ref, scrollViewport, panel2Presence);
 
   useEffect(() => {
     if (!scrollViewport) return;
@@ -712,8 +705,6 @@ export default function AboutMinoClient() {
       pinkExit.set(exit);
       metricsRef.current = { reveal, exit };
 
-      panelPresence.set(pinkTopFade(reveal));
-
       const currentZone = overlayZone(exit);
       const prevZone = prevZoneRef.current;
 
@@ -758,13 +749,14 @@ export default function AboutMinoClient() {
       scrollViewport.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, [scrollViewport, pinkReveal, pinkExit, pinkPresence, panelPresence]);
+  }, [scrollViewport, pinkReveal, pinkExit, pinkPresence]);
 
-  const panelOpacity = panelPresence;
-  const panelRightX = useTransform(panelPresence, [0, 1], [72, 0]);
-  const panelLeftX = useTransform(panelPresence, [0, 1], [-72, 0]);
-  const panelY = useTransform(panelPresence, [0, 1], [28, 0]);
-  const panelLeftY = useTransform(panelPresence, [0, 1], [36, 0]);
+  const panel1Opacity = panel1Presence;
+  const panel1X = useTransform(panel1Presence, [0, 1], [72, 0]);
+  const panel1Y = useTransform(panel1Presence, [0, 1], [28, 0]);
+  const panel2Opacity = panel2Presence;
+  const panel2X = useTransform(panel2Presence, [0, 1], [-72, 0]);
+  const panel2Y = useTransform(panel2Presence, [0, 1], [36, 0]);
 
   return (
     <OverlayScrollRootContext.Provider value={scrollViewport}>
@@ -774,14 +766,14 @@ export default function AboutMinoClient() {
         <div className={ABOUT_CONTENT_Z}>
           {/* ── HERO (content only) ── */}
           <section className={clsx("flex flex-col justify-end", HERO_CONTENT_HEIGHT)}>
-            <div className="mx-auto w-full max-w-5xl px-5 pb-24 pt-20 md:px-8 md:pb-32 md:pt-24">
+            <div className="mx-auto w-full max-w-5xl px-5 pb-24 pt-20 md:px-8 md:pb-32 md:pt-24 xl:pb-36 2xl:pb-40">
               <motion.div
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: EASE, delay: 0.2 }}
+                transition={{ duration: 0.7, ease: EASE, delay: 3.2 }}
               >
                 <SectionLabel>Vtuber · coach · femboy</SectionLabel>
-                <h1 className="mt-3 text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl">
+                <h1 className="mt-3 text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl xl:text-[4.625rem] 2xl:text-[4.875rem]">
                   About{" "}
                   <span
                     className="bg-clip-text text-transparent"
@@ -795,13 +787,13 @@ export default function AboutMinoClient() {
                     🌸
                   </span>
                 </h1>
-                <p className="mt-5 max-w-xl text-base text-fg-muted/90 md:text-xl">
+                <p className="mt-5 max-w-xl text-base text-fg-muted/90 md:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]">
                   <TypingText
-                    text="Fixing the League community one stream at a time"
+                    text="Fixing the League community, one stream at a time"
                     speed={28}
-                    delay={900}
+                    delay={3900}
                     color={ABOUT_MINO_ACCENT}
-                    className="text-base text-fg-muted/90 md:text-xl"
+                    className="text-base text-fg-muted/90 md:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]"
                   />
                 </p>
               </motion.div>
@@ -809,7 +801,7 @@ export default function AboutMinoClient() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.6, duration: 0.8 }}
+                transition={{ delay: 2.6, duration: 0.8 }}
                 className="mt-10 flex justify-center md:justify-start"
               >
                 <motion.div
@@ -828,131 +820,63 @@ export default function AboutMinoClient() {
           <div
             ref={pinkZoneRef}
             className={clsx(
-              "flex flex-col justify-start px-5 pb-24 pt-0 md:px-8 md:pb-32 md:pt-[4vh]",
+              "flex flex-col px-5 pb-24 pt-0 md:px-8 md:pb-32 md:pt-[4vh]",
               PINK_SECTION_HEIGHT
             )}
           >
-            <div className="flex w-full flex-col gap-6 md:gap-8 lg:gap-10">
+            <div className="flex w-full min-h-0 flex-1 flex-col">
+              <div className="flex-1" aria-hidden />
               <motion.div
-                className="ml-auto w-full max-w-md md:mr-[8%] md:max-w-lg lg:mr-[10%]"
-                style={{ opacity: panelOpacity, x: panelRightX, y: panelY }}
+                ref={panel1Ref}
+                className="ml-auto w-full max-w-lg md:mr-[8%] md:max-w-xl lg:mr-[10%]"
+                style={{ opacity: panel1Opacity, x: panel1X, y: panel1Y }}
               >
                 <PinkPanelCard
                   demonMode={panelDemonMode}
-                  eyebrow="Also me"
-                  title="Talented, soft, and a little magical."
-                  body="The credentials are real. The vibe is just pinker. Streams, content, and coaching all come from the same place: high elo skill with a feminine, playful energy that doesn't take itself too seriously."
-                  tags={["Vtuber", "Coach", "Femboy", "Challenger"]}
+                  eyebrow="Hello~"
+                  title="I'm Mino! It's nice to meet you"
+                  closingPaw
+                  body={
+                    "The League community is known for its toxicity and I'd like to change that!! or at least try... >.<\n\n" +
+                    "If someone's having a bad game they already feel bad about that. Making them feel worse deteriorates the game quality and mental health of the community long-term, which led us to where we are now..."
+                  }
+                  bodyClosing="Let's make a difference together!"
                 />
               </motion.div>
 
+              <div className="flex-1" aria-hidden />
+
               <motion.div
-                className="mr-auto w-full max-w-md md:ml-[8%] md:max-w-lg lg:ml-[10%]"
-                style={{ opacity: panelOpacity, x: panelLeftX, y: panelLeftY }}
+                ref={panel2Ref}
+                className="mr-auto w-full max-w-lg md:ml-[8%] md:max-w-xl lg:ml-[10%]"
+                style={{ opacity: panel2Opacity, x: panel2X, y: panel2Y }}
               >
                 <PinkPanelCard
                   demonMode={panelDemonMode}
-                  eyebrow="In session"
-                  title="Sweet voice, sharp eyes on your gameplay."
-                  body="Coaching is where the kitten energy meets Challenger discipline — clear fixes, no fluff, and a session that still feels warm even when the feedback stings a little."
-                  tags={["VOD review", "Live coaching", "Mindset", "Macro"]}
+                  eyebrow="Coaching"
+                  title="I actually have 5 years of coaching experience!"
+                  body={
+                    "In 2020 I started coaching and got something like ~2000 sessions done since then for all roles and ranks.\n\n" +
+                    "Feel free to check it out, I swear it's lowkey goated."
+                  }
+                  stats={[
+                    { value: "500+", label: "Student reviews" },
+                    { value: "4.9/5", label: "Average rating" },
+                  ]}
+                  cta={{ label: "Learn more", href: "/coaching" }}
                 />
               </motion.div>
+
+              <div className="flex-[8] min-h-0" aria-hidden />
             </div>
           </div>
 
           <RankDemonCredentials />
 
-          <section className="section-y mx-auto max-w-5xl px-5 pb-20 md:px-8 md:pb-28">
-            <FadeUp className="mb-8 text-center md:mb-12">
-              <SectionLabel>By the numbers</SectionLabel>
-              <h2 className="mt-3 text-2xl font-extrabold md:text-4xl">Experience you can trust</h2>
-            </FadeUp>
-
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-              {STATS.map((stat, i) => (
-                <StatCard key={stat.label} {...stat} index={i} />
-              ))}
-            </div>
-          </section>
-
-          {/* ── MOODS & personality ── */}
-          <section className="section-y relative mx-auto max-w-4xl px-5 md:px-8">
-            <FadeUp className="mb-8 text-center md:mb-10">
-              <SectionLabel pink>Two sides</SectionLabel>
-              <h2 className="mt-3 text-2xl font-semibold text-[#FDF2F8] md:text-4xl">
-                Depends what I&apos;m playing
-              </h2>
-            </FadeUp>
-
-            <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-              {MOODS.map((mood, i) => (
-                <MoodCard key={mood.title} mood={mood} index={i} />
-              ))}
-            </div>
-          </section>
-
-          <section className="section-y relative mx-auto max-w-3xl px-5 md:px-8">
-            <FadeUp className="mb-8 md:mb-10">
-              <div className="flex items-center gap-2">
-                <Heart className="h-4 w-4 text-[#FBCFE8]" />
-                <SectionLabel pink>The rest</SectionLabel>
-              </div>
-              <h2 className="mt-3 text-2xl font-semibold text-[#FDF2F8] md:text-4xl">
-                Feminine, silly, still very good at League
-              </h2>
-            </FadeUp>
-
-            <div className="flex flex-col gap-3">
-              {VIBES.map((v, i) => (
-                <VibeRow key={v.text} {...v} index={i} />
-              ))}
-            </div>
-
-            <FadeUp delay={0.2} className="mt-10">
-              <div className="flex items-center gap-4 rounded-3xl border border-[#FBCFE8]/22 bg-[#FDF2F8]/[0.08] p-5 backdrop-blur-sm md:p-6">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FDF2F8]/10 ring-1 ring-[#FBCFE8]/25">
-                  <Mic2 className="h-6 w-6 text-[#FBCFE8]" />
-                </span>
-                <div>
-                  <p className="font-medium text-[#FDF2F8]">Streams & community</p>
-                  <p className="mt-1 text-sm leading-relaxed text-[#FDF2F8]/72">
-                    Twitch, TikTok, Discord — come hang out, watch some League, see which mode shows
-                    up that day.
-                  </p>
-                </div>
-              </div>
-            </FadeUp>
-          </section>
-
-          <section className="section-y relative mx-auto max-w-2xl px-5 pb-28 text-center md:px-8 md:pb-36">
-            <FadeUp>
-              <SectionLabel pink>Ready?</SectionLabel>
-              <h2 className="mt-3 text-2xl font-semibold text-[#FDF2F8] md:text-4xl">
-                Let&apos;s climb together
-              </h2>
-              <p className="mx-auto mt-4 max-w-md text-[#FDF2F8]/72">
-                Book a session, try a skillcheck, or say hi on Discord.
-              </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link
-                  href="/coaching"
-                  className="relative inline-flex min-w-[11rem] items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold text-[#3b1228] transition hover:brightness-105"
-                  style={{
-                    background: `linear-gradient(135deg, #FDF2F8 0%, ${ABOUT_MINO_ACCENT} 55%, #F9A8D4 100%)`,
-                    boxShadow: `0 10px 32px -8px ${ABOUT_MINO_GLOW}`,
-                  }}
-                >
-                  Book coaching
-                </Link>
-                <Link
-                  href="/"
-                  className="inline-flex min-w-[11rem] items-center justify-center rounded-2xl border border-[#FBCFE8]/30 bg-[#FDF2F8]/10 px-6 py-3 text-sm font-medium text-[#FDF2F8]/90 transition hover:border-[#FBCFE8]/50 hover:bg-[#FDF2F8]/15"
-                >
-                  Back home
-                </Link>
-              </div>
-            </FadeUp>
+          <section className="flex min-h-[45vh] flex-col items-center justify-center px-5 pb-28 pt-20 text-center md:px-8 md:pb-36 md:pt-28">
+            <p className="text-base text-fg-muted/50 md:text-lg">
+              work in progress, adding more soon :3
+            </p>
           </section>
         </div>
       </div>

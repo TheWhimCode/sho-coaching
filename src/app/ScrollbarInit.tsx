@@ -2,67 +2,96 @@
 
 import { useEffect } from "react";
 import { OverlayScrollbars } from "overlayscrollbars";
-import "overlayscrollbars/styles/overlayscrollbars.css";
+
+const SCROLLBAR_OPTIONS = {
+  overflow: { x: "hidden" as const, y: "scroll" as const },
+  scrollbars: {
+    theme: "os-theme-custom",
+    autoHide: "never" as const,
+    visibility: "auto" as const,
+  },
+};
+
+function configureInstance(instance: OverlayScrollbars) {
+  const viewport = instance.elements().viewport;
+  if (viewport) viewport.style.scrollBehavior = "smooth";
+
+  const { host, padding } = instance.elements();
+  if (host) host.style.pointerEvents = "none";
+  if (padding) padding.style.pointerEvents = "none";
+  if (viewport) viewport.style.pointerEvents = "auto";
+}
+
+function getOrCreateScrollbarInstance(scrollRoot: HTMLElement) {
+  const existing = OverlayScrollbars(scrollRoot);
+  if (existing) return existing;
+  return OverlayScrollbars(scrollRoot, SCROLLBAR_OPTIONS);
+}
+
+function finishLoading(scrollRoot: HTMLElement) {
+  scrollRoot.classList.remove("os-loading");
+}
 
 export default function ScrollbarInit() {
   useEffect(() => {
-    const scrollRoot = document.getElementById("scroll-root");
-    if (!scrollRoot) return;
+    let cancelled = false;
 
-    const instance = OverlayScrollbars(scrollRoot, {
-      overflow: { x: "hidden", y: "scroll" },
-      scrollbars: {
-        theme: "os-theme-custom",
-        autoHide: "never",
-        visibility: "auto",
-      },
-    });
+    const tryInit = () => {
+      if (cancelled) return true;
 
-    const handleNavigation = () => {
-      const viewport = instance.elements().viewport;
-      if (viewport) {
-        viewport.scrollTop = 0;
-      }
+      const scrollRoot = document.getElementById("scroll-root");
+      if (!scrollRoot) return false;
 
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            instance.update(true);
-            if (viewport) {
-              void viewport.offsetHeight;
-            }
-          });
-        });
-      });
-    };
-
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        handleNavigation();
+      try {
+        const instance = getOrCreateScrollbarInstance(scrollRoot);
+        if (!instance) return false;
+        configureInstance(instance);
+        finishLoading(scrollRoot);
+        return true;
+      } catch {
+        finishLoading(scrollRoot);
+        return true;
       }
     };
 
-    const onPopState = () => {
-      handleNavigation();
+    const refresh = () => {
+      tryInit();
+      const scrollRoot = document.getElementById("scroll-root");
+      if (!scrollRoot) return;
+      const instance = OverlayScrollbars(scrollRoot);
+      instance?.update(true);
     };
 
-    window.addEventListener("pageshow", onPageShow);
-    window.addEventListener("popstate", onPopState);
+    if (tryInit()) {
+      window.addEventListener("pageshow", refresh);
+      window.addEventListener("popstate", refresh);
+      return () => {
+        cancelled = true;
+        window.removeEventListener("pageshow", refresh);
+        window.removeEventListener("popstate", refresh);
+      };
+    }
 
-    const viewport = instance.elements().viewport;
-    if (viewport) viewport.style.scrollBehavior = "smooth";
+    const interval = window.setInterval(() => {
+      if (tryInit()) window.clearInterval(interval);
+    }, 50);
 
-    const { host, padding } = instance.elements();
-    if (host) host.style.pointerEvents = "none";
-    if (padding) padding.style.pointerEvents = "none";
-    if (viewport) viewport.style.pointerEvents = "auto";
+    const timeout = window.setTimeout(() => {
+      window.clearInterval(interval);
+      const scrollRoot = document.getElementById("scroll-root");
+      if (scrollRoot) finishLoading(scrollRoot);
+    }, 3000);
 
-    scrollRoot.classList.remove("os-loading");
+    window.addEventListener("pageshow", refresh);
+    window.addEventListener("popstate", refresh);
 
     return () => {
-      window.removeEventListener("pageshow", onPageShow);
-      window.removeEventListener("popstate", onPopState);
-      instance?.destroy();
+      cancelled = true;
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+      window.removeEventListener("pageshow", refresh);
+      window.removeEventListener("popstate", refresh);
+      // Do not destroy OverlayScrollbars — React Strict Mode remount breaks scroll-root if we do.
     };
   }, []);
 

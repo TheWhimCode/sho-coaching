@@ -5,8 +5,16 @@ import LayoutClient from "@/app/LayoutClient";
 import { NavChromeProvider } from "@/app/_components/navChrome"; // <-- adjust path if needed
 import { SITE_URL } from "@/lib/site";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -28,15 +36,22 @@ const MAINTENANCE = false;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}>
+    <html lang="en" style={{ backgroundColor: "#050B18" }}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${geistSans.className} antialiased bg-black text-white`}
+        style={{ backgroundColor: "#050B18", color: "#EAF2FF" }}
+      >
         {MAINTENANCE ? (
           <div className="min-h-dvh flex items-center justify-center p-6 text-center">
             <p className="text-xl text-white/90">Unavailable until next month.</p>
           </div>
         ) : (
           <NavChromeProvider>
-            <div id="scroll-root" className="h-dvh overflow-hidden overflow-x-hidden os-loading">
+            <div
+              id="scroll-root"
+              className="h-dvh overflow-hidden overflow-x-hidden bg-bg os-loading"
+              style={{ backgroundColor: "#050B18" }}
+            >
               <LayoutClient>{children}</LayoutClient>
             </div>
           </NavChromeProvider>

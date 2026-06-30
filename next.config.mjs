@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+import path from "path";
+import { fileURLToPath } from "url";
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV !== "production";
 
 const scriptSrc = [
@@ -49,6 +53,10 @@ if (!isDev) cspParts.push(`upgrade-insecure-requests`);
 const csp = cspParts.join("; ");
 
 const nextConfig = {
+  turbopack: {
+    root: projectRoot,
+  },
+
   env: {
     PRICING_DISCOUNT_PERCENT: process.env.PRICING_DISCOUNT_PERCENT,
     RUSH_BUNDLE_PRICE_EUR: process.env.RUSH_BUNDLE_PRICE_EUR,

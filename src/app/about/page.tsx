@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { ABOUT_MINO_PRELOAD_IMAGES } from "@/app/_components/linktree/aboutMinoPreload";
 import AboutMinoClient from "./AboutMinoClient";
-
-const IS_DEV = process.env.NODE_ENV === "development";
 
 const title = "About Mino";
 const description =
@@ -24,8 +21,6 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
-  if (!IS_DEV) notFound();
-
   return (
     <>
       <link rel="preload" as="video" href="/videos/about/ChallPromotionthinner.webm" />
