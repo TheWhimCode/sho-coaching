@@ -23,8 +23,7 @@ import {
 } from "lucide-react";
 import TypingText from "@/app/_components/animations/TypingText";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
-import { championAvatarByName, rankMiniCrestSvg } from "@/lib/league/datadragon";
-import { ROLE_ICONS } from "@/lib/datadragon/roles";
+import { rankEmblemUrl } from "@/lib/league/datadragon";
 import {
   ABOUT_MINO_ACCENT,
   ABOUT_MINO_ACHIEVEMENTS,
@@ -41,10 +40,14 @@ const OverlayScrollRootContext = createContext<HTMLElement | null>(null);
 const EASE = [0.22, 1, 0.36, 1] as const;
 const HERO_VIDEO = "/videos/about/ChallPromotionthinner.webm";
 const PASTEL_PINK_BG =
-  "linear-gradient(165deg, #FFF5FA 0%, #FDF2F8 22%, #FBCFE8 58%, #F9A8D4 100%)";
+  "linear-gradient(165deg, #FFE8F3 0%, #FBCFE8 30%, #F9A8D4 65%, #F472B6 100%)";
+const PINK_OVERLAY_RADIAL =
+  "radial-gradient(ellipse 120% 90% at 50% 35%, rgba(255,182,210,0.32), transparent 70%)";
+const PINK_LAYER_FIXED: React.CSSProperties = { backgroundAttachment: "fixed" };
+const DEMON_VIEWPORT_TRIGGER_RATIO = 0.4;
 const ABOUT_GOLD = "#E8C36A";
 const ABOUT_SECTION_BG = "#050B18";
-const PINK_SECTION_HEIGHT = "min-h-[150dvh]";
+const PINK_SECTION_HEIGHT = "min-h-[175dvh]";
 /** Panel sits higher + pink/panel reveal earlier; keep `PINK_SCROLL_REVEAL_OFFSET` in sync with `pt-0 md:pt-[4vh]`. */
 const PINK_SCROLL_REVEAL_OFFSET = 0.08;
 const PINK_REVEAL_START_RATIO = 0.72 + PINK_SCROLL_REVEAL_OFFSET;
@@ -76,6 +79,58 @@ const HERO_VIDEO_HEIGHT =
 const ABOUT_BG_Z = "pointer-events-none absolute inset-0 z-0";
 const ABOUT_CONTENT_Z = "relative isolate z-10";
 
+function PinkOverlayLayers() {
+  return (
+    <>
+      <div
+        className="absolute inset-0"
+        style={{ background: PASTEL_PINK_BG, ...PINK_LAYER_FIXED }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{ background: PINK_OVERLAY_RADIAL, ...PINK_LAYER_FIXED }}
+      />
+    </>
+  );
+}
+
+/** Fires once when the element's top edge reaches `heightRatio` of the scroll viewport. */
+function useTriggerAtViewportHeight(
+  ref: React.RefObject<HTMLElement | null>,
+  scrollRoot: HTMLElement | null,
+  heightRatio: number
+) {
+  const [triggered, setTriggered] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current || !scrollRoot || triggered) return;
+
+    const check = () => {
+      const el = ref.current;
+      if (!el) return;
+
+      const containerRect = scrollRoot.getBoundingClientRect();
+      const sectionRect = el.getBoundingClientRect();
+      const topInViewport = sectionRect.top - containerRect.top;
+
+      if (topInViewport <= containerRect.height * heightRatio) {
+        setTriggered(true);
+      }
+    };
+
+    scrollRoot.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    check();
+
+    return () => {
+      scrollRoot.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, [ref, scrollRoot, heightRatio, triggered]);
+
+  return triggered;
+}
+
 function AboutPageBackgrounds({ pinkPresence }: { pinkPresence: MotionValue<number> }) {
   return (
     <div className={ABOUT_BG_Z} aria-hidden>
@@ -101,15 +156,12 @@ function AboutPageBackgrounds({ pinkPresence }: { pinkPresence: MotionValue<numb
           />
         </div>
       </div>
-      <motion.div className="absolute inset-0" style={{ opacity: pinkPresence }} aria-hidden>
-        <div className="absolute inset-0" style={{ background: PASTEL_PINK_BG }} />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 120% 90% at 50% 35%, rgba(255,255,255,0.65), transparent 70%)",
-          }}
-        />
+      <motion.div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{ opacity: pinkPresence }}
+        aria-hidden
+      >
+        <PinkOverlayLayers />
       </motion.div>
     </div>
   );
@@ -127,38 +179,18 @@ function PinkPanelCard({ eyebrow, title, body, tags, demonMode }: PinkPanelCardP
   return (
     <motion.div
       className={clsx(
-        "relative overflow-hidden rounded-3xl p-5 backdrop-blur-xl md:p-7",
+        "relative rounded-3xl p-5 backdrop-blur-xl md:p-7",
         demonMode
-          ? "border border-[#E8C36A]/50 bg-[#050B18]/55"
-          : "border border-white/70 bg-white/72"
+          ? "border border-[#F472B6]/55 bg-transparent"
+          : "overflow-hidden border border-white/70 bg-white/72"
       )}
       animate={{
         boxShadow: demonMode
-          ? `0 0 42px -10px ${ABOUT_GOLD}, 0 0 56px -14px rgba(244,114,182,0.48), inset 0 1px 0 rgba(255,255,255,0.12)`
+          ? "none"
           : `0 28px 70px -28px ${ABOUT_MINO_GLOW}, 0 0 0 1px rgba(255,255,255,0.45)`,
       }}
       transition={{ duration: 0.45, ease: EASE }}
     >
-      <motion.div
-        className="pointer-events-none absolute inset-0 rounded-3xl"
-        animate={{
-          opacity: demonMode ? 1 : 0,
-          background:
-            "linear-gradient(135deg, rgba(244,114,182,0.14) 0%, transparent 42%, rgba(232,195,106,0.12) 100%)",
-        }}
-        transition={{ duration: 0.45 }}
-        aria-hidden
-      />
-      <motion.div
-        className="pointer-events-none absolute inset-x-4 top-0 h-px"
-        animate={{
-          opacity: demonMode ? 0.9 : 0,
-          background: `linear-gradient(90deg, transparent, ${ABOUT_MINO_ACCENT}, ${ABOUT_GOLD}, transparent)`,
-        }}
-        transition={{ duration: 0.45 }}
-        aria-hidden
-      />
-
       <div className="relative">
         <motion.p
           className="text-[11px] font-medium uppercase tracking-[0.22em]"
@@ -174,7 +206,6 @@ function PinkPanelCard({ eyebrow, title, body, tags, demonMode }: PinkPanelCardP
           className="mt-2.5 text-xl font-semibold leading-snug md:mt-3 md:text-2xl"
           animate={{
             color: demonMode ? "#FDF2F8" : "#4A1D35",
-            textShadow: demonMode ? `0 0 28px rgba(232,195,106,0.35)` : "none",
           }}
           transition={{ duration: 0.4 }}
         >
@@ -193,9 +224,9 @@ function PinkPanelCard({ eyebrow, title, body, tags, demonMode }: PinkPanelCardP
               key={tag}
               className="rounded-full px-3 py-1 text-xs font-medium"
               animate={{
-                borderColor: demonMode ? "rgba(232,195,106,0.45)" : "rgba(249,168,212,0.5)",
-                backgroundColor: demonMode ? "rgba(5,11,24,0.55)" : "rgba(253,242,248,0.8)",
-                color: demonMode ? ABOUT_GOLD : "#9D174D",
+                borderColor: demonMode ? "rgba(244,114,182,0.45)" : "rgba(249,168,212,0.5)",
+                backgroundColor: demonMode ? "transparent" : "rgba(253,242,248,0.8)",
+                color: demonMode ? "#F9A8D4" : "#9D174D",
               }}
               style={{ borderWidth: 1, borderStyle: "solid" }}
               transition={{ duration: 0.4 }}
@@ -215,12 +246,6 @@ const ROLE_LABEL: Record<AboutMinoAchievement["role"], string> = {
   mid: "Mid",
   adc: "ADC",
   sup: "Support",
-};
-
-const TIER_LABEL: Record<string, string> = {
-  MASTER: "Master",
-  GRANDMASTER: "Grandmaster",
-  CHALLENGER: "Challenger",
 };
 
 const STATS = [
@@ -309,119 +334,199 @@ function SectionLabel({
   );
 }
 
-function ChampionIcons({
-  champions,
-  visible,
-}: {
-  champions: string[];
-  visible: boolean;
-}) {
-  return (
-    <div
-      className={clsx(
-        "flex min-w-0 flex-wrap items-center justify-end gap-1.5 transition-all duration-300",
-        visible
-          ? "max-h-12 opacity-100"
-          : "pointer-events-none max-h-0 overflow-hidden opacity-0"
-      )}
-    >
-      {champions.map((champ) => (
-        <div
-          key={champ}
-          className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-zinc-900 ring-1 ring-[#E8C36A]/35 md:h-9 md:w-9"
-          title={champ}
-        >
-          <Image
-            src={championAvatarByName(champ)}
-            alt={champ}
-            width={36}
-            height={36}
-            className="h-full w-full scale-[1.12] object-cover"
-            unoptimized
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
+const CHALLENGER_PEAKS = ABOUT_MINO_ACHIEVEMENTS.filter(
+  (achievement) => achievement.tier === "CHALLENGER"
+).sort((a, b) => {
+  const order: Record<AboutMinoAchievement["role"], number> = { mid: 0, jng: 1, sup: 2 };
+  return order[a.role] - order[b.role];
+});
 
-function AchievementCard({
+function RankEmblemSlab({
   achievement,
   index,
+  show,
 }: {
   achievement: AboutMinoAchievement;
   index: number;
+  show: boolean;
 }) {
-  const [crestHovered, setCrestHovered] = useState(false);
-  const tierName = TIER_LABEL[achievement.tier] ?? achievement.tier;
   const roleName = ROLE_LABEL[achievement.role];
-  const isPrimary = index === 0;
 
   return (
-    <FadeUp delay={index * 0.08}>
-      <GlassPanel
-        className={clsx(
-          "flex items-center gap-3 p-3.5 transition-[box-shadow,border-color] duration-300 md:p-4",
-          "bg-[#0B1220]/55 ring-1 ring-[#E8C36A]/20",
-          "hover:ring-[color-mix(in_srgb,#F5B8D9_45%,#E8C36A_55%)]",
-          isPrimary &&
-            "shadow-[0_0_40px_-12px_rgba(232,195,106,0.28),0_0_32px_-14px_rgba(245,184,217,0.22)]"
-        )}
+    <motion.div
+      className={clsx(
+        "flex shrink-0 flex-col items-center",
+        index === 1 && "-mt-8 md:-mt-12"
+      )}
+      initial={{ opacity: 0, y: 44 }}
+      animate={show ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: CREST_REVEAL_DURATION_S, delay: index * CREST_REVEAL_STAGGER_S, ease: EASE }}
+    >
+      <div
+        className="relative flex h-40 w-40 items-center justify-center md:h-48 md:w-48"
+        style={{ overflow: "visible" }}
+        aria-hidden
       >
-        <span
-          className="relative inline-flex h-10 w-10 shrink-0 cursor-default items-center justify-center"
-          onMouseEnter={() => setCrestHovered(true)}
-          onMouseLeave={() => setCrestHovered(false)}
-          onFocus={() => setCrestHovered(true)}
-          onBlur={() => setCrestHovered(false)}
-          onClick={() => setCrestHovered((on) => !on)}
-          tabIndex={0}
-          role="button"
-          aria-label={`Show ${tierName} ${roleName} champions`}
-        >
-          <Image
-            src={rankMiniCrestSvg(achievement.tier)}
-            alt=""
-            width={40}
-            height={40}
-            className="h-9 w-9 object-contain drop-shadow-[0_0_14px_rgba(232,195,106,0.4)]"
-            unoptimized
-          />
-          <span className="sr-only">
-            {tierName} {roleName}
-          </span>
-        </span>
+        <Image
+          src={rankEmblemUrl(achievement.tier)}
+          alt=""
+          width={128}
+          height={128}
+          className="h-full w-full object-contain"
+          style={{
+            transform: "scale(6.5)",
+            transformOrigin: "center",
+            filter: "drop-shadow(0 0 28px rgba(232,195,106,0.35))",
+          }}
+          unoptimized
+        />
+      </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white md:text-base">
-            {tierName}{" "}
-            <span className="font-medium text-fg-muted">· {roleName}</span>
-            {isPrimary && (
-              <span className="ml-2 text-xs font-medium" style={{ color: ABOUT_GOLD }}>
-                main
-              </span>
-            )}
-          </p>
-          <p className="mt-0.5 text-xs text-fg-muted/75 md:text-sm">Peak rank</p>
+      <p className="mt-2 text-[9px] font-semibold uppercase tracking-[0.32em] text-[#E8C36A]/70 md:text-[10px]">
+        {roleName}
+      </p>
+    </motion.div>
+  );
+}
+
+const CREST_REVEAL_STAGGER_S = 0.12;
+const CREST_REVEAL_DURATION_S = 0.65;
+const CREST_FINAL_DELAY_MS =
+  (CHALLENGER_PEAKS.length - 1) * CREST_REVEAL_STAGGER_S * 1000 +
+  CREST_REVEAL_DURATION_S * 1000;
+const DEMON_PINK_OUTLINE_MS = 2000;
+const CREST_AFTER_DEMON_MS = 450;
+
+const DEMON_TEXT_CLASS =
+  "pointer-events-none absolute left-1/2 -translate-x-1/2 select-none font-black uppercase leading-none tracking-[-0.05em]";
+const DEMON_STACK_TOP = "top-16 md:top-20";
+
+function RankDemonCredentials() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const scrollRoot = useContext(OverlayScrollRootContext);
+  const [demonFinal, setDemonFinal] = useState(false);
+  const [showCrests, setShowCrests] = useState(false);
+  const [showHeadline, setShowHeadline] = useState(false);
+
+  const demonTriggered = useTriggerAtViewportHeight(
+    sectionRef,
+    scrollRoot,
+    DEMON_VIEWPORT_TRIGGER_RATIO
+  );
+
+  useEffect(() => {
+    if (!demonTriggered) return;
+
+    const toFinal = window.setTimeout(() => setDemonFinal(true), DEMON_PINK_OUTLINE_MS);
+    const crestsAt = DEMON_PINK_OUTLINE_MS + CREST_AFTER_DEMON_MS;
+    const toCrests = window.setTimeout(() => setShowCrests(true), crestsAt);
+    const toHeadline = window.setTimeout(
+      () => setShowHeadline(true),
+      crestsAt + CREST_FINAL_DELAY_MS + 1000
+    );
+
+    return () => {
+      window.clearTimeout(toFinal);
+      window.clearTimeout(toCrests);
+      window.clearTimeout(toHeadline);
+    };
+  }, [demonTriggered]);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative min-h-[100dvh] overflow-visible pt-14 md:pt-16"
+    >
+      <motion.p
+        className={clsx(
+          DEMON_TEXT_CLASS,
+          DEMON_STACK_TOP,
+          "z-10 text-[clamp(5.5rem,25vw,16.5rem)]"
+        )}
+        style={{
+          WebkitTextStroke: "2px #F472B6",
+          color: "transparent",
+          paintOrder: "stroke fill",
+        }}
+        initial={{ opacity: 0, scale: 1.04 }}
+        animate={
+          demonTriggered
+            ? { opacity: demonFinal ? 0 : 1, scale: 1.08 }
+            : { opacity: 0, scale: 1.04 }
+        }
+        transition={{ duration: 0.5, ease: EASE }}
+        aria-hidden
+      >
+        demon
+      </motion.p>
+
+      <motion.p
+        className={clsx(
+          DEMON_TEXT_CLASS,
+          DEMON_STACK_TOP,
+          "z-10 text-[clamp(5rem,23vw,15rem)]"
+        )}
+        style={{ color: "rgba(255,255,255,0.028)" }}
+        initial={{ opacity: 0, scale: 1 }}
+        animate={
+          demonTriggered && demonFinal ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.98 }
+        }
+        transition={{ duration: 0.55, ease: EASE }}
+        aria-hidden
+      >
+        demon
+      </motion.p>
+
+      <div className="relative z-20 mx-auto max-w-6xl overflow-visible px-5 pb-14 pt-10 md:pt-12">
+        <div className="relative flex w-full flex-col items-center overflow-visible">
+          <motion.div
+            className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2 text-center"
+            initial={{ opacity: 0, y: 12 }}
+            animate={showHeadline ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+            transition={{ duration: 0.55, ease: EASE }}
+            aria-hidden={!showHeadline}
+          >
+            <p
+              className="text-[clamp(3.25rem,12vw,7rem)] font-black leading-[0.88] tracking-tighter text-white"
+              style={{ textShadow: "0 0 100px rgba(232,195,106,0.12)" }}
+            >
+              3<span style={{ color: ABOUT_GOLD }}>×</span>
+            </p>
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.48em] text-[#F472B6]/85 md:tracking-[0.55em]">
+              challenger
+            </p>
+          </motion.div>
+
+          <div className="flex w-full max-w-7xl items-end justify-center gap-14 sm:gap-18 md:gap-28 lg:gap-32">
+            {CHALLENGER_PEAKS.map((achievement, index) => (
+              <RankEmblemSlab
+                key={`${achievement.tier}-${achievement.role}`}
+                achievement={achievement}
+                index={index}
+                show={showCrests}
+              />
+            ))}
+          </div>
+
+          <motion.p
+            className="mt-8 text-center text-[10px] uppercase tracking-[0.42em] text-fg-muted/45 md:mt-10"
+            initial={{ opacity: 0 }}
+            animate={showHeadline ? { opacity: 1 } : {}}
+            transition={{ duration: 0.45, delay: 0.2, ease: EASE }}
+          >
+            peak elo
+          </motion.p>
         </div>
+      </div>
 
-        <ChampionIcons champions={achievement.champions} visible={crestHovered} />
-
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-[#F5B8D9]/25"
-          style={{ background: "color-mix(in srgb, #E8C36A 12%, transparent)" }}
-        >
-          <Image
-            src={ROLE_ICONS[achievement.role]}
-            alt={roleName}
-            width={24}
-            height={24}
-            className="h-6 w-6 object-contain opacity-90"
-            unoptimized
-          />
-        </span>
-      </GlassPanel>
-    </FadeUp>
+      <div
+        className="pointer-events-none absolute bottom-10 left-8 hidden md:block"
+        aria-hidden
+      >
+        <div className="h-14 w-px bg-gradient-to-b from-[#E8C36A]/50 to-transparent" />
+        <div className="h-px w-14 bg-gradient-to-r from-[#E8C36A]/50 to-transparent" />
+      </div>
+    </section>
   );
 }
 
@@ -713,7 +818,7 @@ export default function AboutMinoClient() {
             </div>
           </section>
 
-          {/* ── PINK SCROLL ZONE (1.5× viewport) ── */}
+          {/* ── PINK SCROLL ZONE ── */}
           <div
             ref={pinkZoneRef}
             className={clsx(
@@ -750,26 +855,7 @@ export default function AboutMinoClient() {
             </div>
           </div>
 
-          {/* ── DARK ZONE — peak ranks ── */}
-          <section className="section-y mx-auto max-w-4xl px-5 md:px-8">
-            <FadeUp className="mb-8 md:mb-12">
-              <SectionLabel gold>Credentials</SectionLabel>
-              <h2 className="mt-3 text-2xl font-extrabold md:text-4xl">
-                Peak ranks{" "}
-                <span style={{ color: ABOUT_GOLD }}>&</span>{" "}
-                <span style={{ color: ABOUT_MINO_ACCENT }}>main pools</span>
-              </h2>
-              <p className="mt-3 max-w-lg text-sm text-fg-muted/80 md:text-base">
-                Hover a rank crest to peek the champion pool.
-              </p>
-            </FadeUp>
-
-            <div className="flex flex-col gap-3">
-              {ABOUT_MINO_ACHIEVEMENTS.map((a, i) => (
-                <AchievementCard key={`${a.tier}-${a.role}`} achievement={a} index={i} />
-              ))}
-            </div>
-          </section>
+          <RankDemonCredentials />
 
           <section className="section-y mx-auto max-w-5xl px-5 pb-20 md:px-8 md:pb-28">
             <FadeUp className="mb-8 text-center md:mb-12">
