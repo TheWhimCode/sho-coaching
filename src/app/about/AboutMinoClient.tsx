@@ -337,7 +337,13 @@ function SectionLabel({
 const CHALLENGER_PEAKS = ABOUT_MINO_ACHIEVEMENTS.filter(
   (achievement) => achievement.tier === "CHALLENGER"
 ).sort((a, b) => {
-  const order: Record<AboutMinoAchievement["role"], number> = { mid: 0, jng: 1, sup: 2 };
+  const order: Record<AboutMinoAchievement["role"], number> = {
+    mid: 0,
+    jng: 1,
+    sup: 2,
+    top: 3,
+    adc: 4,
+  };
   return order[a.role] - order[b.role];
 });
 
