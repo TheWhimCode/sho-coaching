@@ -68,9 +68,7 @@ export default function AboutMinoButton({ index }: Props) {
                 🌸
               </span>
             </div>
-            <div className={LINKTREE_DESCRIPTION}>
-              Kitten lore, ranks & soft vibes
-            </div>
+            <div className={LINKTREE_DESCRIPTION}>Some stuff about me :3</div>
           </div>
 
           <ArrowUpRight

@@ -77,7 +77,7 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
     id: "x",
     label: "X",
-    description: "I post about League, femboys and Vtubing",
+    description: "League, femboys and Vtubing",
     href: "https://x.com/itsMinooooo_",
     external: true,
     Icon: FaXTwitter,
@@ -90,7 +90,7 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
     id: "viego-guide",
     label: "Viego Guide",
-    description: "My Lethality & Hail of Blades Viego guide",
+    description: "Lethality & Hail of Blades Viego guide",
     href: "/guide",
     external: false,
     Icon: BookOpen,

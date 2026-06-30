@@ -58,12 +58,12 @@ const PINK_PANEL_REVEAL_RANGE: [number, number] = [
   0.75 - PINK_SCROLL_REVEAL_OFFSET,
 ];
 const PINK_PANEL_REVEAL_END = PINK_PANEL_REVEAL_RANGE[1];
-/** Horror lights-out: on → snap off → one dying flicker → dead. */
-const LIGHTS_OUT_DURATION_S = 0.82;
-const LIGHTS_OUT_TIMES = [0, 0.05, 0.16, 0.38] as const;
-/** Bulb sputters back on when re-entering from below. */
-const LIGHTS_IN_DURATION_S = 0.95;
-const LIGHTS_IN_TIMES = [0, 0.12, 0.24, 0.5] as const;
+/** Horror lights-out: single snap fade to dark (no mid-blink flash). */
+const LIGHTS_OUT_DURATION_S = 0.35;
+const LIGHTS_OUT_EASE = [0.4, 0, 1, 1] as const;
+/** Lights back on when re-entering pink from below. */
+const LIGHTS_IN_DURATION_S = 0.4;
+const LIGHTS_IN_EASE = [0, 0, 0.2, 1] as const;
 
 function smoothstep(t: number) {
   const x = Math.min(1, Math.max(0, t));
@@ -660,10 +660,9 @@ export default function AboutMinoClient() {
       blinkAnimatingRef.current = true;
       animDirectionRef.current = "out";
       const from = pinkPresence.get();
-      blinkControlRef.current = animate(pinkPresence, [from, 0, 1, 0], {
+      blinkControlRef.current = animate(pinkPresence, [from, 0], {
         duration: LIGHTS_OUT_DURATION_S,
-        times: [...LIGHTS_OUT_TIMES],
-        ease: "linear",
+        ease: LIGHTS_OUT_EASE,
         onComplete: () => {
           stopBlink();
           syncSteadyOverlay();
@@ -677,19 +676,14 @@ export default function AboutMinoClient() {
       blinkAnimatingRef.current = true;
       animDirectionRef.current = "in";
       const from = pinkPresence.get();
-      blinkControlRef.current = animate(
-        pinkPresence,
-        [from, target * 0.6, target * 0.05, target],
-        {
-          duration: LIGHTS_IN_DURATION_S,
-          times: [...LIGHTS_IN_TIMES],
-          ease: "linear",
-          onComplete: () => {
-            stopBlink();
-            syncSteadyOverlay();
-          },
-        }
-      );
+      blinkControlRef.current = animate(pinkPresence, [from, target], {
+        duration: LIGHTS_IN_DURATION_S,
+        ease: LIGHTS_IN_EASE,
+        onComplete: () => {
+          stopBlink();
+          syncSteadyOverlay();
+        },
+      });
     };
 
     const update = () => {
