@@ -42,9 +42,9 @@ const OverlayScrollRootContext = createContext<HTMLElement | null>(null);
 const EASE = [0.22, 1, 0.36, 1] as const;
 const HERO_VIDEO = "/videos/about/ChallPromotionthinner.webm";
 const PASTEL_PINK_BG =
-  "linear-gradient(165deg, #FFE8F3 0%, #FBCFE8 30%, #F9A8D4 65%, #F472B6 100%)";
+  "linear-gradient(165deg, #D0B0C4 0%, #C192AB 30%, #B07496 65%, #9E5880 100%)";
 const PINK_OVERLAY_RADIAL =
-  "radial-gradient(ellipse 120% 90% at 50% 35%, rgba(255,182,210,0.32), transparent 70%)";
+  "radial-gradient(ellipse 120% 90% at 50% 35%, rgba(170,110,140,0.11), transparent 70%)";
 const PINK_LAYER_FIXED: React.CSSProperties = { backgroundAttachment: "fixed" };
 const DEMON_VIEWPORT_TRIGGER_RATIO = 0.4;
 const ABOUT_GOLD = "#E8C36A";
