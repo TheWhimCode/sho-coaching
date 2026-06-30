@@ -137,7 +137,7 @@ export default function MobileNav() {
                 },
                 {
                   key: "x",
-                  href: "https://x.com/Shoaching",
+                  href: "https://x.com/itsMinooooo_",
                   label: "X",
                   Icon: FaXTwitter,
                 },

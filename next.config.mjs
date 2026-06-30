@@ -100,7 +100,6 @@ const nextConfig = {
     }
 
     const allHeaders = [
-      // Long cache for skillcheck hero images (biggest bandwidth cost)
       {
         source: "/skillcheck/:path*",
         headers: [
@@ -111,11 +110,11 @@ const nextConfig = {
         ],
       },
       {
-        source: "/videos/guide/:path*",
+        source: "/videos/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=3600, must-revalidate",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },

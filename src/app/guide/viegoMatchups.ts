@@ -21,7 +21,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Kha'Zix",
           explanation:
-            "Once he hits level 6, he can invade you at any point. You need vision against Kha — if he facechecks you, he explodes, and resetting on him is insane in teamfights.\nBut the fact that you always die if he finds you first means that you have to constantly be on your toes.",
+            "Once he hits level 6, he can invade you at any point. You need vision against Kha. If he facechecks you, he explodes, and resetting on him is insane in teamfights.\nBut the fact that you always die if he finds you first means that you have to constantly be on your toes.",
         },
         {
           champion: "Rengar",
@@ -36,7 +36,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Qiyana",
           explanation:
-            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck — be careful when fighting in the jungle as well, and she will E through you when you press R.\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with W > auto > Q > auto/R unless she goes DD\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
+            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with W > auto > Q > auto/R unless she goes DD\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
         },
       ],
     },
@@ -59,7 +59,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Jarvan IV",
           explanation:
-            "Insane reset — he has to go in, and below GM every Jarvan disrespects you and randomly ints. The real GOAT Jarvan will play only to deny you resets, but y'all don't have to worry about that.",
+            "Insane reset. He has to go in, and below GM every Jarvan disrespects you and randomly ints. The real GOAT Jarvan will play only to deny you resets, but y'all don't have to worry about that.",
         },
         {
           champion: "Vi",

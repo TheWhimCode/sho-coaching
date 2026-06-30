@@ -7,7 +7,7 @@ const MAIN_SHIELDBOW_EXPLANATION =
   "Need 100% crit. We don't care about the defense. If there was an alternative we'd go with that.";
 
 const IE_EXPLANATION =
-  "Max damage option. You do a ton of damage with Q and R instead of autos, which is why you don't ever build this before LDR (crit damage doesn't apply to spells).";
+  "Max damage option. IE is worse than LDR in almost every scenario, even against squishies because of item path, pricing, and how crit-reliant the item is.";
 
 const SERPENTS_EXPLANATION =
   "Delayed Serpent's Fang vs high midgame shield comps.";
@@ -260,7 +260,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Serpent's Fang",
           header: "Usual anti-shield build",
           description:
-            "Serpent's Fang is amazing against shield users. Often those shields come delayed though.\nA toplaner who won't be in the game until midgame, Seraph's Shieldbow Sterak's Locket buyers... This is an amazing first item and super cheap, so you get your LDR asap :3",
+            "Serpent's Fang is amazing against shield users. Often those shields come delayed though.\nA toplaner who won't be in the game until midgame, Seraph's Shieldbow Sterak's Locket buyers... This is an amazing second item and super cheap, so you get your LDR asap :3",
           activeChoiceIds: [6695],
           activePathIndex: 1,
           teamComp: {

@@ -1,12 +1,18 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useInView } from "framer-motion";
 import ComboSequenceBar from "@/app/_components/guides/combos/ComboSequenceBar";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { guideInnerPanelClass, guideMobileFlushPanelClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
-import { prefetchGuideComboVideos } from "@/lib/guides/prefetchGuideVideo";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
+
+/** Flip to false once combo clips are on YouTube embeds. */
+const COMBOS_CLIPS_PENDING_YOUTUBE = true;
+
+const COMBOS_PENDING_MESSAGE =
+  "I need to upload the clips to Youtube and embed them, will do that today. Otherwise my website gets taken down for too much usage 💀";
 
 const comboListButtonClass =
   "w-full rounded-xl border px-3 py-2.5 text-left text-xs font-semibold tracking-wide transition sm:px-4 sm:py-3 sm:text-sm";
@@ -80,7 +86,6 @@ function ComboListSidebar({
               key={combo.id}
               type="button"
               onClick={() => onSelect(combo.id)}
-              onFocus={() => prefetchGuideComboVideos(combo)}
               className={comboGridCellClass({
                 index,
                 active,
@@ -102,8 +107,6 @@ function ComboListSidebar({
               key={combo.id}
               type="button"
               onClick={() => onSelect(combo.id)}
-              onMouseEnter={() => prefetchGuideComboVideos(combo)}
-              onFocus={() => prefetchGuideComboVideos(combo)}
               className={clsx(
                 comboListButtonClass,
                 active
@@ -140,122 +143,37 @@ function ReplayIcon({ className }: { className?: string }) {
 
 type VideoOverlay = "play" | "replay";
 
-const FIRST_FRAME_TIME = 0.001;
-
-function useComboVideoPoster(
-  videoRef: RefObject<HTMLVideoElement | null>,
-  videoSrc: string,
-  setPosterReady: (ready: boolean) => void
-) {
-  useLayoutEffect(() => {
-    setPosterReady(false);
-
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.pause();
-    video.load();
-
-    let cancelled = false;
-    let seekFallbackTimer: number | undefined;
-    let clearSeekListener: (() => void) | undefined;
-    const removeMediaListeners: Array<() => void> = [];
-
-    const cleanup = () => {
-      cancelled = true;
-      window.clearTimeout(seekFallbackTimer);
-      clearSeekListener?.();
-      removeMediaListeners.forEach((remove) => remove());
-    };
-
-    const markReady = () => {
-      if (cancelled) return;
-      window.clearTimeout(seekFallbackTimer);
-      clearSeekListener?.();
-      clearSeekListener = undefined;
-      setPosterReady(true);
-    };
-
-    const seekToFirstFrame = () => {
-      if (cancelled) return;
-
-      clearSeekListener?.();
-
-      const onSeeked = () => {
-        markReady();
-      };
-
-      video.addEventListener("seeked", onSeeked);
-      clearSeekListener = () => video.removeEventListener("seeked", onSeeked);
-
-      seekFallbackTimer = window.setTimeout(markReady, 750);
-
-      try {
-        if (
-          video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
-          Math.abs(video.currentTime - FIRST_FRAME_TIME) < 0.0005
-        ) {
-          markReady();
-          return;
-        }
-        video.currentTime = FIRST_FRAME_TIME;
-      } catch {
-        markReady();
-      }
-    };
-
-    const tryPreparePoster = () => {
-      if (cancelled) return;
-      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        seekToFirstFrame();
-        return true;
-      }
-      return false;
-    };
-
-    if (!tryPreparePoster()) {
-      const onLoadedData = () => {
-        tryPreparePoster();
-      };
-
-      video.addEventListener("loadeddata", onLoadedData);
-      removeMediaListeners.push(() => video.removeEventListener("loadeddata", onLoadedData));
-
-      const rafId = requestAnimationFrame(() => {
-        tryPreparePoster();
-      });
-      removeMediaListeners.push(() => cancelAnimationFrame(rafId));
-    }
-
-    return cleanup;
-  }, [videoSrc, setPosterReady, videoRef]);
-}
-
 function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const inView = useInView(rootRef, { once: true, margin: "120px 0px" });
   const [overlay, setOverlay] = useState<VideoOverlay | null>("play");
-  const [posterReady, setPosterReady] = useState(false);
-
-  useComboVideoPoster(videoRef, videoSrc, setPosterReady);
 
   useEffect(() => {
     setOverlay("play");
   }, [videoSrc]);
 
+  const armVideo = (video: HTMLVideoElement) => {
+    if (!video.src) {
+      video.src = videoSrc;
+      video.load();
+    }
+  };
+
   const handleOverlayClick = () => {
     const video = videoRef.current;
     if (!video || !overlay) return;
 
+    armVideo(video);
+
     if (overlay === "replay") {
-      video.currentTime = FIRST_FRAME_TIME;
+      video.currentTime = 0;
     }
 
     video.muted = false;
     setOverlay(null);
 
-    void video.play().then(() => {
-      setPosterReady(true);
-    }).catch(() => {
+    void video.play().catch(() => {
       setOverlay(overlay);
     });
   };
@@ -272,50 +190,51 @@ function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
     const video = videoRef.current;
     if (video) {
       video.pause();
-      video.currentTime = FIRST_FRAME_TIME;
+      video.currentTime = 0;
     }
     setOverlay("replay");
   };
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#F0ABCF]/15 bg-[#1E1724] ring-1 ring-[#B8D8EA]/10">
-      {!posterReady ? (
+    <div
+      ref={rootRef}
+      className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#F0ABCF]/15 bg-[#1E1724] ring-1 ring-[#B8D8EA]/10"
+    >
+      {!inView ? (
         <div className="absolute inset-0 animate-pulse bg-[#2A1F2E]/70" aria-hidden />
-      ) : null}
-      <video
-        key={videoSrc}
-        ref={videoRef}
-        src={videoSrc}
-        muted
-        playsInline
-        preload="auto"
-        onClick={handleVideoClick}
-        onEnded={handleEnded}
-        className={clsx(
-          "h-full w-full object-contain transition-opacity duration-200",
-          posterReady ? "opacity-100" : "opacity-0",
-          !overlay && "cursor-pointer"
-        )}
-      />
-      {overlay ? (
-        <button
-          type="button"
-          onClick={handleOverlayClick}
-          className={clsx(
-            "absolute inset-0 flex items-center justify-center transition hover:bg-black/45",
-            posterReady ? "bg-black/35" : "bg-black/20"
-          )}
-          aria-label={overlay === "play" ? "Play combo video" : "Replay combo video"}
-        >
-          <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[#F0ABCF]/40 bg-[#2A1F2E]/85 text-[#FAD4E8] ring-1 ring-[#B8D8EA]/20 transition hover:scale-105 sm:h-20 sm:w-20">
-            {overlay === "play" ? (
-              <PlayIcon className="h-9 w-9 sm:h-11 sm:w-11" />
-            ) : (
-              <ReplayIcon className="h-8 w-8 sm:h-10 sm:w-10" />
+      ) : (
+        <>
+          <video
+            key={videoSrc}
+            ref={videoRef}
+            muted
+            playsInline
+            preload="none"
+            onClick={handleVideoClick}
+            onEnded={handleEnded}
+            className={clsx(
+              "h-full w-full object-contain",
+              !overlay && "cursor-pointer"
             )}
-          </span>
-        </button>
-      ) : null}
+          />
+          {overlay ? (
+            <button
+              type="button"
+              onClick={handleOverlayClick}
+              className="absolute inset-0 flex items-center justify-center bg-black/35 transition hover:bg-black/45"
+              aria-label={overlay === "play" ? "Play combo video" : "Replay combo video"}
+            >
+              <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[#F0ABCF]/40 bg-[#2A1F2E]/85 text-[#FAD4E8] ring-1 ring-[#B8D8EA]/20 transition hover:scale-105 sm:h-20 sm:w-20">
+                {overlay === "play" ? (
+                  <PlayIcon className="h-9 w-9 sm:h-11 sm:w-11" />
+                ) : (
+                  <ReplayIcon className="h-8 w-8 sm:h-10 sm:w-10" />
+                )}
+              </span>
+            </button>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
@@ -352,7 +271,32 @@ function ComboVideoPanel({
   );
 }
 
-export default function CombosSection({
+function CombosSectionPending({ data }: { data: GuideComboPageData }) {
+  return (
+    <section id="combos" className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible">
+      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
+        <h2 className={guideSectionTitleClass}>{data.heading}</h2>
+        {data.subtitle ? (
+          <p className="mt-2 text-sm text-[#F5E6D3]/55 sm:text-base">{data.subtitle}</p>
+        ) : null}
+      </div>
+
+      <div
+        className={clsx(
+          guideInnerPanelClass,
+          guideMobileFlushPanelClass,
+          "overflow-hidden px-6 py-8 sm:px-8 sm:py-10"
+        )}
+      >
+        <p className="text-center text-sm leading-relaxed text-[#FAD4E8]/90 sm:text-base">
+          {COMBOS_PENDING_MESSAGE}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function CombosSectionActive({
   data,
   abilityIcons,
   guideTextIcons = {},
@@ -364,10 +308,6 @@ export default function CombosSection({
   const [selectedId, setSelectedId] = useState(data.combos[0]?.id ?? "");
   const selected =
     data.combos.find((combo) => combo.id === selectedId) ?? data.combos[0];
-
-  useEffect(() => {
-    if (selected) prefetchGuideComboVideos(selected);
-  }, [selected]);
 
   if (!selected) return null;
 
@@ -388,7 +328,7 @@ export default function CombosSection({
         )}
       >
         <div className="flex flex-col lg:flex-row">
-          <div className="max-sm:p-0 sm:border-b sm:border-[#F0ABCF]/12 sm:p-5 lg:w-[min(100%,16rem)] lg:shrink-0 lg:border-b-0 lg:border-r xl:w-64">
+          <div className="max-sm:p-0 sm:border-b sm:border-[#F0ABCF]/12 sm:py-5 sm:pl-4 sm:pr-6 lg:w-[min(100%,16rem)] lg:shrink-0 lg:border-b-0 lg:border-r lg:pl-4 lg:pr-8 xl:w-64">
             <ComboListSidebar
               combos={data.combos}
               selectedId={selected.id}
@@ -396,7 +336,7 @@ export default function CombosSection({
             />
           </div>
 
-          <div className={clsx("min-w-0 flex-1 pb-4 pt-4 sm:p-6 lg:p-8", guideSectionHeaderPadClass)}>
+          <div className="min-w-0 flex-1 px-6 pb-4 pt-4 sm:p-6 lg:py-4 lg:pl-8 lg:pr-4">
             {selected.sequence?.length ? (
               <ComboSequenceBar sequence={selected.sequence} abilityIcons={abilityIcons} />
             ) : null}
@@ -438,4 +378,15 @@ export default function CombosSection({
       </div>
     </section>
   );
+}
+
+export default function CombosSection(props: {
+  data: GuideComboPageData;
+  abilityIcons: GuideViegoAbilityIcons;
+  guideTextIcons?: Record<string, string>;
+}) {
+  if (COMBOS_CLIPS_PENDING_YOUTUBE) {
+    return <CombosSectionPending data={props.data} />;
+  }
+  return <CombosSectionActive {...props} />;
 }

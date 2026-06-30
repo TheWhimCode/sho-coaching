@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import LinkTreePage from "@/app/_components/linktree/LinkTreePage";
+import { ABOUT_MINO_PRELOAD_IMAGES } from "@/app/_components/linktree/aboutMinoPreload";
+
+const IS_DEV = process.env.NODE_ENV === "development";
 
 export const metadata: Metadata = {
   title: "Mino, Coaching & Skillcheck",
@@ -11,5 +14,14 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <LinkTreePage />;
+  return (
+    <>
+      {IS_DEV
+        ? ABOUT_MINO_PRELOAD_IMAGES.map((href) => (
+            <link key={href} rel="preload" as="image" href={href} />
+          ))
+        : null}
+      <LinkTreePage />
+    </>
+  );
 }

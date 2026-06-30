@@ -59,7 +59,7 @@ export default function Footer() {
           </a>
 
           <a
-            href="https://x.com/Shoaching"
+            href="https://x.com/itsMinooooo_"
             target="_blank"
             aria-label="X"
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"

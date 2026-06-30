@@ -206,7 +206,7 @@ export default function NavBar({
                   <FaTiktok className="h-5 w-5" />
                 </Link>
                 <Link
-                  href="https://x.com/Shoaching"
+                  href="https://x.com/itsMinooooo_"
                   target="_blank"
                   aria-label="X"
                   className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"

@@ -23,10 +23,10 @@ const TWITCH_URL =
 const twitchButtonClass =
   "shrink-0 items-center gap-2 rounded-full border border-[#9146FF]/45 bg-[#9146FF]/10 px-4 py-2.5 text-sm font-semibold text-[#BF94FF] transition hover:border-[#9146FF]/70 hover:bg-[#9146FF]/18 hover:text-[#D9B8FF] sm:px-4 sm:py-2.5 sm:text-base";
 
+import { getOverlayScrollViewport } from "@/lib/overlayScrollViewport";
+
 function scrollToPageTop() {
-  const viewport = document
-    .getElementById("scroll-root")
-    ?.querySelector<HTMLElement>("[data-overlayscrollbars-viewport]");
+  const viewport = getOverlayScrollViewport();
 
   if (viewport) {
     viewport.scrollTo({ top: 0, behavior: "smooth" });
