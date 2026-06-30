@@ -199,6 +199,11 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
   { patterns: ["exposure"], matchKey: "exposure", boldOnly: true },
   { patterns: ["\\bHOB\\b"], matchKey: "hob", color: GUIDE_SHIELDBOW_RED, icon: { kind: "rune", id: 9923 }, iconShape: "round" },
   { patterns: ["\\bLDR\\b"], matchKey: "ldr", color: GUIDE_LDR_GRAY, icon: { kind: "item", id: "3036" } },
+  {
+    patterns: ["Cloak of Agility", "Cloak"],
+    matchKey: "cloak-of-agility",
+    icon: { kind: "item", id: "1018" },
+  },
   { patterns: ["\\bIE\\b"], matchKey: "ie", color: GUIDE_KRAKEN_GOLD, icon: { kind: "item", id: "3031" } },
   { patterns: ["\\bDD\\b"], matchKey: "dd", color: GUIDE_CONQUEROR_ORANGE, icon: { kind: "item", id: "6333" } },
   { patterns: ["\\bGA\\b"], matchKey: "ga", icon: { kind: "item", id: "3026" } },

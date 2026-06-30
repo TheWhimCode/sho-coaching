@@ -49,7 +49,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Burst combo",
       sequence: ["Wcharge", "E", "AA", "Q", "R", "AA"],
       videoSrc: "/videos/guide/BurstCombo.webm",
-      explanation: "Use this to oneshot mobile squishies. Great against stuff like Ekko, Akali, Qiyana to kill them before they can dash away. Even works if they have mercs! You just need enough damage (usually with LDR + cloack).",
+      explanation: "Use this to oneshot mobile squishies. Great against stuff like Ekko, Akali, Qiyana to kill them before they can dash away. Even works if they have mercs! You just need enough damage (usually with LDR + Cloak of Agility).",
     },
     {
       id: "extended-combo",

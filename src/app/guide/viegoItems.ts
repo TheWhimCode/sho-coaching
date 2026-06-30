@@ -142,7 +142,7 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       id: 3047,
       title: "Plated Steelcaps",
       explanation:
-        "These are the most common boots that you get after LDR + cloak or later. sometimes even earlier when the game is right.",
+        "These are the most common boots that you get after LDR + Cloak of Agility or later. sometimes even earlier when the game is right.",
     },
     {
       id: 3008,
@@ -154,7 +154,7 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       id: 3111,
       title: "Mercury's Treads",
       explanation:
-        "You don't really want them, but sometimes there is too much CC to avoid. Generally not before LDR + Cloak.",
+        "You don't really want them, but sometimes there is too much CC to avoid. Generally not before LDR + Cloak of Agility.",
     },
     {
       id: 3009,
