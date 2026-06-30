@@ -263,10 +263,16 @@ function FadeUp({
 }) {
   const ref = useRef(null);
   const scrollRoot = useContext(OverlayScrollRootContext);
+  const scrollRootRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    scrollRootRef.current = scrollRoot;
+  }, [scrollRoot]);
+
   const inView = useInView(ref, {
     once: true,
     amount: 0.25,
-    root: scrollRoot ?? undefined,
+    root: scrollRoot ? scrollRootRef : undefined,
   });
 
   return (
