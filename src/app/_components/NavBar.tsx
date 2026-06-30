@@ -11,6 +11,7 @@ import { useNavChrome } from "@/app/_components/navChrome";
 import { usePathname } from "next/navigation";
 
 const NAV = [
+  { label: "Mino", href: "/about" },
   { label: "Coaching", href: "/coaching" },
   { label: "Guide", href: "/guide" },
   { label: "Skillcheck", href: "/skillcheck" },

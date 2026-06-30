@@ -10,6 +10,7 @@ import { FaXTwitter } from "react-icons/fa6";
 const EXIT_DURATION = 0.35;
 
 const NAV = [
+  { label: "Mino", href: "/about" },
   { label: "Coaching", href: "/coaching" },
   { label: "Guide", href: "/guide" },
   { label: "Skillcheck", href: "/skillcheck" },
