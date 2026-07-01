@@ -8,12 +8,6 @@ import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHi
 import { guideInnerPanelClass, guideMobileFlushPanelClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 
-/** Flip to false once combo clips are on YouTube embeds. */
-const COMBOS_CLIPS_PENDING_YOUTUBE = false;
-
-const COMBOS_PENDING_MESSAGE =
-  "I need to upload the clips to Youtube and embed them, will do that today. Otherwise my website gets taken down for too much usage 💀";
-
 const comboListButtonClass =
   "w-full rounded-xl border px-3 py-2.5 text-left text-xs font-semibold tracking-wide transition sm:px-4 sm:py-3 sm:text-sm";
 
@@ -271,32 +265,7 @@ function ComboVideoPanel({
   );
 }
 
-function CombosSectionPending({ data }: { data: GuideComboPageData }) {
-  return (
-    <section id="combos" className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible">
-      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
-        <h2 className={guideSectionTitleClass}>{data.heading}</h2>
-        {data.subtitle ? (
-          <p className="mt-2 text-sm text-[#F5E6D3]/55 sm:text-base">{data.subtitle}</p>
-        ) : null}
-      </div>
-
-      <div
-        className={clsx(
-          guideInnerPanelClass,
-          guideMobileFlushPanelClass,
-          "overflow-hidden px-6 py-8 sm:px-8 sm:py-10"
-        )}
-      >
-        <p className="text-center text-sm leading-relaxed text-[#FAD4E8]/90 sm:text-base">
-          {COMBOS_PENDING_MESSAGE}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function CombosSectionActive({
+export default function CombosSection({
   data,
   abilityIcons,
   guideTextIcons = {},
@@ -378,15 +347,4 @@ function CombosSectionActive({
       </div>
     </section>
   );
-}
-
-export default function CombosSection(props: {
-  data: GuideComboPageData;
-  abilityIcons: GuideViegoAbilityIcons;
-  guideTextIcons?: Record<string, string>;
-}) {
-  if (COMBOS_CLIPS_PENDING_YOUTUBE) {
-    return <CombosSectionPending data={props.data} />;
-  }
-  return <CombosSectionActive {...props} />;
 }

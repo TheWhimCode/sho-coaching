@@ -7,7 +7,7 @@ export type GuideComboEntry = {
   label: string;
   /** Ability order for this combo — use AA for auto attacks. */
   sequence?: GuideComboAbilityKey[];
-  /** Local or remote video file (e.g. `/videos/guide/foo.webm`). */
+  /** Local path or remote clip URL (e.g. `https://videos.its-mino.com/foo.webm`). */
   videoSrc?: string | null;
   /** Embed URL (YouTube iframe src, etc.). */
   videoEmbedUrl?: string | null;
