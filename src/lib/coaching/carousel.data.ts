@@ -1,3 +1,5 @@
+import { coachingClipVideo } from "@/lib/coaching/coachingClipVideos";
+
 export type CarouselItem = {
   title: string;
   videoSrc: string;
@@ -5,7 +7,7 @@ export type CarouselItem = {
   imageAlt?: string;
 };
 
-const VIDEO = "/videos/coaching/clips/Placeholder_Pyke.mp4";
+const VIDEO = coachingClipVideo("Placeholder_Pyke.mp4");
 
 export const CAROUSEL_ITEMS: CarouselItem[] = [
   { title: "Wave management",   videoSrc: VIDEO, posterSrc: "/videos/coaching/posters/wave.webp", imageAlt: "Wave management" },

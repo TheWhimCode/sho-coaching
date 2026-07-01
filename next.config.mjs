@@ -29,6 +29,7 @@ const imgSrc = [
   "https://*.stripe.com",
   "https://ddragon.leagueoflegends.com", // allow champion images
   "https://raw.communitydragon.org",     // allow rank emblems (CDragon)
+  "https://videos.its-mino.com",
 ].join(" ");
 
 // Build CSP parts (dev: no upgrade-insecure-requests)
@@ -66,6 +67,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "ddragon.leagueoflegends.com" },
       { protocol: "https", hostname: "raw.communitydragon.org" }, // ✅ allow rank emblems
+      { protocol: "https", hostname: "videos.its-mino.com" },
     ],
   },
 

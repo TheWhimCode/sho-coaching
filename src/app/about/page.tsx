@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ABOUT_MINO_PRELOAD_IMAGES } from "@/app/_components/linktree/aboutMinoPreload";
+import { ABOUT_HERO_VIDEO } from "@/lib/coaching/coachingClipVideos";
 import AboutMinoClient from "./AboutMinoClient";
 
 const title = "About Mino";
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <link rel="preload" as="video" href="/videos/about/ChallPromotionthinner.webm" />
+      <link rel="preload" as="video" href={ABOUT_HERO_VIDEO} />
       {ABOUT_MINO_PRELOAD_IMAGES.map((href) => (
         <link key={href} rel="preload" as="image" href={href} />
       ))}

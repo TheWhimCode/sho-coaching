@@ -4,6 +4,11 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 
+import {
+  PARTICLE_BG_MOBILE_VIDEO,
+  PARTICLE_BG_VIDEO,
+} from "@/lib/coaching/coachingClipVideos";
+
 const EASE = [0.22, 1, 0.36, 1] as const;
 const BG_FADE_DURATION = 3;
 
@@ -16,7 +21,7 @@ export default function QuickbookBackground() {
       transition={{ duration: BG_FADE_DURATION, ease: EASE }}
     >
       <video
-        src="/videos/customize/Particle1_slow.webm"
+        src={PARTICLE_BG_VIDEO}
         autoPlay
         muted
         loop
@@ -25,7 +30,7 @@ export default function QuickbookBackground() {
       />
 
       <video
-        src="/videos/customize/Particle_mobile480p.webm"
+        src={PARTICLE_BG_MOBILE_VIDEO}
         autoPlay
         muted
         loop

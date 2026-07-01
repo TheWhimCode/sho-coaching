@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import SquareButton from "@/app/_components/small/SquareButton";
+import { COACHING_FOLLOWUP_EXAMPLE_IMAGE } from "@/app/coaching/coachingPageAssets";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
 
 type Props = {
@@ -96,7 +97,7 @@ export default function FollowUp({
                 {/* Right: example square button with label on top */}
                 <div className="flex flex-col items-center">
                   <span className="mb-1.5 text-[10px] tracking-[0.2em] text-white/60">EXAMPLE</span>
-                  <SquareButton role="Mid" href={exampleHref} src="/images/squarebuttons/Azir2.png" size={80} />
+                  <SquareButton role="Mid" href={exampleHref} src={COACHING_FOLLOWUP_EXAMPLE_IMAGE} size={80} />
                 </div>
               </div>
 

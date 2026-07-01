@@ -25,6 +25,10 @@ import {
   type Preset,
 } from "@/engine/session";
 import type { ProductId } from "@/engine/session";
+import {
+  PARTICLE_BG_MOBILE_VIDEO,
+  PARTICLE_BG_VIDEO,
+} from "@/lib/coaching/coachingClipVideos";
 
 
 type Props = {
@@ -287,7 +291,7 @@ export default function SessionHero({
         transition={{ duration: BG_FADE_DURATION, ease: EASE }}
       >
         <video
-          src="/videos/customize/Particle1_slow.webm"
+          src={PARTICLE_BG_VIDEO}
           autoPlay
           muted
           loop
@@ -296,7 +300,7 @@ export default function SessionHero({
         />
 
                 <video
-          src="/videos/customize/Particle_mobile480p.webm"
+          src={PARTICLE_BG_MOBILE_VIDEO}
           autoPlay
           muted
           loop

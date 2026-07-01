@@ -24,6 +24,7 @@ import {
   getPinkSectionScrollMetrics,
   useOverlayScrollViewport,
 } from "@/lib/overlayScrollViewport";
+import { ABOUT_HERO_VIDEO } from "@/lib/coaching/coachingClipVideos";
 
 function AboutPawIcon({
   className,
@@ -47,7 +48,6 @@ function AboutPawIcon({
 const OverlayScrollRootContext = createContext<HTMLElement | null>(null);
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const HERO_VIDEO = "/videos/about/ChallPromotionthinner.webm";
 const PASTEL_PINK_BG =
   "linear-gradient(165deg, #D0B0C4 0%, #C192AB 30%, #B07496 65%, #9E5880 100%)";
 const PINK_OVERLAY_RADIAL =
@@ -188,7 +188,7 @@ function AboutPageBackgrounds({ pinkPresence }: { pinkPresence: MotionValue<numb
       <div className={clsx("absolute inset-x-0 top-0 overflow-hidden", HERO_VIDEO_HEIGHT)}>
         <div className="relative w-full">
           <video
-            src={HERO_VIDEO}
+            src={ABOUT_HERO_VIDEO}
             autoPlay
             muted
             loop
@@ -690,7 +690,7 @@ function OtherGameRankCard({
           sizes="(max-width: 1024px) 112px, 144px"
         />
         <div
-          className="pointer-events-none absolute inset-0 rounded-xl shadow-[inset_0_0_32px_rgba(0,0,0,0.75),inset_0_4px_16px_rgba(0,0,0,0.65)]"
+          className="pointer-events-none absolute inset-0 rounded-xl shadow-[inset_0_0_40px_rgba(0,0,0,0.82),inset_0_6px_20px_rgba(0,0,0,0.72)]"
           aria-hidden
         />
       </div>

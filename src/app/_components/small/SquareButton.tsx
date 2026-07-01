@@ -8,7 +8,7 @@ import Image from "next/image";
 export type SquareButtonProps = {
   role: string;
   href: string;
-  src: string;   // e.g. "/images/squarebuttons/Syndra8.png"
+  src: string;   // e.g. coaching square button CDN URL
   size?: number; // px
   /** High-priority load for above-the-fold coaching examples */
   eager?: boolean;

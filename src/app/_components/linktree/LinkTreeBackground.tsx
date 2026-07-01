@@ -1,3 +1,8 @@
+import {
+  PARTICLE_BG_MOBILE_VIDEO,
+  PARTICLE_BG_VIDEO,
+} from "@/lib/coaching/coachingClipVideos";
+
 /** Particle video backdrop — matches coaching preset SessionHero. */
 export default function LinkTreeBackground() {
   return (
@@ -6,7 +11,7 @@ export default function LinkTreeBackground() {
       aria-hidden
     >
       <video
-        src="/videos/customize/Particle1_slow.webm"
+        src={PARTICLE_BG_VIDEO}
         autoPlay
         muted
         loop
@@ -15,7 +20,7 @@ export default function LinkTreeBackground() {
         className="hidden md:block h-full w-full object-cover object-left md:object-center"
       />
       <video
-        src="/videos/customize/Particle_mobile480p.webm"
+        src={PARTICLE_BG_MOBILE_VIDEO}
         autoPlay
         muted
         loop

@@ -9,6 +9,10 @@ import { motion } from "framer-motion";
 import { CheckCircle2, AlertCircle, Calendar, Clock } from "lucide-react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 import DividerWithLogo from "@/app/_components/small/Divider-logo";
+import {
+  PARTICLE_BG_MOBILE_VIDEO,
+  PARTICLE_BG_VIDEO,
+} from "@/lib/coaching/coachingClipVideos";
 
 const BG_FADE_DURATION = 3;
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -170,7 +174,7 @@ export default function SuccessClient() {
         transition={{ duration: BG_FADE_DURATION, ease: EASE }}
       >
         <video
-          src="/videos/customize/Particle1_slow.webm"
+          src={PARTICLE_BG_VIDEO}
           autoPlay
           muted
           loop
@@ -178,7 +182,7 @@ export default function SuccessClient() {
           className="hidden md:block h-full w-full object-cover object-left md:object-center"
         />
         <video
-          src="/videos/customize/Particle_mobile480p.webm"
+          src={PARTICLE_BG_MOBILE_VIDEO}
           autoPlay
           muted
           loop
