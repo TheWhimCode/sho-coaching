@@ -25,12 +25,19 @@ import {
   useOverlayScrollViewport,
 } from "@/lib/overlayScrollViewport";
 
-function AboutPawIcon({ className }: { className?: string }) {
+function AboutPawIcon({
+  className,
+  tone = "pink",
+}: {
+  className?: string;
+  tone?: "pink" | "gold";
+}) {
   return (
     <span
       aria-hidden
       className={clsx(
-        "relative inline-block size-12 shrink-0 -rotate-[30deg] bg-[#F0ABCF] mask-[url(/images/guide/paw.png)] mask-contain mask-center mask-no-repeat md:size-14",
+        "relative inline-block size-12 shrink-0 -rotate-[30deg] mask-[url(/images/guide/paw.png)] mask-contain mask-center mask-no-repeat md:size-14",
+        tone === "gold" ? "bg-[#E8C36A]" : "bg-[#F0ABCF]",
         className
       )}
     />
@@ -216,7 +223,7 @@ type PinkPanelStat = {
 };
 
 type PinkPanelCardProps = {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   titlePaw?: boolean;
   closingPaw?: boolean;
@@ -227,6 +234,7 @@ type PinkPanelCardProps = {
   cta?: { label: string; href: string };
   footer?: string;
   demonMode: boolean;
+  goldClosing?: boolean;
 };
 
 function PinkPanelCard({
@@ -241,6 +249,7 @@ function PinkPanelCard({
   cta,
   footer,
   demonMode,
+  goldClosing = false,
 }: PinkPanelCardProps) {
   const bodyParagraphs = body.split(/\n\n+/).filter(Boolean);
 
@@ -260,18 +269,23 @@ function PinkPanelCard({
       transition={{ duration: 0.45, ease: EASE }}
     >
       <div className="relative">
-        <motion.p
-          className="text-[11px] font-medium uppercase tracking-[0.22em] xl:text-xs"
-          animate={{ color: demonMode ? ABOUT_GOLD : "rgba(190, 24, 93, 0.8)" }}
-          transition={{ duration: 0.4 }}
-        >
-          {eyebrow}
-          {demonMode ? (
-            <span className="text-[#F9A8D4]"> · demon kitten</span>
-          ) : null}
-        </motion.p>
+        {eyebrow ? (
+          <motion.p
+            className="text-[11px] font-medium uppercase tracking-[0.22em] xl:text-xs"
+            animate={{ color: demonMode ? ABOUT_GOLD : "rgba(190, 24, 93, 0.8)" }}
+            transition={{ duration: 0.4 }}
+          >
+            {eyebrow}
+            {demonMode ? (
+              <span className="text-[#F9A8D4]"> · demon kitten</span>
+            ) : null}
+          </motion.p>
+        ) : null}
         <motion.h2
-          className="mt-2 text-xl font-semibold leading-snug sm:text-2xl xl:mt-3 xl:text-3xl"
+          className={clsx(
+            "text-xl font-semibold leading-snug sm:text-2xl xl:text-3xl",
+            eyebrow ? "mt-2 xl:mt-3" : undefined
+          )}
           animate={{
             color: demonMode ? "#FDF2F8" : "#4A1D35",
           }}
@@ -289,12 +303,18 @@ function PinkPanelCard({
             <p key={index}>{paragraph}</p>
           ))}
           {bodyClosing ? (
-            <p className="flex items-end">
-              <span className="font-semibold">{bodyClosing}</span>
-              {closingPaw ? (
-                <AboutPawIcon className="-mb-2 ml-auto mr-[23%] size-12 translate-y-1 sm:size-14 xl:-mb-2.5 xl:mr-[27%] xl:size-16 xl:translate-y-1.5" />
-              ) : null}
-            </p>
+            goldClosing ? (
+              <p className="border-t border-white/[0.07] pt-4 text-[0.8125rem] font-bold uppercase tracking-[0.14em] text-[#E8C36A] sm:text-sm sm:tracking-[0.16em]">
+                {bodyClosing}
+              </p>
+            ) : (
+              <p className="flex items-end">
+                <span className="font-semibold">{bodyClosing}</span>
+                {closingPaw ? (
+                  <AboutPawIcon className="-mb-2 ml-auto mr-[23%] size-12 translate-y-1 sm:size-14 xl:-mb-2.5 xl:mr-[27%] xl:size-16 xl:translate-y-1.5" />
+                ) : null}
+              </p>
+            )
           ) : null}
         </motion.div>
         {footer ? (
@@ -489,6 +509,10 @@ const DEMON_TEXT_CLASS =
   "pointer-events-none absolute left-1/2 -translate-x-1/2 select-none font-black uppercase leading-none tracking-[-0.05em]";
 const DEMON_STACK_TOP = "-top-7 md:-top-6";
 
+const AFTERGLOW_BLOCK_GAP_PB = "pb-20 md:pb-24 lg:pb-28";
+const AFTERGLOW_BLOCK_GAP_MT = "mt-20 md:mt-24 lg:mt-28";
+const AFTERGLOW_VIEWPORT_TRIGGER_RATIO = 0.5;
+
 function RankDemonCredentials() {
   const sectionRef = useRef<HTMLElement>(null);
   const scrollRoot = useContext(OverlayScrollRootContext);
@@ -525,7 +549,7 @@ function RankDemonCredentials() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-[100dvh] overflow-visible pt-14 md:pt-16"
+      className={clsx("relative overflow-visible pt-14 md:pt-16", AFTERGLOW_BLOCK_GAP_PB)}
     >
       <div className="relative -translate-y-12 md:-translate-y-14">
       <motion.p
@@ -568,7 +592,7 @@ function RankDemonCredentials() {
         demon
       </motion.p>
 
-      <div className="relative z-20 mx-auto max-w-6xl overflow-visible px-5 pb-8 pt-2 md:pb-10 md:pt-4">
+      <div className="relative z-20 mx-auto max-w-6xl overflow-visible px-5 pb-0 pt-2 md:pt-4">
         <div className="relative flex w-full flex-col items-center overflow-visible">
           <motion.div
             className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2 text-center"
@@ -628,10 +652,20 @@ const OTHER_GAME_RANK_ROWS: { name: string; imageSrc: string; zoomIn?: boolean }
   [{ name: "Marvel Snap", imageSrc: "/images/about/Omega.jpg", zoomIn: true }],
 ];
 
-/** Stagger: 1 · 2 · 3 ‖ 4 · 5 ‖ 6 (short pauses within rows, slightly longer between rows). */
-const OTHER_GAME_REVEAL_DELAYS_S = [0, 0.07, 0.14, 0.28, 0.35, 0.48];
+/** Stagger items within a row; extra pause between rows. */
+const OTHER_GAME_ITEM_STAGGER_S = 0.07;
+const OTHER_GAME_ROW_STAGGER_S = 0.28;
+const OTHER_GAME_GRID_GAP = "gap-4 sm:gap-5 lg:gap-6 xl:gap-7";
 const OTHER_GAME_REVEAL_X = 26;
 const OTHER_GAME_REVEAL_DURATION_S = 0.52;
+
+function otherGameRevealDelay(rowIndex: number, colIndex: number) {
+  let delay = 0;
+  for (let row = 0; row < rowIndex; row++) {
+    delay += OTHER_GAME_RANK_ROWS[row].length * OTHER_GAME_ITEM_STAGGER_S + OTHER_GAME_ROW_STAGGER_S;
+  }
+  return delay + colIndex * OTHER_GAME_ITEM_STAGGER_S;
+}
 
 function OtherGameRankCard({
   name,
@@ -660,66 +694,103 @@ function OtherGameRankCard({
           aria-hidden
         />
       </div>
-      <p className="pointer-events-none absolute right-0 top-full z-10 mt-px whitespace-nowrap text-right text-[9px] font-semibold uppercase tracking-[0.18em] text-white/75 opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:text-[10px]">
+      <p className="pointer-events-none absolute right-0 top-full z-10 mt-0.5 whitespace-nowrap text-right text-[9px] font-semibold uppercase tracking-[0.18em] text-white/75 opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:text-[10px]">
         {name}
       </p>
     </div>
   );
 }
 
-function OtherGameRanksSection() {
-  const sectionRef = useRef<HTMLElement>(null);
+function PlayForMyselfPanel({ inView }: { inView: boolean }) {
+  return (
+    <motion.div
+      className="relative w-full max-w-sm sm:max-w-md md:max-w-[22rem] lg:max-w-md xl:max-w-lg"
+      initial={{ opacity: 0, x: -36 }}
+      animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -36 }}
+      transition={{ duration: 0.62, delay: 0.08, ease: EASE }}
+    >
+      <PinkPanelCard
+        demonMode
+        goldClosing
+        title="I play for myself."
+        body={
+          "The game doesn't care about how you feel. I want the dragon. I want to help my team. I want the win. But I don't play based on what I want."
+        }
+        bodyClosing="I play based on what's possible."
+      />
+    </motion.div>
+  );
+}
+
+function RankAfterglowSection() {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const gamesRef = useRef<HTMLDivElement>(null);
   const scrollRoot = useContext(OverlayScrollRootContext);
-  const inView = useTriggerAtViewportHeight(sectionRef, scrollRoot, 0.55);
+  const panelInView = useTriggerAtViewportHeight(
+    panelRef,
+    scrollRoot,
+    AFTERGLOW_VIEWPORT_TRIGGER_RATIO
+  );
+  const gamesInView = useTriggerAtViewportHeight(
+    gamesRef,
+    scrollRoot,
+    AFTERGLOW_VIEWPORT_TRIGGER_RATIO
+  );
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative -mt-14 px-5 pb-12 pt-0 md:-mt-16 md:px-8 md:pb-16"
-    >
-      <div className="ml-auto max-w-xl pr-4 text-right sm:pr-6 md:pr-8 xl:pr-12 2xl:pr-16">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 0.4, ease: EASE }}
+    <section className="relative px-5 pb-12 pt-0 md:px-8 md:pb-16">
+      <div className="mx-auto flex w-full max-w-6xl flex-col xl:max-w-7xl">
+        <div ref={panelRef} className="md:ml-[4%] xl:ml-[6%] 2xl:ml-[8%]">
+          <PlayForMyselfPanel inView={panelInView} />
+        </div>
+
+        <div
+          ref={gamesRef}
+          className={clsx(
+            "ml-auto w-full max-w-xl pr-4 text-right sm:pr-6 md:pr-8 xl:pr-12 2xl:pr-16",
+            AFTERGLOW_BLOCK_GAP_MT
+          )}
         >
-          <SectionLabel gold>Beyond League</SectionLabel>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={gamesInView ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ duration: 0.4, ease: EASE }}
+          >
+            <SectionLabel gold>Beyond League</SectionLabel>
+          </motion.div>
 
-        <div className="mt-2 flex flex-col items-end gap-3 sm:mt-2.5 sm:gap-3.5 md:gap-4">
-          {OTHER_GAME_RANK_ROWS.map((row, rowIndex) => {
-            const rowStartIndex = OTHER_GAME_RANK_ROWS.slice(0, rowIndex).reduce(
-              (count, items) => count + items.length,
-              0
-            );
+          <div className={clsx("mt-2 flex flex-col items-end sm:mt-2.5", OTHER_GAME_GRID_GAP)}>
+            {OTHER_GAME_RANK_ROWS.map((row, rowIndex) => (
+              <div key={rowIndex} className={clsx("flex justify-end", OTHER_GAME_GRID_GAP)}>
+                  {row.map((game, colIndex) => {
+                    const delay = otherGameRevealDelay(rowIndex, colIndex);
 
-            return (
-            <div key={rowIndex} className="flex justify-end gap-4 sm:gap-5 lg:gap-6 xl:gap-7">
-              {row.map((game, colIndex) => {
-                const revealIndex = rowStartIndex + colIndex;
-                const delay =
-                  OTHER_GAME_REVEAL_DELAYS_S[revealIndex] ?? revealIndex * 0.07;
-
-                return (
-                  <motion.div
-                    key={game.name}
-                    initial={{ opacity: 0, x: -OTHER_GAME_REVEAL_X }}
-                    animate={
-                      inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -OTHER_GAME_REVEAL_X }
-                    }
-                    transition={{ duration: OTHER_GAME_REVEAL_DURATION_S, delay, ease: EASE }}
-                  >
-                    <OtherGameRankCard
-                      name={game.name}
-                      imageSrc={game.imageSrc}
-                      zoomIn={game.zoomIn}
-                    />
-                  </motion.div>
-                );
-              })}
-            </div>
-            );
-          })}
+                    return (
+                      <motion.div
+                        key={game.name}
+                        initial={{ opacity: 0, x: -OTHER_GAME_REVEAL_X }}
+                        animate={
+                          gamesInView
+                            ? { opacity: 1, x: 0 }
+                            : { opacity: 0, x: -OTHER_GAME_REVEAL_X }
+                        }
+                        transition={{
+                          duration: OTHER_GAME_REVEAL_DURATION_S,
+                          delay,
+                          ease: EASE,
+                        }}
+                      >
+                        <OtherGameRankCard
+                          name={game.name}
+                          imageSrc={game.imageSrc}
+                          zoomIn={game.zoomIn}
+                        />
+                      </motion.div>
+                    );
+                  })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -962,7 +1033,7 @@ export default function AboutMinoClient() {
                 <PinkPanelCard
                   demonMode={panelDemonMode}
                   eyebrow="Coaching"
-                  title="I actually have 5 years of coaching experience!"
+                  title="I have 5 years of coaching experience!"
                   body={
                     "In 2020 I started coaching and got something like ~2000 sessions done since then for all roles and ranks.\n\n" +
                     "Feel free to check it out, I swear it's lowkey goated."
@@ -981,7 +1052,7 @@ export default function AboutMinoClient() {
 
           <RankDemonCredentials />
 
-          <OtherGameRanksSection />
+          <RankAfterglowSection />
 
           <section className="flex min-h-[45vh] flex-col items-center justify-center px-5 pb-28 pt-20 text-center md:px-8 md:pb-36 md:pt-28">
             <p className="text-base text-fg-muted/50 md:text-lg">
