@@ -49,7 +49,7 @@ const PINK_LAYER_FIXED: React.CSSProperties = { backgroundAttachment: "fixed" };
 const DEMON_VIEWPORT_TRIGGER_RATIO = 0.4;
 const ABOUT_GOLD = "#E8C36A";
 const ABOUT_SECTION_BG = "#050B18";
-const PINK_SECTION_HEIGHT = "min-h-[175dvh]";
+const PINK_SECTION_HEIGHT = "min-h-[165dvh] lg:min-h-[170dvh] xl:min-h-[175dvh]";
 /** Panel sits higher + pink/panel reveal earlier; keep `PINK_SCROLL_REVEAL_OFFSET` in sync with `pt-0 md:pt-[4vh]`. */
 const PINK_SCROLL_REVEAL_OFFSET = 0.08;
 const PINK_REVEAL_START_RATIO = 0.72 + PINK_SCROLL_REVEAL_OFFSET;
@@ -247,7 +247,7 @@ function PinkPanelCard({
   return (
     <motion.div
       className={clsx(
-        "relative rounded-3xl p-6 backdrop-blur-xl md:p-8",
+        "relative rounded-2xl p-5 backdrop-blur-xl sm:p-6 xl:rounded-3xl xl:p-8",
         demonMode
           ? "border border-[#F472B6]/55 bg-transparent"
           : "border border-white/70 bg-white/72"
@@ -261,7 +261,7 @@ function PinkPanelCard({
     >
       <div className="relative">
         <motion.p
-          className="text-xs font-medium uppercase tracking-[0.22em] md:text-[13px]"
+          className="text-[11px] font-medium uppercase tracking-[0.22em] xl:text-xs"
           animate={{ color: demonMode ? ABOUT_GOLD : "rgba(190, 24, 93, 0.8)" }}
           transition={{ duration: 0.4 }}
         >
@@ -271,17 +271,17 @@ function PinkPanelCard({
           ) : null}
         </motion.p>
         <motion.h2
-          className="mt-2.5 text-2xl font-semibold leading-snug md:mt-3 md:text-3xl"
+          className="mt-2 text-xl font-semibold leading-snug sm:text-2xl xl:mt-3 xl:text-3xl"
           animate={{
             color: demonMode ? "#FDF2F8" : "#4A1D35",
           }}
           transition={{ duration: 0.4 }}
         >
           {title}
-          {titlePaw ? <AboutPawIcon className="-top-0.5 ml-4 align-middle md:-top-1 md:ml-5" /> : null}
+          {titlePaw ? <AboutPawIcon className="-top-0.5 ml-3 align-middle sm:ml-4 xl:-top-1 xl:ml-5" /> : null}
         </motion.h2>
         <motion.div
-          className="mt-3 space-y-[0.5lh] text-base leading-[1.75] md:mt-4 md:text-lg md:leading-relaxed"
+          className="mt-3 space-y-[0.5lh] text-sm leading-[1.75] sm:text-[0.9375rem] lg:text-base xl:mt-4 xl:text-lg xl:leading-relaxed"
           animate={{ color: demonMode ? "rgba(253, 242, 248, 0.82)" : "rgba(107, 40, 72, 0.88)" }}
           transition={{ duration: 0.4 }}
         >
@@ -292,14 +292,14 @@ function PinkPanelCard({
             <p className="flex items-end">
               <span className="font-semibold">{bodyClosing}</span>
               {closingPaw ? (
-                <AboutPawIcon className="-mb-2 ml-auto mr-[23%] size-14 translate-y-1 md:-mb-2.5 md:mr-[27%] md:size-16 md:translate-y-1.5" />
+                <AboutPawIcon className="-mb-2 ml-auto mr-[23%] size-12 translate-y-1 sm:size-14 xl:-mb-2.5 xl:mr-[27%] xl:size-16 xl:translate-y-1.5" />
               ) : null}
             </p>
           ) : null}
         </motion.div>
         {footer ? (
           <motion.p
-            className="mt-4 text-base font-medium not-italic md:mt-5 md:text-lg"
+            className="mt-4 text-sm font-medium not-italic xl:mt-5 xl:text-lg"
             animate={{ color: demonMode ? "rgba(249, 168, 212, 0.85)" : "rgba(74, 29, 53, 0.92)" }}
             transition={{ duration: 0.4 }}
           >
@@ -307,7 +307,7 @@ function PinkPanelCard({
           </motion.p>
         ) : null}
         {tags.length > 0 ? (
-          <div className="mt-5 flex flex-wrap gap-2 md:mt-6">
+          <div className="mt-4 flex flex-wrap gap-2 xl:mt-6">
             {tags.map((tag) => (
               <motion.span
                 key={tag}
@@ -326,11 +326,11 @@ function PinkPanelCard({
           </div>
         ) : null}
         {stats.length > 0 ? (
-          <div className="mt-3 grid grid-cols-2 gap-2.5 md:mt-3.5 md:gap-3">
+          <div className="mt-3 grid grid-cols-2 gap-2 xl:gap-3">
             {stats.map((stat) => (
               <motion.div
                 key={stat.label}
-                className="rounded-2xl px-3 py-3.5 text-center md:px-4 md:py-4"
+                className="rounded-2xl px-3 py-3 text-center xl:px-4 xl:py-4"
                 animate={{
                   borderColor: demonMode ? "rgba(244,114,182,0.4)" : "rgba(249,168,212,0.45)",
                   backgroundColor: demonMode ? "transparent" : "rgba(253,242,248,0.85)",
@@ -339,14 +339,14 @@ function PinkPanelCard({
                 transition={{ duration: 0.4 }}
               >
                 <motion.p
-                  className="text-xl font-extrabold tracking-tight md:text-2xl"
+                  className="text-lg font-extrabold tracking-tight xl:text-2xl"
                   animate={{ color: demonMode ? "#FDF2F8" : "#4A1D35" }}
                   transition={{ duration: 0.4 }}
                 >
                   {stat.value}
                 </motion.p>
                 <motion.p
-                  className="mt-1 text-xs leading-snug md:text-sm"
+                  className="mt-1 text-[11px] leading-snug xl:text-sm"
                   animate={{ color: demonMode ? "rgba(253, 242, 248, 0.72)" : "rgba(107, 40, 72, 0.8)" }}
                   transition={{ duration: 0.4 }}
                 >
@@ -357,11 +357,11 @@ function PinkPanelCard({
           </div>
         ) : null}
         {cta ? (
-          <motion.div className="mt-3 md:mt-3.5" transition={{ duration: 0.4 }}>
+          <motion.div className="mt-3 xl:mt-3.5" transition={{ duration: 0.4 }}>
             <Link
               href={cta.href}
               className={clsx(
-                "inline-flex w-full items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition md:text-base",
+                "inline-flex w-full items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold transition xl:px-6 xl:py-3 xl:text-base",
                 demonMode
                   ? "border border-[#FBCFE8]/35 bg-transparent text-[#FDF2F8] hover:border-[#FBCFE8]/55 hover:bg-transparent"
                   : "bg-white text-[#4A1D35] ring-1 ring-[#F9A8D4]/25 hover:bg-[#FDF2F8]"
@@ -568,7 +568,7 @@ function RankDemonCredentials() {
         demon
       </motion.p>
 
-      <div className="relative z-20 mx-auto max-w-6xl overflow-visible px-5 pb-14 pt-2 md:pt-4">
+      <div className="relative z-20 mx-auto max-w-6xl overflow-visible px-5 pb-8 pt-2 md:pb-10 md:pt-4">
         <div className="relative flex w-full flex-col items-center overflow-visible">
           <motion.div
             className="pointer-events-none absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2 text-center"
@@ -610,6 +610,117 @@ function RankDemonCredentials() {
           </motion.p>
         </div>
       </div>
+      </div>
+    </section>
+  );
+}
+
+const OTHER_GAME_RANK_ROWS: { name: string; imageSrc: string; zoomIn?: boolean }[][] = [
+  [
+    { name: "Overwatch", imageSrc: "/images/about/Overwatch.jpg", zoomIn: true },
+    { name: "Marvel Rivals", imageSrc: "/images/about/MarvelRivals.jpg", zoomIn: true },
+    { name: "Apex Legends", imageSrc: "/images/about/Apex.jpg" },
+  ],
+  [
+    { name: "Hearthstone", imageSrc: "/images/about/Heartstone.jpg", zoomIn: true },
+    { name: "LoR", imageSrc: "/images/about/LoR.png", zoomIn: true },
+  ],
+  [{ name: "Marvel Snap", imageSrc: "/images/about/Omega.jpg", zoomIn: true }],
+];
+
+/** Stagger: 1 · 2 · 3 ‖ 4 · 5 ‖ 6 (short pauses within rows, slightly longer between rows). */
+const OTHER_GAME_REVEAL_DELAYS_S = [0, 0.07, 0.14, 0.28, 0.35, 0.48];
+const OTHER_GAME_REVEAL_X = 26;
+const OTHER_GAME_REVEAL_DURATION_S = 0.52;
+
+function OtherGameRankCard({
+  name,
+  imageSrc,
+  zoomIn = false,
+}: {
+  name: string;
+  imageSrc: string;
+  zoomIn?: boolean;
+}) {
+  return (
+    <div className="group relative size-24 sm:size-28 lg:size-32 xl:size-36">
+      <div className="relative size-full overflow-hidden rounded-xl border border-white/12 bg-white/[0.04] ring-1 ring-white/8">
+        <Image
+          src={imageSrc}
+          alt={name}
+          fill
+          className={clsx(
+            "object-cover transition duration-500",
+            zoomIn ? "scale-110 group-hover:scale-[1.14]" : "group-hover:scale-[1.04]"
+          )}
+          sizes="(max-width: 1024px) 112px, 144px"
+        />
+        <div
+          className="pointer-events-none absolute inset-0 rounded-xl shadow-[inset_0_0_32px_rgba(0,0,0,0.75),inset_0_4px_16px_rgba(0,0,0,0.65)]"
+          aria-hidden
+        />
+      </div>
+      <p className="pointer-events-none absolute right-0 top-full z-10 mt-px whitespace-nowrap text-right text-[9px] font-semibold uppercase tracking-[0.18em] text-white/75 opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:text-[10px]">
+        {name}
+      </p>
+    </div>
+  );
+}
+
+function OtherGameRanksSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const scrollRoot = useContext(OverlayScrollRootContext);
+  const inView = useTriggerAtViewportHeight(sectionRef, scrollRoot, 0.55);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative -mt-14 px-5 pb-12 pt-0 md:-mt-16 md:px-8 md:pb-16"
+    >
+      <div className="ml-auto max-w-xl pr-4 text-right sm:pr-6 md:pr-8 xl:pr-12 2xl:pr-16">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.4, ease: EASE }}
+        >
+          <SectionLabel gold>Beyond League</SectionLabel>
+        </motion.div>
+
+        <div className="mt-2 flex flex-col items-end gap-3 sm:mt-2.5 sm:gap-3.5 md:gap-4">
+          {OTHER_GAME_RANK_ROWS.map((row, rowIndex) => {
+            const rowStartIndex = OTHER_GAME_RANK_ROWS.slice(0, rowIndex).reduce(
+              (count, items) => count + items.length,
+              0
+            );
+
+            return (
+            <div key={rowIndex} className="flex justify-end gap-4 sm:gap-5 lg:gap-6 xl:gap-7">
+              {row.map((game, colIndex) => {
+                const revealIndex = rowStartIndex + colIndex;
+                const delay =
+                  OTHER_GAME_REVEAL_DELAYS_S[revealIndex] ?? revealIndex * 0.07;
+
+                return (
+                  <motion.div
+                    key={game.name}
+                    initial={{ opacity: 0, x: -OTHER_GAME_REVEAL_X }}
+                    animate={
+                      inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -OTHER_GAME_REVEAL_X }
+                    }
+                    transition={{ duration: OTHER_GAME_REVEAL_DURATION_S, delay, ease: EASE }}
+                  >
+                    <OtherGameRankCard
+                      name={game.name}
+                      imageSrc={game.imageSrc}
+                      zoomIn={game.zoomIn}
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
@@ -767,7 +878,7 @@ export default function AboutMinoClient() {
                 transition={{ duration: 0.7, ease: EASE, delay: 3.2 }}
               >
                 <SectionLabel>Vtuber · coach · femboy</SectionLabel>
-                <h1 className="mt-3 text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl xl:text-[4.625rem] 2xl:text-[4.875rem]">
+                <h1 className="mt-3 text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-[4.875rem]">
                   About{" "}
                   <span
                     className="bg-clip-text text-transparent"
@@ -781,13 +892,13 @@ export default function AboutMinoClient() {
                     🌸
                   </span>
                 </h1>
-                <p className="mt-5 max-w-xl text-base text-fg-muted/90 md:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]">
+                <p className="mt-5 max-w-xl text-base text-fg-muted/90 md:text-lg lg:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]">
                   <TypingText
                     text="Fixing the League community, one stream at a time"
                     speed={28}
                     delay={3900}
                     color={ABOUT_MINO_ACCENT}
-                    className="text-base text-fg-muted/90 md:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]"
+                    className="text-base text-fg-muted/90 md:text-lg lg:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]"
                   />
                 </p>
               </motion.div>
@@ -822,7 +933,7 @@ export default function AboutMinoClient() {
               <div className="flex-1" aria-hidden />
               <motion.div
                 ref={panel1Ref}
-                className="ml-auto w-full max-w-lg md:mr-[8%] md:max-w-xl lg:mr-[10%]"
+                className="ml-auto w-full max-w-sm sm:max-w-md md:max-w-[22rem] lg:max-w-md xl:max-w-xl 2xl:max-w-xl md:mr-[5%] xl:mr-[8%] 2xl:mr-[10%]"
                 style={{ opacity: panel1Opacity, x: panel1X, y: panel1Y }}
               >
                 <PinkPanelCard
@@ -838,11 +949,14 @@ export default function AboutMinoClient() {
                 />
               </motion.div>
 
-              <div className="flex-1" aria-hidden />
+              <div
+                className="min-h-[22vh] flex-[4] shrink-0 lg:min-h-[26vh] xl:min-h-[20vh] xl:flex-[2]"
+                aria-hidden
+              />
 
               <motion.div
                 ref={panel2Ref}
-                className="mr-auto w-full max-w-lg md:ml-[8%] md:max-w-xl lg:ml-[10%]"
+                className="mr-auto w-full max-w-sm sm:max-w-md md:max-w-[22rem] lg:max-w-md xl:max-w-xl 2xl:max-w-xl md:ml-[5%] xl:ml-[8%] 2xl:ml-[10%]"
                 style={{ opacity: panel2Opacity, x: panel2X, y: panel2Y }}
               >
                 <PinkPanelCard
@@ -861,11 +975,13 @@ export default function AboutMinoClient() {
                 />
               </motion.div>
 
-              <div className="flex-[8] min-h-0" aria-hidden />
+              <div className="min-h-0 flex-[4] xl:flex-[6]" aria-hidden />
             </div>
           </div>
 
           <RankDemonCredentials />
+
+          <OtherGameRanksSection />
 
           <section className="flex min-h-[45vh] flex-col items-center justify-center px-5 pb-28 pt-20 text-center md:px-8 md:pb-36 md:pt-28">
             <p className="text-base text-fg-muted/50 md:text-lg">
