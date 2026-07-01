@@ -524,7 +524,7 @@ function RankDemonCredentials({
   demonRevealEnabled,
 }: {
   sectionRef: React.RefObject<HTMLElement | null>;
-  scrollTargetRef: React.RefObject<HTMLElement | null>;
+  scrollTargetRef: React.RefObject<HTMLDivElement | null>;
   demonRevealEnabled: boolean;
 }) {
   const [demonFinal, setDemonFinal] = useState(false);
