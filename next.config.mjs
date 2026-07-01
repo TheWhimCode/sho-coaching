@@ -41,7 +41,7 @@ const cspParts = [
   `frame-src https://js.stripe.com https://hooks.stripe.com`,
   `connect-src ${connectSrc}`,
   `worker-src 'self' blob:`,
-  `media-src 'self' blob:`,
+  `media-src 'self' blob: https://videos.its-mino.com`,
   `object-src 'none'`,
   `base-uri 'self'`,
   `frame-ancestors 'none'`,
