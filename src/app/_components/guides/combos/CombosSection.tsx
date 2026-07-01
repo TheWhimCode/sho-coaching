@@ -9,7 +9,7 @@ import { guideInnerPanelClass, guideMobileFlushPanelClass, guideSectionHeaderPad
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 
 /** Flip to false once combo clips are on YouTube embeds. */
-const COMBOS_CLIPS_PENDING_YOUTUBE = true;
+const COMBOS_CLIPS_PENDING_YOUTUBE = false;
 
 const COMBOS_PENDING_MESSAGE =
   "I need to upload the clips to Youtube and embed them, will do that today. Otherwise my website gets taken down for too much usage 💀";
