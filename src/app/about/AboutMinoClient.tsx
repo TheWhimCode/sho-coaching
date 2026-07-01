@@ -22,6 +22,7 @@ import {
 } from "@/app/_components/linktree/aboutMinoAchievements";
 import {
   getPinkSectionScrollMetrics,
+  lockScrollViewport,
   useOverlayScrollViewport,
 } from "@/lib/overlayScrollViewport";
 import { ABOUT_HERO_VIDEO } from "@/lib/coaching/coachingClipVideos";
@@ -53,7 +54,8 @@ const PASTEL_PINK_BG =
 const PINK_OVERLAY_RADIAL =
   "radial-gradient(ellipse 120% 90% at 50% 35%, rgba(170,110,140,0.11), transparent 70%)";
 const PINK_LAYER_FIXED: React.CSSProperties = { backgroundAttachment: "fixed" };
-const DEMON_VIEWPORT_TRIGGER_RATIO = 0.4;
+/** Demon target center must land within this many px of viewport center to start the reveal. */
+const DEMON_CENTER_TOLERANCE_PX = 56;
 const ABOUT_GOLD = "#E8C36A";
 const ABOUT_SECTION_BG = "#050B18";
 const PINK_SECTION_HEIGHT = "min-h-[165dvh] lg:min-h-[170dvh] xl:min-h-[175dvh]";
@@ -503,29 +505,35 @@ const CREST_TO_HEADLINE_GAP_MS = Math.round(
   (CREST_REVEAL_COMPLETE_MS + HEADLINE_AFTER_LAST_CREST_MS) / 2
 );
 const DEMON_PINK_OUTLINE_MS = 2000;
+/** Matches pink-outline `demon` crossfade in `RankDemonCredentials`. */
+const DEMON_PINK_OUTLINE_FADE_MS = 500;
+const DEMON_PRELUDE_LOCK_MS = DEMON_PINK_OUTLINE_MS + DEMON_PINK_OUTLINE_FADE_MS;
 const CREST_AFTER_DEMON_MS = 450;
 
 const DEMON_TEXT_CLASS =
   "pointer-events-none absolute left-1/2 -translate-x-1/2 select-none font-black uppercase leading-none tracking-[-0.05em]";
 const DEMON_STACK_TOP = "-top-7 md:-top-6";
 
-const AFTERGLOW_BLOCK_GAP_PB = "pb-20 md:pb-24 lg:pb-28";
-const AFTERGLOW_BLOCK_GAP_MT = "mt-20 md:mt-24 lg:mt-28";
+const AFTERGLOW_BLOCK_GAP_PB = "pb-20 md:pb-24 lg:pb-28 xl:pb-36 2xl:pb-40";
+const AFTERGLOW_BLOCK_GAP_MT = "mt-20 md:mt-24 lg:mt-28 xl:mt-36 2xl:mt-40";
 const AFTERGLOW_VIEWPORT_TRIGGER_RATIO = 0.5;
 
-function RankDemonCredentials() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const scrollRoot = useContext(OverlayScrollRootContext);
+function RankDemonCredentials({
+  sectionRef,
+  scrollTargetRef,
+  demonRevealEnabled,
+}: {
+  sectionRef: React.RefObject<HTMLElement | null>;
+  scrollTargetRef: React.RefObject<HTMLElement | null>;
+  demonRevealEnabled: boolean;
+}) {
   const [demonFinal, setDemonFinal] = useState(false);
   const [showCrests, setShowCrests] = useState(false);
   const [showHeadline, setShowHeadline] = useState(false);
   const [showPeakElo, setShowPeakElo] = useState(false);
 
-  const demonTriggered = useTriggerAtViewportHeight(
-    sectionRef,
-    scrollRoot,
-    DEMON_VIEWPORT_TRIGGER_RATIO
-  );
+  /** Parent enables only after prelude scroll centers the demon target. */
+  const demonTriggered = demonRevealEnabled;
 
   useEffect(() => {
     if (!demonTriggered) return;
@@ -551,7 +559,7 @@ function RankDemonCredentials() {
       ref={sectionRef}
       className={clsx("relative overflow-visible pt-14 md:pt-16", AFTERGLOW_BLOCK_GAP_PB)}
     >
-      <div className="relative -translate-y-12 md:-translate-y-14">
+      <div ref={scrollTargetRef} className="relative -translate-y-12 md:-translate-y-14">
       <motion.p
         className={clsx(
           DEMON_TEXT_CLASS,
@@ -799,6 +807,8 @@ function RankAfterglowSection() {
 
 export default function AboutMinoClient() {
   const pinkZoneRef = useRef<HTMLDivElement>(null);
+  const demonSectionRef = useRef<HTMLElement>(null);
+  const demonScrollTargetRef = useRef<HTMLDivElement>(null);
   const panel1Ref = useRef<HTMLDivElement>(null);
   const panel2Ref = useRef<HTMLDivElement>(null);
   const prevZoneRef = useRef<"pink" | "dark">("pink");
@@ -806,6 +816,10 @@ export default function AboutMinoClient() {
   const metricsRef = useRef({ reveal: 0, exit: 0 });
   const blinkAnimatingRef = useRef(false);
   const blinkControlRef = useRef<ReturnType<typeof animate> | null>(null);
+  const preludeRunningRef = useRef(false);
+  const preludeCompleteRef = useRef(false);
+  const unlockScrollRef = useRef<(() => void) | null>(null);
+  const demonCenterYRef = useRef<number | null>(null);
   const scrollViewport = useOverlayScrollViewport();
   const pinkReveal = useMotionValue(0);
   const pinkExit = useMotionValue(0);
@@ -813,6 +827,7 @@ export default function AboutMinoClient() {
   const panel1Presence = useMotionValue(0);
   const panel2Presence = useMotionValue(0);
   const [panelDemonMode, setPanelDemonMode] = useState(false);
+  const [demonRevealEnabled, setDemonRevealEnabled] = useState(false);
   const setPanelDemonModeRef = useRef(setPanelDemonMode);
   setPanelDemonModeRef.current = setPanelDemonMode;
 
@@ -836,21 +851,23 @@ export default function AboutMinoClient() {
       animDirectionRef.current = null;
     };
 
-    const startBlinkOut = () => {
-      stopBlink();
-      setPanelDemonModeRef.current(true);
-      blinkAnimatingRef.current = true;
-      animDirectionRef.current = "out";
-      const from = pinkPresence.get();
-      blinkControlRef.current = animate(pinkPresence, [from, 0], {
-        duration: LIGHTS_OUT_DURATION_S,
-        ease: LIGHTS_OUT_EASE,
-        onComplete: () => {
-          stopBlink();
-          syncSteadyOverlay();
-        },
+    const startBlinkOut = () =>
+      new Promise<void>((resolve) => {
+        stopBlink();
+        setPanelDemonModeRef.current(true);
+        blinkAnimatingRef.current = true;
+        animDirectionRef.current = "out";
+        const from = pinkPresence.get();
+        blinkControlRef.current = animate(pinkPresence, [from, 0], {
+          duration: LIGHTS_OUT_DURATION_S,
+          ease: LIGHTS_OUT_EASE,
+          onComplete: () => {
+            stopBlink();
+            syncSteadyOverlay();
+            resolve();
+          },
+        });
       });
-    };
 
     const startBlinkIn = (target: number) => {
       stopBlink();
@@ -868,6 +885,52 @@ export default function AboutMinoClient() {
       });
     };
 
+    const shouldStartDemonPrelude = () => {
+      if (preludeCompleteRef.current || preludeRunningRef.current) return false;
+
+      const demonEl = demonScrollTargetRef.current ?? demonSectionRef.current;
+      if (!demonEl) return false;
+
+      const containerRect = scrollViewport.getBoundingClientRect();
+      const elRect = demonEl.getBoundingClientRect();
+      const elCenter = elRect.top + elRect.height / 2 - containerRect.top;
+      const viewCenter = containerRect.height / 2;
+      const prevCenter = demonCenterYRef.current;
+      demonCenterYRef.current = elCenter;
+
+      const inBand = Math.abs(elCenter - viewCenter) <= DEMON_CENTER_TOLERANCE_PX;
+      const crossedCenter =
+        prevCenter !== null &&
+        prevCenter > viewCenter + DEMON_CENTER_TOLERANCE_PX &&
+        elCenter <= viewCenter + DEMON_CENTER_TOLERANCE_PX;
+
+      return inBand || crossedCenter;
+    };
+
+    const runDemonPrelude = async () => {
+      if (preludeRunningRef.current || preludeCompleteRef.current) return;
+
+      const demonEl = demonScrollTargetRef.current ?? demonSectionRef.current;
+      if (!demonEl || !shouldStartDemonPrelude()) return;
+
+      preludeRunningRef.current = true;
+
+      try {
+        unlockScrollRef.current = lockScrollViewport(scrollViewport);
+        await startBlinkOut();
+        preludeCompleteRef.current = true;
+        prevZoneRef.current = "dark";
+        setDemonRevealEnabled(true);
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, DEMON_PRELUDE_LOCK_MS);
+        });
+      } finally {
+        unlockScrollRef.current?.();
+        unlockScrollRef.current = null;
+        preludeRunningRef.current = false;
+      }
+    };
+
     const update = () => {
       const zone = pinkZoneRef.current;
       if (!zone) return;
@@ -881,6 +944,16 @@ export default function AboutMinoClient() {
       pinkExit.set(exit);
       metricsRef.current = { reveal, exit };
 
+      if (preludeRunningRef.current) return;
+
+      if (!preludeCompleteRef.current) {
+        syncSteadyOverlay();
+        if (shouldStartDemonPrelude()) {
+          void runDemonPrelude();
+        }
+        return;
+      }
+
       const currentZone = overlayZone(exit);
       const prevZone = prevZoneRef.current;
 
@@ -893,7 +966,7 @@ export default function AboutMinoClient() {
           if (currentZone === "pink") {
             startBlinkIn(pinkTopFade(reveal));
           } else {
-            startBlinkOut();
+            void startBlinkOut();
           }
         }
 
@@ -902,7 +975,7 @@ export default function AboutMinoClient() {
       }
 
       if (currentZone === "dark" && prevZone === "pink") {
-        startBlinkOut();
+        void startBlinkOut();
       } else if (currentZone === "pink" && prevZone === "dark") {
         startBlinkIn(pinkTopFade(reveal));
       } else {
@@ -922,6 +995,8 @@ export default function AboutMinoClient() {
 
     return () => {
       stopBlink();
+      unlockScrollRef.current?.();
+      unlockScrollRef.current = null;
       scrollViewport.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
@@ -1050,7 +1125,11 @@ export default function AboutMinoClient() {
             </div>
           </div>
 
-          <RankDemonCredentials />
+          <RankDemonCredentials
+            sectionRef={demonSectionRef}
+            scrollTargetRef={demonScrollTargetRef}
+            demonRevealEnabled={demonRevealEnabled}
+          />
 
           <RankAfterglowSection />
 

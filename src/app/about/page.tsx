@@ -4,8 +4,7 @@ import { ABOUT_HERO_VIDEO } from "@/lib/coaching/coachingClipVideos";
 import AboutMinoClient from "./AboutMinoClient";
 
 const title = "About Mino";
-const description =
-  "Meet Mino — soft kitten, femboy vtuber, and Challenger jungle coach with 5+ years of experience.";
+const description = "Learn some stuff about Mino";
 
 export const metadata: Metadata = {
   title,
