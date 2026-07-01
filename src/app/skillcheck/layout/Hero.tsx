@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSkillcheckBackground } from "./SkillcheckBackgroundContext";
+import { skillcheckBackgroundUrl } from "@/lib/skillcheck/skillcheckMedia";
 
 export default function Hero({
   hero,
@@ -13,7 +14,7 @@ export default function Hero({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [imagesReady, setImagesReady] = useState(false);
   const backgroundPath = useSkillcheckBackground();
-  const backgroundUrl = `/skillcheck/${backgroundPath}`;
+  const backgroundUrl = skillcheckBackgroundUrl(backgroundPath);
 
   useEffect(() => {
     const root = rootRef.current;

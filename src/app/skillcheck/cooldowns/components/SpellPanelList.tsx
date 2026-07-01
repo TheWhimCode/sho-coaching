@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useSkillcheckBackground } from "@/app/skillcheck/layout/SkillcheckBackgroundContext";
+import { skillcheckBackgroundUrl } from "@/lib/skillcheck/skillcheckMedia";
 
 export type SpellKey = "Q" | "W" | "E" | "R";
 
@@ -83,7 +84,7 @@ export default function SpellPanelList({
   subtitle?: string;
 }) {
   const backgroundPath = useSkillcheckBackground();
-  const backgroundUrl = `/skillcheck/${backgroundPath}`;
+  const backgroundUrl = skillcheckBackgroundUrl(backgroundPath);
 
   // Ensure order Q W E R
   const order: Record<SpellKey, number> = { Q: 0, W: 1, E: 2, R: 3 };

@@ -1,6 +1,6 @@
 /**
  * Daily skillcheck hero background — chosen by today's draft champion region.
- * Images live in public/skillcheck/{regionFolder}/ (e.g. demacia, noxus).
+ * Images served from Cloudflare at `skillcheck/{regionFolder}/` (filenames listed from `public/skillcheck/`).
  * Same day boundary as draft cron (UTC date).
  */
 
