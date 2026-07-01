@@ -68,3 +68,74 @@ export function getPinkSectionScrollMetrics(
 
   return { reveal, exit };
 }
+
+const SCROLL_SETTLE_FRAMES = 4;
+const SCROLL_MAX_WAIT_MS = 1200;
+
+/** Smooth-scroll until `element`'s bottom sits in view (OverlayScrollbars viewport or window). */
+export function scrollRevealElementBottom(
+  element: HTMLElement,
+  bottomPaddingPx = 32
+): Promise<void> {
+  return new Promise((resolve) => {
+    const viewport = getOverlayScrollViewport();
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const containerRect = viewport
+      ? viewport.getBoundingClientRect()
+      : { top: 0, height: window.innerHeight };
+    const elRect = element.getBoundingClientRect();
+    const visibleBottom = containerRect.top + containerRect.height - bottomPaddingPx;
+    const overflow = elRect.bottom - visibleBottom;
+
+    if (overflow <= 0) {
+      resolve();
+      return;
+    }
+
+    const currentScrollTop = viewport?.scrollTop ?? window.scrollY;
+    const targetScrollTop = currentScrollTop + overflow;
+
+    if (reduceMotion) {
+      if (viewport) viewport.scrollTop = targetScrollTop;
+      else window.scrollTo({ top: targetScrollTop });
+      resolve();
+      return;
+    }
+
+    if (viewport) {
+      viewport.scrollTo({ top: targetScrollTop, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: targetScrollTop, behavior: "smooth" });
+    }
+
+    let lastScrollTop = -1;
+    let stableFrames = 0;
+    const startedAt = performance.now();
+
+    const tick = () => {
+      const scrollTop = viewport?.scrollTop ?? window.scrollY;
+
+      if (
+        Math.abs(scrollTop - targetScrollTop) < 2 ||
+        scrollTop === lastScrollTop
+      ) {
+        stableFrames += 1;
+        if (
+          stableFrames >= SCROLL_SETTLE_FRAMES ||
+          performance.now() - startedAt >= SCROLL_MAX_WAIT_MS
+        ) {
+          resolve();
+          return;
+        }
+      } else {
+        stableFrames = 0;
+      }
+
+      lastScrollTop = scrollTop;
+      requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
+  });
+}

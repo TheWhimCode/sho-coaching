@@ -20,6 +20,9 @@ import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHi
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import { collectItemSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import { guideChampionIconImgClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
+import { scrollRevealElementBottom } from "@/lib/overlayScrollViewport";
+
+const FIRST_ITEM_BUILD_SWAP_KEY = "viego-guide-first-item-build-swap";
 
 const GuideTextIconsContext = createContext<Record<string, string>>({});
 
@@ -1079,9 +1082,11 @@ function BuildDetailSection({
 function BuildDetailCrossfade({
   buildKey,
   variant,
+  detailRef,
 }: {
   buildKey: string;
   variant: SerializedGuideItemVariant;
+  detailRef?: RefObject<HTMLDivElement | null>;
 }) {
   const [displayed, setDisplayed] = useState({ key: buildKey, variant });
   const [fading, setFading] = useState(false);
@@ -1106,6 +1111,7 @@ function BuildDetailCrossfade({
 
   return (
     <div
+      ref={detailRef}
       className={clsx(
         ITEM_DETAIL_SECTION,
         ITEM_SECONDARY_PAD_X,
@@ -1805,9 +1811,17 @@ export default function ItemBuildSection({
     return initial;
   });
   const [laneGapPx, setLaneGapPx] = useState<number | null>(null);
+  const buildDetailRef = useRef<HTMLDivElement>(null);
+  const firstItemSwapDoneRef = useRef(false);
   const itemImageUrls = useMemo(() => collectItemSectionImageUrls(data), [data]);
   const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(itemImageUrls);
   const activeTab = data.tabs.find((t) => t.id === activeTabId) ?? data.tabs[0];
+
+  useEffect(() => {
+    if (sessionStorage.getItem(FIRST_ITEM_BUILD_SWAP_KEY) === "1") {
+      firstItemSwapDoneRef.current = true;
+    }
+  }, []);
 
   const handleLaneGapMeasure = useCallback((widthPx: number) => {
     setLaneGapPx((prev) => (prev === null ? widthPx : Math.min(prev, widthPx)));
@@ -1825,10 +1839,29 @@ export default function ItemBuildSection({
 
   const handleVariantChange = useCallback(
     (variantId: string) => {
-      if (!activeTab) return;
-      setVariantByTab((prev) => ({ ...prev, [activeTab.id]: variantId }));
+      if (!activeTab || variantId === activeVariantId) return;
+
+      const commit = () => {
+        setVariantByTab((prev) => ({ ...prev, [activeTab.id]: variantId }));
+      };
+
+      if (firstItemSwapDoneRef.current) {
+        commit();
+        return;
+      }
+
+      firstItemSwapDoneRef.current = true;
+      sessionStorage.setItem(FIRST_ITEM_BUILD_SWAP_KEY, "1");
+
+      const detailEl = buildDetailRef.current;
+      if (!detailEl) {
+        commit();
+        return;
+      }
+
+      void scrollRevealElementBottom(detailEl).then(commit);
     },
-    [activeTab]
+    [activeTab, activeVariantId]
   );
 
   const handlePathSelect = useCallback(
@@ -1837,10 +1870,10 @@ export default function ItemBuildSection({
 
       const match = activeTab.variants.find((variant) => variant.activePathIndex === pathIndex);
       if (match) {
-        setVariantByTab((prev) => ({ ...prev, [activeTab.id]: match.id }));
+        handleVariantChange(match.id);
       }
     },
-    [activeTab]
+    [activeTab, handleVariantChange]
   );
 
   const handleChoiceSelect = useCallback(
@@ -1851,7 +1884,7 @@ export default function ItemBuildSection({
         variant.activeChoiceIds.includes(itemId)
       );
       if (byChoice) {
-        setVariantByTab((prev) => ({ ...prev, [activeTab.id]: byChoice.id }));
+        handleVariantChange(byChoice.id);
         return;
       }
 
@@ -1863,10 +1896,10 @@ export default function ItemBuildSection({
           )
       );
       if (byDivergePath) {
-        setVariantByTab((prev) => ({ ...prev, [activeTab.id]: byDivergePath.id }));
+        handleVariantChange(byDivergePath.id);
       }
     },
-    [activeTab]
+    [activeTab, handleVariantChange]
   );
 
   if (!activeTab) return null;
@@ -1998,6 +2031,7 @@ export default function ItemBuildSection({
 
         {activeVariant ? (
           <BuildDetailCrossfade
+            detailRef={buildDetailRef}
             buildKey={`${activeTabId}:${activeVariantId}`}
             variant={activeVariant}
           />
