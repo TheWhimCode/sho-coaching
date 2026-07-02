@@ -105,6 +105,8 @@ function PinkOverlayLayers() {
   );
 }
 
+const PANEL_VIEWPORT_TRIGGER_RATIO = 0.5;
+
 /** Fires once when the element's top edge reaches `heightRatio` of the scroll viewport. */
 function useTriggerAtViewportHeight(
   ref: React.RefObject<HTMLElement | null>,
@@ -142,10 +144,9 @@ function useTriggerAtViewportHeight(
   return triggered;
 }
 
-const PANEL_REVEAL_CENTER_RATIO = 0.4;
 const PANEL_REVEAL_DURATION_S = 0.65;
 
-/** One-shot panel entrance when the panel center crosses 40% of the scroll viewport height. */
+/** One-shot panel entrance when the panel top edge crosses 50% of the scroll viewport height. */
 function useOneShotPanelReveal(
   ref: React.RefObject<HTMLElement | null>,
   scrollRoot: HTMLElement | null,
@@ -163,10 +164,10 @@ function useOneShotPanelReveal(
 
       const containerRect = scrollRoot.getBoundingClientRect();
       const rect = el.getBoundingClientRect();
-      const centerInViewport = rect.top + rect.height / 2 - containerRect.top;
-      const threshold = containerRect.height * PANEL_REVEAL_CENTER_RATIO;
+      const topInViewport = rect.top - containerRect.top;
+      const threshold = containerRect.height * PANEL_VIEWPORT_TRIGGER_RATIO;
 
-      if (centerInViewport <= threshold) {
+      if (topInViewport <= threshold) {
         doneRef.current = true;
         animate(presence, 1, { duration: PANEL_REVEAL_DURATION_S, ease: EASE });
       }
@@ -519,7 +520,6 @@ const DEMON_STACK_TOP = "-top-7 md:-top-6";
 
 const AFTERGLOW_BLOCK_GAP_PB = "pb-20 md:pb-24 lg:pb-28 xl:pb-36 2xl:pb-40";
 const AFTERGLOW_BLOCK_GAP_MT = "mt-20 md:mt-24 lg:mt-28 xl:mt-36 2xl:mt-40";
-const AFTERGLOW_VIEWPORT_TRIGGER_RATIO = 0.5;
 const COACHING_FADE_SECTION_HEIGHT =
   "min-h-[130dvh] lg:min-h-[150dvh] xl:min-h-[165dvh]";
 /** Long vertical wash: dark afterglow → pastel pink at the bottom. */
@@ -769,7 +769,7 @@ function CoachingFadeSection() {
   const panelInView = useTriggerAtViewportHeight(
     panelRef,
     scrollRoot,
-    AFTERGLOW_VIEWPORT_TRIGGER_RATIO
+    PANEL_VIEWPORT_TRIGGER_RATIO
   );
 
   return (
@@ -803,12 +803,12 @@ function RankAfterglowSection() {
   const panelInView = useTriggerAtViewportHeight(
     panelRef,
     scrollRoot,
-    AFTERGLOW_VIEWPORT_TRIGGER_RATIO
+    PANEL_VIEWPORT_TRIGGER_RATIO
   );
   const gamesInView = useTriggerAtViewportHeight(
     gamesRef,
     scrollRoot,
-    AFTERGLOW_VIEWPORT_TRIGGER_RATIO
+    PANEL_VIEWPORT_TRIGGER_RATIO
   );
 
   return (
