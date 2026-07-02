@@ -3,6 +3,7 @@
 import React from "react";
 import { ChevronDown } from "lucide-react";
 import { COACHING_TEXTURE3 } from "@/lib/coaching/coachingClipVideos";
+import type { FaqItem } from "@/lib/coaching/FAQ.data";
 import { FAQ as DEFAULT_FAQ } from "@/lib/coaching/FAQ.data";
 
 type Props = {

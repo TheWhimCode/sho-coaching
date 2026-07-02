@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { CaretRight } from "@phosphor-icons/react";
 import { COACHING_TEXTURE3 } from "@/lib/coaching/coachingClipVideos";
+import type { Review } from "@/lib/reviews/reviews.data";
 import { REVIEWS as DEFAULT_REVIEWS } from "@/lib/reviews/reviews.data";
 
 import Particles from "react-tsparticles";
