@@ -67,9 +67,9 @@ const PINK_PANEL_REVEAL_RANGE: [number, number] = [
   0.75 - PINK_SCROLL_REVEAL_OFFSET,
 ];
 const PINK_PANEL_REVEAL_END = PINK_PANEL_REVEAL_RANGE[1];
-/** Horror lights-out: single snap fade to dark (no mid-blink flash). */
-const LIGHTS_OUT_DURATION_S = 0.35;
-const LIGHTS_OUT_EASE = [0.4, 0, 1, 1] as const;
+/** Quick fade to dark when leaving the pink scroll zone. */
+const LIGHTS_OUT_DURATION_S = 0.4;
+const LIGHTS_OUT_EASE = EASE;
 /** Lights back on when re-entering pink from below. */
 const LIGHTS_IN_DURATION_S = 0.4;
 const LIGHTS_IN_EASE = [0, 0, 0.2, 1] as const;
@@ -907,7 +907,17 @@ export default function AboutMinoClient() {
 
     const syncSteadyOverlay = () => {
       const { reveal, exit } = metricsRef.current;
-      pinkPresence.set(exit > 0 ? 0 : pinkTopFade(reveal));
+      if (exit > 0) return;
+      pinkPresence.set(pinkTopFade(reveal));
+    };
+
+    const ensureLightsOut = () => {
+      if (blinkAnimatingRef.current) return;
+      if (pinkPresence.get() <= 0.01) {
+        pinkPresence.set(0);
+        return;
+      }
+      void startBlinkOut();
     };
 
     const stopBlink = () => {
@@ -985,7 +995,7 @@ export default function AboutMinoClient() {
         unlockScrollRef.current = lockScrollViewport(scrollViewport);
         await startBlinkOut();
         preludeCompleteRef.current = true;
-        prevZoneRef.current = "dark";
+        prevZoneRef.current = overlayZone(metricsRef.current.exit);
         setDemonRevealEnabled(true);
         await new Promise<void>((resolve) => {
           window.setTimeout(resolve, DEMON_PRELUDE_LOCK_MS);
@@ -1013,7 +1023,11 @@ export default function AboutMinoClient() {
       if (preludeRunningRef.current) return;
 
       if (!preludeCompleteRef.current) {
-        syncSteadyOverlay();
+        if (exit > 0) {
+          ensureLightsOut();
+        } else if (!blinkAnimatingRef.current) {
+          syncSteadyOverlay();
+        }
         if (shouldStartDemonPrelude()) {
           void runDemonPrelude();
         }
@@ -1032,7 +1046,7 @@ export default function AboutMinoClient() {
           if (currentZone === "pink") {
             startBlinkIn(pinkTopFade(reveal));
           } else {
-            void startBlinkOut();
+            ensureLightsOut();
           }
         }
 
@@ -1040,8 +1054,8 @@ export default function AboutMinoClient() {
         return;
       }
 
-      if (currentZone === "dark" && prevZone === "pink") {
-        void startBlinkOut();
+      if (exit > 0) {
+        ensureLightsOut();
       } else if (currentZone === "pink" && prevZone === "dark") {
         startBlinkIn(pinkTopFade(reveal));
       } else {
