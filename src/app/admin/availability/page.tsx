@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { COACHING_TEXTURE } from "@/lib/coaching/coachingClipVideos";
 
 type Rule = { weekday: number; openMinute: number; closeMinute: number };
 type Exception = {
@@ -243,7 +244,7 @@ export default function AdminSlotsPage() {
           aria-hidden
           className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
           style={{
-            backgroundImage: "url('/images/coaching/texture.png')",
+            backgroundImage: `url('${COACHING_TEXTURE}')`,
             backgroundRepeat: "repeat",
           }}
         />
@@ -272,7 +273,7 @@ export default function AdminSlotsPage() {
         aria-hidden
         className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
         style={{
-          backgroundImage: "url('/images/coaching/texture.png')",
+          backgroundImage: `url('${COACHING_TEXTURE}')`,
           backgroundRepeat: "repeat",
         }}
       />

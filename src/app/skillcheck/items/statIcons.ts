@@ -1,11 +1,11 @@
 /**
  * Item stat icons for skillcheck items result.
- * Icons are served from public/images/league/statIcons/ (e.g. AD.webp, Armor.webp).
+ * Icons are served from Cloudflare at `league/statIcons/`.
  */
 
-const STAT_ICON_BASE = "/images/league/statIcons";
+import { leagueStatIcon } from "@/lib/coaching/coachingClipVideos";
 
-/** Stat phrase (from item description) → icon filename in public/images/league/statIcons. */
+/** Stat phrase (from item description) → icon filename in league/statIcons. */
 const STAT_ICON_MAP: Record<string, string> = {
   "attack damage": "AD.webp",
   "ability power": "AP.webp",
@@ -52,7 +52,7 @@ export function statIconUrl(statName: string): string | undefined {
   const key = statName.trim().toLowerCase();
   const file = STAT_ICON_MAP[key];
   if (!file) return undefined;
-  return `${STAT_ICON_BASE}/${file}`;
+  return leagueStatIcon(file);
 }
 
 /**
@@ -64,7 +64,7 @@ export function statIconUrlFromLine(line: string): string | undefined {
   for (const phrase of STAT_KEYS_ORDERED) {
     if (lower.includes(phrase)) {
       const file = STAT_ICON_MAP[phrase];
-      return file ? `${STAT_ICON_BASE}/${file}` : undefined;
+      return file ? leagueStatIcon(file) : undefined;
     }
   }
   return undefined;

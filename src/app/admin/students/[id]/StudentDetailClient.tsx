@@ -9,6 +9,7 @@ import StudentSummary from '../_components/StudentSummary';
 import MatchHistory from '../_components/MatchHistory';
 import SessionTemplate from '../_components/SessionNotes';
 import GlassPanel from '@/app/_components/panels/GlassPanel';
+import { COACHING_TEXTURE } from '@/lib/coaching/coachingClipVideos';
 
 type EditablePatch = Partial<Pick<Student, 'name' | 'discordId' | 'discordName' | 'riotTag' | 'server'>>;
 
@@ -274,7 +275,7 @@ useEffect(() => {
       <div
         aria-hidden
         className="fixed inset-0 z-0 opacity-25 pointer-events-none"
-        style={{ backgroundImage: "url('/images/coaching/texture.png')", backgroundRepeat: 'repeat' }}
+        style={{ backgroundImage: `url('${COACHING_TEXTURE}')`, backgroundRepeat: 'repeat' }}
       />
 
       {/* content */}

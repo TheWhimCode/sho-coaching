@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ChevronDown } from "lucide-react";
-import type { FaqItem } from "@/lib/coaching/FAQ.data";
+import { COACHING_TEXTURE3 } from "@/lib/coaching/coachingClipVideos";
 import { FAQ as DEFAULT_FAQ } from "@/lib/coaching/FAQ.data";
 
 type Props = {
@@ -43,7 +43,7 @@ export default function FAQ({
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0"
         style={{
-          backgroundImage: "url('/images/coaching/texture3.jpg')",
+          backgroundImage: `url('${COACHING_TEXTURE3}')`,
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
           mixBlendMode: "overlay",

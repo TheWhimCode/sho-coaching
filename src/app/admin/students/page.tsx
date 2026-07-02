@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import StudentCard from "./StudentCard";
+import { COACHING_TEXTURE } from "@/lib/coaching/coachingClipVideos";
 
 type Student = {
   id: string;
@@ -242,7 +243,7 @@ export default function StudentsPage() {
         aria-hidden
         className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
         style={{
-          backgroundImage: "url('/images/coaching/texture.png')",
+          backgroundImage: `url('${COACHING_TEXTURE}')`,
           backgroundRepeat: "repeat",
         }}
       />

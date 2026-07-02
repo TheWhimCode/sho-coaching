@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import SessionRowItem from "@/app/admin/sessions/SessionRow";
 import { SessionData } from "@/app/admin/sessions/SessionData";
 import StudentCard from "@/app/admin/students/StudentCard";
+import { COACHING_TEXTURE } from "@/lib/coaching/coachingClipVideos";
 
 type Student = {
   id: string;
@@ -158,7 +159,7 @@ useEffect(() => {
         aria-hidden
         className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
         style={{
-          backgroundImage: "url('/images/coaching/texture.png')",
+          backgroundImage: `url('${COACHING_TEXTURE}')`,
           backgroundRepeat: "repeat",
         }}
       />

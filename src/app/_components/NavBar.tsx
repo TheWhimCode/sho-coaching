@@ -1,6 +1,8 @@
 // src/app/_components/NavBar.tsx
 "use client";
 
+import { SITE_LOGO } from "@/lib/coaching/coachingClipVideos";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -129,7 +131,7 @@ export default function NavBar({
         className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 hidden md:flex items-center"
       >
         <Image
-          src="/images/Logo_blue.png"
+          src={SITE_LOGO}
           alt="Mino logo"
           width={38}
           height={38}

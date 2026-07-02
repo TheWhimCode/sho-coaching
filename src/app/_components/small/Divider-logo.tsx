@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-
 type Props = {
   className?: string;
   /** base color of the line + logo shape */

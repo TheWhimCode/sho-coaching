@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import Particles from "react-tsparticles";
 import type { ISourceOptions, Engine } from "tsparticles-engine";
 import { loadSlim } from "tsparticles-slim";
+import { coachingOverviewImage } from "@/lib/coaching/coachingClipVideos";
 
 type Item = {
   id: string;
@@ -34,7 +35,7 @@ const DEFAULT_ITEMS: Item[] = [
   { id: "benefit-6", title: "VOD & Notes", body: "Receive my session recording and summary notes afterwards.", icon: <Clapperboard className="h-6 w-6" /> },
 ];
 
-const NOTES_IMG_SRC = "/images/coaching/overview/notes.png";
+const NOTES_IMG_SRC = coachingOverviewImage("notes.png");
 
 export default function Overview({
   eyebrow = "League coaching",

@@ -1,3 +1,5 @@
+import { COACHING_TEXTURE } from "@/lib/coaching/coachingClipVideos";
+
 export default function AdminSkillcheckLayout({
   children,
 }: {
@@ -21,7 +23,7 @@ export default function AdminSkillcheckLayout({
         aria-hidden
         className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
         style={{
-          backgroundImage: "url('/images/coaching/texture.png')",
+          backgroundImage: `url('${COACHING_TEXTURE}')`,
           backgroundRepeat: "repeat",
         }}
       />

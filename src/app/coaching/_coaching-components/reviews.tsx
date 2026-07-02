@@ -5,7 +5,7 @@ import React, { useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { CaretRight } from "@phosphor-icons/react";
-import type { Review } from "@/lib/reviews/reviews.data";
+import { COACHING_TEXTURE3 } from "@/lib/coaching/coachingClipVideos";
 import { REVIEWS as DEFAULT_REVIEWS } from "@/lib/reviews/reviews.data";
 
 import Particles from "react-tsparticles";
@@ -374,7 +374,7 @@ export default function Reviews({
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0"
         style={{
-          backgroundImage: "url('/images/coaching/texture3.jpg')",
+          backgroundImage: `url('${COACHING_TEXTURE3}')`,
           backgroundRepeat: "repeat",
           backgroundSize: "auto",
           mixBlendMode: "overlay",

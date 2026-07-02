@@ -5,6 +5,7 @@ import React from "react";
 import type { Preset } from "@/lib/survey/presets";
 import { colorsByPreset, computePriceEUR } from "@/engine/session";
 import PromoPrice from "@/components/PromoPrice";
+import { coachingSessionImage } from "@/lib/coaching/coachingClipVideos";
 
 type Props = {
   preset: Preset;
@@ -26,7 +27,7 @@ const DETAILS: Record<Preset, Detail> = {
     title: "Signature",
     desc:
       "Structured and designed by Mino to help you climb the maximum amount. Learn how to fix your most impactful bad habits. Progress. And then request your follow-up recording to stay focused and motivated.",
-    img: "/images/sessions/Signature3.webp",
+    img: coachingSessionImage("Signature3.webp"),
     liveMinutes: 45,
     followups: 1,
     duration: "45 min + Follow-up",
@@ -35,7 +36,7 @@ const DETAILS: Record<Preset, Detail> = {
     title: "VOD Review",
     desc:
       "Go on a deep dive, analyze your bad habits and identify in which order to approach them. Learn about your champion, the map and the game and how to use them to your advantage.",
-    img: "/images/sessions/VOD7.webp",
+    img: coachingSessionImage("VOD7.webp"),
     liveMinutes: 60,
     followups: 0,
     duration: "60 min",
@@ -44,7 +45,7 @@ const DETAILS: Record<Preset, Detail> = {
     title: "Instant Insight",
     desc:
       "Short, targeted session to unlock a specific bottleneck. Perfect at the start of a tilt spiral or to sanity-check a matchup or specific game period. Also amazing if you're a beginner and want some direction.",
-    img: "/images/sessions/Instant4.webp",
+    img: coachingSessionImage("Instant4.webp"),
     liveMinutes: 30,
     followups: 0,
     duration: "30 min",
@@ -53,7 +54,7 @@ const DETAILS: Record<Preset, Detail> = {
     title: "Custom Session",
     desc:
       "Customize your session. Whether it's in-game coaching, a two hour session or multiple follow-ups, you can adjust the session to match exactly what you're looking for. Perfect for unique requests.",
-    img: "/images/sessions/Custom2.webp",
+    img: coachingSessionImage("Custom2.webp"),
     liveMinutes: 0,
     followups: 0,
     duration: "Flexible",

@@ -1,6 +1,8 @@
 "use client";
 
 import clsx from "clsx";
+
+const GUIDE_PAW_SRC = "/images/guide/paw.png";
 import { Fragment, type ReactNode } from "react";
 import { flattenGuideTextEntities, GUIDE_TEXT_ENTITIES } from "@/lib/guides/guideTextEntities";
 
@@ -155,7 +157,11 @@ export function GuidePawIcon() {
   return (
     <span
       aria-hidden
-      className="relative -top-0.5 ml-1.5 inline-block size-5 shrink-0 -rotate-[30deg] bg-[#F0ABCF] align-middle mask-[url(/images/guide/paw.png)] mask-contain mask-center mask-no-repeat sm:-top-1 sm:size-[1.35rem]"
+      className="relative -top-0.5 ml-1.5 inline-block size-5 shrink-0 -rotate-[30deg] bg-[#F0ABCF] align-middle mask-contain mask-center mask-no-repeat sm:-top-1 sm:size-[1.35rem]"
+      style={{
+        WebkitMaskImage: `url(${GUIDE_PAW_SRC})`,
+        maskImage: `url(${GUIDE_PAW_SRC})`,
+      }}
     />
   );
 }

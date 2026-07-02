@@ -1,11 +1,14 @@
 /** Coaching page images — shared for preload hints and UI */
 
-import { coachingSquareButtonImage } from "@/lib/coaching/coachingClipVideos";
+import {
+  coachingSessionImage,
+  coachingSquareButtonImage,
+} from "@/lib/coaching/coachingClipVideos";
 
 export const COACHING_CARD_IMAGES = [
-  "/images/sessions/VOD7.webp",
-  "/images/sessions/Signature3.webp",
-  "/images/sessions/Rush.webp",
+  coachingSessionImage("VOD7.webp"),
+  coachingSessionImage("Signature3.webp"),
+  coachingSessionImage("Rush.webp"),
 ] as const;
 
 export const COACHING_EXAMPLE_IMAGES = [

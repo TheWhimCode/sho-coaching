@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { COACHING_TEXTURE } from "@/lib/coaching/coachingClipVideos";
 import Reviews from "@/app/coaching/_coaching-components/reviews";
 import CoachingExamples from "@/app/coaching/_coaching-components/examples";
 import FollowUp from "@/app/coaching/_coaching-components/follow-up";
@@ -59,7 +60,7 @@ export default function CoachingPageClient() {
             aria-hidden
             className="absolute inset-0 z-0 pointer-events-none"
             style={{
-              backgroundImage: "url('/images/coaching/texture.png')",
+              backgroundImage: `url('${COACHING_TEXTURE}')`,
               backgroundRepeat: "repeat",
               backgroundSize: "auto",
               mixBlendMode: "overlay",

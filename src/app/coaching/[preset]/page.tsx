@@ -1,5 +1,6 @@
 import Client from "./Client";
 import { SITE_URL } from "@/lib/site";
+import { coachingSessionBanner } from "@/lib/coaching/coachingClipVideos";
 
 export default async function Page({
   params,
@@ -35,19 +36,17 @@ export async function generateMetadata({
   };
 
   const ogImages: Record<string, string> = {
-    signature: "/images/sessions/banner/SignatureBanner.png",
-    vod: "/images/sessions/banner/VODBanner.png",
-    instant: "/images/sessions/banner/InstantBanner.png",
-    rush: "/images/sessions/banner/RushBanner.png",
+    signature: coachingSessionBanner("SignatureBanner.png"),
+    vod: coachingSessionBanner("VODBanner.png"),
+    instant: coachingSessionBanner("InstantBanner.png"),
+    rush: coachingSessionBanner("RushBanner.png"),
   };
 
   const title = titles[preset] ?? preset;
   const description =
     descriptions[preset] ?? "Book League of Legends coaching tailored to your goals.";
 
-  const ogImage = ogImages[preset]
-    ? `${SITE_URL}${ogImages[preset]}`
-    : `${SITE_URL}/default-og.png`;
+  const ogImage = ogImages[preset] ?? `${SITE_URL}/default-og.png`;
 
   return {
     title,

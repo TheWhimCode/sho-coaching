@@ -4,6 +4,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import SessionRowItem from "./SessionRow"; // UI
 import { SessionData } from "./SessionData"; // type
+import { COACHING_TEXTURE } from "@/lib/coaching/coachingClipVideos";
 
 // ============================================================
 // PAGE
@@ -90,7 +91,7 @@ export default function AdminSessionsPage() {
       <div
         aria-hidden
         className="fixed inset-0 z-0 opacity-25 mix-blend-overlay pointer-events-none"
-        style={{ backgroundImage: "url('/images/coaching/texture.png')", backgroundRepeat: "repeat" }}
+        style={{ backgroundImage: `url('${COACHING_TEXTURE}')`, backgroundRepeat: "repeat" }}
       />
 
       {/* content */}

@@ -14,6 +14,9 @@ import {
 import { ArrowDown } from "lucide-react";
 import StripeRevealText from "@/app/_components/animations/StripeRevealText";
 import { rankEmblemUrl } from "@/lib/league/datadragon";
+import { aboutOtherGameImage } from "@/lib/coaching/coachingClipVideos";
+
+const GUIDE_PAW_SRC = "/images/guide/paw.png";
 import {
   ABOUT_MINO_ACCENT,
   ABOUT_MINO_ACHIEVEMENTS,
@@ -38,10 +41,14 @@ function AboutPawIcon({
     <span
       aria-hidden
       className={clsx(
-        "relative inline-block size-12 shrink-0 -rotate-[30deg] mask-[url(/images/guide/paw.png)] mask-contain mask-center mask-no-repeat md:size-14",
+        "relative inline-block size-12 shrink-0 -rotate-[30deg] mask-contain mask-center mask-no-repeat md:size-14",
         tone === "gold" ? "bg-[#E8C36A]" : "bg-[#F0ABCF]",
         className
       )}
+      style={{
+        WebkitMaskImage: `url(${GUIDE_PAW_SRC})`,
+        maskImage: `url(${GUIDE_PAW_SRC})`,
+      }}
     />
   );
 }
@@ -656,15 +663,15 @@ function RankDemonCredentials({
 
 const OTHER_GAME_RANK_ROWS: { name: string; imageSrc: string; zoomIn?: boolean }[][] = [
   [
-    { name: "Overwatch", imageSrc: "/images/about/Overwatch.jpg", zoomIn: true },
-    { name: "Marvel Rivals", imageSrc: "/images/about/MarvelRivals.jpg", zoomIn: true },
-    { name: "Apex Legends", imageSrc: "/images/about/Apex.jpg" },
+    { name: "Overwatch", imageSrc: aboutOtherGameImage("Overwatch.jpg"), zoomIn: true },
+    { name: "Marvel Rivals", imageSrc: aboutOtherGameImage("MarvelRivals.jpg"), zoomIn: true },
+    { name: "Apex Legends", imageSrc: aboutOtherGameImage("Apex.jpg") },
   ],
   [
-    { name: "Hearthstone", imageSrc: "/images/about/Heartstone.jpg", zoomIn: true },
-    { name: "LoR", imageSrc: "/images/about/LoR.png", zoomIn: true },
+    { name: "Hearthstone", imageSrc: aboutOtherGameImage("Heartstone.jpg"), zoomIn: true },
+    { name: "LoR", imageSrc: aboutOtherGameImage("LoR.png"), zoomIn: true },
   ],
-  [{ name: "Marvel Snap", imageSrc: "/images/about/Omega.jpg", zoomIn: true }],
+  [{ name: "Marvel Snap", imageSrc: aboutOtherGameImage("Omega.jpg"), zoomIn: true }],
 ];
 
 /** Stagger items within a row; extra pause between rows. */
