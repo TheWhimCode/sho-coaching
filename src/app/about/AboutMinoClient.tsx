@@ -12,7 +12,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { ArrowDown } from "lucide-react";
-import TypingText from "@/app/_components/animations/TypingText";
+import StripeRevealText from "@/app/_components/animations/StripeRevealText";
 import { rankEmblemUrl } from "@/lib/league/datadragon";
 import {
   ABOUT_MINO_ACCENT,
@@ -142,10 +142,10 @@ function useTriggerAtViewportHeight(
   return triggered;
 }
 
-const PANEL_REVEAL_CENTER_Y = 600;
+const PANEL_REVEAL_CENTER_RATIO = 0.4;
 const PANEL_REVEAL_DURATION_S = 0.65;
 
-/** One-shot panel entrance when the panel center crosses 600px in the scroll viewport. */
+/** One-shot panel entrance when the panel center crosses 40% of the scroll viewport height. */
 function useOneShotPanelReveal(
   ref: React.RefObject<HTMLElement | null>,
   scrollRoot: HTMLElement | null,
@@ -164,7 +164,7 @@ function useOneShotPanelReveal(
       const containerRect = scrollRoot.getBoundingClientRect();
       const rect = el.getBoundingClientRect();
       const centerInViewport = rect.top + rect.height / 2 - containerRect.top;
-      const threshold = PANEL_REVEAL_CENTER_Y;
+      const threshold = containerRect.height * PANEL_REVEAL_CENTER_RATIO;
 
       if (centerInViewport <= threshold) {
         doneRef.current = true;
@@ -226,11 +226,13 @@ type PinkPanelStat = {
 
 type PinkPanelCardProps = {
   eyebrow?: string;
-  title: string;
+  title?: string;
+  subtitle?: string;
   titlePaw?: boolean;
   closingPaw?: boolean;
   body: string;
   bodyClosing?: string;
+  plainClosing?: boolean;
   tags?: string[];
   stats?: PinkPanelStat[];
   cta?: { label: string; href: string };
@@ -242,10 +244,12 @@ type PinkPanelCardProps = {
 function PinkPanelCard({
   eyebrow,
   title,
+  subtitle,
   titlePaw = false,
   closingPaw = false,
   body,
   bodyClosing,
+  plainClosing = false,
   tags = [],
   stats = [],
   cta,
@@ -270,7 +274,7 @@ function PinkPanelCard({
       }}
       transition={{ duration: 0.45, ease: EASE }}
     >
-      <div className="relative">
+      <div className="relative flex flex-col gap-[0.25lh]">
         {eyebrow ? (
           <motion.p
             className="text-[11px] font-medium uppercase tracking-[0.22em] xl:text-xs"
@@ -278,50 +282,49 @@ function PinkPanelCard({
             transition={{ duration: 0.4 }}
           >
             {eyebrow}
-            {demonMode ? (
-              <span className="text-[#F9A8D4]"> · demon kitten</span>
-            ) : null}
           </motion.p>
         ) : null}
-        <motion.h2
-          className={clsx(
-            "text-xl font-semibold leading-snug sm:text-2xl xl:text-3xl",
-            eyebrow ? "mt-2 xl:mt-3" : undefined
-          )}
-          animate={{
-            color: demonMode ? "#FDF2F8" : "#4A1D35",
-          }}
-          transition={{ duration: 0.4 }}
-        >
-          {title}
-          {titlePaw ? <AboutPawIcon className="-top-0.5 ml-3 align-middle sm:ml-4 xl:-top-1 xl:ml-5" /> : null}
-        </motion.h2>
-        <motion.div
-          className="mt-3 space-y-[0.5lh] text-sm leading-[1.75] sm:text-[0.9375rem] lg:text-base xl:mt-4 xl:text-lg xl:leading-relaxed"
-          animate={{ color: demonMode ? "rgba(253, 242, 248, 0.82)" : "rgba(107, 40, 72, 0.88)" }}
-          transition={{ duration: 0.4 }}
-        >
-          {bodyParagraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
-          {bodyClosing ? (
-            goldClosing ? (
-              <p className="border-t border-white/[0.07] pt-4 text-[0.8125rem] font-bold uppercase tracking-[0.14em] text-[#E8C36A] sm:text-sm sm:tracking-[0.16em]">
-                {bodyClosing}
-              </p>
-            ) : (
-              <p className="flex items-end">
-                <span className="font-semibold">{bodyClosing}</span>
-                {closingPaw ? (
-                  <AboutPawIcon className="-mb-2 ml-auto mr-[23%] size-12 translate-y-1 sm:size-14 xl:-mb-2.5 xl:mr-[27%] xl:size-16 xl:translate-y-1.5" />
-                ) : null}
-              </p>
-            )
-          ) : null}
-        </motion.div>
+        {title ? (
+          <motion.h2
+            className="text-xl font-semibold leading-snug sm:text-2xl xl:text-3xl"
+            animate={{
+              color: demonMode ? "#FDF2F8" : "#4A1D35",
+            }}
+            transition={{ duration: 0.4 }}
+          >
+            {title}
+            {titlePaw ? <AboutPawIcon className="-top-0.5 ml-3 align-middle sm:ml-4 xl:-top-1 xl:ml-5" /> : null}
+          </motion.h2>
+        ) : null}
+        {(subtitle || bodyParagraphs.length > 0 || bodyClosing) && (
+          <motion.div
+            className="flex flex-col gap-[0.25lh] text-sm leading-[1.75] sm:text-[0.9375rem] lg:text-base xl:text-lg xl:leading-relaxed"
+            animate={{ color: demonMode ? "rgba(253, 242, 248, 0.82)" : "rgba(107, 40, 72, 0.88)" }}
+            transition={{ duration: 0.4 }}
+          >
+            {subtitle ? <p>{subtitle}</p> : null}
+            {bodyParagraphs.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+            {bodyClosing ? (
+              goldClosing ? (
+                <p className="border-t border-white/[0.07] pt-[0.25lh] text-[0.8125rem] font-bold uppercase tracking-[0.14em] text-[#E8C36A] sm:text-sm sm:tracking-[0.16em]">
+                  {bodyClosing}
+                </p>
+              ) : closingPaw ? (
+                <p className="relative mt-[0.375lh] w-fit max-w-full self-start font-semibold">
+                  {bodyClosing}
+                  <AboutPawIcon className="pointer-events-none !absolute left-full top-1/2 ml-2 -translate-y-1/2 sm:ml-3 md:ml-4" />
+                </p>
+              ) : (
+                <p className={plainClosing ? undefined : "font-semibold"}>{bodyClosing}</p>
+              )
+            ) : null}
+          </motion.div>
+        )}
         {footer ? (
           <motion.p
-            className="mt-4 text-sm font-medium not-italic xl:mt-5 xl:text-lg"
+            className="text-sm font-medium not-italic xl:text-lg"
             animate={{ color: demonMode ? "rgba(249, 168, 212, 0.85)" : "rgba(74, 29, 53, 0.92)" }}
             transition={{ duration: 0.4 }}
           >
@@ -329,7 +332,7 @@ function PinkPanelCard({
           </motion.p>
         ) : null}
         {tags.length > 0 ? (
-          <div className="mt-4 flex flex-wrap gap-2 xl:mt-6">
+          <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <motion.span
                 key={tag}
@@ -348,7 +351,7 @@ function PinkPanelCard({
           </div>
         ) : null}
         {stats.length > 0 ? (
-          <div className="mt-3 grid grid-cols-2 gap-2 xl:gap-3">
+          <div className="grid grid-cols-2 gap-2 xl:gap-3">
             {stats.map((stat) => (
               <motion.div
                 key={stat.label}
@@ -379,7 +382,7 @@ function PinkPanelCard({
           </div>
         ) : null}
         {cta ? (
-          <motion.div className="mt-3 xl:mt-3.5" transition={{ duration: 0.4 }}>
+          <motion.div transition={{ duration: 0.4 }}>
             <Link
               href={cta.href}
               className={clsx(
@@ -517,6 +520,10 @@ const DEMON_STACK_TOP = "-top-7 md:-top-6";
 const AFTERGLOW_BLOCK_GAP_PB = "pb-20 md:pb-24 lg:pb-28 xl:pb-36 2xl:pb-40";
 const AFTERGLOW_BLOCK_GAP_MT = "mt-20 md:mt-24 lg:mt-28 xl:mt-36 2xl:mt-40";
 const AFTERGLOW_VIEWPORT_TRIGGER_RATIO = 0.5;
+const COACHING_FADE_SECTION_HEIGHT =
+  "min-h-[130dvh] lg:min-h-[150dvh] xl:min-h-[165dvh]";
+/** Long vertical wash: dark afterglow → pastel pink at the bottom. */
+const BLACK_TO_PINK_GRADIENT = `linear-gradient(180deg, ${ABOUT_SECTION_BG} 0%, ${ABOUT_SECTION_BG} 6%, #0a101f 16%, #151028 28%, #2a1a32 42%, #523652 56%, #7a4d68 70%, #9E5880 84%, #C192AB 94%, #D0B0C4 100%)`;
 
 function RankDemonCredentials({
   sectionRef,
@@ -722,11 +729,70 @@ function PlayForMyselfPanel({ inView }: { inView: boolean }) {
         goldClosing
         title="I play for myself."
         body={
-          "The game doesn't care about how you feel. I want the dragon. I want to help my team. I want the win. But I don't play based on what I want."
+          "The game doesn't care about how you feel. I want the dragon. I want to win. I want to help my team. But I don't play based on what I want."
         }
         bodyClosing="I play based on what's possible."
       />
     </motion.div>
+  );
+}
+
+function CoachingPanel({ inView }: { inView: boolean }) {
+  return (
+    <motion.div
+      className="relative w-full max-w-sm sm:max-w-md md:max-w-[22rem] lg:max-w-md xl:max-w-xl 2xl:max-w-xl"
+      initial={{ opacity: 0, x: -72, y: 36 }}
+      animate={inView ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: -72, y: 36 }}
+      transition={{ duration: 0.65, ease: EASE }}
+    >
+      <PinkPanelCard
+        demonMode
+        eyebrow="Coaching"
+        title="I have 5 years of coaching experience!"
+        body={
+          "In 2020 I started coaching and got something like ~2000 sessions done since then for all roles and ranks.\n\n" +
+          "Feel free to check it out, I swear it's lowkey goated."
+        }
+        stats={[
+          { value: "500+", label: "Student reviews" },
+          { value: "4.9/5", label: "Average rating" },
+        ]}
+        cta={{ label: "Learn more", href: "/coaching" }}
+      />
+    </motion.div>
+  );
+}
+
+function CoachingFadeSection() {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRoot = useContext(OverlayScrollRootContext);
+  const panelInView = useTriggerAtViewportHeight(
+    panelRef,
+    scrollRoot,
+    AFTERGLOW_VIEWPORT_TRIGGER_RATIO
+  );
+
+  return (
+    <section
+      className={clsx(
+        "relative px-5 pb-24 pt-0 md:px-8 md:pb-32",
+        COACHING_FADE_SECTION_HEIGHT
+      )}
+    >
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: BLACK_TO_PINK_GRADIENT }}
+        aria-hidden
+      />
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-start pt-20 md:pt-28 lg:pt-36 xl:pt-40 xl:max-w-7xl">
+        <div
+          ref={panelRef}
+          className="mr-auto w-full md:ml-[5%] xl:ml-[8%] 2xl:ml-[10%]"
+        >
+          <CoachingPanel inView={panelInView} />
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -746,7 +812,7 @@ function RankAfterglowSection() {
   );
 
   return (
-    <section className="relative px-5 pb-12 pt-0 md:px-8 md:pb-16">
+    <section className="relative px-5 pb-0 pt-0 md:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col xl:max-w-7xl">
         <div ref={panelRef} className="md:ml-[4%] xl:ml-[6%] 2xl:ml-[8%]">
           <PlayForMyselfPanel inView={panelInView} />
@@ -1039,12 +1105,12 @@ export default function AboutMinoClient() {
                   </span>
                 </h1>
                 <p className="mt-5 max-w-xl text-base text-fg-muted/90 md:text-lg lg:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]">
-                  <TypingText
+                  <StripeRevealText
                     text="Fixing the League community, one stream at a time"
-                    speed={28}
                     delay={3900}
-                    color={ABOUT_MINO_ACCENT}
-                    className="text-base text-fg-muted/90 md:text-lg lg:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]"
+                    duration={2400}
+                    accentColor={ABOUT_MINO_ACCENT}
+                    className="text-base md:text-lg lg:text-xl xl:text-[1.3125rem] 2xl:text-[1.375rem]"
                   />
                 </p>
               </motion.div>
@@ -1086,12 +1152,12 @@ export default function AboutMinoClient() {
                   demonMode={panelDemonMode}
                   eyebrow="Hello~"
                   title="I'm Mino! It's nice to meet you"
-                  closingPaw
                   body={
-                    "The League community is known for its toxicity and I'd like to change that!! or at least try... >.<\n\n" +
-                    "If someone's having a bad game they already feel bad about that. Making them feel worse deteriorates the game quality and mental health of the community long-term, which led us to where we are now..."
+                    "I'm a catboy, VTuber, League coach, #1 Viego, femboy.\n\n" +
+                    "I stream League and try to be educational sometimes... I'm obsessed with the color pink and making things look pretty!"
                   }
-                  bodyClosing="Let's make a difference together!"
+                  bodyClosing="Let's be friends, MEOW"
+                  plainClosing
                 />
               </motion.div>
 
@@ -1107,17 +1173,14 @@ export default function AboutMinoClient() {
               >
                 <PinkPanelCard
                   demonMode={panelDemonMode}
-                  eyebrow="Coaching"
-                  title="I have 5 years of coaching experience!"
+                  eyebrow="Mission"
+                  title="My goal"
+                  closingPaw
                   body={
-                    "In 2020 I started coaching and got something like ~2000 sessions done since then for all roles and ranks.\n\n" +
-                    "Feel free to check it out, I swear it's lowkey goated."
+                    "The League community is known for its toxicity and I'd like to change that!! or at least try... >.<\n\n" +
+                    "If someone's having a bad game they already feel bad about that. Making them feel worse deteriorates the game quality and mental health of the community long-term, which led us to where we are now..."
                   }
-                  stats={[
-                    { value: "500+", label: "Student reviews" },
-                    { value: "4.9/5", label: "Average rating" },
-                  ]}
-                  cta={{ label: "Learn more", href: "/coaching" }}
+                  bodyClosing="Let's make a difference together!"
                 />
               </motion.div>
 
@@ -1132,6 +1195,8 @@ export default function AboutMinoClient() {
           />
 
           <RankAfterglowSection />
+
+          <CoachingFadeSection />
 
           <section className="flex min-h-[45vh] flex-col items-center justify-center px-5 pb-28 pt-20 text-center md:px-8 md:pb-36 md:pt-28">
             <p className="text-base text-fg-muted/50 md:text-lg">

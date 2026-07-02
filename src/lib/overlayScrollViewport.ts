@@ -244,6 +244,12 @@ export function lockScrollViewport(
 
   const lockedTop = viewportEl.scrollTop;
   const previousOverflow = instance?.options().overflow;
+  const previousScrollBehavior = viewportEl.style.scrollBehavior;
+
+  // Cancel any in-flight smooth scroll before clamping; otherwise the scroll
+  // listener fights ongoing momentum and visibly snaps back.
+  viewportEl.style.scrollBehavior = "auto";
+  viewportEl.scrollTop = lockedTop;
 
   if (instance) {
     instance.options({
@@ -255,11 +261,19 @@ export function lockScrollViewport(
     instance.update(true);
   }
 
-  const clampScroll = () => {
+  // Brief rAF guard for residual momentum — not a scroll listener.
+  let guardFrames = 0;
+  let guardRaf = 0;
+  const guardMomentum = () => {
     if (viewportEl.scrollTop !== lockedTop) {
       viewportEl.scrollTop = lockedTop;
     }
+    guardFrames += 1;
+    if (guardFrames < 8) {
+      guardRaf = requestAnimationFrame(guardMomentum);
+    }
   };
+  guardRaf = requestAnimationFrame(guardMomentum);
 
   const blockInput = (event: Event) => {
     event.preventDefault();
@@ -282,16 +296,17 @@ export function lockScrollViewport(
     }
   };
 
-  viewportEl.addEventListener("scroll", clampScroll, { passive: true });
   scrollRoot.addEventListener("wheel", blockInput, { passive: false, capture: true });
   scrollRoot.addEventListener("touchmove", blockInput, { passive: false, capture: true });
   window.addEventListener("keydown", onKey, { capture: true });
 
   return () => {
-    viewportEl.removeEventListener("scroll", clampScroll);
+    cancelAnimationFrame(guardRaf);
     scrollRoot.removeEventListener("wheel", blockInput, { capture: true });
     scrollRoot.removeEventListener("touchmove", blockInput, { capture: true });
     window.removeEventListener("keydown", onKey, { capture: true });
+
+    viewportEl.style.scrollBehavior = previousScrollBehavior;
 
     if (instance && previousOverflow) {
       instance.options({ overflow: previousOverflow });
