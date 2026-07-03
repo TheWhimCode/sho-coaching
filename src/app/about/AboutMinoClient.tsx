@@ -74,12 +74,14 @@ const PINK_PANEL_REVEAL_RANGE: [number, number] = [
   0.75 - PINK_SCROLL_REVEAL_OFFSET,
 ];
 const PINK_PANEL_REVEAL_END = PINK_PANEL_REVEAL_RANGE[1];
-/** Quick fade to dark when leaving the pink scroll zone. */
-const LIGHTS_OUT_DURATION_S = 0.4;
+/** Bottom-of-pink-zone blink only — hero scroll-in still uses pinkTopFade. */
+const PINK_ZONE_BLINK_DURATION_S = 0.75;
+const LIGHTS_OUT_DURATION_S = PINK_ZONE_BLINK_DURATION_S;
 const LIGHTS_OUT_EASE = EASE;
 /** Lights back on when re-entering pink from below. */
-const LIGHTS_IN_DURATION_S = 0.4;
+const LIGHTS_IN_DURATION_S = PINK_ZONE_BLINK_DURATION_S;
 const LIGHTS_IN_EASE = [0, 0, 0.2, 1] as const;
+const PANEL_DEMON_MODE_TRANSITION = { duration: PINK_ZONE_BLINK_DURATION_S, ease: EASE };
 
 function smoothstep(t: number) {
   const x = Math.min(1, Math.max(0, t));
@@ -280,14 +282,14 @@ function PinkPanelCard({
           ? "none"
           : `0 28px 70px -28px ${ABOUT_MINO_GLOW}, 0 0 0 1px rgba(255,255,255,0.45)`,
       }}
-      transition={{ duration: 0.45, ease: EASE }}
+      transition={PANEL_DEMON_MODE_TRANSITION}
     >
       <div className="relative flex flex-col gap-[0.25lh]">
         {eyebrow ? (
           <motion.p
             className="text-[11px] font-medium uppercase tracking-[0.22em] xl:text-xs"
             animate={{ color: demonMode ? ABOUT_GOLD : "rgba(190, 24, 93, 0.8)" }}
-            transition={{ duration: 0.4 }}
+            transition={PANEL_DEMON_MODE_TRANSITION}
           >
             {eyebrow}
           </motion.p>
@@ -298,7 +300,7 @@ function PinkPanelCard({
             animate={{
               color: demonMode ? "#FDF2F8" : "#4A1D35",
             }}
-            transition={{ duration: 0.4 }}
+            transition={PANEL_DEMON_MODE_TRANSITION}
           >
             {title}
             {titlePaw ? <AboutPawIcon className="-top-0.5 ml-3 align-middle sm:ml-4 xl:-top-1 xl:ml-5" /> : null}
@@ -308,7 +310,7 @@ function PinkPanelCard({
           <motion.div
             className="flex flex-col gap-[0.25lh] text-sm leading-[1.75] sm:text-[0.9375rem] lg:text-base xl:text-lg xl:leading-relaxed"
             animate={{ color: demonMode ? "rgba(253, 242, 248, 0.82)" : "rgba(107, 40, 72, 0.88)" }}
-            transition={{ duration: 0.4 }}
+            transition={PANEL_DEMON_MODE_TRANSITION}
           >
             {subtitle ? <p>{subtitle}</p> : null}
             {bodyParagraphs.map((paragraph, index) => (
@@ -334,7 +336,7 @@ function PinkPanelCard({
           <motion.p
             className="text-sm font-medium not-italic xl:text-lg"
             animate={{ color: demonMode ? "rgba(249, 168, 212, 0.85)" : "rgba(74, 29, 53, 0.92)" }}
-            transition={{ duration: 0.4 }}
+            transition={PANEL_DEMON_MODE_TRANSITION}
           >
             {footer}
           </motion.p>
@@ -351,7 +353,7 @@ function PinkPanelCard({
                   color: demonMode ? "#F9A8D4" : "#9D174D",
                 }}
                 style={{ borderWidth: 1, borderStyle: "solid" }}
-                transition={{ duration: 0.4 }}
+                transition={PANEL_DEMON_MODE_TRANSITION}
               >
                 {tag}
               </motion.span>
@@ -369,19 +371,19 @@ function PinkPanelCard({
                   backgroundColor: demonMode ? "transparent" : "rgba(253,242,248,0.85)",
                 }}
                 style={{ borderWidth: 1, borderStyle: "solid" }}
-                transition={{ duration: 0.4 }}
+                transition={PANEL_DEMON_MODE_TRANSITION}
               >
                 <motion.p
                   className="text-lg font-extrabold tracking-tight xl:text-2xl"
                   animate={{ color: demonMode ? "#FDF2F8" : "#4A1D35" }}
-                  transition={{ duration: 0.4 }}
+                  transition={PANEL_DEMON_MODE_TRANSITION}
                 >
                   {stat.value}
                 </motion.p>
                 <motion.p
                   className="mt-1 text-[11px] leading-snug xl:text-sm"
                   animate={{ color: demonMode ? "rgba(253, 242, 248, 0.72)" : "rgba(107, 40, 72, 0.8)" }}
-                  transition={{ duration: 0.4 }}
+                  transition={PANEL_DEMON_MODE_TRANSITION}
                 >
                   {stat.label}
                 </motion.p>
@@ -390,7 +392,7 @@ function PinkPanelCard({
           </div>
         ) : null}
         {cta ? (
-          <motion.div transition={{ duration: 0.4 }}>
+          <motion.div transition={PANEL_DEMON_MODE_TRANSITION}>
             <Link
               href={cta.href}
               className={clsx(
@@ -887,6 +889,8 @@ export default function AboutMinoClient() {
   const prevZoneRef = useRef<"pink" | "dark">("pink");
   const animDirectionRef = useRef<"out" | "in" | null>(null);
   const metricsRef = useRef({ reveal: 0, exit: 0 });
+  const pinkLightsOutRef = useRef(false);
+  const lastScrollTopRef = useRef(0);
   const blinkAnimatingRef = useRef(false);
   const blinkControlRef = useRef<ReturnType<typeof animate> | null>(null);
   const preludeRunningRef = useRef(false);
@@ -910,8 +914,6 @@ export default function AboutMinoClient() {
   useEffect(() => {
     if (!scrollViewport) return;
 
-    const overlayZone = (exit: number) => (exit > 0 ? "dark" : "pink");
-
     const syncSteadyOverlay = () => {
       const { reveal, exit } = metricsRef.current;
       if (exit > 0) return;
@@ -922,6 +924,7 @@ export default function AboutMinoClient() {
       if (blinkAnimatingRef.current) return;
       if (pinkPresence.get() <= 0.01) {
         pinkPresence.set(0);
+        pinkLightsOutRef.current = true;
         return;
       }
       void startBlinkOut();
@@ -937,6 +940,7 @@ export default function AboutMinoClient() {
     const startBlinkOut = () =>
       new Promise<void>((resolve) => {
         stopBlink();
+        pinkLightsOutRef.current = true;
         setPanelDemonModeRef.current(true);
         blinkAnimatingRef.current = true;
         animDirectionRef.current = "out";
@@ -946,7 +950,7 @@ export default function AboutMinoClient() {
           ease: LIGHTS_OUT_EASE,
           onComplete: () => {
             stopBlink();
-            syncSteadyOverlay();
+            pinkLightsOutRef.current = true;
             resolve();
           },
         });
@@ -963,9 +967,47 @@ export default function AboutMinoClient() {
         ease: LIGHTS_IN_EASE,
         onComplete: () => {
           stopBlink();
+          pinkLightsOutRef.current = false;
           syncSteadyOverlay();
         },
       });
+    };
+
+    const applyPinkOverlay = (reveal: number, exit: number, scrollingUp: boolean) => {
+      const target = pinkTopFade(reveal);
+      const presence = pinkPresence.get();
+      const leftPinkZone = exit > 0;
+      const inPinkZone = exit <= 0;
+
+      if (blinkAnimatingRef.current) {
+        const reversed =
+          (animDirectionRef.current === "out" && scrollingUp && inPinkZone) ||
+          (animDirectionRef.current === "in" && leftPinkZone);
+
+        if (reversed) {
+          if (scrollingUp && inPinkZone) {
+            startBlinkIn(target);
+          } else if (leftPinkZone) {
+            ensureLightsOut();
+          }
+        }
+
+        return;
+      }
+
+      if (pinkLightsOutRef.current) {
+        if (scrollingUp && inPinkZone && presence < target - 0.01) {
+          startBlinkIn(target);
+        }
+      } else if (leftPinkZone) {
+        ensureLightsOut();
+      } else {
+        syncSteadyOverlay();
+      }
+
+      if (!blinkAnimatingRef.current) {
+        setPanelDemonModeRef.current(pinkLightsOutRef.current || leftPinkZone);
+      }
     };
 
     const shouldStartDemonPrelude = () => {
@@ -1000,9 +1042,14 @@ export default function AboutMinoClient() {
 
       try {
         unlockScrollRef.current = lockScrollViewport(scrollViewport);
-        await startBlinkOut();
+        if (pinkPresence.get() > 0.05) {
+          await startBlinkOut();
+        } else {
+          pinkLightsOutRef.current = true;
+          setPanelDemonModeRef.current(true);
+        }
         preludeCompleteRef.current = true;
-        prevZoneRef.current = overlayZone(metricsRef.current.exit);
+        prevZoneRef.current = metricsRef.current.exit > 0 ? "dark" : "pink";
         setDemonRevealEnabled(true);
         await new Promise<void>((resolve) => {
           window.setTimeout(resolve, DEMON_PRELUDE_LOCK_MS);
@@ -1027,52 +1074,16 @@ export default function AboutMinoClient() {
       pinkExit.set(exit);
       metricsRef.current = { reveal, exit };
 
+      const scrollTop = scrollViewport.scrollTop;
+      const scrollingUp = scrollTop < lastScrollTopRef.current - 1;
+      lastScrollTopRef.current = scrollTop;
+
       if (preludeRunningRef.current) return;
 
-      if (!preludeCompleteRef.current) {
-        if (exit > 0) {
-          ensureLightsOut();
-        } else if (!blinkAnimatingRef.current) {
-          syncSteadyOverlay();
-        }
-        if (shouldStartDemonPrelude()) {
-          void runDemonPrelude();
-        }
-        return;
-      }
+      applyPinkOverlay(reveal, exit, scrollingUp);
 
-      const currentZone = overlayZone(exit);
-      const prevZone = prevZoneRef.current;
-
-      if (blinkAnimatingRef.current) {
-        const reversed =
-          (animDirectionRef.current === "out" && currentZone === "pink") ||
-          (animDirectionRef.current === "in" && currentZone === "dark");
-
-        if (reversed) {
-          if (currentZone === "pink") {
-            startBlinkIn(pinkTopFade(reveal));
-          } else {
-            ensureLightsOut();
-          }
-        }
-
-        prevZoneRef.current = currentZone;
-        return;
-      }
-
-      if (exit > 0) {
-        ensureLightsOut();
-      } else if (currentZone === "pink" && prevZone === "dark") {
-        startBlinkIn(pinkTopFade(reveal));
-      } else {
-        syncSteadyOverlay();
-      }
-
-      prevZoneRef.current = currentZone;
-
-      if (!blinkAnimatingRef.current) {
-        setPanelDemonModeRef.current(currentZone === "dark");
+      if (!preludeCompleteRef.current && shouldStartDemonPrelude()) {
+        void runDemonPrelude();
       }
     };
 
