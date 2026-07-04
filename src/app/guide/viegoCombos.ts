@@ -72,6 +72,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "HOB combo in wave",
       sequence: ["AA", "AA", "AA", "Wtap", "AA"],
       videoSrc: guideComboVideo("HOB auto combo.webm"),
+      ingameExampleVideoSrc: guideComboVideo("ingameHOBCombo.webm"),
       explanation: "Sometimes you can't hit W because you're getting body blocked, so you just use all HOB autos and then W auto reset for a fourth hit.",
     },
     {
