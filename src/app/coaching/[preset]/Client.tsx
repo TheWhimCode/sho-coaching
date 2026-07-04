@@ -58,7 +58,6 @@ export default function Client({ preset }: { preset: string }) {
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [initialSlotId, setInitialSlotId] = useState<string | undefined>();
-  const [liveMinutes, setLiveMinutes] = useState(init.session.liveMin);
   const [prefetchedSlots, setPrefetchedSlots] = useState<ApiSlot[] | undefined>();
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [userHoldKey, setUserHoldKey] = useState<string | null>(null);
@@ -102,7 +101,6 @@ export default function Client({ preset }: { preset: string }) {
 
   useEffect(() => {
     setSession(init.session);
-    setLiveMinutes(init.session.liveMin);
     setActivePreset(
       getPreset(
         init.session.liveMin,
@@ -185,6 +183,7 @@ export default function Client({ preset }: { preset: string }) {
   useEffect(() => {
     let on = true;
     setSlotsLoading(true);
+    setPrefetchedSlots(undefined);
     slotsLoadStartedAtRef.current = Date.now();
     if (slotsLoadTimeoutRef.current) {
       clearTimeout(slotsLoadTimeoutRef.current);
@@ -255,9 +254,8 @@ export default function Client({ preset }: { preset: string }) {
           slotsFromParent={prefetchedSlots ?? null}
           slotsLoadingFromParent={slotsLoading}
           onCustomize={() => setDrawerOpen(true)}
-          onOpenCalendar={({ slotId, liveMinutes }) => {
+          onOpenCalendar={({ slotId }) => {
             setInitialSlotId(slotId);
-            setLiveMinutes(liveMinutes);
             setCalendarOpen(true);
           }}
         />
@@ -266,7 +264,7 @@ export default function Client({ preset }: { preset: string }) {
           {calendarOpen && (
             <CalLikeOverlay
               sessionType={init.title}
-              liveMinutes={liveMinutes}
+              liveMinutes={session.liveMin}
               initialSlotId={initialSlotId ?? null}
               prefetchedSlots={prefetchedSlots}
               followups={session.followups}

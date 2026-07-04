@@ -26,6 +26,7 @@ import type { ProductId } from "@/engine/session";
 
 type Props = {
   sessionType: string;
+  /** Base live session length (liveMin). Live blocks are added via liveBlocks. */
   liveMinutes: number;
   followups?: number;
   onClose?: () => void;
@@ -151,10 +152,8 @@ export default function Calendar({
     }
   }, [prefetchedSlots, selectedSlotId]);
 
-// Fetch slots (only if no prefetched data); pass userHoldKey so user can reselect their held slot after cancel
+// Always refetch for the current duration — prefetched hero slots can be stale after customize.
 useEffect(() => {
-  if (prefetchedSlots?.length) return;
-
   let ignore = false;
 
   const start = new Date();
@@ -187,7 +186,7 @@ useEffect(() => {
   return () => {
     ignore = true;
   };
-}, [totalMinutes, prefetchedSlots, holdKey, userHoldKeyProp, presetProp]);
+}, [totalMinutes, holdKey, userHoldKeyProp, presetProp]);
 
 
 
@@ -305,7 +304,11 @@ const displayableDayKeys = useMemo(
       goingToCheckout.current = true;
       router.push(url.toString());
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const raw = e instanceof Error ? e.message : String(e);
+      const msg =
+        raw === "unavailable"
+          ? "That time is no longer available — please pick another slot."
+          : raw;
       setDErr(msg || "Could not hold the slot");
     } finally {
       setPending(false);

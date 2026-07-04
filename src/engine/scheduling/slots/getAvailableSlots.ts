@@ -5,7 +5,7 @@ import { CFG_SERVER } from "@/lib/config.server";
 import { guards } from "../policy/guards";
 import { getLeadMinutesOverride } from "../presetLead";
 import { findBusyStartTimesInRange } from "../db/slotQueries";
-import { addMin, ceilDiv, SLOT_SIZE_MIN, utcMidnight } from "../time/timeMath";
+import { addMin, ceilDiv, countContiguousSessions, SLOT_SIZE_MIN, utcMidnight } from "../time/timeMath";
 
 const MAX_RANGE_DAYS = 60;
 const MIN_MINUTES = 30;
@@ -69,6 +69,7 @@ export async function getAvailableSlots(
   if (rows.length > 2000) return [];
 
   const busySet = new Set(busyStartTimes.map((d) => d.getTime()));
+  const freeStartSet = new Set(rows.map((r) => r.startTime.getTime()));
 
   // 2) Per-day cap: days that already have >= PER_DAY_CAP sessions (contiguous busy runs)
   const fullDays = new Set<number>();
@@ -81,15 +82,7 @@ export async function getAvailableSlots(
       byDay.get(key)!.push(d);
     }
     for (const [, daySlots] of byDay) {
-      daySlots.sort((a, b) => a.getTime() - b.getTime());
-      let sessions = 0;
-      for (let i = 0; i < daySlots.length; i++) {
-        const prev = daySlots[i - 1];
-        const cur = daySlots[i];
-        const expectedPrev = prev ? addMin(cur, -SLOT_SIZE_MIN).getTime() : NaN;
-        if (!prev || prev.getTime() !== expectedPrev) sessions++;
-      }
-      if (sessions >= PER_DAY_CAP) {
+      if (countContiguousSessions(daySlots) >= PER_DAY_CAP) {
         fullDays.add(daySlots[0] ? utcMidnight(daySlots[0]).getTime() : 0);
       }
     }
@@ -104,7 +97,7 @@ export async function getAvailableSlots(
     let blocked = false;
     for (let i = 0; i < expectedSlots; i++) {
       const slotTime = addMin(r.startTime, i * SLOT_SIZE_MIN);
-      if (busySet.has(slotTime.getTime())) {
+      if (busySet.has(slotTime.getTime()) || !freeStartSet.has(slotTime.getTime())) {
         blocked = true;
         break;
       }

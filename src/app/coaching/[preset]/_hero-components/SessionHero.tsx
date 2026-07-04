@@ -417,7 +417,7 @@ export default function SessionHero({
       {showCal && (
         <Calendar
           sessionType={titlesByPreset[preset]}
-          liveMinutes={liveMinutes}
+          liveMinutes={session.liveMin}
           prefetchedSlots={parentControlled ? (slotsFromParent ?? []) : seedSlots}
           initialSlotId={initialSlotId}
           onClose={() => setShowCal(false)}

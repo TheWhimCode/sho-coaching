@@ -19,6 +19,16 @@ export async function holdSlots(
   });
   if (!start) return null;
 
+  const now = new Date();
+
+  // Reusing a holdKey on a different time — release the previous block first.
+  if (opts?.holdKey) {
+    await tx.slot.updateMany({
+      where: { holdKey: clientKey, holdUntil: { gt: now } },
+      data: { holdKey: null, holdUntil: null },
+    });
+  }
+
   const blockIds = await getBlockIdsByTime(
     start.startTime,
     liveMinutes,
@@ -27,7 +37,6 @@ export async function holdSlots(
   );
   if (!blockIds) return null;
 
-  const now = new Date();
   const holdUntil = getHoldUntil(now);
 
   const updated = await tx.slot.updateMany({
