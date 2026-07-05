@@ -18,6 +18,8 @@ const connectSrc = [
   "https://m.stripe.network",
   "https://r.stripe.com",
   "https://ddragon.leagueoflegends.com", // allow realms fetch
+  "https://vimeo.com",
+  "https://player.vimeo.com",
   isDev ? "ws:" : "",
   isDev ? "wss:" : "",
 ].filter(Boolean).join(" ");
@@ -30,6 +32,8 @@ const imgSrc = [
   "https://ddragon.leagueoflegends.com", // allow champion images
   "https://raw.communitydragon.org",     // allow rank emblems (CDragon)
   "https://videos.its-mino.com",
+  "https://i.vimeocdn.com",
+  "https://vumbnail.com",
 ].join(" ");
 
 // Build CSP parts (dev: no upgrade-insecure-requests)
@@ -39,7 +43,7 @@ const cspParts = [
   `style-src 'self' 'unsafe-inline'`,
   `img-src ${imgSrc}`,
   `font-src 'self' data:`,
-  `frame-src https://js.stripe.com https://hooks.stripe.com`,
+  `frame-src https://js.stripe.com https://hooks.stripe.com https://player.vimeo.com`,
   `connect-src ${connectSrc}`,
   `worker-src 'self' blob:`,
   `media-src 'self' blob: https://videos.its-mino.com`,

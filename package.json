@@ -29,6 +29,7 @@
     "@tiptap/pm": "3.6.2",
     "@tiptap/react": "3.6.2",
     "@tiptap/starter-kit": "3.6.2",
+    "@vimeo/player": "^2.30.4",
     "bottleneck": "^2.19.5",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

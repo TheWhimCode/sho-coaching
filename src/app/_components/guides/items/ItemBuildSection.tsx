@@ -1942,12 +1942,7 @@ export default function ItemBuildSection({
         </h2>
         {data.headerIcon ? (
           <div className="relative shrink-0">
-            <div
-              className={clsx(
-                ITEM_TILE_CLASS,
-                "relative overflow-hidden ring-1 ring-[#F0ABCF]/30"
-              )}
-            >
+            <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg sm:h-16 sm:w-16">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <GuideImage
                 src={data.headerIcon.icon}

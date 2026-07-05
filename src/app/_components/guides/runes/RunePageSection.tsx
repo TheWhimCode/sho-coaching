@@ -307,7 +307,7 @@ export default function RunePageSection({
             <h2 className={guideSectionTitleClass}>{build.heading}</h2>
             {headerIcon ? (
               <div className="relative shrink-0">
-                <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 ring-transparent sm:h-16 sm:w-16">
+                <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg sm:h-16 sm:w-16">
                   <GuideImage
                     src={headerIcon.icon}
                     alt={headerIcon.name}

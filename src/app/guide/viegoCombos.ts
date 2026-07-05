@@ -1,5 +1,5 @@
 import type { GuideComboSectionConfig } from "@/lib/guides/comboGuideTypes";
-import { guideComboVideo } from "@/lib/guides/guideComboVideos";
+import { guideComboThumbnail, guideComboVideo } from "@/lib/guides/guideComboVideos";
 
 export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
   heading: "Combo Guide",
@@ -10,7 +10,9 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Q extension",
       sequence: ["Wtap", "Q"],
       videoSrc: guideComboVideo("Q extension.webm"),
+      posterSrc: guideComboThumbnail("qex.webp"),
       ingameExampleVideoSrc: guideComboVideo("ingameQextension.webm"),
+      ingamePosterSrc: guideComboThumbnail("iqex.webp"),
       explanation: "Cancel Q animation to extend the range. This way you can get resets, finish people off, do damage while chasing or running away and mark people for your R.",
     },
     {
@@ -18,7 +20,9 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Q extension oneshot",
       sequence: ["Wtap", "Q", "R", "AA"],
       videoSrc: guideComboVideo("Q extension oneshot.webm"),
-      ingameExampleVideoSrc: guideComboVideo("ingameQextensiononeshot.webm"),
+      posterSrc: guideComboThumbnail("qexoneshto.webp"),
+      ingameExampleVideoSrc: guideComboVideo("ingameQextensionburst.webm"),
+      ingamePosterSrc: guideComboThumbnail("iqexburst.webp"),
       explanation: "Mark people with Q extension to increase R damage for a quick oneshot. Example below is without W.",
     },
     {
@@ -26,7 +30,9 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "R extension",
       sequence: ["Wtap", "R"],
       videoSrc: guideComboVideo("R extension.webm"),
+      posterSrc: guideComboThumbnail("Rex.webp"),
       ingameExampleVideoSrc: guideComboVideo("ingameRextension.webm"),
+      ingamePosterSrc: guideComboThumbnail("iRex.webp"),
       explanation: "W > R extends the R range immediately. This only works with W, if you Lucian E > R your R will just have the normal range. Wait until the dash is completed before you R on other champions.",
     },
     {
@@ -34,7 +40,9 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "R extension burst",
       sequence: ["Wtap", "R", "Q", "AA"],
       videoSrc: guideComboVideo("R extension burst.webm"),
-      ingameExampleVideoSrc: guideComboVideo("ingameRextensionburst.webm"),
+      posterSrc: guideComboThumbnail("rexburst.webp"),
+      ingameExampleVideoSrc: guideComboVideo("ingameRExtensionBurst.webm"),
+      ingamePosterSrc: guideComboThumbnail("iRexburst.webp"),
       explanation: "Get in range quickly, Q first to apply the mark for the auto. Through with HOB your Q animation gets so fast after the first auto, it barely matters which order you do it in.",
     },
     {
@@ -42,7 +50,9 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "W tap burst",
       sequence: ["Wtap", "AA", "Q", "AA"],
       videoSrc: guideComboVideo("w tap burst.webm"),
+      posterSrc: guideComboThumbnail("wtap.webp"),
       ingameExampleVideoSrc: guideComboVideo("ingameWtapburst.webm"),
+      ingamePosterSrc: guideComboThumbnail("iwtap.webp"),
       explanation: "Bread and butter. You walk up with E and do the basic burst combo. On 3 items this kills squishies.",
     },
     {
@@ -50,6 +60,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Burst combo",
       sequence: ["Wcharge", "E", "AA", "Q", "R", "AA"],
       videoSrc: guideComboVideo("BurstCombo.webm"),
+      posterSrc: guideComboThumbnail("burstcombo.webp"),
       explanation: "Use this to oneshot mobile squishies. Great against stuff like Ekko, Akali, Qiyana to kill them before they can dash away. Even works if they have mercs! You just need enough damage (usually with LDR + Cloak of Agility).",
     },
     {
@@ -57,6 +68,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Extended burst combo",
       sequence: ["Wcharge", "E", "AA", "Q", "AA", "R", "AA"],
       videoSrc: guideComboVideo("extended combo.webm"),
+      posterSrc: guideComboThumbnail("excombo.webp"),
       explanation: "Same as burst combo, but you use an extra auto before R. This will allow people to Flash out of your ult if they have tenacity or you lack attackspeed (low alacrity stacks without E active), but against champs like Talon/Akali you need to do the auto before your R. Otherwise they instantly go invis.",
     },
     {
@@ -64,7 +76,9 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Ranged stun combo",
       sequence: ["Wcharge", "R", "Q", "AA"],
       videoSrc: guideComboVideo("RangedStun.webm"),
+      posterSrc: guideComboThumbnail("ranged.webp"),
       ingameExampleVideoSrc: guideComboVideo("ingameRangedStun.webm"),
+      ingamePosterSrc: guideComboThumbnail("iranged.webp"),
       explanation: "Usually you use this from fog over a wall. You can't get in range to auto, so the moment you know the stun connects you just ult and send it.",
     },
     {
@@ -72,7 +86,9 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "HOB combo in wave",
       sequence: ["AA", "AA", "AA", "Wtap", "AA"],
       videoSrc: guideComboVideo("HOB auto combo.webm"),
+      posterSrc: guideComboThumbnail("hob.webp"),
       ingameExampleVideoSrc: guideComboVideo("ingameHOBCombo.webm"),
+      ingamePosterSrc: guideComboThumbnail("ihob.webp"),
       explanation: "Sometimes you can't hit W because you're getting body blocked, so you just use all HOB autos and then W auto reset for a fourth hit.",
     },
     {
@@ -80,7 +96,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Squishy burst",
       sequence: ["Wtap", "Q", "AA"],
       videoSrc: guideComboVideo("Squishy burst.webm"),
-      ingameExampleVideoSrc: guideComboVideo("ingameSquishyBurst.webm"),
+      posterSrc: guideComboThumbnail("squishy.webp"),
       explanation: "Sometimes this is all it takes...",
     },
     {
@@ -88,6 +104,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       label: "Hidden stun initiator",
       sequence: ["E", "Wcharge"],
       videoSrc: guideComboVideo("Hidden stun initiator.webm"),
+      posterSrc: guideComboThumbnail("hidestun.webp"),
       explanation: "Don't overuse this. If you hit it, the enemy dies, but often they will retreat immediately when they see your E and you're just wasting time/exposing yourself. I like to use this when I'm against someone that wants to fight me, or when I'm desperate for a pick on a mobile/tanky champion. Also if you're on a ward, you're about to get baited.",
     },
   ],

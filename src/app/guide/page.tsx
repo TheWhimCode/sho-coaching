@@ -13,6 +13,7 @@ import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
 import { VIEGO_CONVENTIONAL_BUILD } from "./viegoConventionalBuild";
 import { VIEGO_COMBO_SECTION } from "./viegoCombos";
+import { VIEGO_GAME_STAGES_SECTION } from "./viegoGameStages";
 import ViegoGuideClient from "./ViegoGuideClient";
 
 const title = "Viego Guide";
@@ -59,6 +60,7 @@ export default async function ViegoGuidePage() {
         guideTextIcons={guideTextIcons}
         matchupData={matchupData}
         comboData={VIEGO_COMBO_SECTION}
+        gameStagesData={VIEGO_GAME_STAGES_SECTION}
         viegoAbilityIcons={viegoAbilityIcons}
         championIcon={championIcon}
       />

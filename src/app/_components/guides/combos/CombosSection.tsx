@@ -1,9 +1,9 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
-import { useInView } from "framer-motion";
+import { useState } from "react";
 import ComboSequenceBar from "@/app/_components/guides/combos/ComboSequenceBar";
+import GuideVideoPanel from "@/app/_components/guides/GuideVideoPanel";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { guideInnerPanelClass, guideMobileFlushPanelClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
@@ -118,153 +118,6 @@ function ComboListSidebar({
   );
 }
 
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={clsx("block shrink-0", className)} aria-hidden>
-      <path d="M9 6v12l9-6-9-6z" />
-    </svg>
-  );
-}
-
-function ReplayIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={clsx("block shrink-0", className)} aria-hidden>
-      <path d="M3 12a9 9 0 1 0 3-6.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M3 4v5h5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-type VideoOverlay = "play" | "replay";
-
-function LocalComboVideo({ videoSrc }: { videoSrc: string }) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const inView = useInView(rootRef, { once: true, margin: "120px 0px" });
-  const [overlay, setOverlay] = useState<VideoOverlay | null>("play");
-
-  useEffect(() => {
-    setOverlay("play");
-  }, [videoSrc]);
-
-  const armVideo = (video: HTMLVideoElement) => {
-    if (!video.src) {
-      video.src = videoSrc;
-      video.load();
-    }
-  };
-
-  const handleOverlayClick = () => {
-    const video = videoRef.current;
-    if (!video || !overlay) return;
-
-    armVideo(video);
-
-    if (overlay === "replay") {
-      video.currentTime = 0;
-    }
-
-    video.muted = false;
-    setOverlay(null);
-
-    void video.play().catch(() => {
-      setOverlay(overlay);
-    });
-  };
-
-  const handleVideoClick = () => {
-    const video = videoRef.current;
-    if (!video || overlay) return;
-
-    video.pause();
-    setOverlay("play");
-  };
-
-  const handleEnded = () => {
-    const video = videoRef.current;
-    if (video) {
-      video.pause();
-      video.currentTime = 0;
-    }
-    setOverlay("replay");
-  };
-
-  return (
-    <div
-      ref={rootRef}
-      className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#F0ABCF]/15 bg-[#1E1724] ring-1 ring-[#B8D8EA]/10"
-    >
-      {!inView ? (
-        <div className="absolute inset-0 animate-pulse bg-[#2A1F2E]/70" aria-hidden />
-      ) : (
-        <>
-          <video
-            key={videoSrc}
-            ref={videoRef}
-            muted
-            playsInline
-            preload="none"
-            onClick={handleVideoClick}
-            onEnded={handleEnded}
-            className={clsx(
-              "h-full w-full object-contain",
-              !overlay && "cursor-pointer"
-            )}
-          />
-          {overlay ? (
-            <button
-              type="button"
-              onClick={handleOverlayClick}
-              className="absolute inset-0 flex items-center justify-center bg-black/35 transition hover:bg-black/45"
-              aria-label={overlay === "play" ? "Play combo video" : "Replay combo video"}
-            >
-              <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[#F0ABCF]/40 bg-[#2A1F2E]/85 text-[#FAD4E8] ring-1 ring-[#B8D8EA]/20 transition hover:scale-105 sm:h-20 sm:w-20">
-                {overlay === "play" ? (
-                  <PlayIcon className="h-9 w-9 sm:h-11 sm:w-11" />
-                ) : (
-                  <ReplayIcon className="h-8 w-8 sm:h-10 sm:w-10" />
-                )}
-              </span>
-            </button>
-          ) : null}
-        </>
-      )}
-    </div>
-  );
-}
-
-function ComboVideoPanel({
-  videoSrc,
-  embedUrl,
-}: {
-  videoSrc?: string | null;
-  embedUrl?: string | null;
-}) {
-  if (videoSrc) {
-    return <LocalComboVideo key={videoSrc} videoSrc={videoSrc} />;
-  }
-
-  if (embedUrl) {
-    return (
-      <div className="aspect-video w-full overflow-hidden rounded-xl border border-[#F0ABCF]/15 bg-black ring-1 ring-[#B8D8EA]/10">
-        <iframe
-          src={embedUrl}
-          title="Combo video"
-          className="h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex aspect-video w-full items-center justify-center rounded-xl border border-dashed border-[#F0ABCF]/20 bg-[#1E1724]/55 ring-1 ring-[#B8D8EA]/10">
-      <p className="text-sm text-[#F5E6D3]/38 sm:text-base">Video coming soon</p>
-    </div>
-  );
-}
-
 export default function CombosSection({
   data,
   abilityIcons,
@@ -279,6 +132,11 @@ export default function CombosSection({
     data.combos.find((combo) => combo.id === selectedId) ?? data.combos[0];
 
   if (!selected) return null;
+
+  const hasIngameVideo =
+    selected.ingameExampleVideoSrc ||
+    selected.ingameExampleVideoEmbedUrl ||
+    selected.ingamePosterSrc;
 
   return (
     <section id="combos" className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible">
@@ -316,10 +174,12 @@ export default function CombosSection({
               <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
                 Combo clip
               </p>
-              <ComboVideoPanel
+              <GuideVideoPanel
                 key={`${selected.id}-clip`}
                 videoSrc={selected.videoSrc}
+                posterSrc={selected.posterSrc}
                 embedUrl={selected.videoEmbedUrl}
+                title={`${selected.label} combo clip`}
               />
             </div>
             <div className="mt-5 text-sm leading-[1.75] text-[#F5E6D3]/62 sm:text-base">
@@ -332,16 +192,20 @@ export default function CombosSection({
                 </p>
               ))}
             </div>
-            <div className="mt-5">
-              <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
-                Ingame example
-              </p>
-              <ComboVideoPanel
-                key={`${selected.id}-ingame`}
-                videoSrc={selected.ingameExampleVideoSrc}
-                embedUrl={selected.ingameExampleVideoEmbedUrl}
-              />
-            </div>
+            {hasIngameVideo ? (
+              <div className="mt-5">
+                <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
+                  Ingame example
+                </p>
+                <GuideVideoPanel
+                  key={`${selected.id}-ingame`}
+                  videoSrc={selected.ingameExampleVideoSrc}
+                  posterSrc={selected.ingamePosterSrc}
+                  embedUrl={selected.ingameExampleVideoEmbedUrl}
+                  title={`${selected.label} ingame example`}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
