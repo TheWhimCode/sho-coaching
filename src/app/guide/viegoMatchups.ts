@@ -109,7 +109,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Sylas",
           explanation:
-            "Best reset in the game. You pick him up and you go crazy. He has to go fight your team and you always have enough damage to oneshot him from level 6.\nJust don't let him engage on you in early fights and wait until LDR if he gets random kills.",
+            "Best reset in the game. You pick him up and you go crazy. He has to use all his mobility to go in, so he has no way to dodge your combo or get out.\n\nBefore LDR you lack damage to solo kill, so play off of your team. But you outscale him hard.\n\nJust don't let him engage on you in early fights and wait until LDR if he gets random kills.",
         },
         {
           champion: "Diana",
