@@ -113,7 +113,7 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
             "Every assassin needs a tool to get in range. To sneak up to their opponents. Talon E, Qiyana W. Viego's tool is his E.",
             "Since you're building full burst, this ability is transformed into an extremely high pressure zone. Squishy champions can never disrespect you. They can't bait you. You'll oneshot them.",
             "Before teamfights, you use this ability to create space. Walk up to the furthest wall near the enemies and E it. They will spam abilities into the mist, praying you're an inter. Don't be an inter.",
-            "While your E is active, you avoid all vision besides controlwards. You can use this to sneak into bushes way deeper than people expect, or walk up to a disrespecting carry and oneshot them.",
+            "While your E is active, you avoid all vision besides Control Wards. You can use this to sneak into bushes way deeper than people expect, or walk up to a disrespecting carry and oneshot them.",
             "Watch out when facechecking bushes or corners, enemies can have Sweeper active. You can also turn on your Sweeper though, it has more range than your stealth. It's really useful to prepare objectives or win fights.",
           ].join("\n\n"),
         },

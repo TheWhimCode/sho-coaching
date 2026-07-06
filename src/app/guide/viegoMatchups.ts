@@ -96,7 +96,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Nocturne",
           explanation:
-            "He's surprisingly OP in early fights. Don't contest him, he will run you down.\n\nBad Nocturnes are easy kills from LDR, but his W can deny you the stun if you don't manage to smite it off. His ult makes teamfighting annoying, since you can't see the target you're trying to sneak up to.\n\nIf you get ahead it's very free, if you fall behind it's very annoying. If he ults you, make sure to R over a wall.",
+            "He's surprisingly OP in early fights. Don't contest him, he will run you down.\n\nBad Nocturnes are easy kills from LDR, but his W can deny you the stun if you don't manage to Smite it off. His ult makes teamfighting annoying, since you can't see the target you're trying to sneak up to.\n\nIf you get ahead it's very free, if you fall behind it's very annoying. If he ults you, make sure to R over a wall.",
         },
         {
           champion: "Olaf",
@@ -116,7 +116,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Jax",
           explanation:
-            "His E dodges your R damage and autos. He will get either DD or Zhonyas and become extremely hard to kill. Never fight him. You can bust and win fights later if he messes up, but you rely on that. Don't get baited.",
+            "His E dodges your R damage and autos. He will get either DD or Zhonya's and become extremely hard to kill. Never fight him. You can bust and win fights later if he messes up, but you rely on that. Don't get baited.",
         },
         {
           champion: "Qiyana",
@@ -144,12 +144,12 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Diana",
           explanation:
-            "Insane reset and Dianas don't really buy Zhonyas in their first 3 items anymore, which makes her a super easy target. Serpents, Hubris, and LDR are all insane against her.",
+            "Insane reset and Dianas don't really buy Zhonya's in their first 3 items anymore, which makes her a super easy target. Serpents, Hubris, and LDR are all insane against her.",
         },
         {
           champion: "Ekko",
           explanation:
-            "You blow him up. He can't even ult in time. It's so hard to play lategame Ekko against your build, you severely limit his options and outscale him because of that.\n\nHe's as weak as you early and most Ekkos are really bad at hitting the W, which is the only ability that's scary to you.\n\nCheck if he builds mercs, he can R before you get your full combo off.",
+            "You blow him up. He can't even ult in time. It's so hard to play lategame Ekko against your build, you severely limit his options and outscale him because of that.\n\nHe's as weak as you early and most Ekkos are really bad at hitting the W, which is the only ability that's scary to you.\n\nCheck if he builds Mercs, he can R before you get your full combo off.",
         },
         {
           champion: "Jarvan IV",
@@ -164,7 +164,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Ivern",
           explanation:
-            "You're an amazing Serpents builder and you can always reach him. If he has no Flash, he always dies.\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next ult and giving you survivability.",
+            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next ult and giving you survivability.",
         },
         {
           champion: "Master Yi",

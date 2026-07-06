@@ -32,12 +32,12 @@ export const VIEGO_RUNE_BUILD: GuideRuneBuild = {
       title: "Insane burst setup",
       treeLabel: "DOMINATION",
       body:
-        "This allows you to play without attackspeed in your build. Essential. It makes your combo super fast (even Q animation scales with attackspeed).",
+        "This allows you to play without AS in your build. Essential. It makes your combo super fast (even Q animation scales with AS).",
     },
   ],
   precisionSection: {
     title: "Precision tree",
     body:
-      "Triumph is just too good and Alacrity helps with clearing in the midgame. I used to run cashback, but this is just better.",
+      "Triumph is just too good and Legend: Alacrity helps with clearing in the midgame. I used to run Cash Back, but this is just better.",
   },
 };

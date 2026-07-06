@@ -4,10 +4,10 @@ const SITUATIONAL_COLLECTOR_EXPLANATION =
   "Best first item when you plan to adjust your build.";
 
 const MAIN_SHIELDBOW_EXPLANATION =
-  "Need 100% crit. We don't care about the defense. If there was an alternative we'd go with that.";
+  "Need 100% Crit. We don't care about the defense. If there was an alternative we'd go with that.";
 
 const IE_EXPLANATION =
-  "Max damage option. IE is worse than LDR in almost every scenario, even against squishies because of item path, pricing, and how crit-reliant the item is.";
+  "Max damage option. IE is worse than LDR in almost every scenario, even against squishies because of item path, pricing, and how Crit-reliant the item is.";
 
 const SERPENTS_EXPLANATION =
   "Delayed Serpent's Fang vs high midgame shield comps.";
@@ -34,7 +34,7 @@ const MAIN_BUILD_STEPS: GuideItemSectionConfig["tabs"][number]["steps"] = [
         id: 6697,
         title: "Hubris",
         explanation:
-          "Highest scaling damage in the game. High AD + Crit + Armorpen is the key. Best baseline item, especially in low elo.",
+          "Highest scaling damage in the game. High AD + Crit + Armor Pen is the key. Best baseline item, especially in low elo.",
       },
       {
         id: 6695,
@@ -49,7 +49,7 @@ const MAIN_BUILD_STEPS: GuideItemSectionConfig["tabs"][number]["steps"] = [
       {
         id: 6676,
         explanation:
-          "Always best second. Double lethality -> %pen. Insane item on Viego.",
+          "Always best second. Double Lethality -> %pen. Insane item on Viego.",
       },
     ],
   },
@@ -97,7 +97,7 @@ const SITUATIONAL_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPat
         {
           id: 6333,
           explanation:
-            "We are full crit with extra item slot. DD is best, but you can also get GA/QSS/Cyclosword or Serpent's Fang vs lategame Shieldbow/Sterak's/Locket and such.",
+            "We are full Crit with extra item slot. DD is best, but you can also get GA/QSS/Cyclosword or Serpent's Fang vs lategame Shieldbow/Sterak's/Locket and such.",
         },
       ],
     },
@@ -121,13 +121,13 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       id: 1103,
       title: "Mosstomper Seedling",
       explanation:
-        "Best smite option and it's not even close. Free bonus health and sustain in between fights.",
+        "Best Smite option and it's not even close. Free bonus health and sustain in between fights.",
     },
     {
       id: 3340,
       title: "Stealth Ward",
       explanation:
-        "Since you're building scaling, you lack skirmishing power early levels. Wards help you deal with those early invades and smoothen the game when you crossmap. Swap to sweeper when you're strong enough to oneshot",
+        "Since you're building scaling, you lack skirmishing power early levels. Wards help you deal with those early invades and smoothen the game when you crossmap. Swap to Sweeper when you're strong enough to oneshot",
     },
   ],
   startingLink: {
@@ -164,7 +164,7 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       id: 3009,
       title: "Boots of Swiftness",
       explanation:
-        "Sometimes you get to fullbuild and didn't finish boots cuz nothing was good. Can go swifties here, before selling for Youmus. Rare.",
+        "Sometimes you get to fullbuild and didn't finish boots cuz nothing was good. Can go swifties here, before selling for Youmuu's. Rare.",
     },
   ],
   fullBuild: {
@@ -177,7 +177,7 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       id: 3142,
       title: "Youmuu's Ghostblade",
       explanation:
-        "You still need MS but triple lethality gives you that extra damage that scales with the enemies defense, so you can keep Sukuna Sushi Slicing them.",
+        "You still need MS but triple Lethality gives you that extra damage that scales with the enemies defense, so you can keep Sukuna Sushi Slicing them.",
     },
   },
 };
@@ -203,7 +203,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Cyclosword",
           header: "The twink crusher.",
           description:
-            "This item hits HARD against low armor. Maximum lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhen you don't need the scaling or need earlygame power because you'll get invaded or fell behind hard, Cyclosword is great.",
+            "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhen you don't need the scaling or need earlygame power because you'll get invaded or fell behind hard, Cyclosword is great.",
           activeChoiceIds: [6699],
           teamComp: {
             ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
@@ -216,7 +216,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Hubris",
           header: "Max damage & scaling",
           description:
-            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max crit with double lethality and %pen.",
+            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.",
           activeChoiceIds: [6697],
           teamComp: {
             ally: ["Garen", "Viego", "Lissandra", "Vayne", "Lulu"],
@@ -248,9 +248,9 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         {
           id: "survival",
           label: "Death's Dance",
-          header: "Multiple high armor fulltanks :(",
+          header: "Multiple high Armor fulltanks :(",
           description:
-            "We don't like this build.\nIt's better than Kraken + Conqueror because you can't DPS against high CC high armor champs either way and it gives you surprisingly high midgame damage, but the Shieldbow 3rd hurts a lot and LDR costs a lot for a second item.",
+            "We don't like this build.\nIt's better than Kraken + Conqueror because you can't DPS against high CC high Armor champs either way and it gives you surprisingly high midgame damage, but the Shieldbow 3rd hurts a lot and LDR costs a lot for a second item.",
           activeChoiceIds: [],
           activePathIndex: 0,
           teamComp: {

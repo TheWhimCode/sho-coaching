@@ -10,6 +10,12 @@ export const GUIDE_COLLECTOR_BLUE = "#3B82F6";
 export const GUIDE_SERAPHS_BLUE = "#60A5FA";
 export const GUIDE_ZHONYAS_BLUE = "#4478F0";
 export const GUIDE_FROST_BLUE = "#67E8F9";
+export const GUIDE_AP_PURPLE = "#A855F7";
+export const GUIDE_AS_YELLOW = "#EAB308";
+export const GUIDE_MS_GREEN = "#4ADE80";
+export const GUIDE_MR_VIOLET = "#8B5CF6";
+export const GUIDE_AH_CYAN = "#22D3EE";
+export const GUIDE_TENACITY_AMBER = "#FB923C";
 
 export type GuideTextEntityIcon =
   | { kind: "item"; id: string }
@@ -132,13 +138,13 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "3110" },
   },
   {
-    patterns: ["Control Ward"],
+    patterns: ["Control Wards", "Control Ward"],
     matchKey: "control-ward",
     color: GUIDE_SHIELDBOW_RED,
     icon: { kind: "item", id: "2055" },
   },
   {
-    patterns: ["Oracle Lens", "Sweeper", "sweeper"],
+    patterns: ["Oracle Lens", "Sweeper"],
     matchKey: "sweeper",
     color: GUIDE_SHIELDBOW_RED,
     icon: { kind: "item", id: "3364" },
@@ -147,6 +153,11 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     patterns: ["Quicksilver Sash"],
     matchKey: "quicksilver-sash",
     icon: { kind: "item", id: "3140" },
+  },
+  {
+    patterns: ["Mercury's Treads", "Mercs"],
+    matchKey: "mercury-treads",
+    icon: { kind: "item", id: "3111" },
   },
   {
     patterns: ["Infinity Edge"],
@@ -170,7 +181,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
   },
   { patterns: ["Conqueror", "Conq"], matchKey: "conqueror", color: GUIDE_CONQUEROR_ORANGE, icon: { kind: "rune", id: 8010 }, iconShape: "round" },
   {
-    patterns: ["lethality"],
+    patterns: ["lethality", "Lethality"],
     matchKey: "lethality",
     color: GUIDE_SHIELDBOW_RED,
     weight: 800,
@@ -195,6 +206,54 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     matchKey: "ad",
     color: GUIDE_CONQUEROR_ORANGE,
     icon: { kind: "stat", name: "attack damage" },
+  },
+  {
+    patterns: ["Ability Power", "\\bAP\\b"],
+    matchKey: "ap",
+    color: GUIDE_AP_PURPLE,
+    icon: { kind: "stat", name: "ability power" },
+  },
+  {
+    patterns: ["Attack Speed", "\\bAS\\b"],
+    matchKey: "as",
+    color: GUIDE_AS_YELLOW,
+    icon: { kind: "stat", name: "attack speed" },
+  },
+  {
+    patterns: ["Ability Haste", "\\bAH\\b"],
+    matchKey: "ah",
+    color: GUIDE_AH_CYAN,
+    icon: { kind: "stat", name: "ability haste" },
+  },
+  {
+    patterns: ["Critical Strike", "\\bCrit\\b", "\\bcrit\\b"],
+    matchKey: "crit",
+    color: GUIDE_KRAKEN_GOLD,
+    icon: { kind: "stat", name: "crit" },
+  },
+  {
+    patterns: ["\\bArmor\\b", "\\barmor\\b"],
+    matchKey: "armor",
+    color: GUIDE_STEELCAPS_BROWN,
+    icon: { kind: "stat", name: "armor" },
+  },
+  {
+    patterns: ["Magic Resistance", "Magic Resist", "\\bMR\\b"],
+    matchKey: "mr",
+    color: GUIDE_MR_VIOLET,
+    icon: { kind: "stat", name: "magic resist" },
+  },
+  {
+    patterns: ["Movement Speed", "Move Speed", "\\bMS\\b"],
+    matchKey: "ms",
+    color: GUIDE_MS_GREEN,
+    icon: { kind: "stat", name: "movement speed" },
+  },
+  {
+    patterns: ["Tenacity"],
+    matchKey: "tenacity",
+    color: GUIDE_TENACITY_AMBER,
+    icon: { kind: "stat", name: "tenacity" },
   },
   { patterns: ["exposure"], matchKey: "exposure", boldOnly: true },
   { patterns: ["\\bHOB\\b"], matchKey: "hob", color: GUIDE_SHIELDBOW_RED, icon: { kind: "rune", id: 9923 }, iconShape: "round" },
@@ -233,6 +292,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
 export type FlatGuideTextTerm = {
   pattern: string;
   regex?: boolean;
+  caseSensitive?: boolean;
   matchKey: string;
   icon?: GuideTextEntityIcon;
   iconShape?: "round" | "square";
@@ -241,14 +301,23 @@ export type FlatGuideTextTerm = {
   boldOnly?: boolean;
 };
 
+/** Uppercase abbreviations (AS, AD) — not lowercase prose like "as". */
+export function isCaseSensitiveGuideRegexPattern(pattern: string): boolean {
+  if (!pattern.startsWith("\\b")) return false;
+  if (/^\\b[a-z]/.test(pattern)) return false;
+  return /^\\b[A-Z]{2,}\\b$/.test(pattern) || /^\\b[A-Z][a-z]+\\b$/.test(pattern);
+}
+
 export function flattenGuideTextEntities(): FlatGuideTextTerm[] {
   const terms: FlatGuideTextTerm[] = [];
 
   for (const entity of GUIDE_TEXT_ENTITIES) {
     for (const pattern of entity.patterns) {
+      const regex = pattern.startsWith("\\b");
       terms.push({
         pattern,
-        regex: pattern.startsWith("\\b"),
+        regex,
+        caseSensitive: regex ? isCaseSensitiveGuideRegexPattern(pattern) : false,
         matchKey: entity.matchKey,
         icon: entity.icon,
         iconShape: entity.iconShape,

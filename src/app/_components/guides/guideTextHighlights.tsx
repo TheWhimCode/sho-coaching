@@ -4,7 +4,7 @@ import clsx from "clsx";
 
 const GUIDE_PAW_SRC = "/images/guide/paw.png";
 import { Fragment, type ReactNode } from "react";
-import { flattenGuideTextEntities, GUIDE_TEXT_ENTITIES } from "@/lib/guides/guideTextEntities";
+import { flattenGuideTextEntities, GUIDE_TEXT_ENTITIES, isCaseSensitiveGuideRegexPattern } from "@/lib/guides/guideTextEntities";
 
 export const GUIDE_CONQUEROR_ORANGE = "#F97316";
 export const GUIDE_DARK_RED = "#B01212";
@@ -16,9 +16,10 @@ function escapeRegex(value: string) {
 }
 
 const HIGHLIGHT_REGEX = new RegExp(
-  `(${GUIDE_TEXT_TERMS.map(({ pattern, regex }) =>
-    regex ? pattern : escapeRegex(pattern)
-  ).join("|")})`,
+  `(${GUIDE_TEXT_TERMS.map(({ pattern, regex, caseSensitive }) => {
+    const body = regex ? pattern : escapeRegex(pattern);
+    return caseSensitive ? `(?-i:${body})` : body;
+  }).join("|")})`,
   "gi"
 );
 
@@ -59,7 +60,8 @@ function resolveEntity(part: string) {
   for (const entity of GUIDE_TEXT_ENTITIES) {
     for (const pattern of entity.patterns) {
       if (pattern.startsWith("\\b")) {
-        if (new RegExp(pattern, "i").test(part)) return entity;
+        const flags = isCaseSensitiveGuideRegexPattern(pattern) ? "" : "i";
+        if (new RegExp(`^${pattern}$`, flags).test(part)) return entity;
       } else if (pattern.toLowerCase() === lower) {
         return entity;
       }

@@ -16,8 +16,6 @@ const NAV = [
   { label: "Mino", href: "/about" },
   { label: "Coaching", href: "/coaching" },
   { label: "Guide", href: "/guide" },
-  { label: "Skillcheck", href: "/skillcheck" },
-  { label: "Patreon", href: "https://www.patreon.com/c/Shoaching", external: true },
 ];
 
 export default function NavBar({
