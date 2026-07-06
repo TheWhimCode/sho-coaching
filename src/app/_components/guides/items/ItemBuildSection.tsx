@@ -319,10 +319,36 @@ function isChoiceItemInactive(
 
 function connectorPath(
   start: { x: number; y: number },
-  end: { x: number; y: number }
+  end: { x: number; y: number },
+  bend: "horizontal-first" | "vertical-first" = "horizontal-first"
 ) {
+  if (bend === "vertical-first") {
+    const bendY = start.y + (end.y - start.y) * 0.55;
+    return `M ${start.x} ${start.y} C ${start.x} ${bendY}, ${end.x} ${bendY}, ${end.x} ${end.y}`;
+  }
+
   const bendX = start.x + (end.x - start.x) * 0.55;
   return `M ${start.x} ${start.y} C ${bendX} ${start.y}, ${bendX} ${end.y}, ${end.x} ${end.y}`;
+}
+
+type ConnectorBendOptions =
+  | "vertical-first"
+  | "horizontal-first"
+  | {
+      corner?: "vertical-first" | "horizontal-first";
+      sCurve?: "vertical-first" | "horizontal-first";
+    };
+
+function resolveConnectorPath(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  bend?: ConnectorBendOptions
+) {
+  if (!bend) return connectorPath(start, end);
+  if (typeof bend === "string") return connectorPathCorner(start, end, bend);
+  if (bend.corner) return connectorPathCorner(start, end, bend.corner);
+  if (bend.sCurve) return connectorPath(start, end, bend.sCurve);
+  return connectorPath(start, end);
 }
 
 /** Single-bend curve — one control point at the axis corner (no S-shape). */
@@ -927,7 +953,7 @@ function PreBuildStrip({ preBuild }: { preBuild: SerializedGuideItemPreBuild }) 
             href={preBuild.startingLink.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="pt-1.5 text-left text-[0.6rem] font-semibold leading-relaxed text-[#5865F2] transition hover:text-[#7289DA]"
+            className="pt-1.5 text-left text-[0.6rem] font-bold leading-relaxed text-[#5865F2] transition hover:text-[#7289DA]"
           >
             {preBuild.startingLink.label}
           </a>
@@ -1153,11 +1179,11 @@ function buildMobileForkMergeSharedPathConnectors(
     start: { x: number; y: number } | null,
     end: { x: number; y: number } | null,
     inactive = false,
-    bend?: "vertical-first" | "horizontal-first"
+    bend?: ConnectorBendOptions
   ) => {
     if (!start || !end) return;
     paths.push({
-      d: bend ? connectorPathCorner(start, end, bend) : connectorPath(start, end),
+      d: resolveConnectorPath(start, end, bend),
       inactive,
     });
   };
@@ -1181,17 +1207,29 @@ function buildMobileForkMergeSharedPathConnectors(
     const cycloKey = sharedPathDivergeKey(1, cyclo.id);
     const path1LdrKey = sharedPathTileKey(1, 0, path1.items[0].id);
 
-    pushPath(point(originKey, "left"), point(serpentsKey, "top"), path1Inactive, "horizontal-first");
-    pushPath(point(originKey, "bottom"), point(cycloKey, "top"), path1Inactive);
+    pushPath(
+      point(originKey, "left"),
+      point(serpentsKey, "top"),
+      isChoiceItemInactive(serpents.id, activeChoiceIds, path1Inactive),
+      "horizontal-first"
+    );
+    pushPath(
+      point(originKey, "bottom"),
+      point(cycloKey, "top"),
+      isChoiceItemInactive(cyclo.id, activeChoiceIds, path1Inactive),
+      { sCurve: "vertical-first" }
+    );
     pushPath(
       point(serpentsKey, "bottom"),
       point(path1LdrKey, "top"),
-      isChoiceItemInactive(serpents.id, activeChoiceIds, path1Inactive)
+      isChoiceItemInactive(serpents.id, activeChoiceIds, path1Inactive),
+      { sCurve: "vertical-first" }
     );
     pushPath(
       point(cycloKey, "bottom"),
       point(path1LdrKey, "top"),
-      isChoiceItemInactive(cyclo.id, activeChoiceIds, path1Inactive)
+      isChoiceItemInactive(cyclo.id, activeChoiceIds, path1Inactive),
+      { sCurve: "vertical-first" }
     );
   }
 
@@ -1976,7 +2014,6 @@ export default function ItemBuildSection({
                   className={clsx(
                     "px-5 py-3.5 text-sm font-semibold tracking-wide transition sm:px-6",
                     "ring-1 ring-inset",
-                    index === 0 && "sm:rounded-tl-2xl",
                     index === data.tabs.length - 1 && "sm:rounded-br-2xl",
                     active
                       ? "text-[#FAD4E8] ring-[#F0ABCF]/35"

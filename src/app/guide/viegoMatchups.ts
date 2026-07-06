@@ -39,6 +39,16 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
             "Don't face her a lot, but from my experience you just do too much damage for her to handle in teamfights. Just watch out for her early Raptors cheese.",
         },
         {
+          champion: "Ambessa",
+          explanation:
+            "She does nothing early. You outscale her. She can't R you because you can R out of it, which is disorienting for the Ambessa player (her animation ends instantly and she dashes).\n\nWhen she ults your team, you can instantly charge W and burst her.\n\nIf you get ahead you can oneshot her in one W. If not, don't fight her alone. But the reset is so good.",
+        },
+        {
+          champion: "Briar",
+          explanation:
+            "She will try to create chaos. Invade, lv 3 gank, stack early objectives.\n\nAvoid her early. Just drop camps if she invades. She doesn't wanna fullclear, so you'll often be able to take her camps back while she's ganking.\n\nJust relax, play consistent. From LDR you can burst her very easily. Watch out for her E damage reduction, you gotta wait that out if she casts it before your W.\n\nSimilar to Sylas, she has to perma engage and expose herself to your burst. If she R's you, you can instantly fully charged W her on arrival.",
+        },
+        {
           champion: "Rek'Sai",
           explanation:
             "Hard early, but really easy to kill later. Just don't EVER become her target, focus her whenever she engages someone else.\n\nHer engage range is surprising, but you can charge stun when she E's forward. She can't knock you up if she can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when she's ulting, especially on a team mate. She always ends up behind the target from where she jumped. Fully charge W > oneshot > transform > W to go underground + E to gapclose > knockup + R.",
@@ -84,9 +94,24 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
             "Not as hard as you'd think. If she R's you just hit her with W and burst her.\n\nBut her dogs are annoying cuz she can always facecheck you and she can dodge your R so make sure you fast combo or play around it.",
         },
         {
+          champion: "Nocturne",
+          explanation:
+            "He's surprisingly OP in early fights. Don't contest him, he will run you down.\n\nBad Nocturnes are easy kills from LDR, but his W can deny you the stun if you don't manage to smite it off. His ult makes teamfighting annoying, since you can't see the target you're trying to sneak up to.\n\nIf you get ahead it's very free, if you fall behind it's very annoying. If he ults you, make sure to R over a wall.",
+        },
+        {
+          champion: "Olaf",
+          explanation:
+            "Respect him early and farm. Play with your team, you never wanna 1v1 an Olaf until you can oneshot him in lategame.\n\nHe has to go in at some point and go super deep to keep his ult. You have enough damage to instantly burst him with your team.",
+        },
+        {
           champion: "Graves",
           explanation:
             "Very hard for Kraken Viego, but from LDR you can oneshot him and they never expect it. But you can't contest his early scuttle or Raptors invades, he gains way too much Armor.\n\nClear your camps on spawn, don't give him an angle and respect early drakes if your team doesn't have good setup/AP.",
+        },
+        {
+          champion: "Hecarim",
+          explanation:
+            "He relies heavily on having his Q stacks active. At scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He can not start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
         },
         {
           champion: "Jax",
@@ -97,6 +122,11 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
           champion: "Qiyana",
           explanation:
             "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
+        },
+        {
+          champion: "Zed",
+          explanation:
+            "If he ever ults you, a team mate or facechecks, he dies instantly to your W.\n\nHe won't invade you either, so you get to free scale.\n\nJust watch out if he finds you in the Jungle during lategame, he can kill you before you can get your damage off.",
         },
       ],
     },
@@ -117,6 +147,11 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
             "Insane reset and Dianas don't really buy Zhonyas in their first 3 items anymore, which makes her a super easy target. Serpents, Hubris, and LDR are all insane against her.",
         },
         {
+          champion: "Ekko",
+          explanation:
+            "You blow him up. He can't even ult in time. It's so hard to play lategame Ekko against your build, you severely limit his options and outscale him because of that.\n\nHe's as weak as you early and most Ekkos are really bad at hitting the W, which is the only ability that's scary to you.\n\nCheck if he builds mercs, he can R before you get your full combo off.",
+        },
+        {
           champion: "Jarvan IV",
           explanation:
             "Insane reset. He has to go in, and below GM every Jarvan disrespects you and randomly ints. The real GOAT Jarvan will play only to deny you resets, but y'all don't have to worry about that.",
@@ -130,6 +165,11 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
           champion: "Ivern",
           explanation:
             "You're an amazing Serpents builder and you can always reach him. If he has no Flash, he always dies.\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next ult and giving you survivability.",
+        },
+        {
+          champion: "Master Yi",
+          explanation:
+            "You have too much damage for him. Yis always wait for the perfect moment to go in, but if you're patient you can always make teamfights impossible.\n\nIf he facechecks he dies instantly, he can't 1v1 you at all from LDR either.\n\nKinda similar to Ekko, you reduce most of his options, which makes you outscale.",
         },
         {
           champion: "Nunu",
