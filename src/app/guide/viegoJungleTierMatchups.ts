@@ -27,10 +27,7 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Jax", possessionValue: 7 },
         { champion: "Nasus", possessionValue: 5 },
         { champion: "Rammus", possessionValue: 8 },
-        { champion: "Evelynn", possessionValue: 4 },
-        { champion: "Nocturne", possessionValue: 4 },
         { champion: "Shaco", possessionValue: 5 },
-        { champion: "Hecarim", possessionValue: 3 },
       ],
     },
     {
@@ -48,6 +45,7 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Karthus", possessionValue: 5 },
         { champion: "Kayn", possessionValue: 5 },
         { champion: "Maokai", possessionValue: 5 },
+        { champion: "Nocturne", possessionValue: 4 },
         { champion: "Poppy", possessionValue: 6 },
         { champion: "Shyvana", possessionValue: 6 },
         { champion: "Wukong", possessionValue: 6 },
@@ -63,7 +61,9 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       matchups: [
         { champion: "Briar", possessionValue: 4 },
         { champion: "Dr. Mundo", possessionValue: 5 },
+        { champion: "Evelynn", possessionValue: 4 },
         { champion: "Gragas", possessionValue: 5 },
+        { champion: "Hecarim", possessionValue: 3 },
         { champion: "Lillia", possessionValue: 5 },
         { champion: "Naafiri", possessionValue: 6 },
         { champion: "Nidalee", possessionValue: 3 },
