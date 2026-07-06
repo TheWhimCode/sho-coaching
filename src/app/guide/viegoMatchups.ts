@@ -11,12 +11,12 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Lee Sin",
           explanation:
-            "A good Lee Sin is impossible to deal with, which is why I ban him every game. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out. If you DO kill him, you get a crazy powerful reset, but idk, I just can't get it done...",
+            "A good Lee Sin is impossible to deal with, which is why I ban him every game. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out. If you DO kill him, you get a crazy powerful reset, but idk, I just can't get it done...\n\nAvoid early skirmishes and clear your camps on spawn to avoid getting invaded. When he hits level 6, don't fight him 1v1. Don't get overextend to try and get a reset when he has W ready to escape. Play around your team mates CC and don't expose yourself in skirmishes.",
         },
         {
           champion: "Talon",
           explanation:
-            "A real headache. Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead. He can just find you in your jungle, attacc, and you explode.\nIf you ever waste tempo, he will instantly snatch up all your camps. So I always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.",
+            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead. He can just find you in your jungle, attacc, and you explode.\nDon't ever waste tempo. He will instantly snatch up all your camps. So I always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\nBut his reset is pretty bad.",
         },
         {
           champion: "Kha'Zix",
@@ -32,6 +32,66 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
           champion: "Kindred",
           explanation:
             "They are very annoying in some games. Others she's fine. Depending on the draft, she can make teamfighting completely impossible for you, so you need to find picks or pray your team does some work.\nThey often early invade as well, which can disrupt your scaling a little. But I'm really most worried about her ult.",
+        },
+        {
+          champion: "Bel'Veth",
+          explanation:
+            "Don't face her a lot, but from my experience you just do too much damage for her to handle in teamfights. Just watch out for her early Raptors cheese.",
+        },
+        {
+          champion: "Rek'Sai",
+          explanation:
+            "Hard early, but really easy to kill later. Just don't EVER become his target, focus him whenever he engages someone else.\n\nHis engage range is surprising, but you can charge stun when he E's forward. He can't knock you up if he can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when he's ulting, especially on a team mate. He always ends up behind the target from where he jumped. Fully charge W > oneshot > transform > W to go underground + E to gapclose > knockup + R.",
+        },
+        {
+          champion: "Shaco",
+          explanation:
+            "AP Shaco is a nightmare for Viego. The boxes make it extremely difficult to play fights. Sometimes I try to sidelane to get into unorthodox angles on backliners.\n\nAD Shaco is pretty free if you don't die first 5 mins. Only AD Shaco invades early.\n\nIt's always the clone guys. Don't hit. 😭😭 Shaco has to do early drakes, if you get 1 it's big but don't die for it.",
+        },
+        {
+          champion: "Wukong",
+          explanation:
+            "Matchup is much easier with my build than with Kraken. Just respect his ult and trinity spikes, offset from your team and wait for him to overextend.",
+        },
+        {
+          champion: "Elise",
+          explanation:
+            "She always oneshots you if you facecheck her and you can't W her properly cuz of her dumbass spiders GOD I HATE THEM and why can she JUMP ON PLANTS. The reset is so mediocre too. Bad Elise is kinda free tho.",
+        },
+        {
+          champion: "Xin Zhao",
+          explanation:
+            "Depends a bit on the teamcomp, but it's actually quite difficult to kill Xin and he creates space for his team & wins early. If he dies it's free tho.\n\nRespect his early power. He won't invade though, cuz his lv 1-3 clear is super slow.",
+        },
+        {
+          champion: "Rammus",
+          explanation:
+            "I don't face Rammus at all, but people told me he's rly hard to beat. Just try to avoid him early and play around his W cooldown. I think it's easier than people say if you respect, his reset is insane for you, but I can't speak from experience.",
+        },
+        {
+          champion: "Kayn",
+          explanation:
+            "Blue Kayn is kinda like Qiyana, if he hits you first you die. But he's weaker early and won't abuse you as long as you don't get cheesed at Raptors.\n\nBe very careful when he has 3+ items, it's very easy for him to kill you. DD last angle.",
+        },
+        {
+          champion: "Nasus",
+          explanation:
+            "Don't fight objectives vs this guy when he has R. He can be 0/5 and still beats you 1v1 and his W is extremely annoying for you, cuz it ruins your HOB combo and you can't really get away.\n\nNasus R is completely broken. You need to wait it out. Lategame you can surprise him with your burst, you outscale.\n\nYou can try to cheese invade him at the start. Raptors -> his Blue + Gromp.",
+        },
+        {
+          champion: "Naafiri",
+          explanation:
+            "Not as hard as you'd think. If she R's you just hit her with W and burst her.\n\nBut her dogs are annoying cuz she can always facecheck you and she can dodge your R so make sure you fast combo or play around it.",
+        },
+        {
+          champion: "Graves",
+          explanation:
+            "Very hard for Kraken Viego, but from LDR you can oneshot him and they never expect it. But you can't contest his early scuttle or Raptors invades, he gains way too much Armor.\n\nClear your camps on spawn, don't give him an angle and respect early drakes if your team doesn't have good setup/AP.",
+        },
+        {
+          champion: "Jax",
+          explanation:
+            "His E dodges your R damage and autos. He will get either DD or Zhonyas and become extremely hard to kill. Never fight him. You can bust and win fights later if he messes up, but you rely on that. Don't get baited.",
         },
         {
           champion: "Qiyana",

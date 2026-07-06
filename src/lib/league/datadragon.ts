@@ -1,4 +1,6 @@
 // src/lib/league/datadragon.ts
+import { leagueStatIcon } from "@/lib/coaching/coachingClipVideos";
+
 export const FALLBACK_PATCH =
   process.env.NEXT_PUBLIC_DDRAGON_PATCH ?? '16.5.1';
 
@@ -25,6 +27,7 @@ const ALIAS: Record<string, string> = {
   'xinzhao': 'XinZhao',
   'renata glasc': 'Renata',
   'monkeyking': 'MonkeyKing',
+  'wukong': 'MonkeyKing',
   'nunu & willump': 'Nunu',
   'nunu and willump': 'Nunu',
   "reksai": 'RekSai',
@@ -46,8 +49,15 @@ function pascalize(name: string) {
 }
 
 export function resolveChampionId(name: string): string {
-  const s = (name || '').trim().toLowerCase();
-  return ALIAS[s] ?? pascalize(s);
+  const raw = (name || '').trim();
+  if (!raw) return '';
+
+  const normalized = raw.toLowerCase();
+  if (ALIAS[normalized]) return ALIAS[normalized];
+
+  if (/^[A-Z][A-Za-z0-9]*$/.test(raw)) return raw;
+
+  return pascalize(raw);
 }
 
 export function champSquareUrlById(id: string, patch = currentPatch) {
@@ -177,19 +187,20 @@ export function runeStyleIconUrl(styleId: number | string): string {
   return `https://ddragon.leagueoflegends.com/cdn/img/${icon}`;
 }
 
-const SHARD_BASENAME: Record<number, string> = {
-  5008: 'statmodsadaptiveforceicon',
-  5005: 'statmodsattackspeedicon',
-  5007: 'statmodscdrscalingicon',
-  5002: 'statmodsarmoricon',
-  5003: 'statmodsmagicresicon',
-  5001: 'statmodshealthscalingicon',
+const SHARD_ICON_FILE: Record<number, string> = {
+  5008: "AD.webp",
+  5005: "AS.webp",
+  5007: "AH.webp",
+  5002: "Armor.webp",
+  5003: "MR.webp",
+  5001: "Health.webp",
+  5010: "MS.webp",
+  5011: "Health.webp",
+  5013: "Tenacity.webp",
 };
 function statShardIconUrl(id: number): string | null {
-  const name = SHARD_BASENAME[id];
-  return name
-    ? `https://raw.communitydragon.org/latest/game/assets/perks/statmods/${name}.png`
-    : null;
+  const file = SHARD_ICON_FILE[id];
+  return file ? leagueStatIcon(file) : null;
 }
 
 export type RuneIconSet = {

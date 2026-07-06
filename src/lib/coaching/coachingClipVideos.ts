@@ -50,9 +50,9 @@ export function aboutOtherGameImage(filename: string) {
   return `${MEDIA_CDN}/about/otherGames/${encodeURIComponent(filename)}`;
 }
 
-/** League stat icon for skillcheck items / guide highlights. */
+/** League stat icon on Cloudflare (e.g. `league/AS.webp`). */
 export function leagueStatIcon(filename: string) {
-  return `${MEDIA_CDN}/league/statIcons/${encodeURIComponent(filename)}`;
+  return `${MEDIA_CDN}/league/${encodeURIComponent(filename)}`;
 }
 
 export const ABOUT_HERO_VIDEO = aboutVideo("ChallPromotionthinner.webm");

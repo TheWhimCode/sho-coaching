@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { FaTwitch } from "react-icons/fa6";
 import RunePageSection from "@/app/_components/guides/runes/RunePageSection";
 import ItemBuildSection from "@/app/_components/guides/items/ItemBuildSection";
-import MatchupSection from "@/app/_components/guides/matchups/MatchupSection";
+import JungleTierMatchupPanel from "@/app/_components/guides/matchups/JungleTierMatchupPanel";
 import CombosSection from "@/app/_components/guides/combos/CombosSection";
 import GameStagesSection from "@/app/_components/guides/gameStages/GameStagesSection";
 import ConventionalBuildSection from "@/app/_components/guides/conventional/ConventionalBuildSection";
@@ -13,7 +13,7 @@ import { LINK_TREE_LINKS } from "@/app/_components/linktree/linkTreeLinks";
 import { guideChampionIconImgClass, guidePageBg, GUIDE } from "@/lib/guides/guideTheme";
 import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
 import type { GuideItemPageData } from "@/lib/guides/itemGuideTypes";
-import type { GuideMatchupPageData } from "@/lib/guides/matchupGuideTypes";
+import type { GuideJungleTierMatchupPageData } from "@/lib/guides/matchupGuideTypes";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 import type { GuideGameStagePageData } from "@/lib/guides/gameStageGuideTypes";
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
@@ -21,9 +21,6 @@ import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBu
 const TWITCH_URL =
   LINK_TREE_LINKS.find((link) => link.id === "twitch")?.href ??
   "https://www.twitch.tv/itsMinooooo";
-
-/** Game Plan section — dev-only until ready to ship. */
-const GUIDE_GAME_PLAN_ENABLED = process.env.NODE_ENV !== "production";
 
 const twitchButtonClass =
   "shrink-0 items-center gap-2 rounded-full border border-[#9146FF]/45 bg-[#9146FF]/10 px-4 py-2.5 text-sm font-semibold text-[#BF94FF] transition hover:border-[#9146FF]/70 hover:bg-[#9146FF]/18 hover:text-[#D9B8FF] sm:px-4 sm:py-2.5 sm:text-base";
@@ -73,7 +70,7 @@ export default function ViegoGuideClient({
   runeData,
   itemData,
   conventionalBuildData,
-  matchupData,
+  jungleTierMatchupData,
   comboData,
   gameStagesData,
   viegoAbilityIcons,
@@ -83,7 +80,7 @@ export default function ViegoGuideClient({
   runeData: GuideRunePageData;
   itemData: GuideItemPageData;
   conventionalBuildData: GuideConventionalBuildPageData;
-  matchupData: GuideMatchupPageData;
+  jungleTierMatchupData: GuideJungleTierMatchupPageData;
   comboData: GuideComboPageData;
   gameStagesData: GuideGameStagePageData;
   viegoAbilityIcons: GuideViegoAbilityIcons;
@@ -157,7 +154,7 @@ export default function ViegoGuideClient({
         </div>
 
         <div className="mt-16">
-          <MatchupSection data={matchupData} guideTextIcons={guideTextIcons} />
+          <JungleTierMatchupPanel data={jungleTierMatchupData} guideTextIcons={guideTextIcons} />
         </div>
 
         <div className="mt-16">
@@ -168,11 +165,9 @@ export default function ViegoGuideClient({
           />
         </div>
 
-        {GUIDE_GAME_PLAN_ENABLED ? (
-          <div className="mt-16">
-            <GameStagesSection data={gameStagesData} guideTextIcons={guideTextIcons} />
-          </div>
-        ) : null}
+        <div className="mt-16">
+          <GameStagesSection data={gameStagesData} guideTextIcons={guideTextIcons} />
+        </div>
 
         <GuideFooter />
       </div>

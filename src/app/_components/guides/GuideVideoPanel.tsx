@@ -309,6 +309,7 @@ function useGuideVideoPlaybackRestore(
 function GuideVideoFrame({
   rootRef,
   showContent,
+  showControls,
   progressFillRef,
   progressTrackRef,
   progressSeekable,
@@ -320,6 +321,7 @@ function GuideVideoFrame({
 }: {
   rootRef: React.RefObject<HTMLDivElement | null>;
   showContent: boolean;
+  showControls: boolean;
   progressFillRef: React.RefObject<HTMLDivElement | null>;
   progressTrackRef: React.RefObject<HTMLDivElement | null>;
   progressSeekable?: boolean;
@@ -343,15 +345,15 @@ function GuideVideoFrame({
       }}
     >
       {children}
-      {showContent ? (
+      {showContent && showControls ? (
         <GuideVideoProgressBar
           fillRef={progressFillRef}
           trackRef={progressTrackRef}
           seekable={progressSeekable}
         />
       ) : null}
-      {showContent && !expanded ? <GuideVideoExpandButton onClick={onExpand} /> : null}
-      {showContent && expanded ? <GuideVideoCloseButton onClick={onClose} /> : null}
+      {showContent && showControls && !expanded ? <GuideVideoExpandButton onClick={onExpand} /> : null}
+      {showContent && showControls && expanded ? <GuideVideoCloseButton onClick={onClose} /> : null}
     </div>
   );
 
@@ -417,7 +419,15 @@ function useGuidePoster(posterSrc: string | null | undefined, inView: boolean) {
   return posterReady;
 }
 
-function LocalGuideVideo({ videoSrc, posterSrc }: { videoSrc: string; posterSrc?: string | null }) {
+function LocalGuideVideo({
+  videoSrc,
+  posterSrc,
+  interactiveControls = false,
+}: {
+  videoSrc: string;
+  posterSrc?: string | null;
+  interactiveControls?: boolean;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
@@ -465,7 +475,7 @@ function LocalGuideVideo({ videoSrc, posterSrc }: { videoSrc: string; posterSrc?
   const scrubbingRef = useGuideVideoProgressScrub(
     progressTrackRef,
     progressFillRef,
-    showContent,
+    showContent && interactiveControls,
     handleSeek
   );
 
@@ -541,9 +551,10 @@ function LocalGuideVideo({ videoSrc, posterSrc }: { videoSrc: string; posterSrc?
     <GuideVideoFrame
       rootRef={rootRef}
       showContent={showContent}
+      showControls={interactiveControls}
       progressFillRef={progressFillRef}
       progressTrackRef={progressTrackRef}
-      progressSeekable={showContent}
+      progressSeekable={showContent && interactiveControls}
       expanded={expanded}
       onExpand={handleExpand}
       onClose={handleClose}
@@ -589,10 +600,12 @@ function VimeoGuideVideo({
   embedUrl,
   posterSrc,
   title,
+  interactiveControls = false,
 }: {
   embedUrl: string;
   posterSrc?: string | null;
   title: string;
+  interactiveControls?: boolean;
 }) {
   const videoId = parseVimeoVideoId(embedUrl);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -634,7 +647,7 @@ function VimeoGuideVideo({
   const scrubbingRef = useGuideVideoProgressScrub(
     progressTrackRef,
     progressFillRef,
-    showContent && armed,
+    showContent && interactiveControls && armed,
     handleSeek
   );
 
@@ -799,9 +812,10 @@ function VimeoGuideVideo({
     <GuideVideoFrame
       rootRef={rootRef}
       showContent={showContent}
+      showControls={interactiveControls}
       progressFillRef={progressFillRef}
       progressTrackRef={progressTrackRef}
-      progressSeekable={showContent && armed}
+      progressSeekable={showContent && interactiveControls && armed}
       expanded={expanded}
       onExpand={handleExpand}
       onClose={handleClose}
@@ -863,15 +877,25 @@ export default function GuideVideoPanel({
   embedUrl,
   title = "Guide video",
   emptyLabel = "Video coming soon",
+  interactiveControls = false,
 }: {
   videoSrc?: string | null;
   posterSrc?: string | null;
   embedUrl?: string | null;
   title?: string;
   emptyLabel?: string;
+  /** Progress scrub + expand overlay — game stages section only. */
+  interactiveControls?: boolean;
 }) {
   if (videoSrc) {
-    return <LocalGuideVideo key={videoSrc} videoSrc={videoSrc} posterSrc={posterSrc} />;
+    return (
+      <LocalGuideVideo
+        key={videoSrc}
+        videoSrc={videoSrc}
+        posterSrc={posterSrc}
+        interactiveControls={interactiveControls}
+      />
+    );
   }
 
   if (embedUrl) {
@@ -881,6 +905,7 @@ export default function GuideVideoPanel({
         embedUrl={embedUrl}
         posterSrc={posterSrc}
         title={title}
+        interactiveControls={interactiveControls}
       />
     );
   }

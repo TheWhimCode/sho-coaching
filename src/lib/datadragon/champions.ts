@@ -70,16 +70,18 @@ export function resolveChampionId(input: string) {
   const raw = (input || "").trim();
   if (!raw) return "";
 
-  // Preserve correct casing if already a canonical DDragon id
-  if (/^[A-Z][A-Za-z0-9]*$/.test(raw)) return raw;
-
-  const s = raw
+  const normalized = raw
     .replace(/[’‘]/g, "'")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
 
-  return ALIAS[s] ?? pascalize(s);
+  if (ALIAS[normalized]) return ALIAS[normalized];
+
+  // Preserve canonical DDragon ids passed in directly (e.g. JarvanIV, KSante)
+  if (/^[A-Z][A-Za-z0-9]*$/.test(raw)) return raw;
+
+  return pascalize(raw);
 }
 
 export function championAvatarByName(name: string, patch = currentPatch) {

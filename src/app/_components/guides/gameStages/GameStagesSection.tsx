@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import GuideVideoPanel from "@/app/_components/guides/GuideVideoPanel";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import {
@@ -20,6 +20,14 @@ import type {
 
 const topicChipClass =
   "shrink-0 rounded-xl border px-3.5 py-2.5 text-left text-xs font-medium leading-snug transition sm:px-4 sm:py-3 sm:text-sm";
+
+function firstEnabledTopic(topics: GuideGameStageTopic[]) {
+  return topics.find((topic) => !topic.disabled);
+}
+
+function firstEnabledTopicId(topics: GuideGameStageTopic[]) {
+  return firstEnabledTopic(topics)?.id ?? "";
+}
 
 function CategoryTabs({
   categories,
@@ -76,20 +84,28 @@ function TopicNav({
       aria-label="Topics"
     >
       {topics.map((topic) => {
-        const active = topic.id === selectedId;
+        const active = !topic.disabled && topic.id === selectedId;
+        const disabled = Boolean(topic.disabled);
+
         return (
           <button
             key={topic.id}
             type="button"
             role="tab"
             aria-selected={active}
-            onClick={() => onSelect(topic.id)}
+            aria-disabled={disabled}
+            disabled={disabled}
+            onClick={() => {
+              if (!disabled) onSelect(topic.id);
+            }}
             className={clsx(
               topicChipClass,
               "sm:w-full",
-              active
-                ? "border-[#F0ABCF]/40 bg-[#F0ABCF]/10 text-[#FAD4E8] ring-1 ring-inset ring-[#F0ABCF]/25"
-                : "border-[#F0ABCF]/12 bg-[#16121A]/35 text-[#F5E6D3]/52 hover:border-[#F0ABCF]/20 hover:bg-[#F0ABCF]/5 hover:text-[#F5E6D3]/75"
+              disabled
+                ? "cursor-not-allowed border-[#F5E6D3]/8 bg-[#1E1724]/30 text-[#F5E6D3]/38 opacity-45"
+                : active
+                  ? "border-[#F0ABCF]/40 bg-[#F0ABCF]/10 text-[#FAD4E8] ring-1 ring-inset ring-[#F0ABCF]/25"
+                  : "border-[#F0ABCF]/12 bg-[#16121A]/35 text-[#F5E6D3]/52 hover:border-[#F0ABCF]/20 hover:bg-[#F0ABCF]/5 hover:text-[#F5E6D3]/75"
             )}
           >
             {topic.label}
@@ -130,7 +146,12 @@ function TopicArticle({
             key={index}
             className="max-w-3xl text-base leading-[1.9] text-[#F5E6D3]/68 sm:text-lg sm:leading-[1.85]"
           >
-            {renderGuideHighlightedText(paragraph, guideTextIcons)}
+            {paragraph.split("\n").map((line, lineIndex) => (
+              <Fragment key={lineIndex}>
+                {lineIndex > 0 ? <br /> : null}
+                {renderGuideHighlightedText(line, guideTextIcons)}
+              </Fragment>
+            ))}
           </p>
         ))}
       </div>
@@ -151,6 +172,7 @@ function TopicArticle({
                   posterSrc={video.posterSrc}
                   embedUrl={video.embedUrl}
                   title={video.label ?? topic.label}
+                  interactiveControls
                 />
               </div>
             );
@@ -171,20 +193,25 @@ export default function GameStagesSection({
   const [categoryId, setCategoryId] = useState(data.categories[0]?.id ?? "");
   const category =
     data.categories.find((entry) => entry.id === categoryId) ?? data.categories[0];
-  const [topicId, setTopicId] = useState(category?.topics[0]?.id ?? "");
+  const [topicId, setTopicId] = useState(
+    () => firstEnabledTopicId(category?.topics ?? [])
+  );
 
   useEffect(() => {
     const nextCategory =
       data.categories.find((entry) => entry.id === categoryId) ?? data.categories[0];
-    if (!nextCategory?.topics.some((topic) => topic.id === topicId)) {
-      setTopicId(nextCategory?.topics[0]?.id ?? "");
+    const currentTopic = nextCategory?.topics.find((topic) => topic.id === topicId);
+
+    if (!currentTopic || currentTopic.disabled) {
+      setTopicId(firstEnabledTopicId(nextCategory?.topics ?? []));
     }
   }, [categoryId, data.categories, topicId]);
 
   const topic =
-    category?.topics.find((entry) => entry.id === topicId) ?? category?.topics[0];
+    category?.topics.find((entry) => entry.id === topicId && !entry.disabled) ??
+    firstEnabledTopic(category?.topics ?? []);
 
-  if (!category || !topic) return null;
+  if (!category) return null;
 
   return (
     <section
@@ -214,19 +241,25 @@ export default function GameStagesSection({
 
         <div className={clsx(guideInnerPanelClass, "max-sm:!border-0 max-sm:!bg-transparent max-sm:!p-0 sm:!rounded-none sm:!border-0 sm:!bg-transparent sm:!p-0")}>
           <div className="flex flex-col gap-0 lg:flex-row lg:items-start">
-            <aside className="border-b border-[#F0ABCF]/10 px-6 py-5 sm:px-8 lg:sticky lg:top-24 lg:w-[min(100%,17rem)] lg:shrink-0 lg:border-b-0 lg:border-r lg:py-8 lg:pl-8 lg:pr-6 xl:w-72">
+            <aside className="max-sm:px-6 max-sm:py-5 border-b border-[#F0ABCF]/10 sm:py-5 sm:pl-4 sm:pr-6 lg:sticky lg:top-24 lg:w-[min(100%,13rem)] lg:shrink-0 lg:border-b-0 lg:border-r lg:py-8 lg:pl-4 lg:pr-8 xl:w-52">
               <p className="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
                 Topics
               </p>
               <TopicNav
                 topics={category.topics}
-                selectedId={topic.id}
+                selectedId={topic?.id ?? ""}
                 onSelect={setTopicId}
               />
             </aside>
 
-            <div className="min-w-0 flex-1 px-6 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10 xl:px-12 xl:py-12">
-              <TopicArticle topic={topic} guideTextIcons={guideTextIcons} />
+            <div className="min-w-0 flex-1 px-6 pb-4 pt-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4">
+              {topic ? (
+                <TopicArticle topic={topic} guideTextIcons={guideTextIcons} />
+              ) : (
+                <p className="text-sm text-[#F5E6D3]/48 sm:text-base">
+                  More topics coming soon.
+                </p>
+              )}
             </div>
           </div>
         </div>

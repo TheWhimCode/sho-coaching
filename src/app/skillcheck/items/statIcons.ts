@@ -1,11 +1,11 @@
 /**
  * Item stat icons for skillcheck items result.
- * Icons are served from Cloudflare at `league/statIcons/`.
+ * Icons are served from Cloudflare at `league/` (e.g. `https://videos.its-mino.com/league/AS.webp`).
  */
 
 import { leagueStatIcon } from "@/lib/coaching/coachingClipVideos";
 
-/** Stat phrase (from item description) → icon filename in league/statIcons. */
+/** Stat phrase (from item description) → icon filename on the league CDN. */
 const STAT_ICON_MAP: Record<string, string> = {
   "attack damage": "AD.webp",
   "ability power": "AP.webp",

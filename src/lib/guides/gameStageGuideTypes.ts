@@ -12,6 +12,7 @@ export type GuideGameStageTopic = {
   /** Multi-paragraph body — separate paragraphs with blank lines. */
   body: string;
   videos?: GuideGameStageVideo[];
+  disabled?: boolean;
 };
 
 export type GuideGameStageCategory = {

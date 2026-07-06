@@ -208,12 +208,6 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
   { patterns: ["\\bDD\\b"], matchKey: "dd", color: GUIDE_CONQUEROR_ORANGE, icon: { kind: "item", id: "6333" } },
   { patterns: ["\\bGA\\b"], matchKey: "ga", icon: { kind: "item", id: "3026" } },
   { patterns: ["\\bQSS\\b"], matchKey: "qss", icon: { kind: "item", id: "3140" } },
-  {
-    patterns: ["\\bvision\\b"],
-    matchKey: "vision",
-    color: GUIDE_SHIELDBOW_RED,
-    icon: { kind: "item", id: "2055" },
-  },
   { patterns: ["Flash"], matchKey: "flash", color: "#FFE566", icon: { kind: "spell", id: 4 } },
   {
     patterns: ["Ignite"],

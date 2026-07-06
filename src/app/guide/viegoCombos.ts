@@ -3,7 +3,6 @@ import { guideComboThumbnail, guideComboVideo } from "@/lib/guides/guideComboVid
 
 export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
   heading: "Combo Guide",
-  subtitle: "How and when to use each combo",
   combos: [
     {
       id: "q-extension",
