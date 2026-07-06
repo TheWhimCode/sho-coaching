@@ -9,7 +9,9 @@ import { FaXTwitter } from "react-icons/fa6";
 
 const EXIT_DURATION = 0.35;
 
-const NAV = [
+type NavItem = { label: string; href: string; external?: boolean };
+
+const NAV: NavItem[] = [
   { label: "Mino", href: "/about" },
   { label: "Coaching", href: "/coaching" },
   { label: "Guide", href: "/guide" },

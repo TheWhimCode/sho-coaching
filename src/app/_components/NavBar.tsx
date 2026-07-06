@@ -12,7 +12,9 @@ import { FaXTwitter } from "react-icons/fa6";
 import { useNavChrome } from "@/app/_components/navChrome";
 import { usePathname } from "next/navigation";
 
-const NAV = [
+type NavItem = { label: string; href: string; external?: boolean };
+
+const NAV: NavItem[] = [
   { label: "Mino", href: "/about" },
   { label: "Coaching", href: "/coaching" },
   { label: "Guide", href: "/guide" },
