@@ -325,8 +325,7 @@ export default function JungleTierMatchupPanel({
     [data.tiers]
   );
 
-  const defaultId = clickableMatchups[0]?.matchup.id ?? null;
-  const [selectedId, setSelectedId] = useState<string | null>(defaultId);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const tierImageUrls = useMemo(() => collectTierImageUrls(data), [data]);

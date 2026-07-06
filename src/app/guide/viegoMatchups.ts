@@ -31,7 +31,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Kindred",
           explanation:
-            "They are very annoying in some games. Others she's fine. Depending on the draft, she can make teamfighting completely impossible for you, so you need to find picks or pray your team does some work.\nThey often early invade as well, which can disrupt your scaling a little. But I'm really most worried about her ult.",
+            "They are very annoying in some games. Others they're fine. Depending on the draft, they can make teamfighting completely impossible for you, so you need to find picks or pray your team does some work.\nThey often early invade as well, which can disrupt your scaling a little. But I'm really most worried about their ult.",
         },
         {
           champion: "Bel'Veth",
@@ -96,7 +96,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Qiyana",
           explanation:
-            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with W > auto > Q > auto/R unless she goes DD\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
+            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
         },
       ],
     },
