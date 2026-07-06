@@ -41,7 +41,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Rek'Sai",
           explanation:
-            "Hard early, but really easy to kill later. Just don't EVER become his target, focus him whenever he engages someone else.\n\nHis engage range is surprising, but you can charge stun when he E's forward. He can't knock you up if he can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when he's ulting, especially on a team mate. He always ends up behind the target from where he jumped. Fully charge W > oneshot > transform > W to go underground + E to gapclose > knockup + R.",
+            "Hard early, but really easy to kill later. Just don't EVER become her target, focus her whenever she engages someone else.\n\nHer engage range is surprising, but you can charge stun when she E's forward. She can't knock you up if she can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when she's ulting, especially on a team mate. She always ends up behind the target from where she jumped. Fully charge W > oneshot > transform > W to go underground + E to gapclose > knockup + R.",
         },
         {
           champion: "Shaco",
