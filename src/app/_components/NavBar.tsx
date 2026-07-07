@@ -136,7 +136,7 @@ export default function NavBar({
           width={38}
           height={38}
           priority
-          sizes="38px"
+          unoptimized
           className="rounded-md"
         />
       </Link>

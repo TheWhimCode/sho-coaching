@@ -116,8 +116,8 @@ export default function ViegoGuideClient({
                   alt="Viego"
                   fill
                   className={guideChampionIconImgClass}
-                  sizes="96px"
                   priority
+                  unoptimized
                 />
               </div>
               <h1

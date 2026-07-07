@@ -256,6 +256,7 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
               className="object-cover"
               sizes="(max-width: 1200px) 50vw, 33vw"
               priority
+              unoptimized
               fetchPriority="high"
             />
           </div>
@@ -294,6 +295,7 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
                   fill
                   className="object-cover"
                   priority
+                  unoptimized
                   fetchPriority="high"
                 />
                 {item.badge ? (
