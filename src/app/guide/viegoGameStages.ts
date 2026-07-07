@@ -7,15 +7,26 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
     {
       id: "early",
       label: "Early",
+      subtitle:
+        "Before first item: fullclear, scale, don't waste your tempo, prevent invades.",
       topics: [
         {
           id: "early-gameplan",
           label: "Gameplan",
           summary:
             "Your main priority is to get to 3 items as quickly as possible.",
+          steps: [
+            {
+              label: "Step 1",
+              text: "Get yourself a lead. You need to get to your spikes.",
+            },
+            {
+              label: "Step 2",
+              text: "Take over the map. Invade, play for your wincon, secure objectives.",
+            },
+          ],
           body: [
             "As a carry jungler, there are two steps to winning:",
-            "Step 1: Get yourself a lead. You need to get to your spikes.\nStep 2: Take over the map. Invade, play for your wincon, secure objectives.",
             "Start with step 1 every game. Path to whatever side is most likely to get you an advantage. CC setup, volatile matchups, prio if you're high elo, etc.",
             "Most plays you're going for should happen when your camps are all cleared. If you waste time or lose HP, you open yourself up to getting invaded way too early into the game.",
             "Mute all at the start. Your team mates will want you to do drakes and gank, but if you make bad decisions and fall behind your champion stops functioning.",
@@ -61,6 +72,7 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
     {
       id: "mid",
       label: "Mid",
+      subtitle: "During item 1-2: adjust to the gamestate!",
       topics: [
         {
           id: "mid-from-ahead",
@@ -87,6 +99,8 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
     {
       id: "late",
       label: "Late",
+      subtitle:
+        "From LDR onwards: Find picks and high value fights around enemy camps and objectives",
       topics: [
         {
           id: "late-finding-picks",
@@ -122,6 +136,8 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
     {
       id: "teamfights",
       label: "Teamfights",
+      subtitle:
+        "Play like an assassin. Set up, be patient, wait for your angle. Then burst & reset.",
       topics: [
         {
           id: "tf-patience",

@@ -116,6 +116,31 @@ function TopicNav({
   );
 }
 
+function GuideStepCallout({
+  steps,
+  guideTextIcons,
+}: {
+  steps: NonNullable<GuideGameStageTopic["steps"]>;
+  guideTextIcons: Record<string, string>;
+}) {
+  return (
+    <div className="max-w-3xl border border-[#F0ABCF]/18 bg-[#1E1724]/35 px-4 py-3">
+      {steps.map((step, index) => (
+        <p
+          key={step.label}
+          className={clsx(
+            "text-base leading-[1.75] text-[#F5E6D3]/72 sm:text-lg sm:leading-[1.7]",
+            index > 0 && "mt-1.5"
+          )}
+        >
+          <span className="font-semibold text-[#F0ABCF]">{step.label}:</span>{" "}
+          {renderGuideHighlightedText(step.text, guideTextIcons)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function TopicArticle({
   topic,
   guideTextIcons,
@@ -142,17 +167,19 @@ function TopicArticle({
 
       <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
         {paragraphs.map((paragraph, index) => (
-          <p
-            key={index}
-            className="max-w-3xl text-base leading-[1.9] text-[#F5E6D3]/68 sm:text-lg sm:leading-[1.85]"
-          >
-            {paragraph.split("\n").map((line, lineIndex) => (
-              <Fragment key={lineIndex}>
-                {lineIndex > 0 ? <br /> : null}
-                {renderGuideHighlightedText(line, guideTextIcons)}
-              </Fragment>
-            ))}
-          </p>
+          <Fragment key={index}>
+            <p className="max-w-3xl text-base leading-[1.9] text-[#F5E6D3]/68 sm:text-lg sm:leading-[1.85]">
+              {paragraph.split("\n").map((line, lineIndex) => (
+                <Fragment key={lineIndex}>
+                  {lineIndex > 0 ? <br /> : null}
+                  {renderGuideHighlightedText(line, guideTextIcons)}
+                </Fragment>
+              ))}
+            </p>
+            {topic.steps && topic.steps.length > 0 && index === 0 ? (
+              <GuideStepCallout steps={topic.steps} guideTextIcons={guideTextIcons} />
+            ) : null}
+          </Fragment>
         ))}
       </div>
 
