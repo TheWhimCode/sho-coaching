@@ -2,8 +2,11 @@
 
 import clsx from "clsx";
 import { Fragment, useEffect, useState } from "react";
+import GuideImage from "@/app/_components/guides/GuideImage";
+import { GuideLabelWithNew } from "@/app/_components/guides/GuideNewBadge";
 import GuideVideoPanel from "@/app/_components/guides/GuideVideoPanel";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { categoryHasNewContent, topicIsNew } from "@/lib/guides/guideWhatsNew";
 import {
   guideInnerPanelClass,
   guideMobileFlushPanelClass,
@@ -60,7 +63,12 @@ function CategoryTabs({
                 : "bg-[#16121A]/55 text-[#F5E6D3]/48 hover:bg-[#F0ABCF]/7 hover:text-[#F5E6D3]/72"
             )}
           >
-            {category.label}
+            <GuideLabelWithNew
+              isNew={categoryHasNewContent(category)}
+              badgeClassName="sm:text-[10px]"
+            >
+              {category.label}
+            </GuideLabelWithNew>
           </button>
         );
       })}
@@ -108,7 +116,9 @@ function TopicNav({
                   : "border-[#F0ABCF]/12 bg-[#16121A]/35 text-[#F5E6D3]/52 hover:border-[#F0ABCF]/20 hover:bg-[#F0ABCF]/5 hover:text-[#F5E6D3]/75"
             )}
           >
-            {topic.label}
+            <GuideLabelWithNew isNew={topicIsNew(topic)}>
+              {topic.label}
+            </GuideLabelWithNew>
           </button>
         );
       })}
@@ -141,6 +151,93 @@ function GuideStepCallout({
   );
 }
 
+function GuideTopicParagraphs({
+  text,
+  guideTextIcons,
+  steps,
+  showStepsAfterFirst,
+}: {
+  text: string;
+  guideTextIcons: Record<string, string>;
+  steps?: GuideGameStageTopic["steps"];
+  showStepsAfterFirst?: boolean;
+}) {
+  const paragraphs = text.split(/\n\n+/).filter(Boolean);
+
+  return (
+    <>
+      {paragraphs.map((paragraph, index) => (
+        <Fragment key={index}>
+          <p className="max-w-3xl text-base leading-[1.9] text-[#F5E6D3]/68 sm:text-lg sm:leading-[1.85]">
+            {paragraph.split("\n").map((line, lineIndex) => (
+              <Fragment key={lineIndex}>
+                {lineIndex > 0 ? <br /> : null}
+                {renderGuideHighlightedText(line, guideTextIcons)}
+              </Fragment>
+            ))}
+          </p>
+          {showStepsAfterFirst && steps && steps.length > 0 && index === 0 ? (
+            <GuideStepCallout steps={steps} guideTextIcons={guideTextIcons} />
+          ) : null}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function GuideTopicBanner({
+  topic,
+  quote,
+  guideTextIcons,
+}: {
+  topic: GuideGameStageTopic;
+  quote?: GuideGameStageTopic["quote"];
+  guideTextIcons: Record<string, string>;
+}) {
+  if (!topic.bannerImageSrc) return null;
+
+  return (
+    <figure className="max-w-3xl">
+      {quote ? (
+        <figcaption className="mb-3 sm:mb-4">
+          {quote.lead ? (
+            <p className="text-base leading-relaxed text-[#F5E6D3]/58 sm:text-lg">
+              {renderGuideHighlightedText(quote.lead, guideTextIcons)}
+            </p>
+          ) : null}
+          <p
+            className={clsx(
+              "text-center text-base font-bold leading-relaxed text-[#FAD4E8]/86 sm:text-lg",
+              quote.lead ? "mt-1" : undefined
+            )}
+          >
+            “{quote.text}”
+          </p>
+        </figcaption>
+      ) : null}
+      <div className="relative h-36 w-full overflow-hidden rounded-xl sm:h-40 md:h-44">
+        <GuideImage
+          src={topic.bannerImageSrc}
+          alt={topic.bannerImageAlt ?? ""}
+          className="absolute inset-0 h-full w-full object-cover object-[72%_center] brightness-[0.78]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-xl"
+          style={{
+            background: [
+              "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 30%)",
+              "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 30%)",
+              "linear-gradient(to right, rgba(0,0,0,0.45) 0%, transparent 24%)",
+              "linear-gradient(to left, rgba(0,0,0,0.45) 0%, transparent 24%)",
+            ].join(", "),
+          }}
+        />
+      </div>
+    </figure>
+  );
+}
+
 function TopicArticle({
   topic,
   guideTextIcons,
@@ -148,7 +245,6 @@ function TopicArticle({
   topic: GuideGameStageTopic;
   guideTextIcons: Record<string, string>;
 }) {
-  const paragraphs = topic.body.split(/\n\n+/).filter(Boolean);
   const videos = topic.videos ?? [];
   const hasVideos = videos.some((video) => video.videoSrc || video.embedUrl);
 
@@ -165,23 +261,31 @@ function TopicArticle({
         ) : null}
       </header>
 
-      <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
-        {paragraphs.map((paragraph, index) => (
-          <Fragment key={index}>
-            <p className="max-w-3xl text-base leading-[1.9] text-[#F5E6D3]/68 sm:text-lg sm:leading-[1.85]">
-              {paragraph.split("\n").map((line, lineIndex) => (
-                <Fragment key={lineIndex}>
-                  {lineIndex > 0 ? <br /> : null}
-                  {renderGuideHighlightedText(line, guideTextIcons)}
-                </Fragment>
-              ))}
-            </p>
-            {topic.steps && topic.steps.length > 0 && index === 0 ? (
-              <GuideStepCallout steps={topic.steps} guideTextIcons={guideTextIcons} />
-            ) : null}
-          </Fragment>
-        ))}
+      <div className="mt-6 space-y-4 sm:mt-8">
+        <GuideTopicParagraphs
+          text={topic.body}
+          guideTextIcons={guideTextIcons}
+          steps={topic.steps}
+          showStepsAfterFirst
+        />
       </div>
+
+      <div className="mt-5 sm:mt-6">
+        <GuideTopicBanner
+          topic={topic}
+          quote={topic.quote}
+          guideTextIcons={guideTextIcons}
+        />
+      </div>
+
+      {topic.bodyAfterBanner ? (
+        <div className="mt-6 space-y-4 sm:mt-8">
+          <GuideTopicParagraphs
+            text={topic.bodyAfterBanner}
+            guideTextIcons={guideTextIcons}
+          />
+        </div>
+      ) : null}
 
       {hasVideos ? (
         <div className="mt-10 space-y-8 border-t border-[#F0ABCF]/10 pt-8 sm:mt-12 sm:space-y-10 sm:pt-10">
@@ -204,6 +308,15 @@ function TopicArticle({
               </div>
             );
           })}
+        </div>
+      ) : null}
+
+      {topic.bodyAfterVideos ? (
+        <div className="mt-6 space-y-4 sm:mt-8">
+          <GuideTopicParagraphs
+            text={topic.bodyAfterVideos}
+            guideTextIcons={guideTextIcons}
+          />
         </div>
       ) : null}
     </article>

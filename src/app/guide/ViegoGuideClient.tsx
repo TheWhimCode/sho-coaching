@@ -7,14 +7,22 @@ import RunePageSection from "@/app/_components/guides/runes/RunePageSection";
 import ItemBuildSection from "@/app/_components/guides/items/ItemBuildSection";
 import JungleTierMatchupPanel from "@/app/_components/guides/matchups/JungleTierMatchupPanel";
 import CombosSection from "@/app/_components/guides/combos/CombosSection";
+import PossessionsSection from "@/app/_components/guides/possessions/PossessionsSection";
 import GameStagesSection from "@/app/_components/guides/gameStages/GameStagesSection";
 import ConventionalBuildSection from "@/app/_components/guides/conventional/ConventionalBuildSection";
+import GuideSectionIndex from "@/app/_components/guides/GuideSectionIndex";
 import { LINK_TREE_LINKS } from "@/app/_components/linktree/linkTreeLinks";
 import { guideChampionIconImgClass, guidePageBg, GUIDE } from "@/lib/guides/guideTheme";
+import {
+  gameStagesSectionHasNew,
+  jungleMatchupsSectionHasNew,
+} from "@/lib/guides/guideWhatsNew";
+import { SHOW_GUIDE_POSSESSIONS_SECTION } from "@/lib/guides/guideFeatureFlags";
 import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
 import type { GuideItemPageData } from "@/lib/guides/itemGuideTypes";
 import type { GuideJungleTierMatchupPageData } from "@/lib/guides/matchupGuideTypes";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
+import type { GuidePossessionPageData } from "@/lib/guides/possessionGuideTypes";
 import type { GuideGameStagePageData } from "@/lib/guides/gameStageGuideTypes";
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
 
@@ -72,6 +80,7 @@ export default function ViegoGuideClient({
   conventionalBuildData,
   jungleTierMatchupData,
   comboData,
+  possessionsData,
   gameStagesData,
   viegoAbilityIcons,
   championIcon,
@@ -82,17 +91,46 @@ export default function ViegoGuideClient({
   conventionalBuildData: GuideConventionalBuildPageData;
   jungleTierMatchupData: GuideJungleTierMatchupPageData;
   comboData: GuideComboPageData;
+  possessionsData: GuidePossessionPageData;
   gameStagesData: GuideGameStagePageData;
   viegoAbilityIcons: GuideViegoAbilityIcons;
   championIcon: string;
   guideTextIcons: Record<string, string>;
 }) {
+  const indexEntries = [
+    { id: "runes", label: runeData.build.heading },
+    { id: "items", label: itemData.heading },
+    { id: "conventional-build", label: conventionalBuildData.heading },
+    {
+      id: "matchups",
+      label: jungleTierMatchupData.title,
+      isNew: jungleMatchupsSectionHasNew(jungleTierMatchupData),
+    },
+    { id: "combos", label: comboData.heading },
+    ...(SHOW_GUIDE_POSSESSIONS_SECTION
+      ? [{ id: "possessions", label: possessionsData.heading }]
+      : []),
+    {
+      id: "game-stages",
+      label: gameStagesData.heading,
+      isNew: gameStagesSectionHasNew(gameStagesData),
+    },
+  ];
+
   return (
     <div className="relative min-h-screen" style={{ color: GUIDE.text }}>
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0"
         style={{ background: guidePageBg }}
+      />
+
+      <GuideSectionIndex
+        entries={indexEntries}
+        className="pointer-events-auto fixed top-28 z-30 hidden xl:block"
+        style={{
+          left: "max(1rem, calc((100vw - 72rem) / 2 - 11rem))",
+        }}
       />
 
       <div className="relative z-10 mx-auto min-w-0 max-w-6xl overflow-x-hidden px-0 pb-20 pt-20 sm:overflow-visible sm:px-10 sm:pt-24 lg:px-16 lg:pt-28 xl:px-24">
@@ -164,6 +202,16 @@ export default function ViegoGuideClient({
             guideTextIcons={guideTextIcons}
           />
         </div>
+
+        {SHOW_GUIDE_POSSESSIONS_SECTION ? (
+          <div className="mt-16">
+            <PossessionsSection
+              data={possessionsData}
+              abilityIcons={viegoAbilityIcons}
+              guideTextIcons={guideTextIcons}
+            />
+          </div>
+        ) : null}
 
         <div className="mt-16">
           <GameStagesSection data={gameStagesData} guideTextIcons={guideTextIcons} />

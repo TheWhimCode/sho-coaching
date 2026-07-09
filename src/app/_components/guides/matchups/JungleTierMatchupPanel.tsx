@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import GuideImage from "@/app/_components/guides/GuideImage";
+import GuideNewBadge from "@/app/_components/guides/GuideNewBadge";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import type {
@@ -93,13 +94,16 @@ function TierIconButton({
       disabled={!clickable}
       onClick={clickable ? onSelect : undefined}
       className={clsx(
-        "flex min-w-0 flex-col items-center rounded-lg border px-1 py-1.5 sm:py-2",
+        "relative flex min-w-0 flex-col items-center rounded-lg border px-1 py-1.5 sm:py-2",
         clickable
           ? "transition-[border-color,background-color,box-shadow] duration-200 ease-out"
           : "cursor-not-allowed border-[#F5E6D3]/8 bg-[#1E1724]/30 opacity-45",
         clickable && (selected ? accent.cardSelected : accent.cardIdle)
       )}
     >
+      {matchup.isNew ? (
+        <GuideNewBadge className="pointer-events-none absolute right-2 top-1 z-10 text-[7px]" />
+      ) : null}
       <div
         className={clsx(
           "relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-[#352839]/80 ring-2 sm:h-9 sm:w-9",

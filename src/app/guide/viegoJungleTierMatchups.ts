@@ -66,8 +66,14 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Gwen", possessionValue: 4 },
         { champion: "Hecarim", possessionValue: 7 },
         { champion: "Lillia", possessionValue: 5 },
-        { champion: "Naafiri", possessionValue: 6 },
-        { champion: "Nidalee", possessionValue: 3 },
+        { champion: "Naafiri", possessionValue: 6, isNew: true },
+        {
+          champion: "Nidalee",
+          possessionValue: 2,
+          isNew: true,
+          explanation:
+            "She's super strong early. Almost always gets a lead in the beginning, thanks to her extremely high tempo and powerful neutral game. But struggles a lot with invading you.\n\nNida doesn't really have the damage to kill you in midgame and has no CC to lock you down.\n\nIn teamfights she's not a threat and if she ever facechecks into you, burst her. You outscale her and if she missteps on your spikes, she gets oneshot.\n\nShe is slippery though and will buy Zhonya's eventually. Don't get baited out of position for a low value reset.",
+        },
         { champion: "Olaf", possessionValue: 5 },
         { champion: "Rek'Sai", possessionValue: 6 },
         { champion: "Skarner", possessionValue: 6 },

@@ -15,13 +15,57 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-const HIGHLIGHT_REGEX = new RegExp(
-  `(${GUIDE_TEXT_TERMS.map(({ pattern, regex, caseSensitive }) => {
-    const body = regex ? pattern : escapeRegex(pattern);
-    return caseSensitive ? `(?-i:${body})` : body;
-  }).join("|")})`,
-  "gi"
-);
+type GuideTermMatch = { start: number; end: number; text: string };
+
+function findGuideTermMatches(text: string): GuideTermMatch[] {
+  const spans: GuideTermMatch[] = [];
+
+  for (const term of GUIDE_TEXT_TERMS) {
+    const body = term.regex ? term.pattern : escapeRegex(term.pattern);
+    const flags = term.caseSensitive ? "g" : "gi";
+    const re = new RegExp(body, flags);
+    let match: RegExpExecArray | null;
+
+    while ((match = re.exec(text)) !== null) {
+      const start = match.index;
+      const end = start + match[0].length;
+      const overlaps = spans.some((span) => start < span.end && end > span.start);
+      if (!overlaps) {
+        spans.push({ start, end, text: match[0] });
+      }
+      if (match[0].length === 0) {
+        re.lastIndex += 1;
+      }
+    }
+  }
+
+  spans.sort((a, b) => a.start - b.start);
+  return spans;
+}
+
+function splitGuideHighlightedText(text: string): string[] {
+  if (!text) return [];
+
+  const matches = findGuideTermMatches(text);
+  if (matches.length === 0) return [text];
+
+  const parts: string[] = [];
+  let pos = 0;
+
+  for (const match of matches) {
+    if (match.start > pos) {
+      parts.push(text.slice(pos, match.start));
+    }
+    parts.push(match.text);
+    pos = match.end;
+  }
+
+  if (pos < text.length) {
+    parts.push(text.slice(pos));
+  }
+
+  return parts;
+}
 
 /** All-caps words in prose (AND, MEGA, DPS, …) — not single letters like Q/R. */
 const ALL_CAPS_WORD_REGEX = /\b[A-Z]{2,}(?:'[A-Z]+)?\b/g;
@@ -50,6 +94,47 @@ function renderPlainWithCapsBold(text: string, segmentKey: number): ReactNode {
 
   if (lastIndex < text.length) {
     nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+}
+
+const CURLY_QUOTE_RE = /“([^”]+)”/g;
+
+function renderPlainWithQuotesAndCaps(text: string, segmentKey: number): ReactNode {
+  CURLY_QUOTE_RE.lastIndex = 0;
+  if (!CURLY_QUOTE_RE.test(text)) {
+    return renderPlainWithCapsBold(text, segmentKey);
+  }
+
+  CURLY_QUOTE_RE.lastIndex = 0;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let partIndex = 0;
+
+  while ((match = CURLY_QUOTE_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(
+        <Fragment key={`${segmentKey}-pre-${partIndex}`}>
+          {renderPlainWithCapsBold(text.slice(lastIndex, match.index), segmentKey * 100 + partIndex)}
+        </Fragment>
+      );
+    }
+    nodes.push(
+      <em key={`${segmentKey}-quote-${partIndex++}`} className="italic">
+        “{match[1]}”
+      </em>
+    );
+    lastIndex = CURLY_QUOTE_RE.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(
+      <Fragment key={`${segmentKey}-post`}>
+        {renderPlainWithCapsBold(text.slice(lastIndex), segmentKey * 100 + 99)}
+      </Fragment>
+    );
   }
 
   return nodes;
@@ -142,7 +227,7 @@ export function renderGuideHighlightedText(
   text: string,
   termIcons: Record<string, string> = {}
 ): ReactNode[] {
-  return text.split(HIGHLIGHT_REGEX).map((part, index) => {
+  return splitGuideHighlightedText(text).map((part, index) => {
     if (!part) return null;
 
     const entity = resolveEntity(part);
@@ -151,7 +236,7 @@ export function renderGuideHighlightedText(
       return renderColoredPart(part, entity, icon, index);
     }
 
-    return <Fragment key={index}>{renderPlainWithCapsBold(part, index)}</Fragment>;
+    return <Fragment key={index}>{renderPlainWithQuotesAndCaps(part, index)}</Fragment>;
   });
 }
 

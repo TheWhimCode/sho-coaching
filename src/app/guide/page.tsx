@@ -14,6 +14,7 @@ import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
 import { VIEGO_JUNGLE_TIER_MATCHUPS } from "./viegoJungleTierMatchups";
 import { VIEGO_CONVENTIONAL_BUILD } from "./viegoConventionalBuild";
 import { VIEGO_COMBO_SECTION } from "./viegoCombos";
+import { VIEGO_POSSESSIONS_SECTION } from "./viegoPossessions";
 import { VIEGO_GAME_STAGES_SECTION } from "./viegoGameStages";
 import ViegoGuideClient from "./ViegoGuideClient";
 
@@ -64,6 +65,7 @@ export default async function ViegoGuidePage() {
         guideTextIcons={guideTextIcons}
         jungleTierMatchupData={jungleTierMatchupData}
         comboData={VIEGO_COMBO_SECTION}
+        possessionsData={VIEGO_POSSESSIONS_SECTION}
         gameStagesData={VIEGO_GAME_STAGES_SECTION}
         viegoAbilityIcons={viegoAbilityIcons}
         championIcon={championIcon}

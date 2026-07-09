@@ -40,6 +40,7 @@ export type GuideJungleTierMatchupEntry = {
   champion: string;
   possessionValue: number;
   explanation?: string;
+  isNew?: boolean;
 };
 
 export type GuideJungleTier = {
@@ -62,6 +63,7 @@ export type SerializedJungleTierMatchup = {
   possessionValue: number;
   explanation: string | null;
   hasExplanation: boolean;
+  isNew?: boolean;
 };
 
 export type SerializedJungleTier = {

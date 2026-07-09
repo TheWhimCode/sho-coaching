@@ -110,8 +110,9 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
             "Ideally, you want to find picks in between fights. The more split up your enemies are, the easier your game is. Less alive enemies = more isolated targets.",
             "But finding picks is difficult. Assassin macro is among the hardest in the game, because you need to understand your enemies macro and vision setup to sneak to where they are gonna facecheck.",
             "Play through sidelanes a lot. Keep track of which enemies tend to overextend and which respect. Check which turrets are broken, so you can wrap around your targets.",
-            "Every laner wants farm. Every jungler wants camps. Every support wants to provide vision. Think in between fights, the faster you identify where to go, the earlier you'll be there and potentially win the next fight without relying on your team at all.",
           ].join("\n\n"),
+          bodyAfterVideos:
+            "Every laner wants farm. Every jungler wants camps. Every support wants to provide vision. Think in between fights, the faster you identify where to go, the earlier you'll be there and potentially win the next fight without relying on your team at all.",
           videos: [
             {
               label: "Example — solo winning through pick setup.",
@@ -164,13 +165,20 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "tf-fog-of-war",
           label: "Fog of war",
-          disabled: true,
-          summary: "Viego teamfights are won from angles the enemy didn't clear — not from running in first.",
+          isNew: true,
+          summary:
+            "You are an assassin. Initiative & striking first are your biggest advantage. Be sneaky.",
           body: [
-            "Path with E through minions or use fog to get angle. If you can't reach the carry without flashing through three people, hold W for peel or a follow-up reset instead of suicide running.",
-            "Establish vision on one side of the pit before the fight starts. The team that knows where you are less afraid to walk up; the team that doesn't gives you free W connects.",
-            "Use W from fog on the player trying to end, not on the full tank line. Late game Viego still deletes carries — you just need one angle they didn't respect.",
+            "Your highest priority targets will try to position safely behind their frontliners. As assassin, you can't just charge through all of the kings guard. You need to wrap around, undetected.",
           ].join("\n\n"),
+          bodyAfterBanner:
+            "Ideally you find a pick before the fight, but often this is not possible. Use fog of war, your E and good pre-fight positioning to set yourself up for success.",
+          quote: {
+            lead: "I always tell people:",
+            text: "What would Ezio do?",
+          },
+          bannerImageSrc: "https://videos.its-mino.com/guide/gameplan/Ezio.jpg",
+          bannerImageAlt: "Ezio from Assassin's Creed",
         },
       ],
     },

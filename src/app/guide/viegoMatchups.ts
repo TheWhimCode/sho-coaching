@@ -11,12 +11,12 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Lee Sin",
           explanation:
-            "A good Lee Sin is impossible to deal with, which is why I ban him every game. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out. If you DO kill him, you get a crazy powerful reset, but idk, I just can't get it done...\n\nAvoid early skirmishes and clear your camps on spawn to avoid getting invaded. When he hits level 6, don't fight him 1v1. Don't get overextend to try and get a reset when he has W ready to escape. Play around your team mates CC and don't expose yourself in skirmishes.",
+            "A good Lee Sin is impossible to deal with, which is why I ban him every game. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out. If you DO kill him, you get a crazy powerful reset, but idk, I just can't get it done...\n\nAvoid early skirmishes and clear your camps on spawn to avoid getting invaded. When he hits level 6, don't fight him 1v1. Don't overextend to try and get a reset when he has W ready to escape. Play around your teammates' CC and don't expose yourself in skirmishes.",
         },
         {
           champion: "Talon",
           explanation:
-            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead. He can just find you in your jungle, attacc, and you explode.\nDon't ever waste tempo. He will instantly snatch up all your camps. So I always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\nBut his reset is pretty bad.",
+            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead. He can just find you in your jungle, attack, and you explode.\nDon't ever waste tempo. He will instantly snatch up all your camps. So I always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\nBut his reset is pretty bad.",
         },
         {
           champion: "Kha'Zix",
@@ -31,7 +31,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Kindred",
           explanation:
-            "They are very annoying in some games. Others they're fine. Depending on the draft, they can make teamfighting completely impossible for you, so you need to find picks or pray your team does some work.\nThey often early invade as well, which can disrupt your scaling a little. But I'm really most worried about their ult.",
+            "They are very annoying in some games. Others they're fine. Depending on the draft, they can make teamfighting completely impossible for you, so you need to find picks or pray your team does some work.\nThey often invade early as well, which can disrupt your scaling a little. But I'm really most worried about their ult.",
         },
         {
           champion: "Bel'Veth",
@@ -41,17 +41,17 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Ambessa",
           explanation:
-            "She does nothing early. You outscale her. She can't R you because you can R out of it, which is disorienting for the Ambessa player (her animation ends instantly and she dashes).\n\nWhen she ults your team, you can instantly charge W and burst her.\n\nIf you get ahead you can oneshot her in one W. If not, don't fight her alone. But the reset is so good.",
+            "She does nothing early. You outscale her. She can't R you because you can R out of it, which is disorienting for the Ambessa player (her animation ends instantly and she dashes).\n\nWhen she ults your team, you can instantly charge W and burst her.\n\nIf you get ahead, you can oneshot her in one W. If not, don't fight her alone. But the reset is so good.",
         },
         {
           champion: "Briar",
           explanation:
-            "She will try to create chaos. Invade, lv 3 gank, stack early objectives.\n\nAvoid her early. Just drop camps if she invades. She doesn't wanna fullclear, so you'll often be able to take her camps back while she's ganking.\n\nJust relax, play consistent. From LDR you can burst her very easily. Watch out for her E damage reduction, you gotta wait that out if she casts it before your W.\n\nSimilar to Sylas, she has to perma engage and expose herself to your burst. If she R's you, you can instantly fully charged W her on arrival.",
+            "She will try to create chaos. Invade, lv 3 gank, stack early objectives.\n\nAvoid her early. Just drop camps if she invades. She doesn't wanna fullclear, so you'll often be able to take her camps back while she's ganking.\n\nJust relax, play consistently. From LDR you can burst her very easily. Watch out for her E damage reduction, you gotta wait that out if she casts it before your W.\n\nSimilar to Sylas, she has to perma engage and expose herself to your burst. If she R's you, you can instantly fully charge W her on arrival.",
         },
         {
           champion: "Rek'Sai",
           explanation:
-            "Hard early, but really easy to kill later. Just don't EVER become her target, focus her whenever she engages someone else.\n\nHer engage range is surprising, but you can charge stun when she E's forward. She can't knock you up if she can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when she's ulting, especially on a team mate. She always ends up behind the target from where she jumped. Fully charge W > oneshot > transform > W to go underground + E to gapclose > knockup + R.",
+            "Hard early, but really easy to kill later. Just don't EVER become her target, focus her whenever she engages someone else.\n\nHer engage range is surprising, but you can charge stun when she E's forward. She can't knock you up if she can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when she's ulting, especially on a teammate. She always ends up behind the target from where she jumped. Fully charge W > oneshot > transform > W to go underground + E to gapclose > knockup + R.",
         },
         {
           champion: "Shaco",
@@ -76,27 +76,27 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Rammus",
           explanation:
-            "I don't face Rammus at all, but people told me he's rly hard to beat. Just try to avoid him early and play around his W cooldown. I think it's easier than people say if you respect, his reset is insane for you, but I can't speak from experience.",
+            "I don't face Rammus at all, but people told me he's really hard to beat. Just try to avoid him early and play around his W cooldown. I think it's easier than people say if you respect him, his reset is insane for you, but I can't speak from experience.",
         },
         {
           champion: "Kayn",
           explanation:
-            "Blue Kayn is kinda like Qiyana, if he hits you first you die. But he's weaker early and won't abuse you as long as you don't get cheesed at Raptors.\n\nBe very careful when he has 3+ items, it's very easy for him to kill you. DD last angle.",
+            "Blue Kayn is kinda like Qiyana, if he hits you first you die. But he's weaker early and won't abuse you as long as you don't get cheesed at Raptors.\n\nBe very careful when he has 3+ items, it's very easy for him to kill you. DD last item.",
         },
         {
           champion: "Nasus",
           explanation:
-            "Don't fight objectives vs this guy when he has R. He can be 0/5 and still beats you 1v1 and his W is extremely annoying for you, cuz it ruins your HOB combo and you can't really get away.\n\nNasus R is completely broken. You need to wait it out. Lategame you can surprise him with your burst, you outscale.\n\nYou can try to cheese invade him at the start. Raptors -> his Blue + Gromp.",
+            "Don't fight objectives vs this guy when he has R. He can be 0/5 and still beat you 1v1 and his W is extremely annoying for you, cuz it ruins your HOB combo and you can't really get away.\n\nNasus R is completely broken. You need to wait it out. Lategame you can surprise him with your burst, you outscale.\n\nYou can try to cheese invade him at the start. Raptors -> his Blue + Gromp.",
         },
         {
           champion: "Naafiri",
           explanation:
-            "Not as hard as you'd think. If she R's you just hit her with W and burst her.\n\nBut her dogs are annoying cuz she can always facecheck you and she can dodge your R so make sure you fast combo or play around it.",
+            "Not as hard as you'd think. She needs too long to get her damage off and her slipperiness doesn't help her against basic attacks. You kill her before she kills you.\n\nIf she R's you, just hit her with W and burst her.\n\nBut her dogs are annoying cuz she can always facecheck you and she can dodge your R so make sure you fast combo or play around it.",
         },
         {
           champion: "Nocturne",
           explanation:
-            "He's surprisingly OP in early fights. Don't contest him, he will run you down.\n\nBad Nocturnes are easy kills from LDR, but his W can deny you the stun if you don't manage to Smite it off. His ult makes teamfighting annoying, since you can't see the target you're trying to sneak up to.\n\nIf you get ahead it's very free, if you fall behind it's very annoying. If he ults you, make sure to R over a wall.",
+            "He's surprisingly OP in early fights. Don't contest him, he will run you down.\n\nBad Nocturnes are easy kills from LDR, but his W can deny you the stun if you don't manage to Smite it off. His ult makes teamfighting annoying, since you can't see the target you're trying to sneak up to.\n\nIf you get ahead, it's very free, if you fall behind, it's very annoying. If he ults you, make sure to R over a wall.",
         },
         {
           champion: "Olaf",
@@ -111,22 +111,22 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Hecarim",
           explanation:
-            "He relies heavily on having his Q stacks active. At scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He can not start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
+            "He relies heavily on having his Q stacks active. At scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He cannot start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
         },
         {
           champion: "Jax",
           explanation:
-            "His E dodges your R damage and autos. He will get either DD or Zhonya's and become extremely hard to kill. Never fight him. You can bust and win fights later if he messes up, but you rely on that. Don't get baited.",
+            "His E dodges your R damage and autos. He will get either DD or Zhonya's and become extremely hard to kill. Never fight him. You can burst and win fights later if he messes up, but you rely on that. Don't get baited.",
         },
         {
           champion: "Qiyana",
           explanation:
-            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
+            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\n\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD.\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
         },
         {
           champion: "Zed",
           explanation:
-            "If he ever ults you, a team mate or facechecks, he dies instantly to your W.\n\nHe won't invade you either, so you get to free scale.\n\nJust watch out if he finds you in the Jungle during lategame, he can kill you before you can get your damage off.",
+            "If he ever ults you or a teammate, or facechecks, he dies instantly to your W.\n\nHe won't invade you either, so you get to free scale.\n\nJust watch out if he finds you in the jungle during lategame, he can kill you before you can get your damage off.",
         },
       ],
     },
@@ -164,7 +164,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Ivern",
           explanation:
-            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next ult and giving you survivability.",
+            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next ult and giving you survivability.",
         },
         {
           champion: "Master Yi",
