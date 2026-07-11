@@ -238,6 +238,40 @@ function GuideTopicBanner({
   );
 }
 
+function TopicVideoList({
+  topic,
+  videos,
+}: {
+  topic: GuideGameStageTopic;
+  videos: NonNullable<GuideGameStageTopic["videos"]>;
+}) {
+  if (!videos.some((video) => video.videoSrc || video.embedUrl)) return null;
+
+  return (
+    <div className="mt-10 space-y-8 sm:mt-12 sm:space-y-10">
+      {videos.map((video, index) => {
+        if (!video.videoSrc && !video.embedUrl) return null;
+        return (
+          <div key={`${topic.id}-video-${index}`}>
+            {video.label ? (
+              <p className="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
+                {video.label}
+              </p>
+            ) : null}
+            <GuideVideoPanel
+              videoSrc={video.videoSrc}
+              posterSrc={video.posterSrc}
+              embedUrl={video.embedUrl}
+              title={video.label ?? topic.label}
+              interactiveControls
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function TopicArticle({
   topic,
   guideTextIcons,
@@ -246,7 +280,10 @@ function TopicArticle({
   guideTextIcons: Record<string, string>;
 }) {
   const videos = topic.videos ?? [];
-  const hasVideos = videos.some((video) => video.videoSrc || video.embedUrl);
+  const videosAfterBody = topic.videosAfterBody ?? [];
+  const hasVideos =
+    videos.some((video) => video.videoSrc || video.embedUrl) ||
+    videosAfterBody.some((video) => video.videoSrc || video.embedUrl);
 
   return (
     <article className="min-h-[28rem] sm:min-h-[32rem]">
@@ -287,28 +324,19 @@ function TopicArticle({
         </div>
       ) : null}
 
-      {hasVideos ? (
-        <div className="mt-10 space-y-8 border-t border-[#F0ABCF]/10 pt-8 sm:mt-12 sm:space-y-10 sm:pt-10">
-          {videos.map((video, index) => {
-            if (!video.videoSrc && !video.embedUrl) return null;
-            return (
-              <div key={`${topic.id}-video-${index}`}>
-                {video.label ? (
-                  <p className="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80 sm:text-xs">
-                    {video.label}
-                  </p>
-                ) : null}
-                <GuideVideoPanel
-                  videoSrc={video.videoSrc}
-                  posterSrc={video.posterSrc}
-                  embedUrl={video.embedUrl}
-                  title={video.label ?? topic.label}
-                  interactiveControls
-                />
-              </div>
-            );
-          })}
+      {hasVideos ? <TopicVideoList topic={topic} videos={videos} /> : null}
+
+      {topic.bodyBetweenVideos ? (
+        <div className="mt-6 space-y-4 sm:mt-8">
+          <GuideTopicParagraphs
+            text={topic.bodyBetweenVideos}
+            guideTextIcons={guideTextIcons}
+          />
         </div>
+      ) : null}
+
+      {videosAfterBody.length > 0 ? (
+        <TopicVideoList topic={topic} videos={videosAfterBody} />
       ) : null}
 
       {topic.bodyAfterVideos ? (

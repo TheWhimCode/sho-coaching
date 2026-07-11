@@ -58,8 +58,10 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       id: "burst-combo",
       label: "Burst combo",
       sequence: ["Wcharge", "E", "AA", "Q", "R", "AA"],
-      videoSrc: guideComboVideo("BurstCombo.webm"),
-      posterSrc: guideComboThumbnail("burstcombo.webp"),
+      videoSrc: guideComboVideo("Burst_Combo.webm"),
+      posterSrc: guideComboThumbnail("burstcombo.png"),
+      ingameExampleVideoSrc: guideComboVideo("ingameBurstCombo.webm"),
+      ingamePosterSrc: guideComboThumbnail("iBurstCombo.png"),
       explanation: "Use this to oneshot mobile squishies. Great against stuff like Ekko, Akali, Qiyana to kill them before they can dash away. Even works if they have Mercs! You just need enough damage (usually with LDR + Cloak of Agility).",
     },
     {
@@ -96,6 +98,8 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       sequence: ["Wtap", "Q", "AA"],
       videoSrc: guideComboVideo("Squishy burst.webm"),
       posterSrc: guideComboThumbnail("squishy.webp"),
+      ingameExampleVideoSrc: guideComboVideo("ingameSquishyBurst.webm"),
+      ingamePosterSrc: guideComboThumbnail("iSquishyBurst.webp"),
       explanation: "Sometimes this is all it takes...",
     },
     {

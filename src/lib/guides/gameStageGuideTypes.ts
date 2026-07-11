@@ -28,6 +28,10 @@ export type GuideGameStageTopic = {
   /** Optional highlighted step cards (e.g. Step 1 / Step 2). Rendered after the first body paragraph. */
   steps?: GuideGameStageStep[];
   videos?: GuideGameStageVideo[];
+  /** Optional copy rendered after mid-content videos and before trailing videos. */
+  bodyBetweenVideos?: string;
+  /** Optional videos rendered after `bodyBetweenVideos`. */
+  videosAfterBody?: GuideGameStageVideo[];
   /** Optional copy rendered after topic videos. */
   bodyAfterVideos?: string;
   /** Full-width banner image shown below the body copy. */

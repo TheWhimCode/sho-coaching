@@ -46,6 +46,7 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "getting-invaded",
           label: "Getting invaded",
+          isNew: true,
           summary: "You are pretty weak early. Think about and react well to invades.",
           body: [
             "Watch out for invades, you're pretty weak in early 1v1s.",
@@ -53,8 +54,15 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
             "Champions like Bel'Veth or Kayn love to go for a level 1 Raptor cheese, to then fight you at your red. Ward for that or check by kiting your Red out a little bit.",
             "Usually, I start the game by warding the opposite buff of the side I start, to see if I'm getting cheesed.",
             "The most important piece of advice I have for getting invaded, is that you stay calm and rational. If you can't win the 1v1, give up your camps. If you can't take their camps in return cuz the enemies will stop you, don't die trying.",
-            "Your enemy decided to walk halfway across the map multiple times. They are not getting any meaningful advantage, they're just making both of your fall behind.",
           ].join("\n\n"),
+          videos: [
+            {
+              label: "Handling an invade.",
+              embedUrl: guideVimeoEmbed("1209013157"),
+            },
+          ],
+          bodyAfterVideos:
+            "Your enemy decided to walk halfway across the map multiple times. They are not getting any meaningful advantage, they're just making both of your fall behind.",
         },
         {
           id: "how-to-gank",
@@ -77,12 +85,19 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "mid-from-ahead",
           label: "From ahead",
+          isNew: true,
           summary: "Like other scaling assassins, if you got a lead early you can start playing proactively.",
           body: [
             "Especially if you didn't buy Hubris (but even if you did), you can move onto step 2. Read the map. Where can you snowball the hardest?",
             "Can you invade? Stack drakes? Snowball your winning laners or stabilize a losing matchup? Getting ahead opens up a ton of options, just don't greed and throw.",
             "Keep scaling.",
           ].join("\n\n"),
+          videos: [
+            {
+              label: "Look at the map, find winning fights",
+              embedUrl: guideVimeoEmbed("1209012987"),
+            },
+          ],
         },
         {
           id: "mid-from-behind",
@@ -105,17 +120,25 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "late-finding-picks",
           label: "Finding picks",
+          isNew: true,
           summary: "You are an assassin. You thrive when you can get your single target burst off on isolated targets. Look at the map.",
           body: [
             "Ideally, you want to find picks in between fights. The more split up your enemies are, the easier your game is. Less alive enemies = more isolated targets.",
             "But finding picks is difficult. Assassin macro is among the hardest in the game, because you need to understand your enemies macro and vision setup to sneak to where they are gonna facecheck.",
-            "Play through sidelanes a lot. Keep track of which enemies tend to overextend and which respect. Check which turrets are broken, so you can wrap around your targets.",
           ].join("\n\n"),
+          bodyBetweenVideos:
+            "Play through sidelanes a lot. Keep track of which enemies tend to overextend and which respect. Check which turrets are broken, so you can wrap around your targets.",
           bodyAfterVideos:
             "Every laner wants farm. Every jungler wants camps. Every support wants to provide vision. Think in between fights, the faster you identify where to go, the earlier you'll be there and potentially win the next fight without relying on your team at all.",
           videos: [
             {
-              label: "Example — solo winning through pick setup.",
+              label: "Understanding the map",
+              embedUrl: guideVimeoEmbed("1209018193"),
+            },
+          ],
+          videosAfterBody: [
+            {
+              label: "Solo winning through pick setup.",
               embedUrl: guideVimeoEmbed("1207112926"),
             },
           ],
@@ -123,11 +146,20 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "late-using-e",
           label: "Using E",
+          isNew: true,
           summary: "Viego's E is his most underrated ability. Use it well.",
           body: [
             "Every assassin needs a tool to get in range. To sneak up to their opponents. Talon E, Qiyana W. Viego's tool is his E.",
             "Since you're building full burst, this ability is transformed into an extremely high pressure zone. Squishy champions can never disrespect you. They can't bait you. You'll oneshot them.",
             "Before teamfights, you use this ability to create space. Walk up to the furthest wall near the enemies and E it. They will spam abilities into the mist, praying you're an inter. Don't be an inter.",
+          ].join("\n\n"),
+          videos: [
+            {
+              label: "Creating space with E",
+              embedUrl: guideVimeoEmbed("1209020142"),
+            },
+          ],
+          bodyAfterVideos: [
             "While your E is active, you avoid all vision besides Control Wards. You can use this to sneak into bushes way deeper than people expect, or walk up to a disrespecting carry and oneshot them.",
             "Watch out when facechecking bushes or corners, enemies can have Sweeper active. You can also turn on your Sweeper though, it has more range than your stealth. It's really useful to prepare objectives or win fights.",
           ].join("\n\n"),
@@ -179,6 +211,12 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
           },
           bannerImageSrc: "https://videos.its-mino.com/guide/gameplan/Ezio.jpg",
           bannerImageAlt: "Ezio from Assassin's Creed",
+          videos: [
+            {
+              label: "Using fog of war & positioning to set up a fight",
+              embedUrl: guideVimeoEmbed("1209019491"),
+            },
+          ],
         },
       ],
     },
