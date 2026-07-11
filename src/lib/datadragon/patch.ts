@@ -2,6 +2,9 @@
 export const FALLBACK_PATCH =
   process.env.NEXT_PUBLIC_DDRAGON_PATCH ?? "16.5.1";
 
+/** Next.js fetch cache TTL for Data Dragon JSON (24h). Enables ISR for /guide. */
+export const DDRAGON_FETCH_REVALIDATE_SECONDS = 60 * 60 * 24;
+
 export let currentPatch = FALLBACK_PATCH;
 export let patchReady = false;
 
@@ -18,7 +21,9 @@ let patchInit: Promise<void> | null = null;
 export function ensureLiveDDragonPatch() {
   if (patchInit) return patchInit;
 
-  patchInit = fetch(VERSIONS_URL, { cache: "no-store" })
+  patchInit = fetch(VERSIONS_URL, {
+    next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS },
+  })
     .then((r) => r.json())
     .then((versions: string[]) => {
       if (Array.isArray(versions) && versions.length > 0) {

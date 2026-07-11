@@ -1,4 +1,4 @@
-import { currentPatch, ensureLiveDDragonPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch, DDRAGON_FETCH_REVALIDATE_SECONDS } from "./patch";
 import type {
   Rune,
   RuneSlot,
@@ -23,7 +23,7 @@ export function ensureRunesAssets(locale: string = "en_US") {
   runesInit = ensureLiveDDragonPatch().then(() =>
     fetch(
       `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/runesReforged.json`,
-      { cache: "no-store" }
+      { next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS } }
     )
   )
     .then(r => r.json())
@@ -109,7 +109,7 @@ export async function fetchKeystoneRunes(patch?: string, locale: string = "en_US
   await ensureLiveDDragonPatch();
   const p = patch ?? currentPatch;
   const url = `https://ddragon.leagueoflegends.com/cdn/${p}/data/${locale}/runesReforged.json`;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS } });
   if (!res.ok) throw new Error(`runesReforged fetch failed: ${res.status}`);
   const trees: RunesTree[] = await res.json();
   if (!Array.isArray(trees)) return [];
@@ -144,7 +144,7 @@ export async function fetchRunesTrees(
   await ensureLiveDDragonPatch();
   const p = patch ?? currentPatch;
   const url = `https://ddragon.leagueoflegends.com/cdn/${p}/data/${locale}/runesReforged.json`;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS } });
   if (!res.ok) throw new Error(`runesReforged fetch failed: ${res.status}`);
 
   const trees: RunesTree[] = await res.json();

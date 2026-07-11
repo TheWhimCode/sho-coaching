@@ -1,4 +1,4 @@
-import { currentPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch, DDRAGON_FETCH_REVALIDATE_SECONDS } from "./patch";
 
 let spellsInit: Promise<void> | null = null;
 const spellIdToKey: Record<number, string> = {};
@@ -17,8 +17,11 @@ export function areSummonerSpellsReady() {
 export function ensureSummonerSpellsAssets(locale: string = "en_US") {
   if (spellsInit) return spellsInit;
 
-  spellsInit = fetch(
-    `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/summoner.json`
+  spellsInit = ensureLiveDDragonPatch().then(() =>
+    fetch(
+      `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/summoner.json`,
+      { next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS } }
+    )
   )
     .then(r => r.json())
     .then(j => {

@@ -1,4 +1,4 @@
-import { currentPatch, ensureLiveDDragonPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch, DDRAGON_FETCH_REVALIDATE_SECONDS } from "./patch";
 import type { ChampionAliasMap } from "./types";
 
 const ALIAS: ChampionAliasMap = {
@@ -95,7 +95,7 @@ export async function getAllChampions(
   await ensureLiveDDragonPatch();
   const res = await fetch(
     `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/${locale}/champion.json`,
-    { cache: "no-store" }
+    { next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS } }
   );
 
   if (!res.ok) {

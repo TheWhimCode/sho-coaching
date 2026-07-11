@@ -1,4 +1,4 @@
-import { currentPatch, ensureLiveDDragonPatch } from "./patch";
+import { currentPatch, ensureLiveDDragonPatch, DDRAGON_FETCH_REVALIDATE_SECONDS } from "./patch";
 
 /* ---------------------------- Types ---------------------------- */
 
@@ -52,7 +52,7 @@ export function ensureItemsData(locale: string = "en_US") {
 
     for (const url of urls) {
       try {
-        const r = await fetch(url, { cache: "no-store" });
+        const r = await fetch(url, { next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS } });
         if (!r.ok) throw new Error(`Fetch failed ${r.status}`);
 
         const arr = (await r.json()) as CDragonItem[];
