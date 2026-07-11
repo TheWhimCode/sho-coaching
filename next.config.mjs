@@ -34,6 +34,7 @@ const imgSrc = [
   "https://videos.its-mino.com",
   "https://i.vimeocdn.com",
   "https://vumbnail.com",
+  "https://static-cdn.jtvnw.net",
 ].join(" ");
 
 // Build CSP parts (dev: no upgrade-insecure-requests)
@@ -43,7 +44,7 @@ const cspParts = [
   `style-src 'self' 'unsafe-inline'`,
   `img-src ${imgSrc}`,
   `font-src 'self' data:`,
-  `frame-src https://js.stripe.com https://hooks.stripe.com https://player.vimeo.com`,
+  `frame-src https://js.stripe.com https://hooks.stripe.com https://player.vimeo.com https://player.twitch.tv`,
   `connect-src ${connectSrc}`,
   `worker-src 'self' blob:`,
   `media-src 'self' blob: https://videos.its-mino.com`,

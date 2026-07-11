@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import clsx from "clsx";
-import { FaTwitch } from "react-icons/fa6";
+import { Suspense } from "react";
 import RunePageSection from "@/app/_components/guides/runes/RunePageSection";
 import ItemBuildSection from "@/app/_components/guides/items/ItemBuildSection";
 import JungleTierMatchupPanel from "@/app/_components/guides/matchups/JungleTierMatchupPanel";
@@ -11,7 +10,8 @@ import PossessionsSection from "@/app/_components/guides/possessions/Possessions
 import GameStagesSection from "@/app/_components/guides/gameStages/GameStagesSection";
 import ConventionalBuildSection from "@/app/_components/guides/conventional/ConventionalBuildSection";
 import GuideSectionIndex from "@/app/_components/guides/GuideSectionIndex";
-import { LINK_TREE_LINKS } from "@/app/_components/linktree/linkTreeLinks";
+import TwitchShoutoutSection from "@/app/_components/guides/TwitchShoutoutSection";
+import GuideDonationSection from "@/app/_components/guides/GuideDonationSection";
 import { guideChampionIconImgClass, guidePageBg, GUIDE } from "@/lib/guides/guideTheme";
 import {
   gameStagesSectionHasNew,
@@ -25,51 +25,14 @@ import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/co
 import type { GuidePossessionPageData } from "@/lib/guides/possessionGuideTypes";
 import type { GuideGameStagePageData } from "@/lib/guides/gameStageGuideTypes";
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
-
-const TWITCH_URL =
-  LINK_TREE_LINKS.find((link) => link.id === "twitch")?.href ??
-  "https://www.twitch.tv/itsMinooooo";
-
-const twitchButtonClass =
-  "shrink-0 items-center gap-2 rounded-full border border-[#9146FF]/45 bg-[#9146FF]/10 px-4 py-2.5 text-sm font-semibold text-[#BF94FF] transition hover:border-[#9146FF]/70 hover:bg-[#9146FF]/18 hover:text-[#D9B8FF] sm:px-4 sm:py-2.5 sm:text-base";
-
-import { getOverlayScrollViewport } from "@/lib/overlayScrollViewport";
-
-function scrollToPageTop() {
-  const viewport = getOverlayScrollViewport();
-
-  if (viewport) {
-    viewport.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
+import type { TwitchStreamStatus } from "@/lib/twitch/types";
 
 function GuideFooter() {
   return (
-    <footer className="mt-16 flex justify-center pb-4">
-      <div className="grid w-max max-w-[calc(100%-3rem)] grid-cols-1 gap-3">
-        <a
-          href={TWITCH_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={clsx(twitchButtonClass, "group inline-flex w-full justify-center sm:hidden")}
-        >
-          <FaTwitch
-            className="h-4 w-4 shrink-0 text-[#9146FF] transition group-hover:text-[#B794FF]"
-            aria-hidden
-          />
-          Watch me live
-        </a>
-        <button
-          type="button"
-          onClick={scrollToPageTop}
-          className="inline-flex w-full items-center justify-center rounded-full border border-white/50 bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white/70 transition hover:border-white/90 hover:bg-white/10 hover:text-white/90 sm:px-5 sm:py-2.5 sm:text-base"
-        >
-          Back to the top
-        </button>
-      </div>
+    <footer className="mt-16 pb-4">
+      <Suspense fallback={null}>
+        <GuideDonationSection />
+      </Suspense>
     </footer>
   );
 }
@@ -85,6 +48,7 @@ export default function ViegoGuideClient({
   viegoAbilityIcons,
   championIcon,
   guideTextIcons,
+  twitchStatus,
 }: {
   runeData: GuideRunePageData;
   itemData: GuideItemPageData;
@@ -96,6 +60,7 @@ export default function ViegoGuideClient({
   viegoAbilityIcons: GuideViegoAbilityIcons;
   championIcon: string;
   guideTextIcons: Record<string, string>;
+  twitchStatus: TwitchStreamStatus;
 }) {
   const indexEntries = [
     { id: "runes", label: runeData.build.heading },
@@ -134,7 +99,7 @@ export default function ViegoGuideClient({
       />
 
       <div className="relative z-10 mx-auto min-w-0 max-w-6xl overflow-x-hidden px-0 pb-20 pt-20 sm:overflow-visible sm:px-10 sm:pt-24 lg:px-16 lg:pt-28 xl:px-24">
-        <header className="mb-12 flex items-center justify-between gap-4 px-6 sm:gap-6 sm:px-0">
+        <header className="mb-12 flex items-center gap-4 px-6 sm:gap-6 sm:px-0">
           <div className="flex min-w-0 flex-1 flex-col pl-24 sm:pl-28">
             <p
               className="text-xs font-semibold uppercase tracking-[0.2em]"
@@ -169,17 +134,11 @@ export default function ViegoGuideClient({
               Isolde was a femboy. Where is he?
             </p>
           </div>
-
-          <a
-            href={TWITCH_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={clsx(twitchButtonClass, "group hidden sm:inline-flex")}
-          >
-            <FaTwitch className="h-4 w-4 shrink-0 text-[#9146FF] transition group-hover:text-[#B794FF] sm:h-5 sm:w-5" aria-hidden />
-            Watch me live
-          </a>
         </header>
+
+        <div className="mb-12">
+          <TwitchShoutoutSection initialStatus={twitchStatus} />
+        </div>
 
         <RunePageSection data={runeData} guideTextIcons={guideTextIcons} />
 
