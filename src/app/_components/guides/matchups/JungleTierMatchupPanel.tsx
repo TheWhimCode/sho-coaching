@@ -393,14 +393,11 @@ export default function JungleTierMatchupPanel({
         <JungleTierMatchupPanelSkeleton data={data} />
       ) : (
         <div className="grid">
-          <div
-            className={clsx(
-              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
-              showContent ? "pointer-events-none opacity-0" : "opacity-100"
-            )}
-          >
-            <JungleTierMatchupPanelSkeleton data={data} />
-          </div>
+          {!showContent ? (
+            <div className="col-start-1 row-start-1 transition-opacity duration-300 ease-out">
+              <JungleTierMatchupPanelSkeleton data={data} />
+            </div>
+          ) : null}
 
           <div
             className={clsx(

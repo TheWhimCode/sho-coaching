@@ -30,14 +30,11 @@ export default function ConventionalBuildSection({
         <ConventionalBuildSectionSkeleton data={data} />
       ) : (
         <div className="grid">
-          <div
-            className={clsx(
-              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
-              showContent ? "pointer-events-none opacity-0" : "opacity-100"
-            )}
-          >
-            <ConventionalBuildSectionSkeleton data={data} />
-          </div>
+          {!showContent ? (
+            <div className="col-start-1 row-start-1 transition-opacity duration-300 ease-out">
+              <ConventionalBuildSectionSkeleton data={data} />
+            </div>
+          ) : null}
 
           <div
             className={clsx(

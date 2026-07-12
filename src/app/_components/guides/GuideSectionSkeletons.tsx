@@ -1049,11 +1049,13 @@ export function ConventionalBuildSectionSkeleton({
         </h2>
         <div className="mt-4 space-y-4">
           {data.paragraphs.map((paragraph, index) => (
-            <TextLineSkeletons
-              key={index}
-              body={paragraph}
-              className="text-sm leading-[1.75] sm:text-base"
-            />
+            <p key={index} className="relative text-sm leading-[1.75] sm:text-base">
+              <span className="text-transparent">{paragraph}</span>
+              <span
+                className="absolute inset-0 animate-pulse rounded bg-[#352839]/55"
+                aria-hidden
+              />
+            </p>
           ))}
         </div>
       </div>
@@ -1075,9 +1077,6 @@ export function JungleTierMatchupPanelSkeleton({
 }: {
   data: GuideJungleTierMatchupPageData;
 }) {
-  const firstTier = data.tiers[0];
-  const firstMatchup = firstTier?.matchups.find((matchup) => matchup.hasExplanation);
-
   return (
     <div aria-hidden className="w-full min-w-0 max-w-full">
       <div
@@ -1110,23 +1109,6 @@ export function JungleTierMatchupPanelSkeleton({
           </div>
         ))}
       </div>
-
-      {firstTier && firstMatchup ? (
-        <div className="mt-4 w-full min-w-0 max-w-full rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:mt-5 sm:p-5">
-          <div className="flex items-start gap-3 sm:gap-5">
-            <SkeletonTile className="h-12 w-12 shrink-0 rounded-lg sm:h-[4.9rem] sm:w-[4.9rem]" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold leading-none text-[#F5E6D3]/25 sm:text-base">
-                {firstMatchup.name}
-              </p>
-              <TextLineSkeletons
-                body={firstMatchup.explanation ?? ""}
-                className="mt-2 text-sm leading-[1.7] sm:text-base"
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
