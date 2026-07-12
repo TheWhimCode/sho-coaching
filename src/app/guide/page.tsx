@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { fetchRunesTrees } from "@/lib/datadragon/runes";
 import { champSquareUrlById } from "@/lib/datadragon/champions";
 import { buildGuideRunePageData } from "@/lib/guides/buildGuideRunePageData";
@@ -10,6 +11,7 @@ import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 import { buildGuideViegoAbilityIcons } from "@/lib/guides/buildGuideViegoAbilityIcons";
 import { collectGuideCriticalPreloadUrls } from "@/lib/guides/preloadGuideImages";
 import { fetchTwitchStreamStatus } from "@/lib/twitch/fetchTwitchStreamStatus";
+import { getTwitchEmbedParentHosts } from "@/lib/twitch/parentHosts";
 import { VIEGO_RUNE_BUILD } from "./viegoRunes";
 import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
@@ -41,6 +43,9 @@ export const metadata: Metadata = {
 export const revalidate = 86400;
 
 export default async function ViegoGuidePage() {
+  const requestHost = (await headers()).get("host");
+  const twitchParentHosts = getTwitchEmbedParentHosts(requestHost);
+
   const [runeData, itemData, guideTextIcons, viegoAbilityIcons, twitchStatus, possessionsData] =
     await Promise.all([
     fetchRunesTrees().then((trees) => buildGuideRunePageData(VIEGO_RUNE_BUILD, trees)),
@@ -75,6 +80,7 @@ export default async function ViegoGuidePage() {
         viegoAbilityIcons={viegoAbilityIcons}
         championIcon={championIcon}
         twitchStatus={twitchStatus}
+        twitchParentHosts={twitchParentHosts}
       />
     </>
   );

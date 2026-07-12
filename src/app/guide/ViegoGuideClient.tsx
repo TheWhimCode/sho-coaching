@@ -49,6 +49,7 @@ export default function ViegoGuideClient({
   championIcon,
   guideTextIcons,
   twitchStatus,
+  twitchParentHosts,
 }: {
   runeData: GuideRunePageData;
   itemData: GuideItemPageData;
@@ -61,6 +62,7 @@ export default function ViegoGuideClient({
   championIcon: string;
   guideTextIcons: Record<string, string>;
   twitchStatus: TwitchStreamStatus;
+  twitchParentHosts: string[];
 }) {
   const indexEntries = [
     { id: "runes", label: runeData.build.heading },
@@ -137,7 +139,10 @@ export default function ViegoGuideClient({
         </header>
 
         <div className="mb-12">
-          <TwitchShoutoutSection initialStatus={twitchStatus} />
+          <TwitchShoutoutSection
+            initialStatus={twitchStatus}
+            parentHosts={twitchParentHosts}
+          />
         </div>
 
         <RunePageSection data={runeData} guideTextIcons={guideTextIcons} />

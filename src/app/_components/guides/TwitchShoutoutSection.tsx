@@ -186,11 +186,14 @@ function TwitchLiveEmbed({
 
 export default function TwitchShoutoutSection({
   initialStatus,
+  parentHosts: parentHostsProp,
 }: {
   initialStatus: TwitchStreamStatus;
+  parentHosts: string[];
 }) {
   const [status, setStatus] = useState(initialStatus);
-  const [parentHosts, setParentHosts] = useState<string[]>(["localhost"]);
+  const [parentHosts, setParentHosts] = useState(parentHostsProp);
+  const [embedReady, setEmbedReady] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -204,10 +207,11 @@ export default function TwitchShoutoutSection({
   }, []);
 
   useEffect(() => {
-    const hosts = new Set(["localhost"]);
+    const hosts = new Set(parentHostsProp);
     hosts.add(window.location.hostname);
     setParentHosts(Array.from(hosts));
-  }, []);
+    setEmbedReady(true);
+  }, [parentHostsProp]);
 
   useEffect(() => {
     const timer = window.setInterval(refreshStatus, LIVE_POLL_MS);
@@ -220,9 +224,9 @@ export default function TwitchShoutoutSection({
       className={clsx("scroll-mt-24", guideSectionHeaderPadClass)}
       aria-label="Twitch stream"
     >
-      {status.isLive ? (
+      {status.isLive && embedReady ? (
         <TwitchLiveEmbed status={status} parentHosts={parentHosts} />
-      ) : (
+      ) : status.isLive ? null : (
         <TwitchOfflineBanner />
       )}
     </section>
