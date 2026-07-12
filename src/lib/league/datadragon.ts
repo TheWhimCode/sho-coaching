@@ -37,6 +37,8 @@ const ALIAS: Record<string, string> = {
   "aurelionsol": 'AurelionSol',
   "masteryi": 'MasterYi',
 
+  leblanc: 'Leblanc',
+  'le blanc': 'Leblanc',
 };
 
 function pascalize(name: string) {

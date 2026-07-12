@@ -207,14 +207,14 @@ function ItemTile({
       });
     };
 
-    updatePosition();
+    if (showHover) updatePosition();
     window.addEventListener("scroll", dismissTip, true);
     window.addEventListener("resize", updatePosition);
     return () => {
       window.removeEventListener("scroll", dismissTip, true);
       window.removeEventListener("resize", updatePosition);
     };
-  }, [showTip]);
+  }, [showTip, showHover]);
 
   const handleTipTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
     if (event.propertyName !== "opacity" || showHover) return;

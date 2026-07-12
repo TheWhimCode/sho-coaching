@@ -1,4 +1,5 @@
 import { statIconUrl } from "@/app/skillcheck/items/statIcons";
+import { jungleCampIconUrl } from "@/lib/datadragon/jungleCamps";
 import { ensureItemsData, itemIconUrl } from "@/lib/datadragon/items";
 import { ensureRunesAssets, runeIconUrl } from "@/lib/datadragon/runes";
 import { ensureSummonerSpellsAssets, summonerSpellIconById } from "@/lib/datadragon/summonerspells";
@@ -14,8 +15,8 @@ function resolveEntityIcon(icon: GuideTextEntityIcon): string | null {
       return summonerSpellIconById(icon.id);
     case "stat":
       return statIconUrl(icon.name) ?? null;
-    default:
-      return null;
+    case "camp":
+      return jungleCampIconUrl(icon.id);
   }
 }
 

@@ -5,6 +5,7 @@ import clsx from "clsx";
 const GUIDE_PAW_SRC = "/images/guide/paw.png";
 import { Fragment, type ReactNode } from "react";
 import { flattenGuideTextEntities, GUIDE_TEXT_ENTITIES, isCaseSensitiveGuideRegexPattern } from "@/lib/guides/guideTextEntities";
+import type { GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 
 export const GUIDE_CONQUEROR_ORANGE = "#F97316";
 export const GUIDE_DARK_RED = "#B01212";
@@ -41,6 +42,27 @@ function findGuideTermMatches(text: string): GuideTermMatch[] {
 
   spans.sort((a, b) => a.start - b.start);
   return spans;
+}
+
+const TRAILING_ABILITY_BEFORE_PERIOD_RE = /(?:\s*(?:->|>)\s*)*\b[QWER]\.$/;
+
+/** Drop a sentence-ending period when it immediately follows an inline icon term. */
+export function stripTrailingPeriodAfterInlineIcon(text: string): string {
+  if (!text.endsWith(".")) return text;
+
+  if (TRAILING_ABILITY_BEFORE_PERIOD_RE.test(text)) {
+    return text.slice(0, -1);
+  }
+
+  const withoutPeriod = text.slice(0, -1);
+  const matches = findGuideTermMatches(withoutPeriod);
+  const lastMatch = matches.at(-1);
+  if (lastMatch?.end === withoutPeriod.length) {
+    const entity = resolveEntity(lastMatch.text);
+    if (entity?.icon) return withoutPeriod;
+  }
+
+  return text;
 }
 
 function splitGuideHighlightedText(text: string): string[] {
@@ -177,10 +199,11 @@ function renderColoredPart(
 ) {
   const weight = entity.weight ?? 700;
   const suffix = entity.colorSuffix;
+  const displayText = entity.displayAs ?? part;
 
   if (suffix && entity.color && part.toLowerCase().endsWith(suffix.toLowerCase())) {
-    const prefix = part.slice(0, part.length - suffix.length);
-    const colored = part.slice(part.length - suffix.length);
+    const prefix = displayText.slice(0, displayText.length - suffix.length);
+    const colored = displayText.slice(displayText.length - suffix.length);
 
     return (
       <span key={index} className="inline align-baseline">
@@ -198,7 +221,7 @@ function renderColoredPart(
   if (!hasStyle && icon) {
     return (
       <span key={index} className="inline align-baseline">
-        {part}
+        {displayText}
         <GuideInlineIcon src={icon} compact={entity.icon?.kind === "stat"} />
       </span>
     );
@@ -216,7 +239,7 @@ function renderColoredPart(
               : undefined
         }
       >
-        {part}
+        {displayText}
       </span>
       {icon ? <GuideInlineIcon src={icon} compact={entity.icon?.kind === "stat"} /> : null}
     </span>
@@ -227,7 +250,7 @@ export function renderGuideHighlightedText(
   text: string,
   termIcons: Record<string, string> = {}
 ): ReactNode[] {
-  return splitGuideHighlightedText(text).map((part, index) => {
+  return splitGuideHighlightedText(stripTrailingPeriodAfterInlineIcon(text)).map((part, index) => {
     if (!part) return null;
 
     const entity = resolveEntity(part);
@@ -237,6 +260,110 @@ export function renderGuideHighlightedText(
     }
 
     return <Fragment key={index}>{renderPlainWithQuotesAndCaps(part, index)}</Fragment>;
+  });
+}
+
+const VIEGO_ABILITY_TOKEN_RE = /\s*(?:->|>)\s*|\b([QWER])\b/g;
+
+const guideInlineViegoAbilityIconClass =
+  "size-4 shrink-0 rounded-sm object-cover ring-1 ring-[#B8D8EA]/20 sm:size-5";
+
+type ViegoAbilityTextToken =
+  | { kind: "text"; value: string }
+  | { kind: "ability"; key: "Q" | "W" | "E" | "R" }
+  | { kind: "arrow" };
+
+function tokenizeViegoAbilityText(text: string): ViegoAbilityTextToken[] {
+  const tokens: ViegoAbilityTextToken[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  VIEGO_ABILITY_TOKEN_RE.lastIndex = 0;
+  while ((match = VIEGO_ABILITY_TOKEN_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      tokens.push({ kind: "text", value: text.slice(lastIndex, match.index) });
+    }
+
+    if (match[1]) {
+      tokens.push({ kind: "ability", key: match[1] as "Q" | "W" | "E" | "R" });
+    } else {
+      tokens.push({ kind: "arrow" });
+    }
+
+    lastIndex = VIEGO_ABILITY_TOKEN_RE.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    tokens.push({ kind: "text", value: text.slice(lastIndex) });
+  }
+
+  return tokens;
+}
+
+function GuideInlineViegoAbility({
+  label,
+  src,
+  tokenIndex,
+}: {
+  label: string;
+  src: string;
+  tokenIndex: number;
+}) {
+  return (
+    <span
+      key={`viego-ability-${tokenIndex}`}
+      className="mx-0.5 inline-flex items-center gap-0.5 align-middle"
+    >
+      <span className="text-[0.7rem] font-bold leading-none text-[#FAD4E8] sm:text-xs">
+        {label}
+      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={`Viego ${label}`} className={guideInlineViegoAbilityIconClass} />
+    </span>
+  );
+}
+
+export function renderGuideHighlightedTextWithViegoAbilities(
+  text: string,
+  termIcons: Record<string, string> = {},
+  viegoAbilityIcons: GuideViegoAbilityIcons
+): ReactNode {
+  const tokens = tokenizeViegoAbilityText(stripTrailingPeriodAfterInlineIcon(text));
+
+  return tokens.map((token, index) => {
+    if (token.kind === "arrow") {
+      return (
+        <span
+          key={`arrow-${index}`}
+          className={clsx(
+            "mx-0.5 inline-flex select-none items-center align-middle font-semibold text-[#B8D8EA]/85"
+          )}
+          aria-hidden
+        >
+          ›
+        </span>
+      );
+    }
+
+    if (token.kind === "ability") {
+      const src = viegoAbilityIcons[token.key];
+      if (!src) return token.key;
+
+      return (
+        <GuideInlineViegoAbility
+          key={`ability-${index}`}
+          label={token.key}
+          src={src}
+          tokenIndex={index}
+        />
+      );
+    }
+
+    return (
+      <Fragment key={`text-${index}`}>
+        {renderGuideHighlightedText(token.value, termIcons)}
+      </Fragment>
+    );
   });
 }
 

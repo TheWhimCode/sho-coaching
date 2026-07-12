@@ -26,7 +26,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Graves", possessionValue: 5 },
         { champion: "Jax", possessionValue: 7 },
         { champion: "Kayn", possessionValue: 5 },
-        { champion: "Nasus", possessionValue: 5 },
         { champion: "Rammus", possessionValue: 8 },
         { champion: "Shaco", possessionValue: 5 },
         { champion: "Xin Zhao", possessionValue: 7 },
@@ -44,12 +43,19 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Fiddlesticks", possessionValue: 5 },
         { champion: "Karthus", possessionValue: 5 },
         { champion: "Maokai", possessionValue: 5 },
+        { champion: "Nasus", possessionValue: 5 },
         { champion: "Nocturne", possessionValue: 5 },
         { champion: "Poppy", possessionValue: 6 },
         { champion: "Sejuani", possessionValue: 6 },
         { champion: "Shyvana", possessionValue: 6 },
         { champion: "Wukong", possessionValue: 6 },
-        { champion: "Zac", possessionValue: 6 },
+        {
+          champion: "Zac",
+          possessionValue: 8,
+          isNew: true,
+          explanation:
+            "You can't punish his weak early, which sets him up for success for his insane midgame power.\n\nDon't get hit by his CC, don't forget about his crazy engage range and healing in fights. Surviving is his strength. Check the little wings next to his level to see if he has passive up.\n\nBut if he does mess up and you manage to burst him, his transformation is insane. You heal a lot, can instantly jump on your next target and guarantee your ult. Even Zac passive works as Viego.",
+        },
       ],
     },
     {
@@ -79,7 +85,13 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Skarner", possessionValue: 6 },
         { champion: "Udyr", possessionValue: 6 },
         { champion: "Volibear", possessionValue: 5 },
-        { champion: "Warwick", possessionValue: 6 },
+        {
+          champion: "Warwick",
+          possessionValue: 7,
+          isNew: true,
+          explanation:
+            "Very easy to kill lategame. Warwick always has to go in with E and Q, so he exposes himself to a full combo. That combo oneshots him with LDR.\n\nBut his ultimate can be annoying in teamfights, you don't wanna get hit by that. Just be patient, wait for him to disrespect, burst him, snowball the fight.\n\nAnd watch out for his early invades. Especially in low elo, Warwicks like to lv 1,2 or 3 cheese invade you. Just ward your Raptors entrance and you should be good.",
+        },
         { champion: "Zed", possessionValue: 8 },
       ],
     },

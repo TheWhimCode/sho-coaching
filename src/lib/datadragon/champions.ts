@@ -51,6 +51,9 @@ const ALIAS: ChampionAliasMap = {
 
   ksante: "KSante",
   leesin: "LeeSin",
+
+  leblanc: "Leblanc",
+  "le blanc": "Leblanc",
 };
 
 function pascalize(name: string) {

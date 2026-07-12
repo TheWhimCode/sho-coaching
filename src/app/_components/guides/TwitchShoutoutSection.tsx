@@ -3,6 +3,8 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FaTwitch } from "react-icons/fa6";
+import GuideImage from "@/app/_components/guides/GuideImage";
+import { MINO_PROFILE_IMAGE } from "@/lib/coaching/coachingClipVideos";
 import {
   TWITCH_CHANNEL_DISPLAY,
   TWITCH_CHANNEL_LOGIN,
@@ -43,6 +45,43 @@ function LiveBadge() {
 }
 
 function TwitchOfflineBanner() {
+  const profileImage = (
+    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#9146FF]/40 bg-[#9146FF]/15 shadow-[0_0_28px_rgba(145,70,255,0.28)] sm:h-20 sm:w-20">
+      <GuideImage
+        src={MINO_PROFILE_IMAGE}
+        alt="Mino"
+        loading="lazy"
+        className="h-full w-full object-cover"
+      />
+    </div>
+  );
+
+  const headerBlock = (
+    <div className="min-w-0">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-[#BF94FF]/80 sm:text-xs">
+        Mino
+      </p>
+      <h2 className="mt-1 text-xl font-bold tracking-tight text-[#F5E6D3] sm:text-2xl">
+        Catch me on stream{" "}
+        <span className="inline-block animate-[wiggle_2.5s_ease-in-out_infinite]">🌸</span>
+      </h2>
+    </div>
+  );
+
+  const bodyText = (
+    <p className="min-w-0 text-sm leading-relaxed text-[#F5E6D3]/62 sm:mt-1.5 sm:max-w-xl sm:text-base">
+      I stream almost every day! Say hi, ask your questions, happy vibes only :3 Trying to make the
+      League community a better place while taking their LP.
+    </p>
+  );
+
+  const followButton = (
+    <span className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[#9146FF]/55 bg-[#9146FF]/20 px-5 py-3 text-sm font-bold text-[#E4CCFF] shadow-[0_0_24px_rgba(145,70,255,0.22)] transition duration-300 group-hover:border-[#B794FF]/75 group-hover:bg-[#9146FF]/30 group-hover:text-white sm:px-6 sm:text-base">
+      <FaTwitch className="h-4 w-4 shrink-0" aria-hidden />
+      Follow on Twitch
+    </span>
+  );
+
   return (
     <a
       href={TWITCH_CHANNEL_URL}
@@ -66,30 +105,26 @@ function TwitchOfflineBanner() {
         className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-[#9146FF]/20 blur-3xl transition duration-300 group-hover:bg-[#9146FF]/30"
       />
 
-      <div className="relative flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6 lg:p-7">
-        <div className="flex min-w-0 items-start gap-4 sm:items-center">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#9146FF]/40 bg-[#9146FF]/15 shadow-[0_0_28px_rgba(145,70,255,0.28)] sm:h-16 sm:w-16">
-            <FaTwitch className="h-8 w-8 text-[#BF94FF] sm:h-9 sm:w-9" aria-hidden />
+      <div className="relative p-5 sm:p-6 lg:p-7">
+        <div className="flex flex-col gap-4 sm:hidden">
+          <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-4">
+            {profileImage}
+            <div className="flex min-h-16 min-w-0 flex-col justify-center">{headerBlock}</div>
+            <div className="col-span-2">{bodyText}</div>
           </div>
-          <div className="min-w-0">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-[#BF94FF]/80 sm:text-xs">
-              Vtuber
-            </p>
-            <h2 className="mt-1 text-xl font-bold tracking-tight text-[#F5E6D3] sm:text-2xl">
-              Catch me on stream{" "}
-              <span className="inline-block animate-[wiggle_2.5s_ease-in-out_infinite]">🌸</span>
-            </h2>
-            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-[#F5E6D3]/62 sm:text-base">
-              I stream almost every day! Say hi, ask your questions, happy vibes only :3 Trying to
-              make the League community a better place while taking their LP.
-            </p>
-          </div>
+          <div className="flex justify-center">{followButton}</div>
         </div>
 
-        <span className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full border border-[#9146FF]/55 bg-[#9146FF]/20 px-5 py-3 text-sm font-bold text-[#E4CCFF] shadow-[0_0_24px_rgba(145,70,255,0.22)] transition duration-300 group-hover:border-[#B794FF]/75 group-hover:bg-[#9146FF]/30 group-hover:text-white sm:self-center sm:px-6 sm:text-base">
-          <FaTwitch className="h-4 w-4 shrink-0" aria-hidden />
-          Follow on Twitch
-        </span>
+        <div className="hidden items-center justify-between gap-5 sm:flex">
+          <div className="flex min-w-0 items-center gap-4">
+            {profileImage}
+            <div className="min-w-0">
+              {headerBlock}
+              {bodyText}
+            </div>
+          </div>
+          {followButton}
+        </div>
       </div>
     </a>
   );

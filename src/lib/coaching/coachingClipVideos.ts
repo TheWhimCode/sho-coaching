@@ -7,7 +7,9 @@ export const COACHING_SESSION_BANNER_CDN = `${MEDIA_CDN}/sessions/banners`;
 export const ABOUT_VIDEO_CDN = `${MEDIA_CDN}/about`;
 export const CUSTOMIZE_VIDEO_CDN = `${MEDIA_CDN}/customize`;
 
-export const SITE_LOGO = `${MEDIA_CDN}/Logo_blue.png`;export const COACHING_TEXTURE = `${MEDIA_CDN}/coaching/texture.png`;
+export const SITE_LOGO = `${MEDIA_CDN}/Logo_blue.png`;
+export const MINO_PROFILE_IMAGE = `${MEDIA_CDN}/MinoProfile2.png`;
+export const COACHING_TEXTURE = `${MEDIA_CDN}/coaching/texture.png`;
 export const COACHING_TEXTURE3 = `${MEDIA_CDN}/coaching/texture3.jpg`;
 
 /** Particle / customize clips on Cloudflare (filename matches `public/videos/customize/`). */

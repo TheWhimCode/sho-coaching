@@ -5,7 +5,12 @@ import { Fragment, useEffect, useState } from "react";
 import GuideImage from "@/app/_components/guides/GuideImage";
 import { GuideLabelWithNew } from "@/app/_components/guides/GuideNewBadge";
 import GuideVideoPanel from "@/app/_components/guides/GuideVideoPanel";
-import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import {
+  renderGuideHighlightedText,
+  renderGuideHighlightedTextWithViegoAbilities,
+} from "@/app/_components/guides/guideTextHighlights";
+import type { GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
+import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
 import { categoryHasNewContent, topicIsNew } from "@/lib/guides/guideWhatsNew";
 import {
   guideInnerPanelClass,
@@ -17,9 +22,16 @@ import {
 } from "@/lib/guides/guideTheme";
 import type {
   GuideGameStageCategory,
+  GuideGameStageInvaderEntry,
   GuideGameStagePageData,
   GuideGameStageTopic,
 } from "@/lib/guides/gameStageGuideTypes";
+
+const gameStageInvaderIconClass =
+  "aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/30 sm:h-11 sm:w-11";
+
+const GAME_STAGE_EXTERNAL_LINK_CLASS =
+  "text-lg font-bold text-[#5865F2] transition hover:text-[#7289DA] sm:text-xl";
 
 const topicChipClass =
   "shrink-0 rounded-xl border px-3.5 py-2.5 text-left text-xs font-medium leading-snug transition sm:px-4 sm:py-3 sm:text-sm";
@@ -87,7 +99,7 @@ function TopicNav({
 }) {
   return (
     <div
-      className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex-col sm:overflow-visible sm:pb-0"
+      className="flex flex-wrap gap-2 sm:flex-col"
       role="tablist"
       aria-label="Topics"
     >
@@ -116,7 +128,7 @@ function TopicNav({
                   : "border-[#F0ABCF]/12 bg-[#16121A]/35 text-[#F5E6D3]/52 hover:border-[#F0ABCF]/20 hover:bg-[#F0ABCF]/5 hover:text-[#F5E6D3]/75"
             )}
           >
-            <GuideLabelWithNew isNew={topicIsNew(topic)}>
+            <GuideLabelWithNew isNew={topicIsNew(topic)} mobileBadgeAbove>
               {topic.label}
             </GuideLabelWithNew>
           </button>
@@ -129,9 +141,11 @@ function TopicNav({
 function GuideStepCallout({
   steps,
   guideTextIcons,
+  viegoAbilityIcons,
 }: {
   steps: NonNullable<GuideGameStageTopic["steps"]>;
   guideTextIcons: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
   return (
     <div className="max-w-3xl border border-[#F0ABCF]/18 bg-[#1E1724]/35 px-4 py-3">
@@ -144,9 +158,61 @@ function GuideStepCallout({
           )}
         >
           <span className="font-semibold text-[#F0ABCF]">{step.label}:</span>{" "}
-          {renderGuideHighlightedText(step.text, guideTextIcons)}
+          {renderGuideHighlightedTextWithViegoAbilities(
+            step.text,
+            guideTextIcons,
+            viegoAbilityIcons
+          )}
         </p>
       ))}
+    </div>
+  );
+}
+
+function invaderEntryChampions(entry: GuideGameStageInvaderEntry) {
+  if (entry.champions?.length) return entry.champions;
+  if (entry.champion) return [entry.champion];
+  return [];
+}
+
+function GuideTopicInvaderList({
+  entries,
+  guideTextIcons,
+}: {
+  entries: GuideGameStageInvaderEntry[];
+  guideTextIcons: Record<string, string>;
+}) {
+  return (
+    <div className="mb-3 max-w-3xl sm:mb-4">
+      <p className="text-base font-semibold text-[#F0ABCF] sm:text-lg">Common invaders:</p>
+      <ul className="mt-2 list-none space-y-2.5 pl-4 sm:mt-2.5 sm:space-y-3 sm:pl-6">
+        {entries.map((entry) => {
+          const champions = invaderEntryChampions(entry);
+
+          return (
+            <li key={entry.id} className="flex items-center gap-2.5 sm:gap-3">
+              {champions.length ? (
+                <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+                  {champions.map((champion) => (
+                    <GuideImage
+                      key={champion}
+                      src={champSquareUrlById(resolveChampionId(champion))}
+                      alt={champion}
+                      loading="lazy"
+                      className={gameStageInvaderIconClass}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <span className={clsx(gameStageInvaderIconClass, "invisible")} aria-hidden />
+              )}
+              <p className="min-w-0 text-base leading-[1.75] text-[#F5E6D3]/72 sm:text-lg sm:leading-[1.7]">
+                {renderGuideHighlightedText(entry.label, guideTextIcons)}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -154,12 +220,16 @@ function GuideStepCallout({
 function GuideTopicParagraphs({
   text,
   guideTextIcons,
+  viegoAbilityIcons,
   steps,
+  invaderList,
   showStepsAfterFirst,
 }: {
   text: string;
   guideTextIcons: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
   steps?: GuideGameStageTopic["steps"];
+  invaderList?: GuideGameStageTopic["invaderList"];
   showStepsAfterFirst?: boolean;
 }) {
   const paragraphs = text.split(/\n\n+/).filter(Boolean);
@@ -172,12 +242,23 @@ function GuideTopicParagraphs({
             {paragraph.split("\n").map((line, lineIndex) => (
               <Fragment key={lineIndex}>
                 {lineIndex > 0 ? <br /> : null}
-                {renderGuideHighlightedText(line, guideTextIcons)}
+                {renderGuideHighlightedTextWithViegoAbilities(
+                  line,
+                  guideTextIcons,
+                  viegoAbilityIcons
+                )}
               </Fragment>
             ))}
           </p>
           {showStepsAfterFirst && steps && steps.length > 0 && index === 0 ? (
-            <GuideStepCallout steps={steps} guideTextIcons={guideTextIcons} />
+            <GuideStepCallout
+              steps={steps}
+              guideTextIcons={guideTextIcons}
+              viegoAbilityIcons={viegoAbilityIcons}
+            />
+          ) : null}
+          {invaderList && invaderList.length > 0 && index === 0 ? (
+            <GuideTopicInvaderList entries={invaderList} guideTextIcons={guideTextIcons} />
           ) : null}
         </Fragment>
       ))}
@@ -275,9 +356,11 @@ function TopicVideoList({
 function TopicArticle({
   topic,
   guideTextIcons,
+  viegoAbilityIcons,
 }: {
   topic: GuideGameStageTopic;
   guideTextIcons: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
   const videos = topic.videos ?? [];
   const videosAfterBody = topic.videosAfterBody ?? [];
@@ -293,19 +376,50 @@ function TopicArticle({
         </h3>
         {topic.summary ? (
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#FAD4E8]/72 sm:text-base">
-            {renderGuideHighlightedText(topic.summary, guideTextIcons)}
+            {renderGuideHighlightedTextWithViegoAbilities(
+              topic.summary,
+              guideTextIcons,
+              viegoAbilityIcons
+            )}
           </p>
         ) : null}
       </header>
 
-      <div className="mt-6 space-y-4 sm:mt-8">
-        <GuideTopicParagraphs
-          text={topic.body}
-          guideTextIcons={guideTextIcons}
-          steps={topic.steps}
-          showStepsAfterFirst
-        />
-      </div>
+      {topic.body.trim() || topic.steps?.length || topic.invaderList?.length ? (
+        <div className="mt-6 space-y-4 sm:mt-8">
+          <GuideTopicParagraphs
+            text={topic.body}
+            guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
+            steps={topic.steps}
+            invaderList={topic.invaderList}
+            showStepsAfterFirst
+          />
+        </div>
+      ) : null}
+
+      {topic.externalLink ? (
+        <div className="mt-6 sm:mt-8">
+          <a
+            href={topic.externalLink.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={GAME_STAGE_EXTERNAL_LINK_CLASS}
+          >
+            {topic.externalLink.label}
+          </a>
+        </div>
+      ) : null}
+
+      {topic.bodyAfterExternalLink ? (
+        <div className="mt-6 space-y-4 sm:mt-8">
+          <GuideTopicParagraphs
+            text={topic.bodyAfterExternalLink}
+            guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-5 sm:mt-6">
         <GuideTopicBanner
@@ -320,6 +434,7 @@ function TopicArticle({
           <GuideTopicParagraphs
             text={topic.bodyAfterBanner}
             guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
           />
         </div>
       ) : null}
@@ -331,6 +446,7 @@ function TopicArticle({
           <GuideTopicParagraphs
             text={topic.bodyBetweenVideos}
             guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
           />
         </div>
       ) : null}
@@ -344,6 +460,7 @@ function TopicArticle({
           <GuideTopicParagraphs
             text={topic.bodyAfterVideos}
             guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
           />
         </div>
       ) : null}
@@ -354,9 +471,11 @@ function TopicArticle({
 export default function GameStagesSection({
   data,
   guideTextIcons = {},
+  viegoAbilityIcons,
 }: {
   data: GuideGameStagePageData;
   guideTextIcons?: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
   const [categoryId, setCategoryId] = useState(data.categories[0]?.id ?? "");
   const category =
@@ -400,7 +519,7 @@ export default function GameStagesSection({
           onSelect={setCategoryId}
         />
         {category.subtitle ? (
-          <div className="border-b border-[#F0ABCF]/10 bg-[#16121A]/35 px-6 py-4 sm:px-8 sm:py-5">
+          <div className="hidden border-b border-[#F0ABCF]/10 bg-[#16121A]/35 px-6 py-4 sm:block sm:px-8 sm:py-5">
             <p className="max-w-3xl text-sm leading-relaxed text-[#FAD4E8]/72 sm:text-base">
               {category.subtitle}
             </p>
@@ -422,7 +541,11 @@ export default function GameStagesSection({
 
             <div className="min-w-0 flex-1 px-6 pb-4 pt-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4">
               {topic ? (
-                <TopicArticle topic={topic} guideTextIcons={guideTextIcons} />
+                <TopicArticle
+                  topic={topic}
+                  guideTextIcons={guideTextIcons}
+                  viegoAbilityIcons={viegoAbilityIcons}
+                />
               ) : (
                 <p className="text-sm text-[#F5E6D3]/48 sm:text-base">
                   More topics coming soon.

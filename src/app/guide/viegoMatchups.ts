@@ -106,12 +106,12 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Graves",
           explanation:
-            "Very hard for Kraken Viego, but from LDR you can oneshot him and they never expect it. But you can't contest his early scuttle or Raptors invades, he gains way too much Armor.\n\nClear your camps on spawn, don't give him an angle and respect early drakes if your team doesn't have good setup/AP.",
+            "Very hard for Kraken Viego, but from LDR you can oneshot him and they never expect it. But you can't contest his early Scuttle or Raptors invades, he gains way too much Armor.\n\nClear your camps on spawn, don't give him an angle and respect early drakes if your team doesn't have good setup/AP.",
         },
         {
           champion: "Hecarim",
           explanation:
-            "He relies heavily on having his Q stacks active. At scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He cannot start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
+            "He relies heavily on having his Q stacks active. At Scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He cannot start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
         },
         {
           champion: "Jax",

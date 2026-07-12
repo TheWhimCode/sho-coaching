@@ -10,6 +10,18 @@ export type GuideGameStageStep = {
   text: string;
 };
 
+export type GuideGameStageInvaderEntry = {
+  id: string;
+  champion?: string;
+  champions?: string[];
+  label: string;
+};
+
+export type GuideGameStageExternalLink = {
+  label: string;
+  href: string;
+};
+
 export type GuideGameStageQuote = {
   lead?: string;
   text: string;
@@ -27,6 +39,12 @@ export type GuideGameStageTopic = {
   quote?: GuideGameStageQuote;
   /** Optional highlighted step cards (e.g. Step 1 / Step 2). Rendered after the first body paragraph. */
   steps?: GuideGameStageStep[];
+  /** Optional invader list with champion icons, rendered after the first body paragraph. */
+  invaderList?: GuideGameStageInvaderEntry[];
+  /** Optional external link (e.g. TikTok) rendered after the body copy. */
+  externalLink?: GuideGameStageExternalLink;
+  /** Optional copy rendered after the external link. */
+  bodyAfterExternalLink?: string;
   videos?: GuideGameStageVideo[];
   /** Optional copy rendered after mid-content videos and before trailing videos. */
   bodyBetweenVideos?: string;

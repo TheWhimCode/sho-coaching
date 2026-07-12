@@ -9,6 +9,12 @@ export interface SpellData {
   key: "Q" | "W" | "E" | "R";
 }
 
+export interface ChampionPassiveData {
+  name: string;
+  description: string;
+  icon: string;
+}
+
 export interface ChampionSpells {
   championId: string;
   spells: SpellData[];
@@ -56,4 +62,30 @@ console.log("Fetching champ:", championId);
     version,
     data: { championId, spells },
   };
+}
+
+export async function fetchChampionPassiveById(
+  championId: string
+): Promise<ChampionPassiveData | null> {
+  try {
+    const version = await getLatestVersion();
+
+    const res = await fetch(CHAMP_DETAIL_URL(version, championId), {
+      next: { revalidate: 60 * 60 * 24 },
+    });
+
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    const passive = json.data[championId]?.passive;
+    if (!passive) return null;
+
+    return {
+      name: passive.name,
+      description: passive.description,
+      icon: `https://ddragon.leagueoflegends.com/cdn/${version}/img/passive/${passive.image.full}`,
+    };
+  } catch {
+    return null;
+  }
 }

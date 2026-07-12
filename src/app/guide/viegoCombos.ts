@@ -32,7 +32,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       posterSrc: guideComboThumbnail("Rex.webp"),
       ingameExampleVideoSrc: guideComboVideo("ingameRextension.webm"),
       ingamePosterSrc: guideComboThumbnail("iRex.webp"),
-      explanation: "W > R extends the R range immediately. This only works with W, if you Lucian E > R your R will just have the normal range. Wait until the dash is completed before you R on other champions.",
+      explanation: "W > R extends the R range immediately. This only works with W, if you Lucian e > R your R will just have the normal range. Wait until the dash is completed before you R on other champions.",
     },
     {
       id: "r-extension-burst",

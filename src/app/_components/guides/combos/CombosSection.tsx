@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import ComboSequenceBar from "@/app/_components/guides/combos/ComboSequenceBar";
 import GuideVideoPanel from "@/app/_components/guides/GuideVideoPanel";
-import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { renderGuideHighlightedTextWithViegoAbilities } from "@/app/_components/guides/guideTextHighlights";
 import { guideInnerPanelClass, guideMobileFlushPanelClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 
@@ -188,7 +188,11 @@ export default function CombosSection({
               </p>
               {selected.explanation.split("\n").map((paragraph, index) => (
                 <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
-                  {renderGuideHighlightedText(paragraph, guideTextIcons)}
+                  {renderGuideHighlightedTextWithViegoAbilities(
+                    paragraph,
+                    guideTextIcons,
+                    abilityIcons
+                  )}
                 </p>
               ))}
             </div>

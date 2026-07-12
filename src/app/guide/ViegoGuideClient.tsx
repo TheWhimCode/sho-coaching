@@ -73,7 +73,7 @@ export default function ViegoGuideClient({
     },
     { id: "combos", label: comboData.heading },
     ...(SHOW_GUIDE_POSSESSIONS_SECTION
-      ? [{ id: "possessions", label: possessionsData.heading }]
+      ? [{ id: "possessions", label: possessionsData.heading, isNew: possessionsData.isNew }]
       : []),
     {
       id: "game-stages",
@@ -166,14 +166,18 @@ export default function ViegoGuideClient({
           <div className="mt-16">
             <PossessionsSection
               data={possessionsData}
-              abilityIcons={viegoAbilityIcons}
               guideTextIcons={guideTextIcons}
+              viegoAbilityIcons={viegoAbilityIcons}
             />
           </div>
         ) : null}
 
         <div className="mt-16">
-          <GameStagesSection data={gameStagesData} guideTextIcons={guideTextIcons} />
+          <GameStagesSection
+            data={gameStagesData}
+            guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
+          />
         </div>
 
         <GuideFooter />

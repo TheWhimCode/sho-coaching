@@ -2,6 +2,7 @@ export const GUIDE_CONQUEROR_ORANGE = "#F97316";
 export const GUIDE_DARK_RED = "#B01212";
 export const GUIDE_SHIELDBOW_RED = "#FF2222";
 export const GUIDE_KRAKEN_GOLD = "#F5B800";
+export const GUIDE_GA_BEIGE = "#F5E6D3";
 export const GUIDE_STEELCAPS_BROWN = "#A67C4E";
 export const GUIDE_HUBRIS_BROWN = "#C86B10";
 export const GUIDE_SERPENTS_GRAY = "#C5DDD0";
@@ -13,15 +14,18 @@ export const GUIDE_FROST_BLUE = "#67E8F9";
 export const GUIDE_AP_PURPLE = "#A855F7";
 export const GUIDE_AS_YELLOW = "#EAB308";
 export const GUIDE_MS_GREEN = "#4ADE80";
+export const GUIDE_PROTOPLASM_GREEN = "#16A34A";
 export const GUIDE_MR_VIOLET = "#8B5CF6";
 export const GUIDE_AH_CYAN = "#22D3EE";
 export const GUIDE_TENACITY_AMBER = "#FB923C";
+export const GUIDE_SMITE_AMBER = "#E8960C";
 
 export type GuideTextEntityIcon =
   | { kind: "item"; id: string }
   | { kind: "rune"; id: number }
   | { kind: "spell"; id: number }
-  | { kind: "stat"; name: string };
+  | { kind: "stat"; name: string }
+  | { kind: "camp"; id: string };
 
 export type GuideTextEntity = {
   patterns: string[];
@@ -33,6 +37,8 @@ export type GuideTextEntity = {
   colorSuffix?: string;
   weight?: number;
   boldOnly?: boolean;
+  /** Render matched text as this label (e.g. capitalize "smite" → "Smite"). */
+  displayAs?: string;
 };
 
 /** Longest patterns win — list multi-word names before short aliases. */
@@ -115,6 +121,12 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "3053" },
   },
   {
+    patterns: ["Protoplasm Harness", "Protoplasm"],
+    matchKey: "protoplasm-harness",
+    color: GUIDE_PROTOPLASM_GREEN,
+    icon: { kind: "item", id: "2525" },
+  },
+  {
     patterns: ["Locket of the Iron Solari", "Locket"],
     matchKey: "locket",
     color: "#CA8A04",
@@ -123,6 +135,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
   {
     patterns: ["Guardian Angel"],
     matchKey: "guardian-angel",
+    color: GUIDE_GA_BEIGE,
     icon: { kind: "item", id: "3026" },
   },
   {
@@ -265,7 +278,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
   },
   { patterns: ["\\bIE\\b"], matchKey: "ie", color: GUIDE_KRAKEN_GOLD, icon: { kind: "item", id: "3031" } },
   { patterns: ["\\bDD\\b"], matchKey: "dd", color: GUIDE_CONQUEROR_ORANGE, icon: { kind: "item", id: "6333" } },
-  { patterns: ["\\bGA\\b"], matchKey: "ga", icon: { kind: "item", id: "3026" } },
+  { patterns: ["\\bGA\\b"], matchKey: "ga", color: GUIDE_GA_BEIGE, icon: { kind: "item", id: "3026" } },
   { patterns: ["\\bQSS\\b"], matchKey: "qss", icon: { kind: "item", id: "3140" } },
   { patterns: ["Flash"], matchKey: "flash", color: "#FFE566", icon: { kind: "spell", id: 4 } },
   {
@@ -280,7 +293,60 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     color: "#4ADE80",
     icon: { kind: "item", id: "1103" },
   },
-  { patterns: ["Smite"], matchKey: "smite", icon: { kind: "spell", id: 11 } },
+  {
+    patterns: ["\\b[Ss]mite\\b"],
+    matchKey: "smite",
+    displayAs: "Smite",
+    color: GUIDE_SMITE_AMBER,
+    icon: { kind: "spell", id: 11 },
+  },
+  {
+    patterns: ["Blue Kayn"],
+    matchKey: "blue-kayn",
+    boldOnly: true,
+  },
+  {
+    patterns: ["Murk Wolves", "Wolves"],
+    matchKey: "wolves",
+    displayAs: "Wolves",
+    icon: { kind: "camp", id: "wolves" },
+  },
+  {
+    patterns: ["Raptors", "Raptor"],
+    matchKey: "raptors",
+    displayAs: "Raptors",
+    icon: { kind: "camp", id: "raptors" },
+  },
+  {
+    patterns: ["Krugs"],
+    matchKey: "krugs",
+    displayAs: "Krugs",
+    icon: { kind: "camp", id: "krugs" },
+  },
+  {
+    patterns: ["Gromp"],
+    matchKey: "gromp",
+    displayAs: "Gromp",
+    icon: { kind: "camp", id: "gromp" },
+  },
+  {
+    patterns: ["Scuttle", "\\bscuttle\\b", "\\bcrab\\b"],
+    matchKey: "scuttle",
+    displayAs: "Scuttle",
+    icon: { kind: "camp", id: "scuttle" },
+  },
+  {
+    patterns: ["\\bBlue\\b"],
+    matchKey: "blue",
+    displayAs: "Blue",
+    icon: { kind: "camp", id: "blue" },
+  },
+  {
+    patterns: ["\\bRed\\b", "\\bred\\b"],
+    matchKey: "red",
+    displayAs: "Red",
+    icon: { kind: "camp", id: "red" },
+  },
   {
     patterns: ["Barrier"],
     matchKey: "barrier",

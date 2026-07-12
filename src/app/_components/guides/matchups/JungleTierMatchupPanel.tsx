@@ -102,7 +102,7 @@ function TierIconButton({
       )}
     >
       {matchup.isNew ? (
-        <GuideNewBadge className="pointer-events-none absolute right-2 top-1 z-10 text-[7px]" />
+        <GuideNewBadge className="pointer-events-none absolute right-2 top-1 z-10 text-[6px] sm:text-[7px]" />
       ) : null}
       <div
         className={clsx(
@@ -147,6 +147,7 @@ function TierRow({
   return (
     <div
       className={clsx(
+        "max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:p-0",
         "rounded-xl border bg-[#1E1724]/35 px-3 py-3 sm:px-4 sm:py-3.5",
         accent.tierBorder
       )}
@@ -158,7 +159,7 @@ function TierRow({
         <p className="text-[0.65rem] normal-case text-[#F5E6D3]/48 sm:text-xs">{tier.subtitle}</p>
       </div>
 
-      <div className="mt-2.5 grid grid-cols-4 gap-1.5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
+      <div className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-1.5 md:grid-cols-8 lg:grid-cols-10">
         {tier.matchups.map((matchup) => (
           <TierIconButton
             key={matchup.id}
@@ -185,44 +186,57 @@ function MatchupDetailPanel({
   const accent = TIER_TONE[entry.tier.tone];
   const detailText = entry.matchup.explanation ?? "";
 
+  const explanationBody = (
+    <>
+      {detailText.split("\n").map((paragraph, index) => (
+        <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
+          {renderGuideHighlightedText(paragraph, guideTextIcons)}
+        </p>
+      ))}
+    </>
+  );
+
   return (
     <div className="w-full min-w-0 max-w-full rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:p-5">
-      <div className="flex items-start gap-3 sm:gap-5">
-        <div
-          className={clsx(
-            "relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
-            accent.detailRing
-          )}
-        >
-          <GuideImage
-            src={entry.matchup.icon}
-            alt={entry.matchup.name}
-            loading="lazy"
-            className={guideChampionIconImgClass}
-          />
-        </div>
-        <div className="min-w-0 flex-1 break-words">
-          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            <p
-              className={clsx(
-                "text-sm font-semibold leading-none sm:text-base",
-                accent.nameSelected
-              )}
-            >
-              {entry.matchup.name}
-            </p>
-            <p className="text-xs font-medium tabular-nums text-[#F5E6D3]/52 sm:text-sm">
-              Possession value {entry.matchup.possessionValue}/10
-            </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+        <div className="flex items-center gap-3 sm:contents">
+          <div
+            className={clsx(
+              "relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
+              accent.detailRing
+            )}
+          >
+            <GuideImage
+              src={entry.matchup.icon}
+              alt={entry.matchup.name}
+              loading="lazy"
+              className={guideChampionIconImgClass}
+            />
           </div>
 
-          <div className="mt-2 min-w-0 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:text-base">
-            {detailText.split("\n").map((paragraph, index) => (
-              <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
-                {renderGuideHighlightedText(paragraph, guideTextIcons)}
+          <div className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-0 sm:flex-initial sm:gap-0">
+            <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2.5 sm:gap-y-1">
+              <p
+                className={clsx(
+                  "text-sm font-semibold leading-none sm:text-base",
+                  accent.nameSelected
+                )}
+              >
+                {entry.matchup.name}
               </p>
-            ))}
+              <p className="text-xs font-medium tabular-nums text-[#F5E6D3]/52 sm:text-sm">
+                Possession value {entry.matchup.possessionValue}/10
+              </p>
+            </div>
+
+            <div className="mt-2 hidden min-w-0 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:block sm:text-base">
+              {explanationBody}
+            </div>
           </div>
+        </div>
+
+        <div className="min-w-0 w-full text-sm leading-[1.7] text-[#F5E6D3]/62 sm:hidden">
+          {explanationBody}
         </div>
       </div>
     </div>
