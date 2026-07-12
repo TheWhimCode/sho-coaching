@@ -1,10 +1,12 @@
 "use client";
 
 import clsx from "clsx";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import GuideImage from "@/app/_components/guides/GuideImage";
+import { GameStagesSectionSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import { GuideLabelWithNew } from "@/app/_components/guides/GuideNewBadge";
 import GuideVideoPanel from "@/app/_components/guides/GuideVideoPanel";
+import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import {
   renderGuideHighlightedText,
   renderGuideHighlightedTextWithViegoAbilities,
@@ -26,6 +28,7 @@ import type {
   GuideGameStagePageData,
   GuideGameStageTopic,
 } from "@/lib/guides/gameStageGuideTypes";
+import { collectGameStagesSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 
 const gameStageInvaderIconClass =
   "aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/30 sm:h-11 sm:w-11";
@@ -498,13 +501,39 @@ export default function GameStagesSection({
     category?.topics.find((entry) => entry.id === topicId && !entry.disabled) ??
     firstEnabledTopic(category?.topics ?? []);
 
+  const imageUrls = useMemo(() => collectGameStagesSectionImageUrls(data), [data]);
+  const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(imageUrls);
+  const showContent = shouldLoad && imagesReady;
+
   if (!category) return null;
 
   return (
     <section
+      ref={sectionRef}
       id="game-stages"
       className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible"
+      aria-busy={shouldLoad && !imagesReady}
     >
+      {!shouldLoad ? (
+        <GameStagesSectionSkeleton data={data} />
+      ) : (
+        <div className="grid">
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "pointer-events-none opacity-0" : "opacity-100"
+            )}
+          >
+            <GameStagesSectionSkeleton data={data} />
+          </div>
+
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden={!showContent}
+          >
       <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
         <h2 className={guideSectionTitleClass}>{data.heading}</h2>
         {data.subtitle ? (
@@ -555,6 +584,9 @@ export default function GameStagesSection({
           </div>
         </div>
       </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

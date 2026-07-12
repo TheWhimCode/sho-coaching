@@ -6,18 +6,24 @@ import {
   guideSectionHeaderPadClass,
   guideSectionTitleClass,
   guideMobileFlushPanelClass,
+  guideInnerPanelClass,
+  guideSectionSubClass,
 } from "@/lib/guides/guideTheme";
 import type {
   GuideItemPageData,
   SerializedGuideItemSharedPath,
   SerializedGuideItemStep,
 } from "@/lib/guides/itemGuideTypes";
-import type { GuideMatchupPageData } from "@/lib/guides/matchupGuideTypes";
+import type { GuideMatchupPageData, GuideJungleTierMatchupPageData } from "@/lib/guides/matchupGuideTypes";
 import type {
   GuideRunePageData,
   SerializedRuneTree,
   SerializedStatShardRow,
 } from "@/lib/guides/runeGuideTypes";
+import type { GuideGameStagePageData } from "@/lib/guides/gameStageGuideTypes";
+import type { GuidePossessionPageData } from "@/lib/guides/possessionGuideTypes";
+import type { GuideComboPageData } from "@/lib/guides/comboGuideTypes";
+import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
 
 const ITEM_TILE_CLASS =
   "aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/30 sm:h-16 sm:w-16";
@@ -45,6 +51,20 @@ const ITEM_LANE_SPACER_H =
 
 const PREBUILD_HEADER_CLASS =
   "text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#B8D8EA]/55";
+
+const CHAMPION_TILE_SKELETON_CLASS =
+  "aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#352839]/90 sm:h-11 sm:w-11";
+
+const TOPIC_CHIP_SKELETON_CLASS =
+  "rounded-xl border border-[#F0ABCF]/12 bg-[#16121A]/40 px-3.5 py-2.5 sm:px-4 sm:py-3";
+
+function VideoPanelSkeleton() {
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#F0ABCF]/15 bg-[#1E1724] ring-1 ring-[#B8D8EA]/10">
+      <div className="absolute inset-0 animate-pulse bg-[#352839]/90" aria-hidden />
+    </div>
+  );
+}
 
 function SkeletonCircle({ className }: { className?: string }) {
   return (
@@ -766,6 +786,341 @@ export function MatchupSectionSkeleton({ data }: { data: GuideMatchupPageData })
               </p>
               <TextLineSkeletons
                 body={selectedMatchup.explanation}
+                className="mt-2 text-sm leading-[1.7] sm:text-base"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function firstEnabledGameStageTopic(data: GuideGameStagePageData) {
+  const category = data.categories[0];
+  if (!category) return null;
+  return category.topics.find((topic) => !topic.disabled) ?? category.topics[0] ?? null;
+}
+
+export function GameStagesSectionSkeleton({ data }: { data: GuideGameStagePageData }) {
+  const category = data.categories[0];
+  const topic = firstEnabledGameStageTopic(data);
+
+  return (
+    <div aria-hidden className="w-full min-w-0 max-w-full">
+      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
+        <h2 className={guideSectionTitleClass}>{data.heading}</h2>
+        {data.subtitle ? <p className={guideSectionSubClass}>{data.subtitle}</p> : null}
+      </div>
+
+      <div className={clsx(guideRuneOuterPanelClass, guideMobileFlushPanelClass, "overflow-hidden p-0 sm:p-0")}>
+        <div className="grid grid-cols-2 divide-y divide-[#F0ABCF]/12 border-b border-[#F0ABCF]/12 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+          {data.categories.map((entry) => (
+            <div
+              key={entry.id}
+              className="flex min-h-[3.75rem] items-center justify-center px-4 py-4 text-center text-base font-bold tracking-wide text-[#F5E6D3]/25 sm:min-h-[4.25rem] sm:px-5 sm:py-5 sm:text-lg"
+            >
+              {entry.label}
+            </div>
+          ))}
+        </div>
+
+        {category?.subtitle ? (
+          <div className="hidden border-b border-[#F0ABCF]/10 bg-[#16121A]/35 px-6 py-4 sm:block sm:px-8 sm:py-5">
+            <p className="max-w-3xl text-sm leading-relaxed text-[#FAD4E8]/25 sm:text-base">
+              {category.subtitle}
+            </p>
+          </div>
+        ) : null}
+
+        <div
+          className={clsx(
+            guideInnerPanelClass,
+            "max-sm:!border-0 max-sm:!bg-transparent max-sm:!p-0 sm:!rounded-none sm:!border-0 sm:!bg-transparent sm:!p-0"
+          )}
+        >
+          <div className="flex flex-col gap-0 lg:flex-row lg:items-start">
+            <aside className="max-sm:px-6 max-sm:py-5 border-b border-[#F0ABCF]/10 sm:py-5 sm:pl-4 sm:pr-6 lg:sticky lg:top-24 lg:w-[min(100%,13rem)] lg:shrink-0 lg:border-b-0 lg:border-r lg:py-8 lg:pl-4 lg:pr-8 xl:w-52">
+              <p className="mb-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/40 sm:text-xs">
+                Topics
+              </p>
+              <div className="flex flex-wrap gap-2 sm:flex-col">
+                {(category?.topics ?? []).map((entry) => (
+                  <div
+                    key={entry.id}
+                    className={clsx(
+                      TOPIC_CHIP_SKELETON_CLASS,
+                      "text-xs font-medium text-[#F5E6D3]/20 sm:w-full sm:text-sm",
+                      entry.disabled && "opacity-45"
+                    )}
+                  >
+                    {entry.label}
+                  </div>
+                ))}
+              </div>
+            </aside>
+
+            <div className="min-w-0 flex-1 px-6 pb-4 pt-4 sm:p-6 lg:py-8 lg:pl-8 lg:pr-4">
+              {topic ? (
+                <article className="min-h-[28rem] sm:min-h-[32rem]">
+                  <header className="border-b border-[#F0ABCF]/10 pb-6 sm:pb-8">
+                    <h3 className="text-xl font-bold tracking-tight text-[#FAD4E8]/25 sm:text-2xl lg:text-[1.65rem]">
+                      {topic.label}
+                    </h3>
+                    {topic.summary ? (
+                      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#FAD4E8]/20 sm:text-base">
+                        {topic.summary}
+                      </p>
+                    ) : null}
+                  </header>
+                  <div className="mt-6 space-y-4 sm:mt-8">
+                    <TextLineSkeletons
+                      body={topic.body}
+                      className="max-w-3xl text-base leading-[1.9] sm:text-lg"
+                    />
+                  </div>
+                </article>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function PossessionsSectionSkeleton({ data }: { data: GuidePossessionPageData }) {
+  return (
+    <div aria-hidden className="w-full min-w-0 max-w-full">
+      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
+        <h2 className={guideSectionTitleClass}>{data.heading}</h2>
+        {data.subtitle ? <p className={guideSectionSubClass}>{data.subtitle}</p> : null}
+      </div>
+
+      <div
+        className={clsx(
+          guideRuneOuterPanelClass,
+          guideMobileFlushPanelClass,
+          "overflow-hidden p-0 sm:p-0"
+        )}
+      >
+        <div className="border-b border-[#F0ABCF]/10 px-6 py-8 sm:px-10 sm:py-10">
+          <h3 className="text-xl font-bold tracking-tight text-[#B8D8EA]/25 sm:text-2xl">
+            {data.howItWorksHeading}
+          </h3>
+          {data.howItWorksNote ? (
+            <p className="mt-3 text-base leading-[1.7] text-[#F5E6D3]/20 sm:mt-4 sm:text-lg">
+              {data.howItWorksNote}
+            </p>
+          ) : null}
+          <ol className="mt-6 list-none space-y-4 pl-4 sm:mt-7 sm:space-y-4 sm:pl-6">
+            {data.flow.map((step, index) => (
+              <li key={step.id} className="flex items-start gap-2.5 sm:gap-3">
+                <span className="w-9 shrink-0 text-right text-sm font-bold tabular-nums text-[#F0ABCF]/25 sm:text-base">
+                  {index + 1}.
+                </span>
+                <p className="min-w-0 flex-1 text-sm leading-[1.75] text-[#F5E6D3]/20 sm:text-base">
+                  {step.label}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="px-6 py-8 sm:px-10 sm:py-10">
+          <h3 className="text-xl font-bold tracking-tight text-[#B8D8EA]/25 sm:text-2xl">
+            {data.bestToPossessHeading}
+          </h3>
+          <p className="mt-3 text-base leading-[1.7] text-[#F5E6D3]/20 sm:mt-4 sm:text-lg">
+            {data.bestToPossessIntro}
+          </p>
+
+          <div className="mx-auto mt-7 flex w-full max-w-xl flex-col items-start gap-4 sm:mt-8 sm:gap-4">
+            {data.possessionTiers.map((tier) => (
+              <div key={tier.id} className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+                <p className="w-16 shrink-0 text-left text-xs font-semibold text-[#F5E6D3]/20 sm:w-[4.5rem] sm:text-sm">
+                  {tier.label}
+                </p>
+                <div className="flex min-w-0 flex-wrap justify-start gap-1.5 sm:gap-2">
+                  {tier.champions.map((champion) => (
+                    <div
+                      key={champion.id}
+                      className={clsx(CHAMPION_TILE_SKELETON_CLASS, "animate-pulse ring-1 ring-[#F0ABCF]/15")}
+                      aria-hidden
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CombosSectionSkeleton({ data }: { data: GuideComboPageData }) {
+  const selected = data.combos[0];
+
+  return (
+    <div aria-hidden className="w-full min-w-0 max-w-full">
+      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
+        <h2 className={guideSectionTitleClass}>{data.heading}</h2>
+        {data.subtitle ? (
+          <p className="mt-2 text-sm text-[#F5E6D3]/20 sm:text-base">{data.subtitle}</p>
+        ) : null}
+      </div>
+
+      <div
+        className={clsx(
+          guideInnerPanelClass,
+          guideMobileFlushPanelClass,
+          "overflow-hidden max-sm:!border-0 max-sm:!bg-transparent max-sm:!p-0 sm:p-0"
+        )}
+      >
+        <div className="flex flex-col lg:flex-row">
+          <div className="max-sm:p-0 sm:border-b sm:border-[#F0ABCF]/12 sm:py-5 sm:pl-4 sm:pr-6 lg:w-[min(100%,16rem)] lg:shrink-0 lg:border-b-0 lg:border-r lg:pl-4 lg:pr-8 xl:w-64">
+            <p className="mb-3 hidden text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/40 sm:block sm:text-xs">
+              Select combo
+            </p>
+            <div className="hidden flex-col gap-2 sm:flex">
+              {data.combos.map((combo) => (
+                <div
+                  key={combo.id}
+                  className={clsx(
+                    TOPIC_CHIP_SKELETON_CLASS,
+                    "text-xs font-semibold tracking-wide text-[#F5E6D3]/20 sm:text-sm"
+                  )}
+                >
+                  {combo.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1 px-6 pb-4 pt-4 sm:p-6 lg:py-4 lg:pl-8 lg:pr-4">
+            {selected ? (
+              <>
+                <div className="mb-4 flex flex-wrap gap-1.5">
+                  {(selected.sequence ?? ["Q", "W"]).map((_, index) => (
+                    <SkeletonCircle key={index} className="size-8 sm:size-9" />
+                  ))}
+                </div>
+                <h3 className="text-base font-semibold text-[#FAD4E8]/25 sm:text-lg">
+                  {selected.label}
+                </h3>
+                <div className="mt-4">
+                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/40 sm:text-xs">
+                    Combo clip
+                  </p>
+                  <VideoPanelSkeleton />
+                </div>
+                <div className="mt-5">
+                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/40 sm:text-xs">
+                    When to use it
+                  </p>
+                  <TextLineSkeletons
+                    body={selected.explanation}
+                    className="text-sm leading-[1.75] sm:text-base"
+                  />
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const CONVENTIONAL_PANEL_CLASS =
+  "overflow-hidden rounded-none border border-[#F0ABCF]/15 border-x-0 bg-[#2A1F2E]/75 px-6 py-8 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:rounded-2xl sm:border-x sm:px-10 sm:py-10 lg:px-14 lg:py-12";
+
+export function ConventionalBuildSectionSkeleton({
+  data,
+}: {
+  data: GuideConventionalBuildPageData;
+}) {
+  return (
+    <div aria-hidden className="w-full min-w-0 max-w-full">
+      <div className={CONVENTIONAL_PANEL_CLASS}>
+        <h2 className="text-xl font-bold tracking-tight text-[#FAD4E8]/25 sm:text-2xl">
+          {data.heading}
+        </h2>
+        <div className="mt-4 space-y-4">
+          {data.paragraphs.map((paragraph, index) => (
+            <TextLineSkeletons
+              key={index}
+              body={paragraph}
+              className="text-sm leading-[1.75] sm:text-base"
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function JungleTierIconSkeleton() {
+  return (
+    <div className="flex min-w-0 flex-col items-center rounded-lg border border-[#F5E6D3]/8 bg-[#1E1724]/30 px-1 py-1.5 opacity-45 sm:py-2">
+      <SkeletonCircle className="size-8 sm:size-9" />
+      <div className="mt-1 h-3 w-10 animate-pulse rounded bg-[#352839]/70" aria-hidden />
+    </div>
+  );
+}
+
+export function JungleTierMatchupPanelSkeleton({
+  data,
+}: {
+  data: GuideJungleTierMatchupPageData;
+}) {
+  const firstTier = data.tiers[0];
+  const firstMatchup = firstTier?.matchups.find((matchup) => matchup.hasExplanation);
+
+  return (
+    <div aria-hidden className="w-full min-w-0 max-w-full">
+      <div
+        className={clsx(
+          "mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
+          guideSectionHeaderPadClass
+        )}
+      >
+        <h2 className={guideSectionTitleClass}>{data.title}</h2>
+        <div className="h-10 w-full animate-pulse rounded-lg border border-[#F0ABCF]/12 bg-[#1E1724]/55 sm:max-w-xs" />
+      </div>
+
+      <div className={clsx("flex flex-col gap-3", guideSectionHeaderPadClass)}>
+        {data.tiers.map((tier) => (
+          <div
+            key={tier.id}
+            className="rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/35 px-3 py-3 sm:px-4 sm:py-3.5"
+          >
+            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F5E6D3]/25 sm:text-sm">
+                {tier.label}
+              </h3>
+              <p className="text-[0.65rem] normal-case text-[#F5E6D3]/18 sm:text-xs">{tier.subtitle}</p>
+            </div>
+            <div className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-1.5 md:grid-cols-8 lg:grid-cols-10">
+              {tier.matchups.map((matchup) => (
+                <JungleTierIconSkeleton key={matchup.id} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {firstTier && firstMatchup ? (
+        <div className="mt-4 w-full min-w-0 max-w-full rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:mt-5 sm:p-5">
+          <div className="flex items-start gap-3 sm:gap-5">
+            <SkeletonTile className="h-12 w-12 shrink-0 rounded-lg sm:h-[4.9rem] sm:w-[4.9rem]" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold leading-none text-[#F5E6D3]/25 sm:text-base">
+                {firstMatchup.name}
+              </p>
+              <TextLineSkeletons
+                body={firstMatchup.explanation ?? ""}
                 className="mt-2 text-sm leading-[1.7] sm:text-base"
               />
             </div>

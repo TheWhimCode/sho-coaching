@@ -1,12 +1,15 @@
 "use client";
 
 import clsx from "clsx";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ComboSequenceBar from "@/app/_components/guides/combos/ComboSequenceBar";
+import { CombosSectionSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import GuideVideoPanel from "@/app/_components/guides/GuideVideoPanel";
 import { renderGuideHighlightedTextWithViegoAbilities } from "@/app/_components/guides/guideTextHighlights";
+import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import { guideInnerPanelClass, guideMobileFlushPanelClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
+import { collectCombosSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 
 const comboListButtonClass =
   "w-full rounded-xl border px-3 py-2.5 text-left text-xs font-semibold tracking-wide transition sm:px-4 sm:py-3 sm:text-sm";
@@ -138,8 +141,40 @@ export default function CombosSection({
     selected.ingameExampleVideoEmbedUrl ||
     selected.ingamePosterSrc;
 
+  const imageUrls = useMemo(
+    () => collectCombosSectionImageUrls(data, abilityIcons),
+    [data, abilityIcons]
+  );
+  const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(imageUrls);
+  const showContent = shouldLoad && imagesReady;
+
   return (
-    <section id="combos" className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible">
+    <section
+      ref={sectionRef}
+      id="combos"
+      className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible"
+      aria-busy={shouldLoad && !imagesReady}
+    >
+      {!shouldLoad ? (
+        <CombosSectionSkeleton data={data} />
+      ) : (
+        <div className="grid">
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "pointer-events-none opacity-0" : "opacity-100"
+            )}
+          >
+            <CombosSectionSkeleton data={data} />
+          </div>
+
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden={!showContent}
+          >
       <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
         <h2 className={guideSectionTitleClass}>{data.heading}</h2>
         {data.subtitle ? (
@@ -213,6 +248,9 @@ export default function CombosSection({
           </div>
         </div>
       </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

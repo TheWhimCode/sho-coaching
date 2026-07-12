@@ -1,6 +1,11 @@
 import type { GuideItemPageData, SerializedGuideItem } from "@/lib/guides/itemGuideTypes";
 import type { GuideMatchupPageData } from "@/lib/guides/matchupGuideTypes";
 import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
+import type { GuideGameStagePageData } from "@/lib/guides/gameStageGuideTypes";
+import type { GuidePossessionPageData } from "@/lib/guides/possessionGuideTypes";
+import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
+import type { GuideJungleTierMatchupPageData } from "@/lib/guides/matchupGuideTypes";
+import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
 
 function addItem(urls: Set<string>, item: SerializedGuideItem | null | undefined) {
   if (item?.icon) urls.add(item.icon);
@@ -87,6 +92,72 @@ export function collectMatchupSectionImageUrls(data: GuideMatchupPageData): stri
   }
 
   return [...urls];
+}
+
+export function collectGameStagesSectionImageUrls(data: GuideGameStagePageData): string[] {
+  const urls = new Set<string>();
+
+  for (const category of data.categories) {
+    for (const topic of category.topics) {
+      if (topic.bannerImageSrc) urls.add(topic.bannerImageSrc);
+
+      for (const video of [...(topic.videos ?? []), ...(topic.videosAfterBody ?? [])]) {
+        if (video.posterSrc) urls.add(video.posterSrc);
+      }
+
+      for (const entry of topic.invaderList ?? []) {
+        if (entry.champion) urls.add(champSquareUrlById(resolveChampionId(entry.champion)));
+        for (const champion of entry.champions ?? []) {
+          urls.add(champSquareUrlById(resolveChampionId(champion)));
+        }
+      }
+    }
+  }
+
+  return [...urls];
+}
+
+export function collectPossessionsSectionImageUrls(data: GuidePossessionPageData): string[] {
+  const urls = new Set<string>();
+
+  for (const tier of data.possessionTiers) {
+    for (const champion of tier.champions) {
+      if (champion.icon) urls.add(champion.icon);
+      for (const icon of Object.values(champion.abilityIcons)) {
+        if (icon) urls.add(icon);
+      }
+    }
+  }
+
+  for (const example of data.howItWorksPassiveExamples ?? []) {
+    if (example.passiveIcon) urls.add(example.passiveIcon);
+  }
+
+  return [...urls];
+}
+
+export function collectCombosSectionImageUrls(
+  data: GuideComboPageData,
+  abilityIcons: GuideViegoAbilityIcons
+): string[] {
+  const urls = new Set<string>();
+
+  for (const combo of data.combos) {
+    if (combo.posterSrc) urls.add(combo.posterSrc);
+    if (combo.ingamePosterSrc) urls.add(combo.ingamePosterSrc);
+  }
+
+  for (const icon of Object.values(abilityIcons)) {
+    if (icon) urls.add(icon);
+  }
+
+  return [...urls];
+}
+
+export function collectJungleTierMatchupSectionImageUrls(
+  data: GuideJungleTierMatchupPageData
+): string[] {
+  return data.tiers.flatMap((tier) => tier.matchups.map((matchup) => matchup.icon));
 }
 
 export function collectGuideCriticalPreloadUrls(

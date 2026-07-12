@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import GuideImage from "@/app/_components/guides/GuideImage";
+import { JungleTierMatchupPanelSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import GuideNewBadge from "@/app/_components/guides/GuideNewBadge";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
@@ -11,6 +12,7 @@ import type {
   SerializedJungleTier,
   SerializedJungleTierMatchup,
 } from "@/lib/guides/matchupGuideTypes";
+import { collectJungleTierMatchupSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import { guideChampionIconImgClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 
 const DETAIL_DURATION_MS = 320;
@@ -69,10 +71,6 @@ type TierMatchupEntry = {
   tier: SerializedJungleTier;
   matchup: SerializedJungleTierMatchup;
 };
-
-function collectTierImageUrls(data: GuideJungleTierMatchupPageData): string[] {
-  return data.tiers.flatMap((tier) => tier.matchups.map((matchup) => matchup.icon));
-}
 
 function TierIconButton({
   matchup,
@@ -346,8 +344,9 @@ export default function JungleTierMatchupPanel({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  const tierImageUrls = useMemo(() => collectTierImageUrls(data), [data]);
+  const tierImageUrls = useMemo(() => collectJungleTierMatchupSectionImageUrls(data), [data]);
   const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(tierImageUrls);
+  const showContent = shouldLoad && imagesReady;
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -382,8 +381,6 @@ export default function JungleTierMatchupPanel({
     return champVisible ? visibleTier.id : null;
   }, [selectedEntry, visibleTiers]);
 
-  const showContent = shouldLoad && imagesReady;
-
   return (
     <section
       ref={sectionRef}
@@ -392,19 +389,32 @@ export default function JungleTierMatchupPanel({
       aria-label={data.title}
       aria-busy={shouldLoad && !imagesReady}
     >
+      {!shouldLoad ? (
+        <JungleTierMatchupPanelSkeleton data={data} />
+      ) : (
+        <div className="grid">
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "pointer-events-none opacity-0" : "opacity-100"
+            )}
+          >
+            <JungleTierMatchupPanelSkeleton data={data} />
+          </div>
+
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden={!showContent}
+          >
       <div
         className={clsx(
-          "transition-opacity duration-300 ease-out",
-          showContent ? "opacity-100" : "opacity-0",
-          !shouldLoad && "opacity-100"
+          "mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
+          guideSectionHeaderPadClass
         )}
       >
-        <div
-          className={clsx(
-            "mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
-            guideSectionHeaderPadClass
-          )}
-        >
           <h2 className={guideSectionTitleClass}>{data.title}</h2>
 
           <label className="block w-full sm:max-w-xs sm:shrink-0">
@@ -449,7 +459,9 @@ export default function JungleTierMatchupPanel({
               </p>
             )}
           </div>
-      </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

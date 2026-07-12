@@ -4,13 +4,16 @@ import clsx from "clsx";
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type TransitionEvent,
 } from "react";
 import { createPortal } from "react-dom";
 import GuideImage from "@/app/_components/guides/GuideImage";
+import { PossessionsSectionSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import { PossessionPassiveExamples } from "@/app/_components/guides/possessions/PossessionPassiveExamples";
 import { renderPossessionExplanationText } from "@/app/_components/guides/possessions/renderPossessionExplanationText";
 import {
@@ -27,6 +30,7 @@ import type {
   SerializedPossessionChampion,
   SerializedPossessionTier,
 } from "@/lib/guides/possessionGuideTypes";
+import { collectPossessionsSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 
 const POSSESSION_SECTION_HEADING_CLASS =
   "text-xl font-bold tracking-tight text-[#B8D8EA] sm:text-2xl";
@@ -471,11 +475,37 @@ export default function PossessionsSection({
   guideTextIcons?: Record<string, string>;
   viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
+  const imageUrls = useMemo(() => collectPossessionsSectionImageUrls(data), [data]);
+  const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(imageUrls);
+  const showContent = shouldLoad && imagesReady;
+
   return (
     <section
+      ref={sectionRef}
       id="possessions"
       className="scroll-mt-24 w-full min-w-0 max-w-full overflow-x-hidden sm:overflow-visible"
+      aria-busy={shouldLoad && !imagesReady}
     >
+      {!shouldLoad ? (
+        <PossessionsSectionSkeleton data={data} />
+      ) : (
+        <div className="grid">
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "pointer-events-none opacity-0" : "opacity-100"
+            )}
+          >
+            <PossessionsSectionSkeleton data={data} />
+          </div>
+
+          <div
+            className={clsx(
+              "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
+              showContent ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden={!showContent}
+          >
       <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
         <h2 className={guideSectionTitleClass}>{data.heading}</h2>
         {data.subtitle ? <p className={guideSectionSubClass}>{data.subtitle}</p> : null}
@@ -496,6 +526,9 @@ export default function PossessionsSection({
         />
         <WhenNotToPossessSection data={data} guideTextIcons={guideTextIcons} />
       </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
