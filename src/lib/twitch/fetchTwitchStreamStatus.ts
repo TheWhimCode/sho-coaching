@@ -1,5 +1,6 @@
 import "server-only";
 
+import { TWITCH_STATUS_CACHE_SECONDS } from "./cache";
 import { TWITCH_CHANNEL_LOGIN } from "./channel";
 import type { TwitchStreamStatus } from "./types";
 
@@ -61,7 +62,7 @@ export async function fetchTwitchStreamStatus(
         "Client-Id": clientId,
         Authorization: `Bearer ${token}`,
       },
-      next: { revalidate: 60 },
+      next: { revalidate: TWITCH_STATUS_CACHE_SECONDS },
     }
   );
 

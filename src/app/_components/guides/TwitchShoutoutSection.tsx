@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaTwitch } from "react-icons/fa6";
 import GuideImage from "@/app/_components/guides/GuideImage";
 import { MINO_PROFILE_IMAGE } from "@/lib/coaching/coachingClipVideos";
@@ -10,10 +10,9 @@ import {
   TWITCH_CHANNEL_LOGIN,
   TWITCH_CHANNEL_URL,
 } from "@/lib/twitch/channel";
+import { TWITCH_LIVE_POLL_MS } from "@/lib/twitch/cache";
 import type { TwitchStreamStatus } from "@/lib/twitch/types";
 import { guideSectionHeaderPadClass } from "@/lib/guides/guideTheme";
-
-const LIVE_POLL_MS = 60_000;
 
 function buildTwitchEmbedUrl(channel: string, parentHosts: string[]) {
   const params = new URLSearchParams();
@@ -194,6 +193,7 @@ export default function TwitchShoutoutSection({
   const [status, setStatus] = useState(initialStatus);
   const [parentHosts, setParentHosts] = useState(parentHostsProp);
   const [embedReady, setEmbedReady] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -213,13 +213,55 @@ export default function TwitchShoutoutSection({
     setEmbedReady(true);
   }, [parentHostsProp]);
 
+  // Poll only while live, tab is focused, and the section is on screen.
   useEffect(() => {
-    const timer = window.setInterval(refreshStatus, LIVE_POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [refreshStatus]);
+    if (!status.isLive) return;
+
+    const section = sectionRef.current;
+    if (!section) return;
+
+    let timer: number | undefined;
+    let inView = false;
+
+    const clearPoll = () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+        timer = undefined;
+      }
+    };
+
+    const startPoll = () => {
+      clearPoll();
+      if (document.visibilityState !== "visible" || !inView) return;
+      timer = window.setInterval(() => void refreshStatus(), TWITCH_LIVE_POLL_MS);
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        if (inView) startPoll();
+        else clearPoll();
+      },
+      { rootMargin: "120px" }
+    );
+    observer.observe(section);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") startPoll();
+      else clearPoll();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      clearPoll();
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [status.isLive, refreshStatus]);
 
   return (
     <section
+      ref={sectionRef}
       id="twitch"
       className={clsx("scroll-mt-24", guideSectionHeaderPadClass)}
       aria-label="Twitch stream"
