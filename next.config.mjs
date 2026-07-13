@@ -69,6 +69,8 @@ const nextConfig = {
   },
 
   images: {
+    // Remote CDN assets rarely change; keep optimized variants at the edge longer.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
     remotePatterns: [
       { protocol: "https", hostname: "ddragon.leagueoflegends.com" },
       { protocol: "https", hostname: "raw.communitydragon.org" }, // ✅ allow rank emblems
@@ -115,6 +117,15 @@ const nextConfig = {
     }
 
     const allHeaders = [
+      {
+        source: "/_next/image",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
       {
         source: "/guide",
         headers: [

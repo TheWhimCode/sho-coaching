@@ -46,6 +46,7 @@ export default function SquareButton({
         alt={`${role} preview`}
         fill
         sizes={`${size}px`}
+        unoptimized
         priority={eager}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}

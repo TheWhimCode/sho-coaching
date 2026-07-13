@@ -707,6 +707,7 @@ function OtherGameRankCard({
           src={imageSrc}
           alt={name}
           fill
+          unoptimized
           className={clsx(
             "object-cover transition duration-500",
             zoomIn ? "scale-110 group-hover:scale-[1.14]" : "group-hover:scale-[1.04]"

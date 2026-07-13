@@ -164,6 +164,7 @@ const ReviewItem = ({ r }: { r: Review }) => {
             alt={`${r.name} avatar`}
             width={28}
             height={28}
+            unoptimized
             className="h-full w-full object-cover scale-[1.12]"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src =
