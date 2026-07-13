@@ -43,7 +43,7 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
       label: "Survivability",
       text: "to not blow up immediately",
     },
-    { id: "cc", label: "CC", text: "to guarantee your next ult" },
+    { id: "cc", label: "CC", text: "to guarantee your next R" },
   ],
   bestToPossessNote:
     "In some situations, high-damage ranged champs or enchanters can also be useful.",
@@ -60,7 +60,7 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
         {
           champion: "Leona",
           explanation:
-            "Become immortal inside the whole enemy team. Instantly W when you take damage.\n\nGuarantee your next ult with Q.",
+            "Become immortal inside the whole enemy team. Instantly W when you take damage.\n\nGuarantee your next R with Q.",
         },
         {
           champion: "Camille",

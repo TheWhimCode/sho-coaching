@@ -53,7 +53,26 @@ const PREBUILD_HEADER_CLASS =
   "text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#B8D8EA]/55";
 
 const CHAMPION_TILE_SKELETON_CLASS =
-  "aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#352839]/90 sm:h-11 sm:w-11";
+  "aspect-square h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-[#352839]/90 ring-1 ring-[#F0ABCF]/15 sm:h-11 sm:w-11";
+
+const POSSESSION_SKELETON_HEADING_CLASS =
+  "text-xl font-bold tracking-tight text-[#B8D8EA]/25 sm:text-2xl";
+
+const POSSESSION_SKELETON_LIST_INDENT_CLASS = "pl-4 sm:pl-6";
+
+const POSSESSION_SKELETON_LIST_ROW_CLASS = "flex items-start gap-2.5 sm:gap-3";
+
+const POSSESSION_SKELETON_FACTOR_ROW_CLASS = "flex items-center gap-2.5 sm:gap-3";
+
+const POSSESSION_SKELETON_MARKER_COL_CLASS = "w-9 shrink-0 sm:w-9";
+
+const POSSESSION_SKELETON_MARKER_CELL_CLASS =
+  "flex h-[1.75rem] items-center justify-end sm:h-[1.8rem]";
+
+const POSSESSION_SKELETON_FACTOR_MARKER_CLASS =
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#F0ABCF]/18 bg-[#16121A]/70 sm:h-9 sm:w-9";
+
+const POSSESSION_SKELETON_BULLET_CLASS = "h-1.5 w-1.5 rounded-full bg-[#F0ABCF]/25 sm:h-2 sm:w-2";
 
 const TOPIC_CHIP_SKELETON_CLASS =
   "rounded-xl border border-[#F0ABCF]/12 bg-[#16121A]/40 px-3.5 py-2.5 sm:px-4 sm:py-3";
@@ -889,6 +908,47 @@ export function GameStagesSectionSkeleton({ data }: { data: GuideGameStagePageDa
   );
 }
 
+function PossessionPassiveExamplesSkeleton({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-1 align-middle">
+      {Array.from({ length: count }, (_, index) => (
+        <Fragment key={index}>
+          {index > 0 ? (
+            <span className="text-sm text-transparent sm:text-base" aria-hidden>
+              {index === count - 1 ? ", and " : ", "}
+            </span>
+          ) : (
+            <span className="text-sm text-transparent sm:text-base" aria-hidden>
+              {" "}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-0.5 align-middle">
+            <span
+              className="inline-block h-4 w-14 animate-pulse rounded bg-[#352839]/70 sm:h-[1.1rem] sm:w-16"
+              aria-hidden
+            />
+            <span
+              className="inline-block size-4 animate-pulse rounded-sm bg-[#352839]/90 ring-1 ring-[#B8D8EA]/10 sm:size-[1.125rem]"
+              aria-hidden
+            />
+          </span>
+        </Fragment>
+      ))}
+    </span>
+  );
+}
+
+function PossessionFactorMarkerSkeleton() {
+  return (
+    <span
+      className={clsx(POSSESSION_SKELETON_FACTOR_MARKER_CLASS, "animate-pulse bg-[#352839]/55")}
+      aria-hidden
+    />
+  );
+}
+
 export function PossessionsSectionSkeleton({ data }: { data: GuidePossessionPageData }) {
   return (
     <div aria-hidden className="w-full min-w-0 max-w-full">
@@ -905,53 +965,147 @@ export function PossessionsSectionSkeleton({ data }: { data: GuidePossessionPage
         )}
       >
         <div className="border-b border-[#F0ABCF]/10 px-6 py-8 sm:px-10 sm:py-10">
-          <h3 className="text-xl font-bold tracking-tight text-[#B8D8EA]/25 sm:text-2xl">
-            {data.howItWorksHeading}
-          </h3>
-          {data.howItWorksNote ? (
-            <p className="mt-3 text-base leading-[1.7] text-[#F5E6D3]/20 sm:mt-4 sm:text-lg">
-              {data.howItWorksNote}
-            </p>
-          ) : null}
-          <ol className="mt-6 list-none space-y-4 pl-4 sm:mt-7 sm:space-y-4 sm:pl-6">
-            {data.flow.map((step, index) => (
-              <li key={step.id} className="flex items-start gap-2.5 sm:gap-3">
-                <span className="w-9 shrink-0 text-right text-sm font-bold tabular-nums text-[#F0ABCF]/25 sm:text-base">
-                  {index + 1}.
-                </span>
-                <p className="min-w-0 flex-1 text-sm leading-[1.75] text-[#F5E6D3]/20 sm:text-base">
-                  {step.label}
-                </p>
-              </li>
-            ))}
-          </ol>
+          <div className="max-w-3xl">
+            <h3 className={POSSESSION_SKELETON_HEADING_CLASS}>{data.howItWorksHeading}</h3>
+            {data.howItWorksNote ? (
+              <div className="mt-3 sm:mt-4">
+                <TextLineSkeletons body={data.howItWorksNote} />
+              </div>
+            ) : null}
+
+            <ol
+              className={clsx(
+                "mt-6 list-none space-y-4 sm:mt-7 sm:space-y-4",
+                POSSESSION_SKELETON_LIST_INDENT_CLASS
+              )}
+            >
+              {data.flow.map((step, index) => (
+                <li key={step.id} className={POSSESSION_SKELETON_LIST_ROW_CLASS}>
+                  <span className={POSSESSION_SKELETON_MARKER_COL_CLASS} aria-hidden>
+                    <span
+                      className={clsx(
+                        POSSESSION_SKELETON_MARKER_CELL_CLASS,
+                        "text-sm font-bold tabular-nums text-[#F0ABCF]/25 sm:text-base"
+                      )}
+                    >
+                      {index + 1}.
+                    </span>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <TextLineSkeletons body={step.label} />
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            {data.howItWorksDetails?.length ? (
+              <div className="mt-6 space-y-3 sm:mt-7 sm:space-y-4">
+                {data.howItWorksDetails.map((paragraph, index) => (
+                  <div key={index}>
+                    <TextLineSkeletons body={paragraph} />
+                    {index === 0 && data.howItWorksPassiveExamples?.length ? (
+                      <PossessionPassiveExamplesSkeleton
+                        count={data.howItWorksPassiveExamples.length}
+                      />
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="px-6 py-8 sm:px-10 sm:py-10">
-          <h3 className="text-xl font-bold tracking-tight text-[#B8D8EA]/25 sm:text-2xl">
-            {data.bestToPossessHeading}
-          </h3>
-          <p className="mt-3 text-base leading-[1.7] text-[#F5E6D3]/20 sm:mt-4 sm:text-lg">
-            {data.bestToPossessIntro}
-          </p>
+          <div className="max-w-3xl">
+            <h3 className={POSSESSION_SKELETON_HEADING_CLASS}>{data.bestToPossessHeading}</h3>
+            <div className="mt-3 sm:mt-4">
+              <TextLineSkeletons body={data.bestToPossessIntro} />
+            </div>
+
+            <ol
+              className={clsx(
+                "mt-5 list-none space-y-3 sm:mt-6 sm:space-y-3.5",
+                POSSESSION_SKELETON_LIST_INDENT_CLASS
+              )}
+            >
+              {data.factors.map((factor) => (
+                <li key={factor.id} className={POSSESSION_SKELETON_FACTOR_ROW_CLASS}>
+                  <span className={POSSESSION_SKELETON_MARKER_COL_CLASS} aria-hidden>
+                    <span className="flex justify-end">
+                      <PossessionFactorMarkerSkeleton />
+                    </span>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <TextLineSkeletons body={`${factor.label} — ${factor.text}`} />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
 
           <div className="mx-auto mt-7 flex w-full max-w-xl flex-col items-start gap-4 sm:mt-8 sm:gap-4">
             {data.possessionTiers.map((tier) => (
-              <div key={tier.id} className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
-                <p className="w-16 shrink-0 text-left text-xs font-semibold text-[#F5E6D3]/20 sm:w-[4.5rem] sm:text-sm">
+              <div
+                key={tier.id}
+                className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4"
+              >
+                <p className="w-16 shrink-0 text-left text-xs font-semibold text-[#F5E6D3]/25 sm:w-[4.5rem] sm:text-sm">
                   {tier.label}
                 </p>
                 <div className="flex min-w-0 flex-wrap justify-start gap-1.5 sm:gap-2">
                   {tier.champions.map((champion) => (
                     <div
                       key={champion.id}
-                      className={clsx(CHAMPION_TILE_SKELETON_CLASS, "animate-pulse ring-1 ring-[#F0ABCF]/15")}
+                      className={clsx(CHAMPION_TILE_SKELETON_CLASS, "animate-pulse")}
                       aria-hidden
                     />
                   ))}
                 </div>
               </div>
             ))}
+          </div>
+
+          {data.bestToPossessNote ? (
+            <div className="max-w-3xl">
+              <div className="mt-5 sm:mt-6">
+                <TextLineSkeletons body={data.bestToPossessNote} />
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="border-t border-[#F0ABCF]/10 px-6 py-8 sm:px-10 sm:py-10">
+          <div className="max-w-3xl">
+            <h3 className={POSSESSION_SKELETON_HEADING_CLASS}>{data.whenNotToPossessHeading}</h3>
+            {data.whenNotToPossessIntro ? (
+              <div className="mt-3 sm:mt-4">
+                <TextLineSkeletons body={data.whenNotToPossessIntro} />
+              </div>
+            ) : null}
+
+            {data.whenNotToPossessItems.length ? (
+              <div className={clsx("mt-6 sm:mt-7", POSSESSION_SKELETON_LIST_INDENT_CLASS)}>
+                {data.whenNotToPossessDontLabel ? (
+                  <p className="text-sm font-semibold text-[#FAD4E8]/25 sm:text-base">
+                    {data.whenNotToPossessDontLabel}:
+                  </p>
+                ) : null}
+                <ul className="mt-3 list-none space-y-3 sm:space-y-3.5">
+                  {data.whenNotToPossessItems.map((item) => (
+                    <li key={item.id} className={POSSESSION_SKELETON_LIST_ROW_CLASS}>
+                      <span className={POSSESSION_SKELETON_MARKER_COL_CLASS} aria-hidden>
+                        <span className={POSSESSION_SKELETON_MARKER_CELL_CLASS}>
+                          <span className={POSSESSION_SKELETON_BULLET_CLASS} />
+                        </span>
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <TextLineSkeletons body={item.text} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

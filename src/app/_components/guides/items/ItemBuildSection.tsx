@@ -16,18 +16,24 @@ import type {
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
 import GuideImage from "@/app/_components/guides/GuideImage";
 import { ItemBuildSectionSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
-import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { renderGuideHighlightedTextWithViegoAbilities } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import { collectItemSectionImageUrls } from "@/lib/guides/preloadGuideImages";
+import type { GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 import { guideChampionIconImgClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 import { scrollRevealElementBottom } from "@/lib/overlayScrollViewport";
 
 const FIRST_ITEM_BUILD_SWAP_KEY = "viego-guide-first-item-build-swap";
 
 const GuideTextIconsContext = createContext<Record<string, string>>({});
+const GuideViegoAbilityIconsContext = createContext<GuideViegoAbilityIcons>({});
 
 function useGuideTextIcons() {
   return useContext(GuideTextIconsContext);
+}
+
+function useGuideViegoAbilityIcons() {
+  return useContext(GuideViegoAbilityIconsContext);
 }
 
 const ITEM_PANEL_OUTER =
@@ -76,6 +82,7 @@ function ItemExplanationPanel({
   onTransitionEnd?: (event: TransitionEvent<HTMLDivElement>) => void;
 }) {
   const guideTextIcons = useGuideTextIcons();
+  const viegoAbilityIcons = useGuideViegoAbilityIcons();
   return (
     <div
       id={tipId}
@@ -117,7 +124,11 @@ function ItemExplanationPanel({
           <div className="relative px-5 py-4 sm:px-6 sm:py-5">
             <p className="text-sm font-semibold tracking-wide text-[#FAD4E8]">{item.title}</p>
             <p className="mt-2 text-sm leading-[1.65] text-[#F5E6D3]/72">
-              {renderGuideHighlightedText(item.explanation, guideTextIcons)}
+              {renderGuideHighlightedTextWithViegoAbilities(
+                item.explanation,
+                guideTextIcons,
+                viegoAbilityIcons
+              )}
             </p>
           </div>
         </div>
@@ -1080,6 +1091,7 @@ function BuildDetailSection({
   activeVariant: SerializedGuideItemVariant;
 }) {
   const guideTextIcons = useGuideTextIcons();
+  const viegoAbilityIcons = useGuideViegoAbilityIcons();
   return (
     <div className="flex w-full min-w-0 max-w-full flex-col items-stretch gap-8 sm:flex-row sm:gap-10 lg:gap-12">
       <div className="min-w-0 w-full max-w-full flex-[3]">
@@ -1089,7 +1101,11 @@ function BuildDetailSection({
         <div className="mt-5 min-w-0 max-w-full break-words text-left text-sm leading-[1.75] text-[#F5E6D3]/62 [overflow-wrap:anywhere] sm:mt-6 sm:min-h-[11em] sm:text-base">
           {activeVariant.description.split("\n").map((paragraph, index) => (
             <p key={index} className={clsx("min-w-0 max-w-full", index > 0 && "mt-[0.5em]")}>
-              {renderGuideHighlightedText(paragraph, guideTextIcons)}
+              {renderGuideHighlightedTextWithViegoAbilities(
+                paragraph,
+                guideTextIcons,
+                viegoAbilityIcons
+              )}
             </p>
           ))}
         </div>
@@ -1108,11 +1124,9 @@ function BuildDetailSection({
 function BuildDetailCrossfade({
   buildKey,
   variant,
-  detailRef,
 }: {
   buildKey: string;
   variant: SerializedGuideItemVariant;
-  detailRef?: RefObject<HTMLDivElement | null>;
 }) {
   const [displayed, setDisplayed] = useState({ key: buildKey, variant });
   const [fading, setFading] = useState(false);
@@ -1137,11 +1151,8 @@ function BuildDetailCrossfade({
 
   return (
     <div
-      ref={detailRef}
       className={clsx(
-        ITEM_DETAIL_SECTION,
-        ITEM_SECONDARY_PAD_X,
-        "min-w-0 max-w-full overflow-x-hidden rounded-none transition-opacity ease-out motion-reduce:transition-none sm:overflow-visible sm:rounded-b-2xl",
+        "min-w-0 max-w-full overflow-x-hidden transition-opacity ease-out motion-reduce:transition-none sm:overflow-visible",
         fading ? "opacity-0" : "opacity-100"
       )}
       style={{ transitionDuration: `${BUILD_DETAIL_FADE_MS}ms` }}
@@ -1835,9 +1846,11 @@ function TabBuildContent({
 export default function ItemBuildSection({
   data,
   guideTextIcons = {},
+  viegoAbilityIcons,
 }: {
   data: GuideItemPageData;
   guideTextIcons?: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
   const [activeTabId, setActiveTabId] = useState(data.tabs[0]?.id ?? "main");
   const [variantByTab, setVariantByTab] = useState<Record<string, string>>(() => {
@@ -1870,10 +1883,6 @@ export default function ItemBuildSection({
     activeTab?.defaultVariantId ??
     activeTab?.variants[0]?.id ??
     "";
-
-  const activeVariant =
-    activeTab?.variants.find((variant) => variant.id === activeVariantId) ??
-    activeTab?.variants[0];
 
   const handleVariantChange = useCallback(
     (variantId: string) => {
@@ -1952,6 +1961,7 @@ export default function ItemBuildSection({
 
   return (
     <GuideTextIconsContext.Provider value={guideTextIcons}>
+    <GuideViegoAbilityIconsContext.Provider value={viegoAbilityIcons}>
     <section ref={sectionRef} id="items" className="scroll-mt-24 min-w-0 max-w-full overflow-x-hidden sm:overflow-visible">
       {!shouldLoad ? (
         <ItemBuildSectionSkeleton data={data} />
@@ -2042,7 +2052,9 @@ export default function ItemBuildSection({
                     key={tab.id}
                     className={clsx(
                       "col-start-1 row-start-1 flex w-full min-w-0 max-w-full items-center",
-                      isActive ? "relative z-10" : "hidden"
+                      isActive
+                        ? "relative z-10"
+                        : "max-sm:hidden sm:invisible sm:pointer-events-none"
                     )}
                     aria-hidden={!isActive}
                   >
@@ -2061,18 +2073,51 @@ export default function ItemBuildSection({
           </div>
         </div>
 
-        {activeVariant ? (
-          <BuildDetailCrossfade
-            detailRef={buildDetailRef}
-            buildKey={`${activeTabId}:${activeVariantId}`}
-            variant={activeVariant}
-          />
-        ) : null}
+        <div
+          ref={buildDetailRef}
+          className={clsx(
+            ITEM_DETAIL_SECTION,
+            ITEM_SECONDARY_PAD_X,
+            "min-w-0 max-w-full overflow-x-hidden rounded-none sm:overflow-visible sm:rounded-b-2xl"
+          )}
+        >
+          <div className="grid min-w-0 w-full max-w-full">
+            {data.tabs.map((tab) => {
+              const isActive = tab.id === activeTabId;
+              const tabVariantId =
+                variantByTab[tab.id] ?? tab.defaultVariantId ?? tab.variants[0]?.id ?? "";
+              const tabVariant =
+                tab.variants.find((variant) => variant.id === tabVariantId) ?? tab.variants[0];
+              if (!tabVariant) return null;
+
+              return (
+                <div
+                  key={tab.id}
+                  className={clsx(
+                    "col-start-1 row-start-1 min-w-0 max-w-full",
+                    isActive ? "relative z-10" : "max-sm:hidden sm:invisible sm:pointer-events-none"
+                  )}
+                  aria-hidden={!isActive}
+                >
+                  {isActive ? (
+                    <BuildDetailCrossfade
+                      buildKey={`${tab.id}:${tabVariantId}`}
+                      variant={tabVariant}
+                    />
+                  ) : (
+                    <BuildDetailSection activeVariant={tabVariant} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
         </div>
       </div>
       )}
     </section>
+    </GuideViegoAbilityIconsContext.Provider>
     </GuideTextIconsContext.Provider>
   );
 }

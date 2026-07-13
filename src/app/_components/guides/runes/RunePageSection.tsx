@@ -12,9 +12,10 @@ import {
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
 import GuideImage from "@/app/_components/guides/GuideImage";
 import { RunePageSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
-import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
+import { renderGuideHighlightedTextWithViegoAbilities } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import { collectRuneSectionImageUrls } from "@/lib/guides/preloadGuideImages";
+import type { GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 import type {
   GuideRunePageData,
   SerializedRune,
@@ -180,6 +181,7 @@ function ExplanationPanel({
   compactIcon = false,
   className,
   guideTextIcons = {},
+  viegoAbilityIcons,
 }: {
   title: string;
   body: string;
@@ -188,6 +190,7 @@ function ExplanationPanel({
   compactIcon?: boolean;
   className?: string;
   guideTextIcons?: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
   const accentStyles = TREE_ACCENT[accent];
 
@@ -222,7 +225,11 @@ function ExplanationPanel({
         </div>
       </div>
       <p className="mt-3 flex-1 text-sm leading-relaxed text-[#F5E6D3]/65 sm:text-base">
-        {renderGuideHighlightedText(body, guideTextIcons)}
+        {renderGuideHighlightedTextWithViegoAbilities(
+          body,
+          guideTextIcons,
+          viegoAbilityIcons
+        )}
       </p>
     </article>
   );
@@ -240,9 +247,11 @@ function findRuneIcon(tree: SerializedRuneTree, perkId: number): string | null {
 export default function RunePageSection({
   data,
   guideTextIcons = {},
+  viegoAbilityIcons,
 }: {
   data: GuideRunePageData;
   guideTextIcons?: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
   const { build, primaryTree, secondaryTree, statShardRows, headerIcon } = data;
   const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -358,6 +367,7 @@ export default function RunePageSection({
                       runeIcon={hailOfBladesIcon}
                       accent="primary"
                       guideTextIcons={guideTextIcons}
+                      viegoAbilityIcons={viegoAbilityIcons}
                     />
                   </div>
                 ) : null}
@@ -371,6 +381,7 @@ export default function RunePageSection({
                       accent="secondary"
                       compactIcon
                       guideTextIcons={guideTextIcons}
+                      viegoAbilityIcons={viegoAbilityIcons}
                     />
                   </div>
                 ) : null}

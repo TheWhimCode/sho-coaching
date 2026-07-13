@@ -70,7 +70,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       sequence: ["Wcharge", "E", "AA", "Q", "AA", "R", "AA"],
       videoSrc: guideComboVideo("extended combo.webm"),
       posterSrc: guideComboThumbnail("excombo.webp"),
-      explanation: "Same as burst combo, but you use an extra auto before R. This will allow people to Flash out of your ult if they have Tenacity or you lack AS (low Alacrity stacks without E active), but against champs like Talon/Akali you need to do the auto before your R. Otherwise they instantly go invis.",
+      explanation: "Same as burst combo, but you use an extra auto before R. This will allow people to Flash out of your R if they have Tenacity or you lack AS (low Alacrity stacks without E active), but against champs like Talon/Akali you need to do the auto before your R. Otherwise they instantly go invis.",
     },
     {
       id: "ranged-stun-combo",
@@ -80,7 +80,7 @@ export const VIEGO_COMBO_SECTION: GuideComboSectionConfig = {
       posterSrc: guideComboThumbnail("ranged.webp"),
       ingameExampleVideoSrc: guideComboVideo("ingameRangedStun.webm"),
       ingamePosterSrc: guideComboThumbnail("iranged.webp"),
-      explanation: "Usually you use this from fog over a wall. You can't get in range to auto, so the moment you know the stun connects you just ult and send it.",
+      explanation: "Usually you use this from fog over a wall. You can't get in range to auto, so the moment you know the stun connects you just R and send it.",
     },
     {
       id: "hob-combo-in-wave",

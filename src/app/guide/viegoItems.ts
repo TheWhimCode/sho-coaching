@@ -7,7 +7,7 @@ const MAIN_SHIELDBOW_EXPLANATION =
   "Need 100% Crit. We don't care about the defense. If there was an alternative we'd go with that.";
 
 const IE_EXPLANATION =
-  "Max damage option. IE is worse than LDR in almost every scenario, even against squishies because of item path, pricing, and how Crit-reliant the item is.";
+  "Q and R scale with IE critdamage, but I found that even against squishies LDR does pretty much the same damage. The itempath is a lot worse on IE as well and it's more expensive, so I default to Noon -> LDR -> IE.";
 
 const SERPENTS_EXPLANATION =
   "Delayed Serpent's Fang vs high midgame shield comps.";

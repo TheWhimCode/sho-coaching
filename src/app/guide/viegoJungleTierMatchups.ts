@@ -54,7 +54,7 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
           possessionValue: 8,
           isNew: true,
           explanation:
-            "You can't punish his weak early, which sets him up for success for his insane midgame power.\n\nDon't get hit by his CC, don't forget about his crazy engage range and healing in fights. Surviving is his strength. Check the little wings next to his level to see if he has passive up.\n\nBut if he does mess up and you manage to burst him, his transformation is insane. You heal a lot, can instantly jump on your next target and guarantee your ult. Even Zac passive works as Viego.",
+            "You can't punish his weak early, which sets him up for success for his insane midgame power.\n\nDon't get hit by his CC, don't forget about his crazy engage range and healing in fights. Surviving is his strength. Check the little wings next to his level to see if he has passive up.\n\nBut if he does mess up and you manage to burst him, his transformation is insane. You heal a lot, can instantly jump on your next target and guarantee your R. Even Zac passive works as Viego.",
         },
       ],
     },

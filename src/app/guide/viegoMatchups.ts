@@ -121,7 +121,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Qiyana",
           explanation:
-            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\n\nWhat I do in this matchup is take some cocaine and then react to every ult by ulting out myself. That way she never has R. Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD.\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
+            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\n\nWhat I do in this matchup is take some cocaine and then react to every ult by R'ing out myself. That way she never has R. Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD.\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
         },
         {
           champion: "Zed",
@@ -164,7 +164,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Ivern",
           explanation:
-            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next ult and giving you survivability.",
+            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next R and giving you survivability.",
         },
         {
           champion: "Master Yi",
@@ -174,7 +174,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Nunu",
           explanation:
-            "Very hard for him to not just die to you instantly. You transform, become tanky, eat a minion or bottom laner, snowball into their Viktor and ult his face. It's hard for Nunu, even if he gets Frozen Heart second.",
+            "Very hard for him to not just die to you instantly. You transform, become tanky, eat a minion or bottom laner, snowball into their Viktor and R his face. It's hard for Nunu, even if he gets Frozen Heart second.",
         },
       ],
     },

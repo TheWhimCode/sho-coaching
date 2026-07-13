@@ -145,10 +145,18 @@ export default function ViegoGuideClient({
           />
         </div>
 
-        <RunePageSection data={runeData} guideTextIcons={guideTextIcons} />
+        <RunePageSection
+          data={runeData}
+          guideTextIcons={guideTextIcons}
+          viegoAbilityIcons={viegoAbilityIcons}
+        />
 
         <div className="mt-16">
-          <ItemBuildSection data={itemData} guideTextIcons={guideTextIcons} />
+          <ItemBuildSection
+            data={itemData}
+            guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
+          />
         </div>
 
         <div className="mt-16">
