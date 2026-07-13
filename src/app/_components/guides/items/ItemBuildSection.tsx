@@ -25,8 +25,17 @@ import { scrollRevealElementBottom } from "@/lib/overlayScrollViewport";
 
 const FIRST_ITEM_BUILD_SWAP_KEY = "viego-guide-first-item-build-swap";
 
+const EMPTY_VIEGO_ABILITY_ICONS: GuideViegoAbilityIcons = {
+  Q: "",
+  W: "",
+  E: "",
+  R: "",
+};
+
 const GuideTextIconsContext = createContext<Record<string, string>>({});
-const GuideViegoAbilityIconsContext = createContext<GuideViegoAbilityIcons>({});
+const GuideViegoAbilityIconsContext = createContext<GuideViegoAbilityIcons>(
+  EMPTY_VIEGO_ABILITY_ICONS
+);
 
 function useGuideTextIcons() {
   return useContext(GuideTextIconsContext);
