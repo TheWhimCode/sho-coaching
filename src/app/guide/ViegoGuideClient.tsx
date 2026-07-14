@@ -25,7 +25,6 @@ import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/co
 import type { GuidePossessionPageData } from "@/lib/guides/possessionGuideTypes";
 import type { GuideGameStagePageData } from "@/lib/guides/gameStageGuideTypes";
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
-import type { TwitchStreamStatus } from "@/lib/twitch/types";
 
 function GuideFooter() {
   return (
@@ -48,8 +47,6 @@ export default function ViegoGuideClient({
   viegoAbilityIcons,
   championIcon,
   guideTextIcons,
-  twitchStatus,
-  twitchParentHosts,
 }: {
   runeData: GuideRunePageData;
   itemData: GuideItemPageData;
@@ -61,8 +58,6 @@ export default function ViegoGuideClient({
   viegoAbilityIcons: GuideViegoAbilityIcons;
   championIcon: string;
   guideTextIcons: Record<string, string>;
-  twitchStatus: TwitchStreamStatus;
-  twitchParentHosts: string[];
 }) {
   const indexEntries = [
     { id: "runes", label: runeData.build.heading },
@@ -139,10 +134,7 @@ export default function ViegoGuideClient({
         </header>
 
         <div className="mb-12">
-          <TwitchShoutoutSection
-            initialStatus={twitchStatus}
-            parentHosts={twitchParentHosts}
-          />
+          <TwitchShoutoutSection />
         </div>
 
         <RunePageSection

@@ -10,8 +10,13 @@ import {
   TWITCH_CHANNEL_LOGIN,
   TWITCH_CHANNEL_URL,
 } from "@/lib/twitch/channel";
-import { TWITCH_LIVE_POLL_MS } from "@/lib/twitch/cache";
+import {
+  readTwitchStatusSessionCache,
+  TWITCH_LIVE_POLL_MS,
+  writeTwitchStatusSessionCache,
+} from "@/lib/twitch/cache";
 import type { TwitchStreamStatus } from "@/lib/twitch/types";
+import { getTwitchEmbedParentHosts } from "@/lib/twitch/parentHosts";
 import { guideSectionHeaderPadClass } from "@/lib/guides/guideTheme";
 
 function buildTwitchEmbedUrl(channel: string, parentHosts: string[]) {
@@ -40,6 +45,45 @@ function LiveBadge() {
       </span>
       Live now
     </span>
+  );
+}
+
+function TwitchShoutoutSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="overflow-hidden rounded-2xl border border-[#9146FF]/20 bg-[#1E1724]/80 ring-1 ring-[#9146FF]/15"
+    >
+      <div className="p-5 sm:p-6 lg:p-7">
+        <div className="flex flex-col gap-4 sm:hidden">
+          <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-4">
+            <div className="h-16 w-16 shrink-0 animate-pulse rounded-2xl bg-[#352839]/90 sm:h-20 sm:w-20" />
+            <div className="space-y-2">
+              <div className="h-3 w-12 animate-pulse rounded bg-[#352839]/70" />
+              <div className="h-6 w-40 animate-pulse rounded bg-[#352839]/70" />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <div className="h-4 w-full animate-pulse rounded bg-[#352839]/55" />
+              <div className="h-4 w-[92%] animate-pulse rounded bg-[#352839]/55" />
+            </div>
+          </div>
+          <div className="mx-auto h-11 w-44 animate-pulse rounded-full bg-[#352839]/70" />
+        </div>
+
+        <div className="hidden items-center justify-between gap-5 sm:flex">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="h-20 w-20 shrink-0 animate-pulse rounded-2xl bg-[#352839]/90" />
+            <div className="min-w-0 space-y-2">
+              <div className="h-3 w-12 animate-pulse rounded bg-[#352839]/70" />
+              <div className="h-7 w-48 animate-pulse rounded bg-[#352839]/70" />
+              <div className="h-4 w-80 max-w-full animate-pulse rounded bg-[#352839]/55" />
+              <div className="h-4 w-72 max-w-full animate-pulse rounded bg-[#352839]/55" />
+            </div>
+          </div>
+          <div className="h-12 w-44 shrink-0 animate-pulse rounded-full bg-[#352839]/70" />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -183,16 +227,10 @@ function TwitchLiveEmbed({
   );
 }
 
-export default function TwitchShoutoutSection({
-  initialStatus,
-  parentHosts: parentHostsProp,
-}: {
-  initialStatus: TwitchStreamStatus;
-  parentHosts: string[];
-}) {
-  const [status, setStatus] = useState(initialStatus);
-  const [parentHosts, setParentHosts] = useState(parentHostsProp);
-  const [embedReady, setEmbedReady] = useState(false);
+export default function TwitchShoutoutSection() {
+  const [status, setStatus] = useState<TwitchStreamStatus>({ isLive: false });
+  const [statusChecked, setStatusChecked] = useState(false);
+  const [parentHosts, setParentHosts] = useState<string[]>([]);
   const sectionRef = useRef<HTMLElement>(null);
 
   const refreshStatus = useCallback(async () => {
@@ -201,21 +239,57 @@ export default function TwitchShoutoutSection({
       if (!res.ok) return;
       const next = (await res.json()) as TwitchStreamStatus;
       setStatus(next);
+      writeTwitchStatusSessionCache(next);
     } catch {
-      // Keep the last known status if polling fails.
+      // Keep the last known status if the fetch fails.
     }
   }, []);
 
   useEffect(() => {
-    const hosts = new Set(parentHostsProp);
-    hosts.add(window.location.hostname);
-    setParentHosts(Array.from(hosts));
-    setEmbedReady(true);
-  }, [parentHostsProp]);
+    setParentHosts(getTwitchEmbedParentHosts(window.location.hostname));
+  }, []);
+
+  // Reuse a fresh tab-session cache, otherwise defer the first edge fetch until idle.
+  useEffect(() => {
+    const cached = readTwitchStatusSessionCache();
+    if (cached) {
+      setStatus(cached.status);
+      setStatusChecked(true);
+      return;
+    }
+
+    let cancelled = false;
+    let started = false;
+
+    const runInitialFetch = () => {
+      if (started || cancelled) return;
+      started = true;
+
+      void (async () => {
+        await refreshStatus();
+        if (!cancelled) setStatusChecked(true);
+      })();
+    };
+
+    let idleId: number | undefined;
+    const timeoutId = window.setTimeout(runInitialFetch, 3000);
+
+    if (typeof requestIdleCallback !== "undefined") {
+      idleId = requestIdleCallback(runInitialFetch, { timeout: 3000 });
+    }
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      if (idleId !== undefined && typeof cancelIdleCallback !== "undefined") {
+        cancelIdleCallback(idleId);
+      }
+    };
+  }, [refreshStatus]);
 
   // Poll only while live, tab is focused, and the section is on screen.
   useEffect(() => {
-    if (!status.isLive) return;
+    if (!statusChecked || !status.isLive) return;
 
     const section = sectionRef.current;
     if (!section) return;
@@ -257,7 +331,7 @@ export default function TwitchShoutoutSection({
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [status.isLive, refreshStatus]);
+  }, [statusChecked, status.isLive, refreshStatus]);
 
   return (
     <section
@@ -265,10 +339,13 @@ export default function TwitchShoutoutSection({
       id="twitch"
       className={clsx("scroll-mt-24", guideSectionHeaderPadClass)}
       aria-label="Twitch stream"
+      aria-busy={!statusChecked}
     >
-      {status.isLive && embedReady ? (
+      {status.isLive && parentHosts.length === 0 ? (
+        <TwitchShoutoutSkeleton />
+      ) : status.isLive ? (
         <TwitchLiveEmbed status={status} parentHosts={parentHosts} />
-      ) : status.isLive ? null : (
+      ) : (
         <TwitchOfflineBanner />
       )}
     </section>
