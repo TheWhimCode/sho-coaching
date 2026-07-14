@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { TWITCH_STATUS_CACHE_SECONDS } from "@/lib/twitch/cache";
 import { fetchTwitchStreamStatus } from "@/lib/twitch/fetchTwitchStreamStatus";
 
-export const revalidate = TWITCH_STATUS_CACHE_SECONDS;
+export const revalidate = 600;
 
 export async function GET() {
   const status = await fetchTwitchStreamStatus();
