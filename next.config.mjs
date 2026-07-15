@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV !== "production";
+const coachingSalesEnabled = process.env.NEXT_PUBLIC_COACHING_SALES_ENABLED === "true";
 
 const scriptSrc = [
   "'self'",
@@ -79,13 +80,27 @@ const nextConfig = {
   },
 
   async redirects() {
-    return [
+    const redirects = [
       {
         source: "/guides/viego",
         destination: "/guide",
         permanent: true,
       },
     ];
+
+    if (!coachingSalesEnabled) {
+      redirects.push(
+        { source: "/checkout", destination: "/coaching", permanent: false },
+        { source: "/checkout/cancel", destination: "/coaching", permanent: false },
+        { source: "/checkout/success", destination: "/coaching", permanent: false },
+        { source: "/terms", destination: "/", permanent: false },
+        { source: "/privacy", destination: "/", permanent: false },
+        { source: "/imprint", destination: "/", permanent: false },
+        { source: "/withdrawal", destination: "/", permanent: false }
+      );
+    }
+
+    return redirects;
   },
 
   async headers() {

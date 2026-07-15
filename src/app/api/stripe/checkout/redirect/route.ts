@@ -1,7 +1,10 @@
 import Stripe from "stripe";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-08-27.basil" });
 
 export async function POST(req: Request) {
+  if (!COACHING_SALES_ENABLED) return coachingSalesBlockedResponse();
+
   const { pi, method } = await req.json();
   // load booking/amount from DB using piId or bookingId
   const session = await stripe.checkout.sessions.create({

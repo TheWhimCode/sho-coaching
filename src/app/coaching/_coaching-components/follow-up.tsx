@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import SquareButton from "@/app/_components/small/SquareButton";
 import { COACHING_FOLLOWUP_EXAMPLE_IMAGE } from "@/app/coaching/coachingPageAssets";
 import TransitionOverlay from "@/app/coaching/_coaching-components/components/OverlayTransition";
+import { COACHING_DISCORD_URL, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 
 type Props = {
   className?: string;
@@ -22,9 +24,11 @@ export default function FollowUp({
 }: Props) {
   const router = useRouter();
   const [transitioning, setTransitioning] = useState(false);
+  const salesEnabled = COACHING_SALES_ENABLED;
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!salesEnabled) return;
       // Let modifier/middle clicks behave like a normal link (new tab/window)
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
 
@@ -32,7 +36,7 @@ export default function FollowUp({
       e.preventDefault();
       if (!transitioning) setTransitioning(true);
     },
-    [transitioning]
+    [transitioning, salesEnabled]
   );
 
   const handleOverlayComplete = useCallback(() => {
@@ -79,18 +83,31 @@ export default function FollowUp({
                 {/* Left: helper line on top + button */}
                 <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
                   <p className="text-sm md:text-sm text-white/70 mb-2">
-                    You can add follow-ups through customization.
+                    {salesEnabled
+                      ? "You can add follow-ups through customization."
+                      : "Follow-ups are unavailable while coaching bookings are paused."}
                   </p>
                   <div className="relative inline-block">
                     <span className="pointer-events-none absolute -inset-1 rounded-xl blur-md opacity-30 -z-10 bg-[radial-gradient(60%_100%_at_50%_50%,_rgba(255,179,71,.28),_transparent_70%)]" />
-                    <a
-                      href={customizeHref}
-                      onClick={handleClick}
-                      className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
-                      aria-busy={transitioning}
-                    >
-                      Add follow-ups
-                    </a>
+                    {salesEnabled ? (
+                      <a
+                        href={customizeHref}
+                        onClick={handleClick}
+                        className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-[#0A0A0A] bg-[#fc8803] hover:bg[#f8a81a] transition shadow-[0_10px_28px_rgba(245,158,11,.35)] ring-1 ring-[rgba(255,190,80,.55)]"
+                        aria-busy={transitioning}
+                      >
+                        Add follow-ups
+                      </a>
+                    ) : (
+                      <Link
+                        href={COACHING_DISCORD_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="relative z-10 inline-flex items-center justify-center rounded-xl px-4 md:px-5 py-2.5 md:py-3 text-sm md:text-base font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] transition shadow-[0_10px_28px_rgba(88,101,242,.35)] ring-1 ring-[#7289DA]/55"
+                      >
+                        Reach out on Discord
+                      </Link>
+                    )}
                   </div>
                 </div>
 

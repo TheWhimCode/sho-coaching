@@ -2,6 +2,7 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 import { resolveBookingAmountCentsAfterCoupon } from "@/engine/session/rules/resolveBookingPrice";
 import type { ProductId } from "@/engine/session/model/product";
 
@@ -15,6 +16,8 @@ function parseProductId(raw: unknown): ProductId | null {
 }
 
 export async function POST(req: Request) {
+  if (!COACHING_SALES_ENABLED) return coachingSalesBlockedResponse();
+
   let {
     method,
     amountCents: bodyAmountCents,

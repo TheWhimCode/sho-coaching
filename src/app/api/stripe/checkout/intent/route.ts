@@ -8,6 +8,7 @@ import type { ProductId } from "@/engine/session/model/product";
 import { rateLimit } from "@/lib/rateLimit";
 import { CFG_SERVER } from "@/lib/config.server";
 import { getStripePaymentMethodTypes } from "@/engine/checkout";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,6 +47,8 @@ function parseLiveBlocks(raw: unknown): number {
 }
 
 export async function POST(req: Request) {
+  if (!COACHING_SALES_ENABLED) return coachingSalesBlockedResponse();
+
   try {
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";

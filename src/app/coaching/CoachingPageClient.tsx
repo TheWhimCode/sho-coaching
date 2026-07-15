@@ -6,7 +6,7 @@ import Reviews from "@/app/coaching/_coaching-components/reviews";
 import CoachingExamples from "@/app/coaching/_coaching-components/examples";
 import FollowUp from "@/app/coaching/_coaching-components/follow-up";
 import Overview from "@/app/coaching/_coaching-components/overview";
-import PresetCards from "@/app/coaching/_coaching-components/cards";
+import CoachingPresetCardsSection from "@/app/coaching/_coaching-components/CoachingPresetCardsSection";
 import NeedMoreInfo from "@/app/coaching/_coaching-components/components/NeedMoreInfo";
 import Clips from "@/app/coaching/_coaching-components/clips";
 import ClipsMobile from "@/app/coaching/_coaching-components/clipsmobile";
@@ -32,7 +32,7 @@ export default function CoachingPageClient() {
         <section className="relative isolate overflow-x-clip">
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="block-gap" />
-            <PresetCards
+            <CoachingPresetCardsSection
               containerClassName="max-w-6xl px-6"
               onFollowupInfo={handleScrollToFollowup}
             />

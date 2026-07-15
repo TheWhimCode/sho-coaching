@@ -5,11 +5,14 @@ import { rateLimit } from "@/lib/rateLimit";
 import { CheckoutZ } from "@/engine/checkout";
 import { resolveBookingAmountCents } from "@/engine/session/rules/resolveBookingPrice";
 import type { ProductId } from "@/engine/session/model/product";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  if (!COACHING_SALES_ENABLED) return coachingSalesBlockedResponse();
+
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 

@@ -154,7 +154,15 @@ const cardVariants: Variants = {
   },
 };
 
-function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => void }) {
+function Card({
+  item,
+  onFollowupInfo,
+  salesDisabled = false,
+}: {
+  item: Item;
+  onFollowupInfo?: () => void;
+  salesDisabled?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const { setChrome } = useNavChrome();
@@ -199,6 +207,7 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
   }, [router, navQueuedTo]);
 
   const handleNavigate = (e: React.MouseEvent | React.KeyboardEvent) => {
+    if (salesDisabled) return;
     e.preventDefault();
     e.stopPropagation();
     if (overlayActive) return;
@@ -224,11 +233,14 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
   return (
     <>
       <motion.div
-        className="relative group cursor-pointer outline-none transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none"
-        role="link"
-        tabIndex={0}
-        onClick={handleNavigate}
-        onKeyDown={handleKeyDown}
+        className={[
+          "relative group outline-none transition-all duration-300 focus-visible:outline-none",
+          salesDisabled ? "cursor-default" : "cursor-pointer hover:-translate-y-1",
+        ].join(" ")}
+        role={salesDisabled ? undefined : "link"}
+        tabIndex={salesDisabled ? -1 : 0}
+        onClick={salesDisabled ? undefined : handleNavigate}
+        onKeyDown={salesDisabled ? undefined : handleKeyDown}
         variants={cardVariants}
       >
         {item.badge ? (
@@ -241,10 +253,13 @@ function Card({ item, onFollowupInfo }: { item: Item; onFollowupInfo?: () => voi
           style={cssVars}
           className={[
             "relative flex flex-col h-full overflow-hidden rounded-3xl border bg-white/[.03] backdrop-blur-md transition-[border-color,box-shadow] duration-300",
-            item.featured
+            salesDisabled
+              ? "border-white/10"
+              : item.featured
               ? "border-[color-mix(in_srgb,var(--ring)_48%,rgba(255,255,255,0.14))] shadow-[0_0_32px_-14px_var(--glow)]"
               : "border-white/10",
-            "group-hover:border-[var(--ring)] group-hover:shadow-[0_0_10px_1px_var(--glow)] group-focus-visible:border-[var(--ring)] group-focus-visible:shadow-[0_0_10px_1px_var(--glow)]",
+            !salesDisabled &&
+              "group-hover:border-[var(--ring)] group-hover:shadow-[0_0_10px_1px_var(--glow)] group-focus-visible:border-[var(--ring)] group-focus-visible:shadow-[0_0_10px_1px_var(--glow)]",
           ].join(" ")}
         >
           {/* Desktop/Tablet media */}
@@ -373,11 +388,13 @@ export default function PresetCards({
   className = "",
   containerClassName = "max-w-6xl px-6",
   onFollowupInfo,
+  salesDisabled = false,
 }: {
   items?: Item[];
   className?: string;
   containerClassName?: string;
   onFollowupInfo?: () => void;
+  salesDisabled?: boolean;
 }) {
   return (
     <section className={`w-full ${className}`}>
@@ -389,7 +406,12 @@ export default function PresetCards({
           animate="visible"
         >
           {items.map((item) => (
-            <Card key={item.slug} item={item} onFollowupInfo={onFollowupInfo} />
+            <Card
+              key={item.slug}
+              item={item}
+              onFollowupInfo={onFollowupInfo}
+              salesDisabled={salesDisabled}
+            />
           ))}
         </motion.div>
       </div>

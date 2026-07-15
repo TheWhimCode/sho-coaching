@@ -4,26 +4,27 @@
 import Link from "next/link";
 import { FaDiscord, FaTiktok, FaEnvelope } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import { COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 
 export default function Footer() {
   return (
     <footer className="relative mt-32 text-white/70">
       <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
 
-        {/* Legal links (now ABOVE divider) */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm md:text-base text-white/60">
-          <Link href="/terms" prefetch={false} className="hover:text-orange-400 transition">
-            Terms of Service
-          </Link>
-          <Link href="/privacy" prefetch={false} className="hover:text-orange-400 transition">
-            Privacy Policy
-          </Link>
-          <Link href="/imprint" prefetch={false} className="hover:text-orange-400 transition">
-            Imprint
-          </Link>
-        </div>
+        {COACHING_SALES_ENABLED ? (
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm md:text-base text-white/60">
+            <Link href="/terms" prefetch={false} className="hover:text-orange-400 transition">
+              Terms of Service
+            </Link>
+            <Link href="/privacy" prefetch={false} className="hover:text-orange-400 transition">
+              Privacy Policy
+            </Link>
+            <Link href="/imprint" prefetch={false} className="hover:text-orange-400 transition">
+              Imprint
+            </Link>
+          </div>
+        ) : null}
 
-        {/* Divider (reduced spacing) */}
         <div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         {/* Email WITH icon (reduced spacing below divider) */}

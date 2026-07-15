@@ -1,12 +1,18 @@
 import Client from "./Client";
 import { SITE_URL } from "@/lib/site";
 import { coachingSessionBanner } from "@/lib/coaching/coachingClipVideos";
+import { COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
+import { redirect } from "next/navigation";
 
 export default async function Page({
   params,
 }: {
   params: Promise<{ preset: string }>;
 }) {
+  if (!COACHING_SALES_ENABLED) {
+    redirect("/coaching");
+  }
+
   const { preset } = await params;
   return <Client preset={preset} />;
 }
