@@ -128,6 +128,7 @@ export default function NavBar({
       {/* LOGO */}
       <Link
         href="/"
+        prefetch={false}
         className="absolute left-4 md:left-6 top-8 md:top-10 -translate-y-1/2 z-20 hidden md:flex items-center"
       >
         <Image
@@ -173,6 +174,7 @@ export default function NavBar({
                     <Link
                       key={it.href}
                       href={it.href}
+                      prefetch={false}
                       className="text-base md:text-lg text-white/80 hover:text-orange-400 transition"
                     >
                       {it.label}
@@ -182,6 +184,7 @@ export default function NavBar({
 
                 <Link
                   href="/contact"
+                  prefetch={false}
                   className="text-base md:text-lg text-white/80 hover:text-orange-400 transition"
                 >
                   Contact

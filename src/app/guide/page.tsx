@@ -9,6 +9,7 @@ import { buildGuideConventionalBuildPageData } from "@/lib/guides/buildGuideConv
 import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 import { buildGuideViegoAbilityIcons } from "@/lib/guides/buildGuideViegoAbilityIcons";
 import { collectGuideCriticalPreloadUrls } from "@/lib/guides/preloadGuideImages";
+import { getManualTwitchStreamStatus } from "@/lib/twitch/getManualTwitchStreamStatus";
 import { VIEGO_RUNE_BUILD } from "./viegoRunes";
 import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
@@ -40,13 +41,14 @@ export const metadata: Metadata = {
 export const revalidate = 86400;
 
 export default async function ViegoGuidePage() {
-  const [runeData, itemData, guideTextIcons, viegoAbilityIcons, possessionsData] =
+  const [runeData, itemData, guideTextIcons, viegoAbilityIcons, possessionsData, twitchStatus] =
     await Promise.all([
     fetchRunesTrees().then((trees) => buildGuideRunePageData(VIEGO_RUNE_BUILD, trees)),
     buildGuideItemPageData(VIEGO_ITEM_SECTION),
     buildGuideTextIcons(),
     buildGuideViegoAbilityIcons(),
     buildGuidePossessionPageData(VIEGO_POSSESSIONS_SECTION),
+    getManualTwitchStreamStatus(),
   ]);
   const jungleTierMatchupData = buildGuideJungleTierMatchupPageData(
     VIEGO_JUNGLE_TIER_MATCHUPS,
@@ -72,6 +74,7 @@ export default async function ViegoGuidePage() {
         gameStagesData={VIEGO_GAME_STAGES_SECTION}
         viegoAbilityIcons={viegoAbilityIcons}
         championIcon={championIcon}
+        twitchStatus={twitchStatus}
       />
     </>
   );

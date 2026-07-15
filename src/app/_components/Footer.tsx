@@ -12,13 +12,13 @@ export default function Footer() {
 
         {/* Legal links (now ABOVE divider) */}
         <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm md:text-base text-white/60">
-          <Link href="/terms" className="hover:text-orange-400 transition">
+          <Link href="/terms" prefetch={false} className="hover:text-orange-400 transition">
             Terms of Service
           </Link>
-          <Link href="/privacy" className="hover:text-orange-400 transition">
+          <Link href="/privacy" prefetch={false} className="hover:text-orange-400 transition">
             Privacy Policy
           </Link>
-          <Link href="/imprint" className="hover:text-orange-400 transition">
+          <Link href="/imprint" prefetch={false} className="hover:text-orange-400 transition">
             Imprint
           </Link>
         </div>

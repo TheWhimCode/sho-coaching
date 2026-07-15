@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaTwitch } from "react-icons/fa6";
 import GuideImage from "@/app/_components/guides/GuideImage";
 import { MINO_PROFILE_IMAGE } from "@/lib/coaching/coachingClipVideos";
@@ -10,11 +10,6 @@ import {
   TWITCH_CHANNEL_LOGIN,
   TWITCH_CHANNEL_URL,
 } from "@/lib/twitch/channel";
-import {
-  readTwitchStatusSessionCache,
-  TWITCH_LIVE_POLL_MS,
-  writeTwitchStatusSessionCache,
-} from "@/lib/twitch/cache";
 import type { TwitchStreamStatus } from "@/lib/twitch/types";
 import { getTwitchEmbedParentHosts } from "@/lib/twitch/parentHosts";
 import { guideSectionHeaderPadClass } from "@/lib/guides/guideTheme";
@@ -27,13 +22,6 @@ function buildTwitchEmbedUrl(channel: string, parentHosts: string[]) {
   }
   params.set("muted", "true");
   return `https://player.twitch.tv/?${params.toString()}`;
-}
-
-function formatViewerCount(count: number) {
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1).replace(/\.0$/, "")}K`;
-  }
-  return String(count);
 }
 
 function LiveBadge() {
@@ -191,11 +179,6 @@ function TwitchLiveEmbed({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <LiveBadge />
-            {typeof status.viewerCount === "number" ? (
-              <p className="text-xs font-medium tabular-nums text-[#F5E6D3]/52 sm:text-sm">
-                {formatViewerCount(status.viewerCount)} watching
-              </p>
-            ) : null}
           </div>
           {status.title ? (
             <p className="mt-2 line-clamp-2 text-sm font-semibold text-[#F5E6D3] sm:text-base">
@@ -227,119 +210,18 @@ function TwitchLiveEmbed({
   );
 }
 
-export default function TwitchShoutoutSection() {
-  const [status, setStatus] = useState<TwitchStreamStatus>({ isLive: false });
-  const [statusChecked, setStatusChecked] = useState(false);
+export default function TwitchShoutoutSection({ status }: { status: TwitchStreamStatus }) {
   const [parentHosts, setParentHosts] = useState<string[]>([]);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  const refreshStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/twitch/live");
-      if (!res.ok) return;
-      const next = (await res.json()) as TwitchStreamStatus;
-      setStatus(next);
-      writeTwitchStatusSessionCache(next);
-    } catch {
-      // Keep the last known status if the fetch fails.
-    }
-  }, []);
 
   useEffect(() => {
     setParentHosts(getTwitchEmbedParentHosts(window.location.hostname));
   }, []);
 
-  // Reuse a fresh tab-session cache, otherwise defer the first edge fetch until idle.
-  useEffect(() => {
-    const cached = readTwitchStatusSessionCache();
-    if (cached) {
-      setStatus(cached.status);
-      setStatusChecked(true);
-      return;
-    }
-
-    let cancelled = false;
-    let started = false;
-
-    const runInitialFetch = () => {
-      if (started || cancelled) return;
-      started = true;
-
-      void (async () => {
-        await refreshStatus();
-        if (!cancelled) setStatusChecked(true);
-      })();
-    };
-
-    let idleId: number | undefined;
-    const timeoutId = window.setTimeout(runInitialFetch, 3000);
-
-    if (typeof requestIdleCallback !== "undefined") {
-      idleId = requestIdleCallback(runInitialFetch, { timeout: 3000 });
-    }
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-      if (idleId !== undefined && typeof cancelIdleCallback !== "undefined") {
-        cancelIdleCallback(idleId);
-      }
-    };
-  }, [refreshStatus]);
-
-  // Poll only while live, tab is focused, and the section is on screen.
-  useEffect(() => {
-    if (!statusChecked || !status.isLive) return;
-
-    const section = sectionRef.current;
-    if (!section) return;
-
-    let timer: number | undefined;
-    let inView = false;
-
-    const clearPoll = () => {
-      if (timer !== undefined) {
-        window.clearInterval(timer);
-        timer = undefined;
-      }
-    };
-
-    const startPoll = () => {
-      clearPoll();
-      if (document.visibilityState !== "visible" || !inView) return;
-      timer = window.setInterval(() => void refreshStatus(), TWITCH_LIVE_POLL_MS);
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        inView = entry.isIntersecting;
-        if (inView) startPoll();
-        else clearPoll();
-      },
-      { rootMargin: "120px" }
-    );
-    observer.observe(section);
-
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") startPoll();
-      else clearPoll();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-
-    return () => {
-      clearPoll();
-      observer.disconnect();
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [statusChecked, status.isLive, refreshStatus]);
-
   return (
     <section
-      ref={sectionRef}
       id="twitch"
       className={clsx("scroll-mt-24", guideSectionHeaderPadClass)}
       aria-label="Twitch stream"
-      aria-busy={!statusChecked}
     >
       {status.isLive && parentHosts.length === 0 ? (
         <TwitchShoutoutSkeleton />

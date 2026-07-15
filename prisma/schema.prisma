@@ -409,6 +409,16 @@ model LeaderboardEntry {
   @@schema("skillcheck")
 }
 
+/// Singleton row id = "default" — site-wide toggles (e.g. manual Twitch live on guide).
+model SiteConfig {
+  id                 String   @id @default("default")
+  twitchLiveManual   Boolean  @default(false)
+  twitchStreamTitle  String?
+  updatedAt          DateTime @updatedAt
+
+  @@schema("public")
+}
+
 model AxomEvent {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())

@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import SessionRowItem from "@/app/admin/sessions/SessionRow";
 import { SessionData } from "@/app/admin/sessions/SessionData";
 import StudentCard from "@/app/admin/students/StudentCard";
+import TwitchLiveButton from "@/app/admin/HUB/TwitchLiveButton";
 import { COACHING_TEXTURE } from "@/lib/coaching/coachingClipVideos";
 
 type Student = {
@@ -167,9 +168,9 @@ useEffect(() => {
       <div className="relative z-10 pb-20">
         <div className="mx-auto w-full max-w-5xl px-6 space-y-8">
           <div className="h-1" />
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <h1 className="text-xl font-semibold">Daily Hub</h1>
-
+            <TwitchLiveButton />
           </div>
 
           {/* ===== sessions + movers ===== */}

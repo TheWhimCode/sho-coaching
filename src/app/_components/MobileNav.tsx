@@ -93,6 +93,7 @@ export default function MobileNav() {
                 ) : (
                   <Link
                     href={it.href}
+                    prefetch={false}
                     className="block py-3 text-xl font-semibold text-white/90 hover:text-orange-400 transition"
                     onClick={() => setOpen(false)}
                   >
@@ -113,6 +114,7 @@ export default function MobileNav() {
             >
               <Link
                 href="/contact"
+                prefetch={false}
                 className="block py-3 text-xl font-semibold text-white/90 hover:text-orange-400 transition"
                 onClick={() => setOpen(false)}
               >
