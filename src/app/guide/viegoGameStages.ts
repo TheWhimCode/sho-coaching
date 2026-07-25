@@ -35,7 +35,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "first-clear",
           label: "First clear",
-          isNew: true,
           summary:
             "You should always be on Scuttle before it spawns, especially with Blue start.",
           body: [
@@ -54,7 +53,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "getting-invaded",
           label: "Getting invaded",
-          isNew: true,
           summary: "You are pretty weak early. Think about and react well to invades.",
           body: [
             "Watch out for invades, you're pretty weak in early 1v1s. Think about what the enemy is playing.",
@@ -101,7 +99,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "mid-from-ahead",
           label: "From ahead",
-          isNew: true,
           summary: "Like other scaling assassins, if you got a lead early, you can start playing proactively.",
           body: [
             "Especially if you didn't buy Hubris (but even if you did), you can move on to step 2. Read the map. Where can you snowball the hardest?",
@@ -136,7 +133,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "late-finding-picks",
           label: "Finding picks",
-          isNew: true,
           summary: "You are an assassin. You thrive when you can get your single target burst off on isolated targets. Look at the map.",
           body: [
             "Ideally, you want to find picks in between fights. The more split up your enemies are, the easier your game is. Less alive enemies = more isolated targets.",
@@ -162,7 +158,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "late-using-e",
           label: "Using E",
-          isNew: true,
           summary: "Viego's E is his most underrated ability. Use it well.",
           body: [
             "Every assassin needs a tool to get in range. To sneak up to their opponents. Talon e, Qiyana w. Viego's tool is his E.",
@@ -191,7 +186,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "tf-patience",
           label: "Patience",
-          isNew: true,
           summary: "The high elo tiger can restrain himself.",
           body: [
             "You need an angle. It doesn't matter if your team will lose the fight or the objective. If there is no angle, your champion can't work.",
@@ -202,7 +196,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "tf-target-focus",
           label: "Target focus",
-          isNew: true,
           summary:
             "Pick your targets wisely, or you'll end up like Viper from Game of Thrones.",
           body: [
@@ -215,7 +208,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
         {
           id: "tf-fog-of-war",
           label: "Fog of war",
-          isNew: true,
           summary:
             "You are an assassin. Initiative & striking first are your biggest advantage. Be sneaky.",
           body: [

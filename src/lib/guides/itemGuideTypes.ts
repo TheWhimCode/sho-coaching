@@ -3,6 +3,7 @@ export type GuideItemEntry = {
   /** Optional short headline — defaults to item name from Data Dragon */
   title?: string;
   explanation: string;
+  isNew?: boolean;
 };
 
 export type GuideItemBuildStep =
@@ -75,6 +76,7 @@ export type GuideItemVariant = {
   activeChoiceIds: number[];
   /** For shared-path tabs — which row is active (dims the other). */
   activePathIndex?: number;
+  isNew?: boolean;
 };
 
 export type GuideItemTab = {
@@ -106,6 +108,7 @@ export type SerializedGuideItem = {
   icon: string;
   title: string;
   explanation: string;
+  isNew?: boolean;
 };
 
 export type SerializedGuideItemStep =
@@ -163,6 +166,7 @@ export type SerializedGuideItemVariant = {
   goodAgainst: SerializedGuideChampion[];
   activeChoiceIds: number[];
   activePathIndex: number | null;
+  isNew?: boolean;
 };
 
 export type SerializedGuideItemTab = {

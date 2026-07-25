@@ -35,6 +35,7 @@ function serializeItem(entry: GuideItemEntry): SerializedGuideItem | null {
     icon,
     title: entry.title ?? row.name,
     explanation: entry.explanation,
+    isNew: entry.isNew,
   };
 }
 
@@ -106,6 +107,7 @@ function serializeVariant(
     goodAgainst: variant.goodAgainst.map(serializeChampion),
     activeChoiceIds: variant.activeChoiceIds,
     activePathIndex: variant.activePathIndex ?? null,
+    isNew: variant.isNew,
   };
 }
 

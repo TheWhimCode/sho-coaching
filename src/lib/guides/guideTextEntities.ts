@@ -103,6 +103,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     patterns: ["Serrated Dirk", "Dirk"],
     matchKey: "dirk",
     icon: { kind: "item", id: "3134" },
+    boldOnly: true,
   },
   {
     patterns: ["Youmuu's Ghostblade", "Youmuu's"],
@@ -282,6 +283,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     patterns: ["Cloak of Agility", "Cloak"],
     matchKey: "cloak-of-agility",
     icon: { kind: "item", id: "1018" },
+    boldOnly: true,
   },
   { patterns: ["\\bIE\\b"], matchKey: "ie", color: GUIDE_KRAKEN_GOLD, icon: { kind: "item", id: "3031" } },
   { patterns: ["\\bDD\\b"], matchKey: "dd", color: GUIDE_CONQUEROR_ORANGE, icon: { kind: "item", id: "6333" } },

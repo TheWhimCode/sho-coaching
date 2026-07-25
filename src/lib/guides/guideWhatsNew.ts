@@ -3,6 +3,7 @@ import type {
   GuideGameStageCategory,
   GuideGameStageTopic,
 } from "./gameStageGuideTypes";
+import type { GuideItemPageData } from "./itemGuideTypes";
 import type { GuideJungleTierMatchupPageData } from "./matchupGuideTypes";
 
 export function topicIsNew(topic: GuideGameStageTopic) {
@@ -19,4 +20,9 @@ export function gameStagesSectionHasNew(data: GuideGameStagePageData) {
 
 export function jungleMatchupsSectionHasNew(data: GuideJungleTierMatchupPageData) {
   return data.tiers.some((tier) => tier.matchups.some((matchup) => matchup.isNew));
+}
+
+export function itemSectionHasNew(data: GuideItemPageData) {
+  if (data.preBuild?.boots.some((boot) => boot.isNew)) return true;
+  return data.tabs.some((tab) => tab.variants.some((variant) => variant.isNew));
 }

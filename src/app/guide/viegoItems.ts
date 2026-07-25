@@ -88,12 +88,8 @@ const SITUATIONAL_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPat
     {
       items: [
         { id: 3036, explanation: SITUATIONAL_LDR_EXPLANATION },
-        {
-          id: 6673,
-          explanation:
-            "This is why we don't always rush Collector. Shieldbow 3rd is bad, we hate it. But we needed LDR second.",
-        },
         { id: 3031, explanation: IE_EXPLANATION },
+        { id: 6673, explanation: MAIN_SHIELDBOW_EXPLANATION },
         {
           id: 6333,
           explanation:
@@ -143,16 +139,18 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
   bootsSubheading: "Don't upgrade boots until LDR unless Steelcaps are OP",
   boots: [
     {
-      id: 3047,
-      title: "Plated Steelcaps",
-      explanation:
-        "These are the most common boots that you get after LDR + Cloak of Agility or later. sometimes even earlier when the game is right.",
-    },
-    {
       id: 3008,
       title: "Gluttonous Greaves",
+      isNew: true,
       explanation:
-        "These are crazy good situationally. You can sustain back up between fights and cuz you do so much damage you heal a lot. You can even solo Baron (easily). But you need to stack them.",
+        "These are your go-to boots if you can stack them. Delaying your itemspikes can be greedy, but building them after LDR can make them difficult to stack.",
+    },
+    {
+      id: 3047,
+      title: "Plated Steelcaps",
+      isNew: true,
+      explanation:
+        "These are your go-to against full AD comps. Generally don't finish them before LDR + Cloak.",
     },
     {
       id: 3111,
@@ -203,7 +201,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Cyclosword",
           header: "The twink crusher.",
           description:
-            "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhen you don't need the scaling or need earlygame power because you'll get invaded or fell behind hard, Cyclosword is great.",
+            "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhen you don't need the scaling or need earlygame power because you'll get invaded or fell behind hard, Cyclosword is great.\nI build this roughly 40% of games.",
           activeChoiceIds: [6699],
           teamComp: {
             ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
@@ -216,7 +214,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Hubris",
           header: "Max damage & scaling",
           description:
-            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.",
+            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.\nI build this roughly 40% of games.",
           activeChoiceIds: [6697],
           teamComp: {
             ally: ["Garen", "Viego", "Lissandra", "Vayne", "Lulu"],
@@ -247,17 +245,18 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
       variants: [
         {
           id: "survival",
-          label: "Death's Dance",
-          header: "Multiple high Armor fulltanks :(",
+          label: "Lethality skip",
+          header: "Lethality skip",
+          isNew: true,
           description:
-            "We don't like this build.\nIt's better than Kraken + Conqueror because you can't DPS against high CC high Armor champs either way and it gives you surprisingly high midgame damage, but the Shieldbow 3rd hurts a lot and LDR costs a lot for a second item.",
+            "Build this when it would technically be a good Hubris game, but you don't think you'll be able to stack it. Bad early or really tough compositions.\nYou'll have a much stronger midgame spike against tanky champions, but lose the scaling Hubris offers. It's a strong build. Start Dirk and decide if you can afford Hubris on second base.",
           activeChoiceIds: [],
           activePathIndex: 0,
           teamComp: {
             ally: ["Renekton", "Viego", "Akali", "Zeri", "Lulu"],
-            enemy: ["Jax", "Sejuani", "K'sante", "Ashe", "Leona"],
+            enemy: ["Jax", "Sejuani", "K'sante", "Ashe", "Janna"],
           },
-          goodAgainst: ["Leona", "Ornn", "K'sante", "Braum", "Sejuani", "Malphite"],
+          goodAgainst: ["Leona", "Ornn", "K'sante", "Braum", "Shen", "Zilean"],
         },
         {
           id: "sit-serpents",

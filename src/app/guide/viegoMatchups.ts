@@ -36,7 +36,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Bel'Veth",
           explanation:
-            "Don't face her a lot, but from my experience you just do too much damage for her to handle in teamfights. Just watch out for her early Raptors cheese.",
+            "You just end up having way too much damage for her and her possession is very good. Don't get caught out by her W and don't forget about her E. She becomes super tanky and does a lot of missing health damage.\n\nBut she can get stunned during E, removing her high dmg (but not her dmg reduction). In early skirmishes I sometimes keep my W until we both get low, and when she's about to E, I fully charge W and stun her (often I just run away and let my team handle her).\n\nJust watch out for her level 1 Raptors cheese and drop camps if you need to. Don't play her game, just scale.",
         },
         {
           champion: "Ambessa",

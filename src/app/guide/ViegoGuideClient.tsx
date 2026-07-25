@@ -15,6 +15,7 @@ import GuideDonationSection from "@/app/_components/guides/GuideDonationSection"
 import { guideChampionIconImgClass, guidePageBg, GUIDE } from "@/lib/guides/guideTheme";
 import {
   gameStagesSectionHasNew,
+  itemSectionHasNew,
   jungleMatchupsSectionHasNew,
 } from "@/lib/guides/guideWhatsNew";
 import { SHOW_GUIDE_POSSESSIONS_SECTION } from "@/lib/guides/guideFeatureFlags";
@@ -64,7 +65,7 @@ export default function ViegoGuideClient({
 }) {
   const indexEntries = [
     { id: "runes", label: runeData.build.heading },
-    { id: "items", label: itemData.heading },
+    { id: "items", label: itemData.heading, isNew: itemSectionHasNew(itemData) },
     { id: "conventional-build", label: conventionalBuildData.heading },
     {
       id: "matchups",

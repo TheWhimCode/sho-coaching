@@ -15,6 +15,7 @@ import type {
 } from "@/lib/guides/itemGuideTypes";
 import GuideCrossOverlay from "@/app/_components/guides/GuideCrossOverlay";
 import GuideImage from "@/app/_components/guides/GuideImage";
+import GuideNewBadge, { GuideLabelWithNew } from "@/app/_components/guides/GuideNewBadge";
 import { ItemBuildSectionSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import { renderGuideHighlightedTextWithViegoAbilities } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
@@ -304,6 +305,9 @@ function ItemTile({
           loading="lazy"
         />
         {crossed ? <GuideCrossOverlay /> : null}
+        {item.isNew ? (
+          <GuideNewBadge className="pointer-events-none absolute -right-1 -top-1 z-10 text-[6px] sm:text-[7px]" />
+        ) : null}
       </div>
       {portalMounted && showTip && tipLayout
         ? createPortal(
@@ -1105,7 +1109,7 @@ function BuildDetailSection({
     <div className="flex w-full min-w-0 max-w-full flex-col items-stretch gap-8 sm:flex-row sm:gap-10 lg:gap-12">
       <div className="min-w-0 w-full max-w-full flex-[3]">
         <h3 className="break-words text-center text-xl font-bold tracking-tight text-[#FAD4E8]/90 sm:text-left sm:text-2xl">
-          {activeVariant.header}
+          <GuideLabelWithNew isNew={activeVariant.isNew}>{activeVariant.header}</GuideLabelWithNew>
         </h3>
         <div className="mt-5 min-w-0 max-w-full break-words text-left text-sm leading-[1.75] text-[#F5E6D3]/62 [overflow-wrap:anywhere] sm:mt-6 sm:min-h-[11em] sm:text-base">
           {activeVariant.description.split("\n").map((paragraph, index) => (

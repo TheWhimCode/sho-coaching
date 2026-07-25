@@ -2,7 +2,6 @@ import type { GuidePossessionSectionConfig } from "@/lib/guides/possessionGuideT
 
 export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
   heading: "Possessions",
-  isNew: true,
   howItWorksHeading: "How possessions work",
   howItWorksNote:
     "If an enemy you damaged in the last 3 seconds dies, you can possess them.",
