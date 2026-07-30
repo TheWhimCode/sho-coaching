@@ -109,9 +109,9 @@ const SITUATIONAL_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPat
         { id: 3031, explanation: IE_EXPLANATION },
         { id: 6673, explanation: MAIN_SHIELDBOW_EXPLANATION },
         {
-          id: 6333,
+          id: 3026,
           explanation:
-            "We are full Crit with extra item slot. DD is best, but you can also get GA/QSS/Cyclosword or Serpent's Fang vs lategame Shieldbow/Sterak's/Locket and such.",
+            "We are full Crit with extra item slot. GA is best, but you can also get DD/QSS/Cyclosword or Serpent's Fang vs lategame Shieldbow/Sterak's/Locket and such.",
         },
       ],
     },
