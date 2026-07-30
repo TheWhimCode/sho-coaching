@@ -224,56 +224,83 @@ function ExplanationPanelSkeleton({ title, body }: { title: string; body: string
 }
 
 export function RunePageSkeleton({ data }: { data: GuideRunePageData }) {
-  const { build, primaryTree, secondaryTree, statShardRows, headerIcon } = data;
+  const activeTab =
+    data.tabs.find((tab) => tab.id === data.defaultTabId) ?? data.tabs[0];
+  const { build, primaryTree, secondaryTree, statShardRows } = activeTab;
   const hailOfBladesExplanation = build.explanations[0];
 
   return (
     <div aria-hidden>
       <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
-        <h2 className={clsx(guideSectionTitleClass, "text-[#F5E6D3]/20")}>{build.heading}</h2>
-        {headerIcon ? (
+        <h2 className={clsx(guideSectionTitleClass, "text-[#F5E6D3]/20")}>{data.heading}</h2>
+        {data.headerIcon ? (
           <SkeletonTile className="relative shrink-0 rounded-lg" />
         ) : null}
       </div>
 
-      <div className={clsx(guideRuneOuterPanelClass, guideMobileFlushPanelClass)}>
-        <div
-          className={clsx(
-            "flex flex-col lg:flex-row lg:items-stretch",
-            guideRuneLayoutGapClass
-          )}
-        >
-          <div className="w-full shrink-0 p-3 sm:p-5 lg:w-auto lg:flex-1">
-            <div className="flex flex-col">
-              <div className="flex flex-row items-start gap-1.5 sm:gap-6">
-                <RuneTreeSkeletonPanel tree={primaryTree} />
-                <RuneTreeSkeletonPanel
-                  tree={secondaryTree}
-                  hideKeystone
-                  statShardRows={statShardRows}
-                />
+      <div
+        className={clsx(
+          "overflow-hidden rounded-none border border-[#F0ABCF]/15 bg-[#2A1F2E]/75 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:rounded-2xl",
+          guideMobileFlushPanelClass
+        )}
+      >
+        <div className="flex w-full">
+          {data.tabs.map((tab, index) => (
+            <div
+              key={tab.id}
+              className={clsx(
+                "px-5 py-3.5 text-sm font-semibold tracking-wide sm:px-6",
+                "ring-1 ring-inset",
+                index === data.tabs.length - 1 && "sm:rounded-br-2xl",
+                tab.id === data.defaultTabId
+                  ? "text-[#FAD4E8]/35 ring-[#F0ABCF]/20"
+                  : "text-[#F5E6D3]/15 ring-[#F0ABCF]/08"
+              )}
+            >
+              {tab.label}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-3 sm:p-4">
+          <div
+            className={clsx(
+              "flex flex-col lg:flex-row lg:items-stretch",
+              guideRuneLayoutGapClass
+            )}
+          >
+            <div className="w-full shrink-0 p-3 sm:p-5 lg:w-auto lg:flex-1">
+              <div className="flex flex-col">
+                <div className="flex flex-row items-start gap-1.5 sm:gap-6">
+                  <RuneTreeSkeletonPanel tree={primaryTree} />
+                  <RuneTreeSkeletonPanel
+                    tree={secondaryTree}
+                    hideKeystone
+                    statShardRows={statShardRows}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex min-w-0 flex-col gap-4 lg:flex-1">
-            {hailOfBladesExplanation ? (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <ExplanationPanelSkeleton
-                  title={hailOfBladesExplanation.title}
-                  body={hailOfBladesExplanation.body}
-                />
-              </div>
-            ) : null}
+            <div className="flex min-w-0 flex-col gap-4 lg:flex-1">
+              {hailOfBladesExplanation ? (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <ExplanationPanelSkeleton
+                    title={hailOfBladesExplanation.title}
+                    body={hailOfBladesExplanation.body}
+                  />
+                </div>
+              ) : null}
 
-            {build.precisionSection ? (
-              <div className="flex min-h-0 flex-1 flex-col">
-                <ExplanationPanelSkeleton
-                  title={build.precisionSection.title}
-                  body={build.precisionSection.body}
-                />
-              </div>
-            ) : null}
+              {build.secondarySection ? (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <ExplanationPanelSkeleton
+                    title={build.secondarySection.title}
+                    body={build.secondarySection.body}
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
@@ -409,6 +436,7 @@ function isThreeChoiceFixedPath(steps: SerializedGuideItemStep[]): boolean {
 }
 
 function isMobileForkMergeSharedPath(sharedPath: SerializedGuideItemSharedPath): boolean {
+  if (!sharedPath.origin) return false;
   if (sharedPath.paths.length !== 2) return false;
 
   const [path0, path1] = sharedPath.paths;
@@ -475,8 +503,12 @@ function ItemSharedPathsLayoutSkeleton({
       ) : null}
 
       <div className={clsx("flex w-full min-w-0 items-stretch overflow-visible", useMobileLayout && "hidden sm:block")}>
-        <ItemStepColumnSkeleton step={{ type: "fixed", items: [sharedPath.origin] }} />
-        <div className={ITEM_LANE_SPACER_H} aria-hidden />
+        {sharedPath.origin ? (
+          <>
+            <ItemStepColumnSkeleton step={{ type: "fixed", items: [sharedPath.origin] }} />
+            <div className={ITEM_LANE_SPACER_H} aria-hidden />
+          </>
+        ) : null}
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
           {sharedPath.paths.map((path, pathIndex) => (
             <div

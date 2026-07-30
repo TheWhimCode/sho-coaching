@@ -145,8 +145,8 @@ function serializeSharedPath(
   sharedPath: GuideItemTab["sharedPath"]
 ): SerializedGuideItemSharedPath | null {
   if (!sharedPath) return null;
-  const origin = serializeItem(sharedPath.origin);
-  if (!origin) return null;
+  const origin = sharedPath.origin ? serializeItem(sharedPath.origin) : null;
+  if (sharedPath.origin && !origin) return null;
 
   const paths = sharedPath.paths
     .map((path) => ({

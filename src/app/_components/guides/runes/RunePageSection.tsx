@@ -4,7 +4,6 @@ import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   guideRuneLayoutGapClass,
-  guideRuneOuterPanelClass,
   guideSectionHeaderPadClass,
   guideSectionTitleClass,
   guideMobileFlushPanelClass,
@@ -39,30 +38,46 @@ function RuneIcon({
   selected,
   mode,
   large = false,
+  situational = false,
+  situationalEdge = "right",
 }: {
   rune: SerializedRune;
   selected: boolean;
   mode: TreeMode;
   large?: boolean;
+  situational?: boolean;
+  situationalEdge?: "left" | "right";
 }) {
   const accent = TREE_ACCENT[mode];
   const size = large ? "size-14 sm:size-16 lg:size-[4.5rem]" : "size-9 sm:size-11 lg:size-12";
 
   return (
-    <div
-      className={clsx(
-        "relative aspect-square shrink-0 flex-none overflow-hidden rounded-full border-2 bg-[#352839]/80 transition",
-        size,
-        selected ? accent.border : "border-transparent opacity-35 grayscale"
-      )}
-      title={rune.name}
-    >
-      <GuideImage
-        src={rune.icon}
-        alt={rune.name}
-        className="h-full w-full object-cover"
-        loading="eager"
-      />
+    <div className={clsx("relative aspect-square shrink-0 flex-none", size)} title={rune.name}>
+      <div
+        className={clsx(
+          "h-full w-full overflow-hidden rounded-full border-2 bg-[#352839]/80 transition",
+          selected ? accent.border : "border-transparent opacity-35 grayscale"
+        )}
+      >
+        <GuideImage
+          src={rune.icon}
+          alt={rune.name}
+          className="h-full w-full object-cover"
+          loading="eager"
+        />
+      </div>
+      {situational && selected ? (
+        <span
+          aria-hidden
+          title="Situational"
+          className={clsx(
+            "pointer-events-none absolute top-1/2 z-10 h-2 w-1 -translate-y-1/2 bg-[#B8D8EA] sm:h-2.5 sm:w-1.5",
+            situationalEdge === "left"
+              ? "-left-px rounded-l-full"
+              : "-right-px rounded-r-full"
+          )}
+        />
+      ) : null}
     </div>
   );
 }
@@ -123,6 +138,7 @@ function StatShardGrid({
 function RuneTreePanel({
   tree,
   selectedIds,
+  situationalIds = [],
   mode,
   hideKeystone = false,
   statShardRows,
@@ -130,12 +146,14 @@ function RuneTreePanel({
 }: {
   tree: SerializedRuneTree;
   selectedIds: number[];
+  situationalIds?: number[];
   mode: TreeMode;
   hideKeystone?: boolean;
   statShardRows?: SerializedStatShardRow[];
   statShardClassName?: string;
 }) {
   const selected = new Set(selectedIds);
+  const situational = new Set(situationalIds);
   const slots = hideKeystone ? tree.slots.slice(1) : tree.slots;
 
   return (
@@ -151,16 +169,33 @@ function RuneTreePanel({
                 isKeystoneRow ? "gap-1.5 sm:gap-2.5" : "gap-1 sm:gap-3.5 lg:gap-4"
               )}
             >
-              {row.map((rune) => (
-                <div key={rune.id} className="flex flex-none items-center justify-center">
-                  <RuneIcon
-                    rune={rune}
-                    selected={selected.has(rune.id)}
-                    mode={mode}
-                    large={isKeystoneRow}
-                  />
-                </div>
-              ))}
+              {row.map((rune, runeIdx) => {
+                const isSituational = situational.has(rune.id);
+                const nextSituational =
+                  isSituational &&
+                  runeIdx < row.length - 1 &&
+                  situational.has(row[runeIdx + 1].id);
+                const prevSituational =
+                  isSituational && runeIdx > 0 && situational.has(row[runeIdx - 1].id);
+                const situationalEdge: "left" | "right" = nextSituational
+                  ? "right"
+                  : prevSituational
+                    ? "left"
+                    : "right";
+
+                return (
+                  <div key={rune.id} className="relative flex flex-none items-center justify-center">
+                    <RuneIcon
+                      rune={rune}
+                      selected={selected.has(rune.id)}
+                      mode={mode}
+                      large={isKeystoneRow}
+                      situational={isSituational}
+                      situationalEdge={situationalEdge}
+                    />
+                  </div>
+                );
+              })}
             </div>
           );
         })}
@@ -253,7 +288,10 @@ export default function RunePageSection({
   guideTextIcons?: Record<string, string>;
   viegoAbilityIcons: GuideViegoAbilityIcons;
 }) {
-  const { build, primaryTree, secondaryTree, statShardRows, headerIcon } = data;
+  const { heading, headerIcon, tabs, defaultTabId } = data;
+  const [activeTabId, setActiveTabId] = useState(defaultTabId);
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
+  const { build, primaryTree, secondaryTree, statShardRows } = activeTab;
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const [leftPanelHeight, setLeftPanelHeight] = useState<number | null>(null);
   const runeImageUrls = useMemo(() => collectRuneSectionImageUrls(data), [data]);
@@ -285,7 +323,7 @@ export default function RunePageSection({
       observer.disconnect();
       window.removeEventListener("resize", syncHeight);
     };
-  }, [imagesReady]);
+  }, [imagesReady, activeTabId]);
 
   return (
     <section
@@ -313,7 +351,7 @@ export default function RunePageSection({
           aria-hidden={!imagesReady}
         >
           <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
-            <h2 className={guideSectionTitleClass}>{build.heading}</h2>
+            <h2 className={guideSectionTitleClass}>{heading}</h2>
             {headerIcon ? (
               <div className="relative shrink-0">
                 <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg sm:h-16 sm:w-16">
@@ -329,62 +367,95 @@ export default function RunePageSection({
             ) : null}
           </div>
 
-          <div className={clsx(guideRuneOuterPanelClass, guideMobileFlushPanelClass)}>
-            <div
-              className={clsx(
-                "flex flex-col lg:flex-row lg:items-stretch",
-                guideRuneLayoutGapClass
-              )}
-            >
-              <div ref={leftPanelRef} className="w-full shrink-0 p-3 sm:p-5 lg:w-auto lg:flex-1">
-                <div className="flex flex-col">
-                  <div className="flex flex-row items-start gap-1.5 sm:gap-6">
-                    <RuneTreePanel
-                      tree={primaryTree}
-                      selectedIds={build.primaryPerkIds}
-                      mode="primary"
-                    />
-                    <RuneTreePanel
-                      tree={secondaryTree}
-                      selectedIds={build.secondaryPerkIds}
-                      mode="secondary"
-                      hideKeystone
-                      statShardRows={statShardRows}
-                    />
+          <div
+            className={clsx(
+              "overflow-hidden rounded-none border border-[#F0ABCF]/15 bg-[#2A1F2E]/75 ring-1 ring-[#B8D8EA]/10 backdrop-blur-sm sm:rounded-2xl",
+              guideMobileFlushPanelClass
+            )}
+          >
+            <div className="flex w-full">
+              {tabs.map((tab, index) => {
+                const active = tab.id === activeTabId;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTabId(tab.id)}
+                    className={clsx(
+                      "px-5 py-3.5 text-sm font-semibold tracking-wide transition sm:px-6",
+                      "ring-1 ring-inset",
+                      index === tabs.length - 1 && "sm:rounded-br-2xl",
+                      active
+                        ? "text-[#FAD4E8] ring-[#F0ABCF]/35"
+                        : "text-[#F5E6D3]/38 ring-[#F0ABCF]/12 hover:text-[#F5E6D3]/62 hover:ring-[#F0ABCF]/20"
+                    )}
+                    aria-pressed={active}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="p-3 sm:p-4">
+              <div
+                className={clsx(
+                  "flex flex-col lg:flex-row lg:items-stretch",
+                  guideRuneLayoutGapClass
+                )}
+              >
+                <div ref={leftPanelRef} className="w-full shrink-0 p-3 sm:p-5 lg:w-auto lg:flex-1">
+                  <div className="flex flex-col">
+                    <div className="flex flex-row items-start gap-1.5 sm:gap-6">
+                      <RuneTreePanel
+                        tree={primaryTree}
+                        selectedIds={build.primaryPerkIds}
+                        situationalIds={build.situationalPerkIds}
+                        mode="primary"
+                      />
+                      <RuneTreePanel
+                        tree={secondaryTree}
+                        selectedIds={build.secondaryPerkIds}
+                        situationalIds={build.situationalPerkIds}
+                        mode="secondary"
+                        hideKeystone
+                        statShardRows={statShardRows}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div
-                className="flex min-w-0 flex-col gap-4 lg:flex-1"
-                style={leftPanelHeight != null ? { height: leftPanelHeight } : undefined}
-              >
-                {hailOfBladesExplanation ? (
-                  <div className="flex min-h-0 flex-1 flex-col">
-                    <ExplanationPanel
-                      title={hailOfBladesExplanation.title}
-                      body={hailOfBladesExplanation.body}
-                      runeIcon={hailOfBladesIcon}
-                      accent="primary"
-                      guideTextIcons={guideTextIcons}
-                      viegoAbilityIcons={viegoAbilityIcons}
-                    />
-                  </div>
-                ) : null}
+                <div
+                  className="flex min-w-0 flex-col gap-4 lg:flex-1"
+                  style={leftPanelHeight != null ? { height: leftPanelHeight } : undefined}
+                >
+                  {hailOfBladesExplanation ? (
+                    <div className="flex min-h-0 flex-1 flex-col">
+                      <ExplanationPanel
+                        title={hailOfBladesExplanation.title}
+                        body={hailOfBladesExplanation.body}
+                        runeIcon={hailOfBladesIcon}
+                        accent="primary"
+                        guideTextIcons={guideTextIcons}
+                        viegoAbilityIcons={viegoAbilityIcons}
+                      />
+                    </div>
+                  ) : null}
 
-                {build.precisionSection ? (
-                  <div className="flex min-h-0 flex-1 flex-col">
-                    <ExplanationPanel
-                      title={build.precisionSection.title}
-                      body={build.precisionSection.body}
-                      runeIcon={secondaryTree.icon}
-                      accent="secondary"
-                      compactIcon
-                      guideTextIcons={guideTextIcons}
-                      viegoAbilityIcons={viegoAbilityIcons}
-                    />
-                  </div>
-                ) : null}
+                  {build.secondarySection ? (
+                    <div className="flex min-h-0 flex-1 flex-col">
+                      <ExplanationPanel
+                        title={build.secondarySection.title}
+                        body={build.secondarySection.body}
+                        runeIcon={secondaryTree.icon}
+                        accent="secondary"
+                        compactIcon
+                        guideTextIcons={guideTextIcons}
+                        viegoAbilityIcons={viegoAbilityIcons}
+                      />
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>

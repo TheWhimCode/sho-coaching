@@ -1,10 +1,17 @@
-import type { GuideItemSectionConfig } from "@/lib/guides/itemGuideTypes";
+import type {
+  GuideItemEntry,
+  GuideItemSectionConfig,
+  GuideItemVariant,
+} from "@/lib/guides/itemGuideTypes";
 
 const SITUATIONAL_COLLECTOR_EXPLANATION =
   "Best first item when you plan to adjust your build.";
 
 const MAIN_SHIELDBOW_EXPLANATION =
   "Need 100% Crit. We don't care about the defense. If there was an alternative we'd go with that.";
+
+const MAIN_COLLECTOR_EXPLANATION =
+  "Always best second. Double Lethality -> %pen. Insane item on Viego.";
 
 const IE_EXPLANATION =
   "Q and R scale with IE critdamage, but I found that even against squishies LDR does pretty much the same damage. The itempath is a lot worse on IE as well and it's more expensive, so I default to Noon -> LDR -> IE.";
@@ -21,66 +28,77 @@ const SITUATIONAL_LDR_EXPLANATION =
 const MAIN_LDR_EXPLANATION =
   "Your MEGA spike. This is what we've been scaling for. Kill anything. Anyone. Would be the love of my life if I didn't have Isolde.";
 
-const MAIN_BUILD_STEPS: GuideItemSectionConfig["tabs"][number]["steps"] = [
+const BASTIONBREAKER_PATH_ITEMS: GuideItemEntry[] = [
   {
-    type: "choice",
-    items: [
-      {
-        id: 6699,
-        title: "Voltaic Cyclosword",
-        explanation: "Kraken-like early game spike to burst squishies.",
-      },
-      {
-        id: 6697,
-        title: "Hubris",
-        explanation:
-          "Highest scaling damage in the game. High AD + Crit + Armor Pen is the key. Best baseline item, especially in low elo.",
-      },
-      {
-        id: 6695,
-        title: "Serpent's Fang",
-        explanation: "Tons of shields. Item is cheap so you can get LDR faster as well.",
-      },
-    ],
+    id: 2520,
+    title: "Bastionbreaker",
+    explanation:
+      "Completely overbuffed, same damage as Cyclo without the passive. The passive helps you secure early Drakes/Grubs that you didn't have the time for before",
   },
+  { id: 6676, explanation: MAIN_COLLECTOR_EXPLANATION },
+  { id: 3036, explanation: MAIN_LDR_EXPLANATION },
+  { id: 3031, explanation: IE_EXPLANATION },
   {
-    type: "fixed",
-    items: [
-      {
-        id: 6676,
-        explanation:
-          "Always best second. Double Lethality -> %pen. Insane item on Viego.",
-      },
-    ],
-  },
-  {
-    type: "fixed",
-    items: [
-      {
-        id: 3036,
-        explanation: MAIN_LDR_EXPLANATION,
-      },
-    ],
-  },
-  {
-    type: "fixed",
-    items: [
-      {
-        id: 3031,
-        explanation: IE_EXPLANATION,
-      },
-    ],
-  },
-  {
-    type: "fixed",
-    items: [
-      {
-        id: 6673,
-        explanation: MAIN_SHIELDBOW_EXPLANATION,
-      },
-    ],
+    id: 6699,
+    title: "Voltaic Cyclosword",
+    explanation:
+      "Triple Lethality does insane damage against 75+ Armor targets. All champions have that at level 15. Can overcap with Youmus but it's lowkey fine.",
   },
 ];
+
+const MAIN_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
+  paths: [
+    {
+      items: BASTIONBREAKER_PATH_ITEMS,
+    },
+    {
+      diverge: [
+        {
+          id: 6697,
+          title: "Hubris",
+          explanation:
+            "Highest scaling damage in the game. High AD + Crit + Armor Pen is the key. Best baseline item, especially in low elo.",
+        },
+        {
+          id: 6695,
+          title: "Serpent's Fang",
+          explanation: "Tons of shields. Item is cheap so you can get LDR faster as well.",
+        },
+      ],
+      items: [
+        { id: 6676, explanation: MAIN_COLLECTOR_EXPLANATION },
+        { id: 3036, explanation: MAIN_LDR_EXPLANATION },
+        { id: 3031, explanation: IE_EXPLANATION },
+        {
+          id: 2520,
+          title: "Bastionbreaker",
+          explanation:
+            "Same damage as Cyclo but you also get the passive. 3x Lethality is WAY more damage than Shieldbow.",
+        },
+      ],
+    },
+  ],
+};
+
+const MID_BUILD_STEPS: NonNullable<GuideItemSectionConfig["tabs"][number]["steps"]> =
+  BASTIONBREAKER_PATH_ITEMS.map((item) => ({
+    type: "fixed" as const,
+    items: [item],
+  }));
+
+const BASTIONBREAKER_VARIANT: GuideItemVariant = {
+  id: "bastionbreaker",
+  label: "Bastionbreaker",
+  header: "The twink crusher.",
+  description:
+    "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.",
+  activeChoiceIds: [],
+  teamComp: {
+    ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
+    enemy: ["Kayle", "Kha'Zix", "Syndra", "Tristana", "Senna"],
+  },
+  goodAgainst: ["Kha'Zix", "Talon", "Qiyana", "Kindred", "Quinn", "Hwei"],
+};
 
 const SITUATIONAL_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
   origin: { id: 6676, explanation: SITUATIONAL_COLLECTOR_EXPLANATION },
@@ -193,29 +211,21 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
     {
       id: "main",
       label: "Main Build",
-      steps: MAIN_BUILD_STEPS,
-      defaultVariantId: "hubris",
+      sharedPath: MAIN_SHARED_PATH,
+      defaultVariantId: "bastionbreaker",
       variants: [
         {
-          id: "cyclo",
-          label: "Cyclosword",
-          header: "The twink crusher.",
-          description:
-            "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhen you don't need the scaling or need earlygame power because you'll get invaded or fell behind hard, Cyclosword is great.\nI build this roughly 40% of games.",
-          activeChoiceIds: [6699],
-          teamComp: {
-            ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
-            enemy: ["Kayle", "Kha'Zix", "Syndra", "Tristana", "Senna"],
-          },
-          goodAgainst: ["Kha'Zix", "Talon", "Qiyana", "Kindred", "Quinn", "Hwei"],
+          ...BASTIONBREAKER_VARIANT,
+          activePathIndex: 0,
         },
         {
           id: "hubris",
           label: "Hubris",
           header: "Max damage & scaling",
           description:
-            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.\nI build this roughly 40% of games.",
+            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.",
           activeChoiceIds: [6697],
+          activePathIndex: 1,
           teamComp: {
             ally: ["Garen", "Viego", "Lissandra", "Vayne", "Lulu"],
             enemy: ["Kled", "Jarvan IV", "Sylas", "Samira", "Camille"],
@@ -229,6 +239,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           description:
             "They have tons of shield from the start. I'm saying like Karma AND Ivern... Serpent's Fang is a super efficient item that you should always prioritize against these champs. But often you don't need to get it first item.\nIt also works against Barrier, Shieldbow, Locket, Green Smite, Armored Advance...",
           activeChoiceIds: [6695],
+          activePathIndex: 1,
           teamComp: {
             ally: ["Jax", "Viego", "Hwei", "Jinx", "Nautilus"],
             enemy: ["Sett", "Vi", "Leblanc", "Seraphine", "Karma"],
@@ -245,8 +256,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
       variants: [
         {
           id: "survival",
-          label: "Lethality skip",
-          header: "Lethality skip",
+          label: "The Elekktro build",
+          header: "The Elekktro build",
           isNew: true,
           description:
             "Build this when it would technically be a good Hubris game, but you don't think you'll be able to stack it. Bad early or really tough compositions.\nYou'll have a much stronger midgame spike against tanky champions, but lose the scaling Hubris offers. It's a strong build. Start Dirk and decide if you can afford Hubris on second base.",
@@ -287,6 +298,13 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           goodAgainst: ["Kha'Zix", "Talon", "Qiyana", "Kindred", "Quinn", "Hwei"],
         },
       ],
+    },
+    {
+      id: "mid",
+      label: "Midlane",
+      steps: MID_BUILD_STEPS,
+      defaultVariantId: "bastionbreaker",
+      variants: [BASTIONBREAKER_VARIANT],
     },
   ],
 };

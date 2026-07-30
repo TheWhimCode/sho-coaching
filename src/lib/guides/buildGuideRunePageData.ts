@@ -9,8 +9,9 @@ import {
   summonerSpellIconById,
 } from "@/lib/datadragon/summonerspells";
 import type {
-  GuideRuneBuild,
+  GuideRuneSectionConfig,
   GuideRunePageData,
+  GuideRuneTabPageData,
   SerializedRune,
   SerializedRuneTree,
 } from "./runeGuideTypes";
@@ -48,17 +49,16 @@ function serializeTree(tree: RunesTree): SerializedRuneTree {
   };
 }
 
-export async function buildGuideRunePageData(
-  build: GuideRuneBuild,
+function serializeTab(
+  tab: GuideRuneSectionConfig["tabs"][number],
   trees: RunesTree[]
-): Promise<GuideRunePageData> {
-  await ensureSummonerSpellsAssets();
-
+): GuideRuneTabPageData {
+  const { build } = tab;
   const primaryTree = trees.find((t) => t.id === build.primaryStyleId);
   const secondaryTree = trees.find((t) => t.id === build.secondaryStyleId);
 
   if (!primaryTree || !secondaryTree) {
-    throw new Error("Guide rune build references unknown rune tree");
+    throw new Error(`Guide rune tab "${tab.id}" references unknown rune tree`);
   }
 
   const summonerSpellIcons: Record<number, string> = {};
@@ -75,24 +75,51 @@ export async function buildGuideRunePageData(
 
   const statShardRows = STAT_SHARD_ROW_OPTIONS.map((optionIds, rowIdx) => ({
     selectedId: selectedByRow[rowIdx],
-    shards: optionIds.map((id) => {
-      const icon = getStatShardIconUrl(id);
-      return {
-        id,
-        name: getStatShardName(id),
-        icon: icon ?? "",
-      };
-    }).filter((s) => s.icon),
+    shards: optionIds
+      .map((id) => {
+        const icon = getStatShardIconUrl(id);
+        return {
+          id,
+          name: getStatShardName(id),
+          icon: icon ?? "",
+        };
+      })
+      .filter((s) => s.icon),
   }));
 
   return {
+    id: tab.id,
+    label: tab.label,
     build,
     primaryTree: serializeTree(primaryTree),
     secondaryTree: serializeTree(secondaryTree),
     summonerSpellIcons,
     statShardRows,
-    headerIcon: build.headerIconPerkId
-      ? findRuneInTrees(trees, build.headerIconPerkId)
+  };
+}
+
+export async function buildGuideRunePageData(
+  config: GuideRuneSectionConfig,
+  trees: RunesTree[]
+): Promise<GuideRunePageData> {
+  await ensureSummonerSpellsAssets();
+
+  if (config.tabs.length === 0) {
+    throw new Error("Guide rune section requires at least one tab");
+  }
+
+  const tabs = config.tabs.map((tab) => serializeTab(tab, trees));
+  const defaultTabId =
+    config.defaultTabId && tabs.some((tab) => tab.id === config.defaultTabId)
+      ? config.defaultTabId
+      : tabs[0].id;
+
+  return {
+    heading: config.heading,
+    headerIcon: config.headerIconPerkId
+      ? findRuneInTrees(trees, config.headerIconPerkId)
       : null,
+    defaultTabId,
+    tabs,
   };
 }

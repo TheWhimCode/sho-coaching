@@ -9,10 +9,7 @@ export type GuideRuneExplanation = {
 };
 
 export type GuideRuneBuild = {
-  heading: string;
   subheading?: string;
-  /** Optional crossed-out keystone shown beside the section heading (e.g. Conqueror). */
-  headerIconPerkId?: number;
   primaryStyleId: number;
   /** [keystone, row1, row2, row3] */
   primaryPerkIds: number[];
@@ -29,11 +26,27 @@ export type GuideRuneBuild = {
     note: string;
   };
   explanations: GuideRuneExplanation[];
+  /** Perk ids marked as situational alternatives (half-circle edge marks). */
+  situationalPerkIds?: number[];
   /** Unified secondary-tree write-up shown beside the keystone explanation. */
-  precisionSection?: {
+  secondarySection?: {
     title: string;
     body: string;
   };
+};
+
+export type GuideRuneTabConfig = {
+  id: string;
+  label: string;
+  build: GuideRuneBuild;
+};
+
+export type GuideRuneSectionConfig = {
+  heading: string;
+  /** Optional crossed-out keystone shown beside the section heading (e.g. Conqueror). */
+  headerIconPerkId?: number;
+  defaultTabId?: string;
+  tabs: GuideRuneTabConfig[];
 };
 
 export type SerializedRune = {
@@ -55,11 +68,19 @@ export type SerializedStatShardRow = {
   shards: SerializedRune[];
 };
 
-export type GuideRunePageData = {
+export type GuideRuneTabPageData = {
+  id: string;
+  label: string;
   build: GuideRuneBuild;
   primaryTree: SerializedRuneTree;
   secondaryTree: SerializedRuneTree;
   summonerSpellIcons: Record<number, string>;
   statShardRows: SerializedStatShardRow[];
+};
+
+export type GuideRunePageData = {
+  heading: string;
   headerIcon: SerializedRune | null;
+  defaultTabId: string;
+  tabs: GuideRuneTabPageData[];
 };

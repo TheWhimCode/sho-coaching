@@ -15,19 +15,22 @@ export function collectRuneSectionImageUrls(data: GuideRunePageData): string[] {
   const urls = new Set<string>();
 
   if (data.headerIcon) urls.add(data.headerIcon.icon);
-  urls.add(data.secondaryTree.icon);
 
-  for (const tree of [data.primaryTree, data.secondaryTree]) {
-    for (const row of tree.slots) {
-      for (const rune of row) {
-        urls.add(rune.icon);
+  for (const tab of data.tabs) {
+    urls.add(tab.secondaryTree.icon);
+
+    for (const tree of [tab.primaryTree, tab.secondaryTree]) {
+      for (const row of tree.slots) {
+        for (const rune of row) {
+          urls.add(rune.icon);
+        }
       }
     }
-  }
 
-  for (const row of data.statShardRows) {
-    for (const shard of row.shards) {
-      urls.add(shard.icon);
+    for (const row of tab.statShardRows) {
+      for (const shard of row.shards) {
+        urls.add(shard.icon);
+      }
     }
   }
 
@@ -59,7 +62,7 @@ export function collectItemSectionImageUrls(data: GuideItemPageData): string[] {
     }
 
     if (tab.sharedPath) {
-      addItem(urls, tab.sharedPath.origin);
+      if (tab.sharedPath.origin) addItem(urls, tab.sharedPath.origin);
       for (const path of tab.sharedPath.paths) {
         for (const item of path.diverge ?? []) addItem(urls, item);
         for (const item of path.items) addItem(urls, item);

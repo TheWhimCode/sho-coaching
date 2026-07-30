@@ -598,8 +598,8 @@ function buildSharedPathConnectors(
     if (start && end) paths.push({ d: connectorPath(start, end), inactive });
   };
 
-  const originKey = `shared-${sharedPath.origin.id}`;
-  const originRight = tilePoint(originKey, "right");
+  const originKey = sharedPath.origin ? `shared-${sharedPath.origin.id}` : null;
+  const originRight = originKey ? tilePoint(originKey, "right") : null;
 
   for (let pathIndex = 0; pathIndex < sharedPath.paths.length; pathIndex++) {
     const path = sharedPath.paths[pathIndex];
@@ -610,27 +610,35 @@ function buildSharedPathConnectors(
     if (path.diverge && path.diverge.length > 0) {
       const hubKey = sharedPathTileKey(pathIndex, 0, path.items[0].id);
       const hubLeft = tilePoint(hubKey, "left");
-      if (!originRight || !hubLeft) continue;
+      if (!hubLeft) continue;
 
-      const firstDivergeLeft = tilePoint(
-        sharedPathDivergeKey(pathIndex, path.diverge[0].id),
-        "left"
-      );
-      if (!firstDivergeLeft) continue;
+      if (originRight) {
+        const firstDivergeLeft = tilePoint(
+          sharedPathDivergeKey(pathIndex, path.diverge[0].id),
+          "left"
+        );
+        if (!firstDivergeLeft) continue;
 
-      const busX =
-        originRight.x + Math.max(28, (firstDivergeLeft.x - originRight.x) * 0.38);
-      const busPoint = { x: busX, y: hubLeft.y };
+        const busX =
+          originRight.x + Math.max(28, (firstDivergeLeft.x - originRight.x) * 0.38);
+        const busPoint = { x: busX, y: hubLeft.y };
 
-      pushPath(originRight, busPoint, pathInactive);
+        pushPath(originRight, busPoint, pathInactive);
 
-      for (const item of path.diverge) {
-        const divergeInactive = isChoiceItemInactive(item.id, activeChoiceIds, pathInactive);
-        const divergeKey = sharedPathDivergeKey(pathIndex, item.id);
-        pushPath(busPoint, tilePoint(divergeKey, "left"), divergeInactive);
-        pushPath(tilePoint(divergeKey, "right"), hubLeft, divergeInactive);
+        for (const item of path.diverge) {
+          const divergeInactive = isChoiceItemInactive(item.id, activeChoiceIds, pathInactive);
+          const divergeKey = sharedPathDivergeKey(pathIndex, item.id);
+          pushPath(busPoint, tilePoint(divergeKey, "left"), divergeInactive);
+          pushPath(tilePoint(divergeKey, "right"), hubLeft, divergeInactive);
+        }
+      } else {
+        for (const item of path.diverge) {
+          const divergeInactive = isChoiceItemInactive(item.id, activeChoiceIds, pathInactive);
+          const divergeKey = sharedPathDivergeKey(pathIndex, item.id);
+          pushPath(tilePoint(divergeKey, "right"), hubLeft, divergeInactive);
+        }
       }
-    } else {
+    } else if (originRight) {
       const firstKey = sharedPathTileKey(pathIndex, 0, path.items[0].id);
       pushPath(originRight, tilePoint(firstKey, "left"), pathInactive);
     }
@@ -851,6 +859,7 @@ function SharedPathRow({
   activePathIndex,
   onChoiceSelect,
   onPathSelect,
+  leadSpacer = true,
 }: {
   pathIndex: number;
   path: SerializedGuideItemSharedPath["paths"][number];
@@ -858,6 +867,7 @@ function SharedPathRow({
   activePathIndex?: number | null;
   onChoiceSelect?: (itemId: number) => void;
   onPathSelect?: (pathIndex: number) => void;
+  leadSpacer?: boolean;
 }) {
   const hasDiverge = Boolean(path.diverge && path.diverge.length > 0);
   const rowInactive =
@@ -870,7 +880,9 @@ function SharedPathRow({
         rowInactive && "opacity-[0.32] saturate-[0.35]"
       )}
     >
-      <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
+      {leadSpacer ? (
+        <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
+      ) : null}
       {hasDiverge ? (
         <>
           <SharedPathDivergeColumn
@@ -1176,6 +1188,7 @@ function BuildDetailCrossfade({
 }
 
 function isMobileForkMergeSharedPath(sharedPath: SerializedGuideItemSharedPath): boolean {
+  if (!sharedPath.origin) return false;
   if (sharedPath.paths.length !== 2) return false;
 
   const [path0, path1] = sharedPath.paths;
@@ -1214,6 +1227,8 @@ function buildMobileForkMergeSharedPathConnectors(
 
   const path0Inactive = activePathIndex != null && activePathIndex !== 0;
   const path1Inactive = activePathIndex != null && activePathIndex !== 1;
+
+  if (!sharedPath.origin) return paths;
 
   const originKey = `shared-${sharedPath.origin.id}`;
   const path0LdrKey = sharedPathTileKey(0, 0, path0.items[0].id);
@@ -1315,6 +1330,7 @@ function ItemSharedPathsLayoutMobile({
   const hasSelection = Boolean(activeChoiceIds && activeChoiceIds.length > 0);
   const path0Inactive = activePathIndex != null && activePathIndex !== 0;
   const path1Inactive = activePathIndex != null && activePathIndex !== 1;
+  const origin = sharedPath.origin;
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -1370,6 +1386,8 @@ function ItemSharedPathsLayoutMobile({
   const choiceInactive = (itemId: number, rowInactive: boolean) =>
     rowInactive || (hasSelection && !activeChoiceIds!.includes(itemId));
 
+  if (!origin) return null;
+
   return (
     <div className="flex w-full justify-center">
       <div
@@ -1378,8 +1396,8 @@ function ItemSharedPathsLayoutMobile({
       >
         <div className={clsx("flex flex-col items-center", ITEM_MOBILE_PATH_ROW_GAP)}>
           <ItemTile
-            item={sharedPath.origin}
-            tileKey={`shared-${sharedPath.origin.id}`}
+            item={origin}
+            tileKey={`shared-${origin.id}`}
             compact
           />
 
@@ -1550,12 +1568,14 @@ function ItemSharedPathsLayout({
           ref={containerRef}
           className="relative flex w-full min-w-0 items-stretch overflow-visible"
         >
-          <div className="flex shrink-0 items-center self-stretch px-1 sm:px-2">
-            <ItemTile
-              item={sharedPath.origin}
-              tileKey={`shared-${sharedPath.origin.id}`}
-            />
-          </div>
+          {sharedPath.origin ? (
+            <div className="flex shrink-0 items-center self-stretch px-1 sm:px-2">
+              <ItemTile
+                item={sharedPath.origin}
+                tileKey={`shared-${sharedPath.origin.id}`}
+              />
+            </div>
+          ) : null}
 
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
             {sharedPath.paths.map((path, pathIndex) => (
@@ -1567,6 +1587,7 @@ function ItemSharedPathsLayout({
                 activePathIndex={activePathIndex}
                 onChoiceSelect={onChoiceSelect}
                 onPathSelect={onPathSelect}
+                leadSpacer={Boolean(sharedPath.origin)}
               />
             ))}
           </div>
@@ -1983,7 +2004,7 @@ export default function ItemBuildSection({
         <div
           className={clsx(
             "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
-            shouldLoad && imagesReady ? "pointer-events-none opacity-0" : "opacity-100"
+            shouldLoad && imagesReady ? "hidden" : "opacity-100"
           )}
         >
           <ItemBuildSectionSkeleton data={data} />
@@ -2065,9 +2086,7 @@ export default function ItemBuildSection({
                     key={tab.id}
                     className={clsx(
                       "col-start-1 row-start-1 flex w-full min-w-0 max-w-full items-center",
-                      isActive
-                        ? "relative z-10"
-                        : "max-sm:hidden sm:invisible sm:pointer-events-none"
+                      isActive ? "relative z-10" : "hidden"
                     )}
                     aria-hidden={!isActive}
                   >
@@ -2108,7 +2127,7 @@ export default function ItemBuildSection({
                   key={tab.id}
                   className={clsx(
                     "col-start-1 row-start-1 min-w-0 max-w-full",
-                    isActive ? "relative z-10" : "max-sm:hidden sm:invisible sm:pointer-events-none"
+                    isActive ? "relative z-10" : "hidden"
                   )}
                   aria-hidden={!isActive}
                 >

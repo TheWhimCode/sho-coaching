@@ -64,7 +64,7 @@ export default function ViegoGuideClient({
   twitchStatus: TwitchStreamStatus;
 }) {
   const indexEntries = [
-    { id: "runes", label: runeData.build.heading },
+    { id: "runes", label: runeData.heading },
     { id: "items", label: itemData.heading, isNew: itemSectionHasNew(itemData) },
     { id: "conventional-build", label: conventionalBuildData.heading },
     {
@@ -141,11 +141,13 @@ export default function ViegoGuideClient({
           <TwitchShoutoutSection status={twitchStatus} />
         </div>
 
-        <RunePageSection
-          data={runeData}
-          guideTextIcons={guideTextIcons}
-          viegoAbilityIcons={viegoAbilityIcons}
-        />
+        <div className="mt-8">
+          <RunePageSection
+            data={runeData}
+            guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
+          />
+        </div>
 
         <div className="mt-16">
           <ItemBuildSection

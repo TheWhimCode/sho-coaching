@@ -10,7 +10,7 @@ import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 import { buildGuideViegoAbilityIcons } from "@/lib/guides/buildGuideViegoAbilityIcons";
 import { collectGuideCriticalPreloadUrls } from "@/lib/guides/preloadGuideImages";
 import { getManualTwitchStreamStatus } from "@/lib/twitch/getManualTwitchStreamStatus";
-import { VIEGO_RUNE_BUILD } from "./viegoRunes";
+import { VIEGO_RUNE_SECTION } from "./viegoRunes";
 import { VIEGO_ITEM_SECTION } from "./viegoItems";
 import { VIEGO_MATCHUP_SECTION } from "./viegoMatchups";
 import { VIEGO_JUNGLE_TIER_MATCHUPS } from "./viegoJungleTierMatchups";
@@ -43,7 +43,7 @@ export const revalidate = 86400;
 export default async function ViegoGuidePage() {
   const [runeData, itemData, guideTextIcons, viegoAbilityIcons, possessionsData, twitchStatus] =
     await Promise.all([
-    fetchRunesTrees().then((trees) => buildGuideRunePageData(VIEGO_RUNE_BUILD, trees)),
+    fetchRunesTrees().then((trees) => buildGuideRunePageData(VIEGO_RUNE_SECTION, trees)),
     buildGuideItemPageData(VIEGO_ITEM_SECTION),
     buildGuideTextIcons(),
     buildGuideViegoAbilityIcons(),

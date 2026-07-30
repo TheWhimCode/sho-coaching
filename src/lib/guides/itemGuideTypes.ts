@@ -40,7 +40,8 @@ export type GuideItemPath = {
 };
 
 export type GuideItemSharedPath = {
-  origin: GuideItemEntry;
+  /** Shared left-side start item. Omit when paths begin independently (or with their own diverge). */
+  origin?: GuideItemEntry;
   paths: GuideItemPath[];
 };
 
@@ -130,7 +131,7 @@ export type SerializedGuideItemStep =
     };
 
 export type SerializedGuideItemSharedPath = {
-  origin: SerializedGuideItem;
+  origin: SerializedGuideItem | null;
   paths: { diverge?: SerializedGuideItem[]; items: SerializedGuideItem[] }[];
 };
 

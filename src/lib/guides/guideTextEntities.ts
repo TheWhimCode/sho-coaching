@@ -58,6 +58,12 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "6699" },
   },
   {
+    patterns: ["Bastionbreaker"],
+    matchKey: "bastionbreaker",
+    color: GUIDE_SHIELDBOW_RED,
+    icon: { kind: "item", id: "2520" },
+  },
+  {
     patterns: ["Serpent's Fang", "Serpents"],
     matchKey: "serpents-fang",
     color: GUIDE_SERPENTS_GRAY,
