@@ -66,6 +66,7 @@ export function collectItemSectionImageUrls(data: GuideItemPageData): string[] {
       for (const path of tab.sharedPath.paths) {
         for (const item of path.diverge ?? []) addItem(urls, item);
         for (const item of path.items) addItem(urls, item);
+        for (const item of path.endDiverge ?? []) addItem(urls, item);
       }
     }
 

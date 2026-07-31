@@ -19,63 +19,58 @@ const IE_EXPLANATION =
 const SERPENTS_EXPLANATION =
   "Delayed Serpent's Fang vs high midgame shield comps.";
 
-const CYCLO_EXPLANATION =
-  "You started Serrated Dirk but want Cyclosword instead of Hubris.";
-
 const SITUATIONAL_LDR_EXPLANATION =
   "Build this second vs supermassive frontline champs, to be able to deal enough damage to reset on them in midgame.";
 
 const MAIN_LDR_EXPLANATION =
   "Your MEGA spike. This is what we've been scaling for. Kill anything. Anyone. Would be the love of my life if I didn't have Isolde.";
 
-const BASTIONBREAKER_PATH_ITEMS: GuideItemEntry[] = [
-  {
-    id: 2520,
-    title: "Bastionbreaker",
-    explanation:
-      "Completely overbuffed, same damage as Cyclo without the passive. The passive helps you secure early Drakes/Grubs that you didn't have the time for before",
-  },
+const BASTIONBREAKER_START_ITEM: GuideItemEntry = {
+  id: 2520,
+  title: "Bastionbreaker",
+  explanation:
+    "Completely overbuffed, same damage as Cyclo without the passive. The passive helps you secure early Drakes/Grubs that you didn't have the time for before",
+};
+
+const HUBRIS_START_ITEM: GuideItemEntry = {
+  id: 6697,
+  title: "Hubris",
+  explanation:
+    "Highest scaling damage in the game. High AD + Crit + Armor Pen is the key. Best baseline item, especially in low elo.",
+};
+
+const MAIN_SHARED_CORE_ITEMS: GuideItemEntry[] = [
   { id: 6676, explanation: MAIN_COLLECTOR_EXPLANATION },
   { id: 3036, explanation: MAIN_LDR_EXPLANATION },
   { id: 3031, explanation: IE_EXPLANATION },
-  {
-    id: 6699,
-    title: "Voltaic Cyclosword",
-    explanation:
-      "Triple Lethality does insane damage against 75+ Armor targets. All champions have that at level 15. Can overcap with Youmus but it's lowkey fine.",
-  },
+];
+
+const BASTIONBREAKER_CYCLO_ITEM: GuideItemEntry = {
+  id: 6699,
+  title: "Voltaic Cyclosword",
+  explanation:
+    "Significantly more damage than Shieldbow if the enemy is between 88-140 armor. Care with overcapping armorpen when u buy Youmus later.",
+};
+
+const BASTIONBREAKER_SHIELDBOW_ITEM: GuideItemEntry = {
+  id: 6673,
+  title: "Immortal Shieldbow",
+  explanation:
+    "Build this when most enemies have more than 140 or less than 85 armor. And sometimes to survive unavoidable damage in teamfights.",
+};
+
+const BASTIONBREAKER_PATH_ITEMS: GuideItemEntry[] = [
+  BASTIONBREAKER_START_ITEM,
+  ...MAIN_SHARED_CORE_ITEMS,
+  BASTIONBREAKER_CYCLO_ITEM,
 ];
 
 const MAIN_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
   paths: [
     {
-      items: BASTIONBREAKER_PATH_ITEMS,
-    },
-    {
-      diverge: [
-        {
-          id: 6697,
-          title: "Hubris",
-          explanation:
-            "Highest scaling damage in the game. High AD + Crit + Armor Pen is the key. Best baseline item, especially in low elo.",
-        },
-        {
-          id: 6695,
-          title: "Serpent's Fang",
-          explanation: "Tons of shields. Item is cheap so you can get LDR faster as well.",
-        },
-      ],
-      items: [
-        { id: 6676, explanation: MAIN_COLLECTOR_EXPLANATION },
-        { id: 3036, explanation: MAIN_LDR_EXPLANATION },
-        { id: 3031, explanation: IE_EXPLANATION },
-        {
-          id: 2520,
-          title: "Bastionbreaker",
-          explanation:
-            "Same damage as Cyclo but you also get the passive. 3x Lethality is WAY more damage than Shieldbow.",
-        },
-      ],
+      diverge: [BASTIONBREAKER_START_ITEM, HUBRIS_START_ITEM],
+      items: MAIN_SHARED_CORE_ITEMS,
+      endDiverge: [BASTIONBREAKER_CYCLO_ITEM, BASTIONBREAKER_SHIELDBOW_ITEM],
     },
   ],
 };
@@ -91,8 +86,9 @@ const BASTIONBREAKER_VARIANT: GuideItemVariant = {
   label: "Bastionbreaker",
   header: "The twink crusher.",
   description:
-    "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.",
-  activeChoiceIds: [],
+    "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.\nI build this 50% of games",
+  activeChoiceIds: [2520, 6699, 6673],
+  activePathIndex: 0,
   teamComp: {
     ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
     enemy: ["Kayle", "Kha'Zix", "Syndra", "Tristana", "Senna"],
@@ -116,14 +112,16 @@ const SITUATIONAL_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPat
       ],
     },
     {
-      diverge: [
-        { id: 6695, title: "Serpent's Fang", explanation: SERPENTS_EXPLANATION },
-        { id: 6699, title: "Voltaic Cyclosword", explanation: CYCLO_EXPLANATION },
-      ],
       items: [
+        { id: 6695, title: "Serpent's Fang", explanation: SERPENTS_EXPLANATION },
         { id: 3036, explanation: MAIN_LDR_EXPLANATION },
         { id: 3031, explanation: IE_EXPLANATION },
-        { id: 6673, explanation: MAIN_SHIELDBOW_EXPLANATION },
+        {
+          id: 2520,
+          title: "Bastionbreaker",
+          explanation:
+            "Same damage as Cyclo but you also get the passive. 3x Lethality is WAY more damage than Shieldbow.",
+        },
       ],
     },
   ],
@@ -214,37 +212,20 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
       sharedPath: MAIN_SHARED_PATH,
       defaultVariantId: "bastionbreaker",
       variants: [
-        {
-          ...BASTIONBREAKER_VARIANT,
-          activePathIndex: 0,
-        },
+        BASTIONBREAKER_VARIANT,
         {
           id: "hubris",
           label: "Hubris",
           header: "Max damage & scaling",
           description:
-            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.",
-          activeChoiceIds: [6697],
-          activePathIndex: 1,
+            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.\nI build this 30% of games",
+          activeChoiceIds: [6697, 6699, 6673],
+          activePathIndex: 0,
           teamComp: {
             ally: ["Garen", "Viego", "Lissandra", "Vayne", "Lulu"],
             enemy: ["Kled", "Jarvan IV", "Sylas", "Samira", "Camille"],
           },
           goodAgainst: ["Skarner", "Darius", "Nautilus", "Sylas", "Nunu", "Hecarim"],
-        },
-        {
-          id: "serpents",
-          label: "Serpent's Fang",
-          header: "Early anti-shield",
-          description:
-            "They have tons of shield from the start. I'm saying like Karma AND Ivern... Serpent's Fang is a super efficient item that you should always prioritize against these champs. But often you don't need to get it first item.\nIt also works against Barrier, Shieldbow, Locket, Green Smite, Armored Advance...",
-          activeChoiceIds: [6695],
-          activePathIndex: 1,
-          teamComp: {
-            ally: ["Jax", "Viego", "Hwei", "Jinx", "Nautilus"],
-            enemy: ["Sett", "Vi", "Leblanc", "Seraphine", "Karma"],
-          },
-          goodAgainst: ["Karma", "Ivern", "Riven", "Seraphine", "Lux", "Diana"],
         },
       ],
     },
@@ -275,27 +256,13 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           header: "Usual anti-shield build",
           description:
             "Serpent's Fang is amazing against shield users. Often those shields come delayed though.\nA toplaner who won't be in the game until midgame, Seraph's Shieldbow Sterak's Locket buyers... This is an amazing second item and super cheap, so you get your LDR asap :3",
-          activeChoiceIds: [6695],
+          activeChoiceIds: [],
           activePathIndex: 1,
           teamComp: {
             ally: ["Gwen", "Viego", "Anivia", "Sivir", "Yuumi"],
             enemy: ["Gnar", "Ivern", "Akshan", "Kai'Sa", "Rell"],
           },
           goodAgainst: ["Ryze", "Ambessa", "Yasuo", "Kai'Sa", "Cassiopeia", "Camille"],
-        },
-        {
-          id: "sit-cyclo",
-          label: "Cyclosword",
-          header: "IDK what I'm doing?!?!?",
-          description:
-            "You started with Serrated Dirk but realized that you actually want Cyclosword. Same reason as in main build. You are just dumb.\nHappens to me all the time.",
-          activeChoiceIds: [6699],
-          activePathIndex: 1,
-          teamComp: {
-            ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
-            enemy: ["Kayle", "Kha'Zix", "Syndra", "Tristana", "Senna"],
-          },
-          goodAgainst: ["Kha'Zix", "Talon", "Qiyana", "Kindred", "Quinn", "Hwei"],
         },
       ],
     },

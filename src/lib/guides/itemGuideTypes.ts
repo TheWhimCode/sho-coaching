@@ -37,6 +37,8 @@ export type GuideItemPath = {
   /** Stacked choices after the origin — each connects to origin and the first `items` entry. */
   diverge?: GuideItemEntry[];
   items: GuideItemEntry[];
+  /** Stacked last-item alternatives — each connects from the final `items` entry. */
+  endDiverge?: GuideItemEntry[];
 };
 
 export type GuideItemSharedPath = {
@@ -132,7 +134,11 @@ export type SerializedGuideItemStep =
 
 export type SerializedGuideItemSharedPath = {
   origin: SerializedGuideItem | null;
-  paths: { diverge?: SerializedGuideItem[]; items: SerializedGuideItem[] }[];
+  paths: {
+    diverge?: SerializedGuideItem[];
+    items: SerializedGuideItem[];
+    endDiverge?: SerializedGuideItem[];
+  }[];
 };
 
 export type SerializedGuideChampion = {

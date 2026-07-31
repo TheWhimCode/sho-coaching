@@ -156,6 +156,9 @@ function serializeSharedPath(
       items: path.items
         .map(serializeItem)
         .filter((x): x is SerializedGuideItem => x != null),
+      endDiverge: path.endDiverge
+        ?.map(serializeItem)
+        .filter((x): x is SerializedGuideItem => x != null),
     }))
     .filter((path) => path.items.length > 0);
 

@@ -44,7 +44,7 @@ const ITEM_PRIMARY_MAIN =
   "relative w-full overflow-hidden rounded-none border-y border-[#F0ABCF]/15 bg-[#2A1F2E]/92 sm:rounded-2xl";
 
 const ITEM_PRIMARY_BODY =
-  "min-w-0 max-w-full overflow-x-auto px-6 py-10 sm:overflow-visible sm:px-10 sm:py-12 lg:px-14 lg:py-14";
+  "min-w-0 max-w-full overflow-x-auto px-6 py-10 sm:flex sm:min-h-[22rem] sm:items-center sm:overflow-visible sm:px-10 sm:py-12 lg:min-h-[28rem] lg:px-14 lg:py-14";
 
 const ITEM_LANE_SPACER_H =
   "flex min-w-0 flex-1 items-center justify-center px-3 sm:px-5 md:px-6";
@@ -409,7 +409,7 @@ function ItemStepColumnSkeleton({ step }: { step: SerializedGuideItemStep }) {
             <Fragment key={`${item.id}-${index}`}>
               {index > 0 ? (
                 <div
-                  className="w-full shrink-0 [height:var(--item-diverge-gap,0.875rem)]"
+                  className="w-full shrink-0 [height:var(--item-diverge-gap,2.5rem)]"
                   aria-hidden
                 />
               ) : null}
@@ -435,16 +435,34 @@ function isThreeChoiceFixedPath(steps: SerializedGuideItemStep[]): boolean {
   return steps.slice(1).every((step) => step.type === "fixed" && step.items.length > 0);
 }
 
+function isLinearFixedPath(steps: SerializedGuideItemStep[]): boolean {
+  return (
+    steps.length >= 2 &&
+    steps.every((step) => step.type === "fixed" && step.items.length > 0)
+  );
+}
+
 function isMobileForkMergeSharedPath(sharedPath: SerializedGuideItemSharedPath): boolean {
   if (!sharedPath.origin) return false;
   if (sharedPath.paths.length !== 2) return false;
 
   const [path0, path1] = sharedPath.paths;
   if (path0.items.length === 0 || path1.items.length === 0) return false;
-  if (path0.diverge?.length || !path1.diverge?.length) return false;
-  if (path0.items[0].id !== path1.items[0].id) return false;
+  if (path0.diverge?.length) return false;
+  if (path1.diverge && path1.diverge.length !== 2) return false;
+  if (path1.diverge?.length === 2 && path0.items[0].id !== path1.items[0].id) {
+    return false;
+  }
 
   return true;
+}
+
+function isMobileBranchedSharedPath(sharedPath: SerializedGuideItemSharedPath): boolean {
+  if (sharedPath.origin) return false;
+  if (sharedPath.paths.length !== 1) return false;
+  const path = sharedPath.paths[0];
+  if (!path.diverge || path.diverge.length !== 2) return false;
+  return path.items.length > 0;
 }
 
 function ItemSharedPathsLayoutMobileSkeleton({
@@ -492,13 +510,21 @@ function ItemSharedPathsLayoutSkeleton({
 }: {
   sharedPath: SerializedGuideItemSharedPath;
 }) {
-  const useMobileLayout = isMobileForkMergeSharedPath(sharedPath);
+  const useMobileFork = isMobileForkMergeSharedPath(sharedPath);
+  const useMobileBranch = isMobileBranchedSharedPath(sharedPath);
+  const useMobileLayout = useMobileFork || useMobileBranch;
 
   return (
     <>
-      {useMobileLayout ? (
+      {useMobileFork ? (
         <div className="flex w-full justify-center sm:hidden">
           <ItemSharedPathsLayoutMobileSkeleton sharedPath={sharedPath} />
+        </div>
+      ) : null}
+
+      {useMobileBranch ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemSharedPathBranchesMobileSkeleton sharedPath={sharedPath} />
         </div>
       ) : null}
 
@@ -509,7 +535,7 @@ function ItemSharedPathsLayoutSkeleton({
             <div className={ITEM_LANE_SPACER_H} aria-hidden />
           </>
         ) : null}
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.5rem)]">
           {sharedPath.paths.map((path, pathIndex) => (
             <div
               key={pathIndex}
@@ -536,11 +562,60 @@ function ItemSharedPathsLayoutSkeleton({
                   ))}
                 </div>
               </div>
+              {path.endDiverge ? (
+                <>
+                  <div className={ITEM_LANE_SPACER_H} aria-hidden />
+                  <ItemStepColumnSkeleton step={{ type: "choice", items: path.endDiverge }} />
+                </>
+              ) : null}
             </div>
           ))}
         </div>
       </div>
     </>
+  );
+}
+
+function ItemSharedPathBranchesMobileSkeleton({
+  sharedPath,
+}: {
+  sharedPath: SerializedGuideItemSharedPath;
+}) {
+  const path = sharedPath.paths[0];
+  if (!path?.diverge || path.diverge.length !== 2) return null;
+
+  return (
+    <div className="flex w-full justify-center">
+      <div className="relative w-fit max-w-[24rem]">
+        <div className="flex flex-col items-center gap-[var(--item-lane-gap,3rem)]">
+          <div className="grid w-full grid-cols-2 items-start gap-x-6">
+            <div className="flex justify-end pr-1">
+              <SkeletonTile compact className="ml-1 mr-0" />
+            </div>
+            <div className="flex justify-start pl-1">
+              <SkeletonTile compact className="ml-0 mr-1" />
+            </div>
+          </div>
+          {path.items.map((item) => (
+            <SkeletonTile key={item.id} compact className="mx-1" />
+          ))}
+          {path.endDiverge && path.endDiverge.length > 0 ? (
+            <div className="grid w-full grid-cols-2 items-start gap-x-6">
+              <div className="flex justify-end pr-1">
+                <SkeletonTile compact className="ml-1 mr-0" />
+              </div>
+              {path.endDiverge[1] ? (
+                <div className="flex justify-start pl-1">
+                  <SkeletonTile compact className="ml-0 mr-1" />
+                </div>
+              ) : (
+                <div />
+              )}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -571,14 +646,38 @@ function ItemBuildPathMobileSkeleton({ steps }: { steps: SerializedGuideItemStep
   );
 }
 
+function ItemBuildPathMobileLinearSkeleton({ steps }: { steps: SerializedGuideItemStep[] }) {
+  return (
+    <div className="flex w-full justify-center">
+      <div className="relative w-fit max-w-[24rem]">
+        <div className="flex flex-col items-center gap-[var(--item-lane-gap,3rem)]">
+          {steps.map((step, stepIndex) =>
+            step.type === "fixed" ? (
+              <SkeletonTile key={`${stepIndex}-${step.items[0].id}`} compact className="mx-1" />
+            ) : null
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ItemBuildPathSkeleton({ steps }: { steps: SerializedGuideItemStep[] }) {
-  const useMobileLayout = isThreeChoiceFixedPath(steps);
+  const useMobileThreeChoice = isThreeChoiceFixedPath(steps);
+  const useMobileLinear = isLinearFixedPath(steps);
+  const useMobileLayout = useMobileThreeChoice || useMobileLinear;
 
   return (
     <>
-      {useMobileLayout ? (
+      {useMobileThreeChoice ? (
         <div className="flex w-full justify-center sm:hidden">
           <ItemBuildPathMobileSkeleton steps={steps} />
+        </div>
+      ) : null}
+
+      {useMobileLinear ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemBuildPathMobileLinearSkeleton steps={steps} />
         </div>
       ) : null}
 

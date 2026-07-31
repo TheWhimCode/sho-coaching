@@ -61,9 +61,12 @@ const ITEM_PRIMARY_MAIN =
   "relative w-full overflow-hidden rounded-none border-y border-[#F0ABCF]/15 bg-[#2A1F2E]/92 sm:rounded-2xl";
 
 const ITEM_PRIMARY_BODY =
-  "min-w-0 max-w-full overflow-x-auto px-6 py-10 sm:overflow-visible sm:px-10 sm:py-12 lg:px-14 lg:py-14";
+  "min-w-0 max-w-full overflow-x-auto px-6 py-10 sm:flex sm:min-h-[22rem] sm:items-center sm:overflow-visible sm:px-10 sm:py-12 lg:min-h-[28rem] lg:px-14 lg:py-14";
 const ITEM_LANE_SPACER_H =
   "flex min-w-0 flex-1 items-center justify-center px-3 sm:px-5 md:px-6";
+
+const ITEM_STACK_GAP_H =
+  "w-full shrink-0 [height:var(--item-lane-gap,2rem)] sm:[height:var(--item-stack-gap,3rem)]";
 
 const ITEM_MOBILE_PATH_MAX_W = "max-w-[24rem]";
 const ITEM_MOBILE_PATH_COL_GAP = "gap-x-6";
@@ -475,6 +478,21 @@ function isThreeChoiceFixedPath(steps: SerializedGuideItemStep[]): boolean {
   return steps.slice(1).every((step) => step.type === "fixed" && step.items.length > 0);
 }
 
+function isLinearFixedPath(steps: SerializedGuideItemStep[]): boolean {
+  return (
+    steps.length >= 2 &&
+    steps.every((step) => step.type === "fixed" && step.items.length > 0)
+  );
+}
+
+function isMobileBranchedSharedPath(sharedPath: SerializedGuideItemSharedPath): boolean {
+  if (sharedPath.origin) return false;
+  if (sharedPath.paths.length !== 1) return false;
+  const path = sharedPath.paths[0];
+  if (!path.diverge || path.diverge.length !== 2) return false;
+  return path.items.length > 0;
+}
+
 function tileEdgePoint(
   el: HTMLElement | undefined,
   containerRect: DOMRect,
@@ -571,6 +589,10 @@ function sharedPathDivergeKey(pathIndex: number, itemId: number) {
   return `${pathIndex}-d-${itemId}`;
 }
 
+function sharedPathEndDivergeKey(pathIndex: number, itemId: number) {
+  return `${pathIndex}-ed-${itemId}`;
+}
+
 function buildSharedPathConnectors(
   sharedPath: SerializedGuideItemSharedPath,
   containerRect: DOMRect,
@@ -648,6 +670,24 @@ function buildSharedPathConnectors(
       const toKey = sharedPathTileKey(pathIndex, stepIndex + 1, path.items[stepIndex + 1].id);
       pushPath(tilePoint(fromKey, "right"), tilePoint(toKey, "left"), pathInactive);
     }
+
+    if (path.endDiverge && path.endDiverge.length > 0) {
+      const lastItem = path.items[path.items.length - 1];
+      const lastRight = tilePoint(
+        sharedPathTileKey(pathIndex, path.items.length - 1, lastItem.id),
+        "right"
+      );
+      if (!lastRight) continue;
+
+      for (const item of path.endDiverge) {
+        const divergeInactive = isChoiceItemInactive(item.id, activeChoiceIds, pathInactive);
+        pushPath(
+          lastRight,
+          tilePoint(sharedPathEndDivergeKey(pathIndex, item.id), "left"),
+          divergeInactive
+        );
+      }
+    }
   }
 
   return paths;
@@ -710,7 +750,7 @@ function ChoiceColumn({
         <Fragment key={item.id}>
           {i > 0 ? (
             <div
-              className="w-full shrink-0 [height:var(--item-lane-gap,2rem)]"
+              className={ITEM_STACK_GAP_H}
               aria-hidden
             />
           ) : null}
@@ -741,7 +781,7 @@ function BranchColumn({
         <Fragment key={branch.afterItemId}>
           {i > 0 ? (
             <div
-              className="w-full shrink-0 [height:var(--item-lane-gap,2rem)]"
+              className={ITEM_STACK_GAP_H}
               aria-hidden
             />
           ) : null}
@@ -816,12 +856,14 @@ function ItemStepColumn({
 function SharedPathDivergeColumn({
   pathIndex,
   items,
+  keyFn = sharedPathDivergeKey,
   activeChoiceIds,
   rowInactive = false,
   onChoiceSelect,
 }: {
   pathIndex: number;
   items: SerializedGuideItem[];
+  keyFn?: (pathIndex: number, itemId: number) => string;
   activeChoiceIds?: number[] | null;
   rowInactive?: boolean;
   onChoiceSelect?: (itemId: number) => void;
@@ -834,13 +876,13 @@ function SharedPathDivergeColumn({
         <Fragment key={item.id}>
           {i > 0 ? (
             <div
-              className="w-full shrink-0 [height:var(--item-diverge-gap,0.875rem)]"
+              className="w-full shrink-0 [height:var(--item-diverge-gap,2.5rem)]"
               aria-hidden
             />
           ) : null}
           <ItemTile
             item={item}
-            tileKey={sharedPathDivergeKey(pathIndex, item.id)}
+            tileKey={keyFn(pathIndex, item.id)}
             inactive={
               rowInactive || (hasSelection && !activeChoiceIds!.includes(item.id))
             }
@@ -870,8 +912,26 @@ function SharedPathRow({
   leadSpacer?: boolean;
 }) {
   const hasDiverge = Boolean(path.diverge && path.diverge.length > 0);
+  const hasEndDiverge = Boolean(path.endDiverge && path.endDiverge.length > 0);
   const rowInactive =
     activePathIndex != null && activePathIndex !== pathIndex;
+
+  const renderItems = () =>
+    path.items.map((item, stepIndex) => (
+      <Fragment key={sharedPathTileKey(pathIndex, stepIndex, item.id)}>
+        {(hasDiverge || stepIndex > 0) ? (
+          <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
+        ) : null}
+        <div className="flex shrink-0 items-center self-stretch px-1 sm:px-2">
+          <ItemTile
+            item={item}
+            tileKey={sharedPathTileKey(pathIndex, stepIndex, item.id)}
+            inactive={rowInactive}
+            onSelect={onPathSelect ? () => onPathSelect(pathIndex) : undefined}
+          />
+        </div>
+      </Fragment>
+    ));
 
   return (
     <div
@@ -884,45 +944,28 @@ function SharedPathRow({
         <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
       ) : null}
       {hasDiverge ? (
+        <SharedPathDivergeColumn
+          pathIndex={pathIndex}
+          items={path.diverge!}
+          activeChoiceIds={activeChoiceIds}
+          rowInactive={rowInactive}
+          onChoiceSelect={onChoiceSelect}
+        />
+      ) : null}
+      {renderItems()}
+      {hasEndDiverge ? (
         <>
+          <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
           <SharedPathDivergeColumn
             pathIndex={pathIndex}
-            items={path.diverge!}
+            items={path.endDiverge!}
+            keyFn={sharedPathEndDivergeKey}
             activeChoiceIds={activeChoiceIds}
             rowInactive={rowInactive}
             onChoiceSelect={onChoiceSelect}
           />
-          {path.items.map((item, stepIndex) => (
-            <Fragment key={sharedPathTileKey(pathIndex, stepIndex, item.id)}>
-              <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
-              <div className="flex shrink-0 items-center self-stretch px-1 sm:px-2">
-                <ItemTile
-                  item={item}
-                  tileKey={sharedPathTileKey(pathIndex, stepIndex, item.id)}
-                  inactive={rowInactive}
-                  onSelect={onPathSelect ? () => onPathSelect(pathIndex) : undefined}
-                />
-              </div>
-            </Fragment>
-          ))}
         </>
-      ) : (
-        path.items.map((item, stepIndex) => (
-          <Fragment key={sharedPathTileKey(pathIndex, stepIndex, item.id)}>
-            {stepIndex > 0 ? (
-              <div className={ITEM_LANE_SPACER_H} data-item-lane aria-hidden />
-            ) : null}
-            <div className="flex shrink-0 items-center self-stretch px-1 sm:px-2">
-              <ItemTile
-                item={item}
-                tileKey={sharedPathTileKey(pathIndex, stepIndex, item.id)}
-                inactive={rowInactive}
-                onSelect={onPathSelect ? () => onPathSelect(pathIndex) : undefined}
-              />
-            </div>
-          </Fragment>
-        ))
-      )}
+      ) : null}
     </div>
   );
 }
@@ -1193,8 +1236,11 @@ function isMobileForkMergeSharedPath(sharedPath: SerializedGuideItemSharedPath):
 
   const [path0, path1] = sharedPath.paths;
   if (path0.items.length === 0 || path1.items.length === 0) return false;
-  if (path0.diverge?.length || !path1.diverge?.length) return false;
-  if (path0.items[0].id !== path1.items[0].id) return false;
+  if (path0.diverge?.length) return false;
+  if (path1.diverge && path1.diverge.length !== 2) return false;
+  if (path1.diverge?.length === 2 && path0.items[0].id !== path1.items[0].id) {
+    return false;
+  }
 
   return true;
 }
@@ -1231,16 +1277,16 @@ function buildMobileForkMergeSharedPathConnectors(
   if (!sharedPath.origin) return paths;
 
   const originKey = `shared-${sharedPath.origin.id}`;
-  const path0LdrKey = sharedPathTileKey(0, 0, path0.items[0].id);
-
-  pushPath(
-    point(originKey, "right"),
-    point(path0LdrKey, "top"),
-    path0Inactive,
-    "horizontal-first"
-  );
+  const path0FirstKey = sharedPathTileKey(0, 0, path0.items[0].id);
 
   if (path1.diverge?.length === 2) {
+    pushPath(
+      point(originKey, "right"),
+      point(path0FirstKey, "top"),
+      path0Inactive,
+      "horizontal-first"
+    );
+
     const [serpents, cyclo] = path1.diverge;
     const serpentsKey = sharedPathDivergeKey(1, serpents.id);
     const cycloKey = sharedPathDivergeKey(1, cyclo.id);
@@ -1268,6 +1314,20 @@ function buildMobileForkMergeSharedPathConnectors(
       point(cycloKey, "bottom"),
       point(path1LdrKey, "top"),
       isChoiceItemInactive(cyclo.id, activeChoiceIds, path1Inactive),
+      { sCurve: "vertical-first" }
+    );
+  } else {
+    // Dual linear columns — leave from Collector bottom center into each path top.
+    pushPath(
+      point(originKey, "bottom"),
+      point(path0FirstKey, "top"),
+      path0Inactive,
+      { sCurve: "vertical-first" }
+    );
+    pushPath(
+      point(originKey, "bottom"),
+      point(sharedPathTileKey(1, 0, path1.items[0].id), "top"),
+      path1Inactive,
       { sCurve: "vertical-first" }
     );
   }
@@ -1546,11 +1606,13 @@ function ItemSharedPathsLayout({
     };
   }, [sharedPath, activePathIndex, activeChoiceIds]);
 
-  const useMobileLayout = isMobileForkMergeSharedPath(sharedPath);
+  const useMobileFork = isMobileForkMergeSharedPath(sharedPath);
+  const useMobileBranch = isMobileBranchedSharedPath(sharedPath);
+  const useMobileLayout = useMobileFork || useMobileBranch;
 
   return (
     <>
-      {useMobileLayout ? (
+      {useMobileFork ? (
         <div className="flex w-full justify-center sm:hidden">
           <ItemSharedPathsLayoutMobile
             sharedPath={sharedPath}
@@ -1559,6 +1621,17 @@ function ItemSharedPathsLayout({
             activePathIndex={activePathIndex}
             onChoiceSelect={onChoiceSelect}
             onPathSelect={onPathSelect}
+          />
+        </div>
+      ) : null}
+
+      {useMobileBranch ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemSharedPathBranchesMobile
+            sharedPath={sharedPath}
+            onLaneGapMeasure={onLaneGapMeasure}
+            activeChoiceIds={activeChoiceIds}
+            onChoiceSelect={onChoiceSelect}
           />
         </div>
       ) : null}
@@ -1577,7 +1650,7 @@ function ItemSharedPathsLayout({
             </div>
           ) : null}
 
-          <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.125rem)]">
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-[var(--item-path-gap,2.5rem)]">
             {sharedPath.paths.map((path, pathIndex) => (
               <SharedPathRow
                 key={pathIndex}
@@ -1736,6 +1809,342 @@ function ItemBuildPathMobile({
   );
 }
 
+function buildMobileLinearFixedConnectors(
+  steps: SerializedGuideItemStep[],
+  containerRect: DOMRect,
+  tileRefs: Map<string, HTMLElement>
+): ConnectorSegment[] {
+  const paths: ConnectorSegment[] = [];
+  const point = (key: string, edge: "left" | "right" | "top" | "bottom") =>
+    tileEdgePoint(tileRefs.get(key), containerRect, edge);
+
+  for (let stepIndex = 0; stepIndex < steps.length - 1; stepIndex++) {
+    const from = steps[stepIndex];
+    const to = steps[stepIndex + 1];
+    if (from.type !== "fixed" || to.type !== "fixed") continue;
+    const start = point(`${stepIndex}-${from.items[0].id}`, "bottom");
+    const end = point(`${stepIndex + 1}-${to.items[0].id}`, "top");
+    if (!start || !end) continue;
+    paths.push({ d: connectorPath(start, end), inactive: false });
+  }
+
+  return paths;
+}
+
+function buildMobileBranchedSharedPathConnectors(
+  path: SerializedGuideItemSharedPath["paths"][number],
+  containerRect: DOMRect,
+  tileRefs: Map<string, HTMLElement>,
+  activeChoiceIds?: number[] | null
+): ConnectorSegment[] {
+  const paths: ConnectorSegment[] = [];
+  if (!path.diverge || path.diverge.length !== 2 || path.items.length === 0) return paths;
+
+  const point = (key: string, edge: "left" | "right" | "top" | "bottom") =>
+    tileEdgePoint(tileRefs.get(key), containerRect, edge);
+
+  const pushPath = (
+    start: { x: number; y: number } | null,
+    end: { x: number; y: number } | null,
+    inactive = false,
+    bend?: ConnectorBendOptions
+  ) => {
+    if (!start || !end) return;
+    paths.push({ d: resolveConnectorPath(start, end, bend), inactive });
+  };
+
+  const [leftChoice, rightChoice] = path.diverge;
+  const firstKey = sharedPathTileKey(0, 0, path.items[0].id);
+
+  // Fan into Collector top from Bastion/Hubris — same vertical-first s-curve as the end fork.
+  pushPath(
+    point(sharedPathDivergeKey(0, leftChoice.id), "bottom"),
+    point(firstKey, "top"),
+    isChoiceItemInactive(leftChoice.id, activeChoiceIds),
+    { sCurve: "vertical-first" }
+  );
+  pushPath(
+    point(sharedPathDivergeKey(0, rightChoice.id), "bottom"),
+    point(firstKey, "top"),
+    isChoiceItemInactive(rightChoice.id, activeChoiceIds),
+    { sCurve: "vertical-first" }
+  );
+
+  for (let stepIndex = 0; stepIndex < path.items.length - 1; stepIndex++) {
+    pushPath(
+      point(sharedPathTileKey(0, stepIndex, path.items[stepIndex].id), "bottom"),
+      point(sharedPathTileKey(0, stepIndex + 1, path.items[stepIndex + 1].id), "top")
+    );
+  }
+
+  if (path.endDiverge && path.endDiverge.length > 0) {
+    const lastItem = path.items[path.items.length - 1];
+    const lastKey = sharedPathTileKey(0, path.items.length - 1, lastItem.id);
+    const [endLeft, endRight] = path.endDiverge;
+
+    // Leave from IE bottom center, vertical-first into Cyclo / Shieldbow tops.
+    if (endLeft) {
+      pushPath(
+        point(lastKey, "bottom"),
+        point(sharedPathEndDivergeKey(0, endLeft.id), "top"),
+        isChoiceItemInactive(endLeft.id, activeChoiceIds),
+        { sCurve: "vertical-first" }
+      );
+    }
+    if (endRight) {
+      pushPath(
+        point(lastKey, "bottom"),
+        point(sharedPathEndDivergeKey(0, endRight.id), "top"),
+        isChoiceItemInactive(endRight.id, activeChoiceIds),
+        { sCurve: "vertical-first" }
+      );
+    }
+  }
+
+  return paths;
+}
+
+function ItemBuildPathMobileLinear({
+  steps,
+  onLaneGapMeasure,
+}: {
+  steps: SerializedGuideItemStep[];
+  onLaneGapMeasure?: (widthPx: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const groupRef = useRef<SVGGElement>(null);
+  const onLaneGapMeasureRef = useRef(onLaneGapMeasure);
+  onLaneGapMeasureRef.current = onLaneGapMeasure;
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const svg = svgRef.current;
+    const group = groupRef.current;
+    if (!container || !svg || !group) return;
+
+    const syncConnectors = () => {
+      const containerRect = container.getBoundingClientRect();
+      const width = Math.round(containerRect.width);
+      const height = Math.round(containerRect.height);
+      if (width <= 0 || height <= 0) return;
+
+      svg.setAttribute("width", String(width));
+      svg.setAttribute("height", String(height));
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      paintConnectorPaths(
+        group,
+        buildMobileLinearFixedConnectors(steps, containerRect, collectTileRefs(container))
+      );
+
+      const measureLaneGap = onLaneGapMeasureRef.current;
+      if (measureLaneGap) {
+        const tile = container.querySelector<HTMLElement>("[data-item-tile]");
+        if (tile) {
+          measureLaneGap(Math.max(32, Math.round(tile.getBoundingClientRect().height * 0.72)));
+        }
+      }
+    };
+
+    syncConnectors();
+    requestAnimationFrame(syncConnectors);
+
+    const observer = new ResizeObserver(syncConnectors);
+    observer.observe(container);
+    container.addEventListener("load", syncConnectors, true);
+    window.addEventListener("resize", syncConnectors);
+
+    return () => {
+      observer.disconnect();
+      container.removeEventListener("load", syncConnectors, true);
+      window.removeEventListener("resize", syncConnectors);
+    };
+  }, [steps]);
+
+  return (
+    <div className="flex w-full justify-center">
+      <div
+        ref={containerRef}
+        className={clsx("relative w-fit max-w-full", ITEM_MOBILE_PATH_MAX_W)}
+      >
+        <div className={clsx("flex flex-col items-center", ITEM_MOBILE_PATH_ROW_GAP)}>
+          {steps.map((step, stepIndex) => {
+            if (step.type !== "fixed") return null;
+            const item = step.items[0];
+            return (
+              <ItemTile
+                key={`${stepIndex}-${item.id}`}
+                item={item}
+                tileKey={`${stepIndex}-${item.id}`}
+                compact
+              />
+            );
+          })}
+        </div>
+        <ConnectorSvg svgRef={svgRef} groupRef={groupRef} />
+      </div>
+    </div>
+  );
+}
+
+function ItemSharedPathBranchesMobile({
+  sharedPath,
+  onLaneGapMeasure,
+  activeChoiceIds,
+  onChoiceSelect,
+}: {
+  sharedPath: SerializedGuideItemSharedPath;
+  onLaneGapMeasure?: (widthPx: number) => void;
+  activeChoiceIds?: number[] | null;
+  onChoiceSelect?: (itemId: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const groupRef = useRef<SVGGElement>(null);
+  const onLaneGapMeasureRef = useRef(onLaneGapMeasure);
+  onLaneGapMeasureRef.current = onLaneGapMeasure;
+
+  const path = sharedPath.paths[0];
+  const diverge = path?.diverge ?? [];
+  const endDiverge = path?.endDiverge ?? [];
+  const hasSelection = Boolean(activeChoiceIds && activeChoiceIds.length > 0);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const svg = svgRef.current;
+    const group = groupRef.current;
+    if (!container || !svg || !group || !path) return;
+
+    const syncConnectors = () => {
+      const containerRect = container.getBoundingClientRect();
+      const width = Math.round(containerRect.width);
+      const height = Math.round(containerRect.height);
+      if (width <= 0 || height <= 0) return;
+
+      svg.setAttribute("width", String(width));
+      svg.setAttribute("height", String(height));
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+      paintConnectorPaths(
+        group,
+        buildMobileBranchedSharedPathConnectors(
+          path,
+          containerRect,
+          collectTileRefs(container),
+          activeChoiceIds
+        )
+      );
+
+      const measureLaneGap = onLaneGapMeasureRef.current;
+      if (measureLaneGap) {
+        const tile = container.querySelector<HTMLElement>("[data-item-tile]");
+        if (tile) {
+          measureLaneGap(Math.max(32, Math.round(tile.getBoundingClientRect().height * 0.72)));
+        }
+      }
+    };
+
+    syncConnectors();
+    requestAnimationFrame(syncConnectors);
+
+    const observer = new ResizeObserver(syncConnectors);
+    observer.observe(container);
+    container.addEventListener("load", syncConnectors, true);
+    window.addEventListener("resize", syncConnectors);
+
+    return () => {
+      observer.disconnect();
+      container.removeEventListener("load", syncConnectors, true);
+      window.removeEventListener("resize", syncConnectors);
+    };
+  }, [path, activeChoiceIds]);
+
+  if (!path || diverge.length !== 2) return null;
+
+  const choiceInactive = (itemId: number) =>
+    hasSelection && !activeChoiceIds!.includes(itemId);
+
+  return (
+    <div className="flex w-full justify-center">
+      <div
+        ref={containerRef}
+        className={clsx("relative w-fit max-w-full", ITEM_MOBILE_PATH_MAX_W)}
+      >
+        <div className={clsx("flex flex-col items-center", ITEM_MOBILE_PATH_ROW_GAP)}>
+          <div className={clsx("grid w-full grid-cols-2 items-start", ITEM_MOBILE_PATH_COL_GAP)}>
+            <div className="flex justify-end pr-1">
+              <ItemTile
+                item={diverge[0]}
+                tileKey={sharedPathDivergeKey(0, diverge[0].id)}
+                compact
+                flushEdge="end"
+                inactive={choiceInactive(diverge[0].id)}
+                onSelect={onChoiceSelect ? () => onChoiceSelect(diverge[0].id) : undefined}
+              />
+            </div>
+            <div className="flex justify-start pl-1">
+              <ItemTile
+                item={diverge[1]}
+                tileKey={sharedPathDivergeKey(0, diverge[1].id)}
+                compact
+                flushEdge="start"
+                inactive={choiceInactive(diverge[1].id)}
+                onSelect={onChoiceSelect ? () => onChoiceSelect(diverge[1].id) : undefined}
+              />
+            </div>
+          </div>
+
+          {path.items.map((item, stepIndex) => (
+            <ItemTile
+              key={sharedPathTileKey(0, stepIndex, item.id)}
+              item={item}
+              tileKey={sharedPathTileKey(0, stepIndex, item.id)}
+              compact
+            />
+          ))}
+
+          {endDiverge.length > 0 ? (
+            <div className={clsx("grid w-full grid-cols-2 items-start", ITEM_MOBILE_PATH_COL_GAP)}>
+              {endDiverge[0] ? (
+                <div className="flex justify-end pr-1">
+                  <ItemTile
+                    item={endDiverge[0]}
+                    tileKey={sharedPathEndDivergeKey(0, endDiverge[0].id)}
+                    compact
+                    flushEdge="end"
+                    inactive={choiceInactive(endDiverge[0].id)}
+                    onSelect={
+                      onChoiceSelect ? () => onChoiceSelect(endDiverge[0].id) : undefined
+                    }
+                  />
+                </div>
+              ) : (
+                <div />
+              )}
+              {endDiverge[1] ? (
+                <div className="flex justify-start pl-1">
+                  <ItemTile
+                    item={endDiverge[1]}
+                    tileKey={sharedPathEndDivergeKey(0, endDiverge[1].id)}
+                    compact
+                    flushEdge="start"
+                    inactive={choiceInactive(endDiverge[1].id)}
+                    onSelect={
+                      onChoiceSelect ? () => onChoiceSelect(endDiverge[1].id) : undefined
+                    }
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        <ConnectorSvg svgRef={svgRef} groupRef={groupRef} />
+      </div>
+    </div>
+  );
+}
+
 function ItemBuildPath({
   steps,
   onLaneGapMeasure,
@@ -1801,11 +2210,13 @@ function ItemBuildPath({
     };
   }, [steps, activeChoiceIds]);
 
-  const useMobileLayout = isThreeChoiceFixedPath(steps);
+  const useMobileThreeChoice = isThreeChoiceFixedPath(steps);
+  const useMobileLinear = isLinearFixedPath(steps);
+  const useMobileLayout = useMobileThreeChoice || useMobileLinear;
 
   return (
     <>
-      {useMobileLayout ? (
+      {useMobileThreeChoice ? (
         <div className="flex w-full justify-center sm:hidden">
           <ItemBuildPathMobile
             steps={steps}
@@ -1813,6 +2224,12 @@ function ItemBuildPath({
             activeChoiceIds={activeChoiceIds}
             onChoiceSelect={onChoiceSelect}
           />
+        </div>
+      ) : null}
+
+      {useMobileLinear ? (
+        <div className="flex w-full justify-center sm:hidden">
+          <ItemBuildPathMobileLinear steps={steps} onLaneGapMeasure={onLaneGapMeasure} />
         </div>
       ) : null}
 
@@ -1972,9 +2389,12 @@ export default function ItemBuildSection({
       const byDivergePath = activeTab.variants.find(
         (variant) =>
           variant.activePathIndex != null &&
-          activeTab.sharedPath?.paths[variant.activePathIndex]?.diverge?.some(
+          (activeTab.sharedPath?.paths[variant.activePathIndex]?.diverge?.some(
             (item) => item.id === itemId
-          )
+          ) ||
+            activeTab.sharedPath?.paths[variant.activePathIndex]?.endDiverge?.some(
+              (item) => item.id === itemId
+            ))
       );
       if (byDivergePath) {
         handleVariantChange(byDivergePath.id);
@@ -1987,10 +2407,12 @@ export default function ItemBuildSection({
 
   const panelStyle = {
     ...(laneGapPx !== null ? { "--item-lane-gap": `${laneGapPx}px` } : null),
+    "--item-stack-gap":
+      laneGapPx !== null ? `${Math.round(laneGapPx * 1.6)}px` : "3rem",
     "--item-path-gap":
-      laneGapPx !== null ? `${Math.max(28, Math.round(laneGapPx * 0.8))}px` : "2.125rem",
+      laneGapPx !== null ? `${Math.max(32, Math.round(laneGapPx * 0.95))}px` : "2.5rem",
     "--item-diverge-gap":
-      laneGapPx !== null ? `${Math.max(12, Math.round(laneGapPx * 0.38))}px` : "0.875rem",
+      laneGapPx !== null ? `${Math.max(32, Math.round(laneGapPx * 0.95))}px` : "2.5rem",
   } as CSSProperties;
 
   return (
@@ -2086,7 +2508,9 @@ export default function ItemBuildSection({
                     key={tab.id}
                     className={clsx(
                       "col-start-1 row-start-1 flex w-full min-w-0 max-w-full items-center",
-                      isActive ? "relative z-10" : "hidden"
+                      isActive
+                        ? "relative z-10"
+                        : "max-sm:hidden sm:invisible sm:pointer-events-none"
                     )}
                     aria-hidden={!isActive}
                   >
@@ -2127,7 +2551,9 @@ export default function ItemBuildSection({
                   key={tab.id}
                   className={clsx(
                     "col-start-1 row-start-1 min-w-0 max-w-full",
-                    isActive ? "relative z-10" : "hidden"
+                    isActive
+                      ? "relative z-10"
+                      : "max-sm:hidden sm:invisible sm:pointer-events-none"
                   )}
                   aria-hidden={!isActive}
                 >
