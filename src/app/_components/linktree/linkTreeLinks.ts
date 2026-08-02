@@ -26,6 +26,8 @@ export type LinkTreeLink = {
   iconColor: string;
   /** Optional gold/purple etc. gradient on the icon stroke */
   iconRadiantStops?: IconRadiantStop[];
+  /** Flip to false to show again on the homepage */
+  hidden?: boolean;
 };
 
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
@@ -35,6 +37,7 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     description: "1-on-1 League of Legends coaching",
     href: "/coaching",
     external: false,
+    hidden: true,
     Icon: GraduationCap,
     accent: "#E8C676",
     glow: "rgba(148, 163, 184, 0.32)",
