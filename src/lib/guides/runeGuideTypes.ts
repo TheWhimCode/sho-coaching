@@ -19,14 +19,15 @@ export type GuideRuneBuild = {
   statShards: {
     offense: number;
     flex: number;
-    defense: number;
+    /** One shard, or multiple highlighted options (get 1 / 2 badges). */
+    defense: number | number[];
   };
   summonerSpells: {
     spellIds: number[];
     note: string;
   };
   explanations: GuideRuneExplanation[];
-  /** Perk ids marked as situational alternatives (half-circle edge marks). */
+  /** Perk ids marked as situational alternatives (numbered option badges). */
   situationalPerkIds?: number[];
   /** Unified secondary-tree write-up shown beside the keystone explanation. */
   secondarySection?: {
@@ -64,7 +65,7 @@ export type SerializedRuneTree = {
 };
 
 export type SerializedStatShardRow = {
-  selectedId: number;
+  selectedIds: number[];
   shards: SerializedRune[];
 };
 

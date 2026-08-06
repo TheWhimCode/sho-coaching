@@ -26,7 +26,8 @@ export type GuideTextEntityIcon =
   | { kind: "rune"; id: number }
   | { kind: "spell"; id: number }
   | { kind: "stat"; name: string }
-  | { kind: "camp"; id: string };
+  | { kind: "camp"; id: string }
+  | { kind: "dragonSoul"; id: string };
 
 export type GuideTextEntity = {
   patterns: string[];
@@ -47,6 +48,11 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
   {
     patterns: ["How is nobody punishing you?"],
     matchKey: "how is nobody punishing you?",
+    boldOnly: true,
+  },
+  {
+    patterns: ["You can not get stunned by her ult."],
+    matchKey: "you can not get stunned by her ult.",
     boldOnly: true,
   },
   { patterns: ["already transforming"], matchKey: "already transforming", boldOnly: true },
@@ -129,6 +135,12 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "3053" },
   },
   {
+    patterns: ["Mountain Soul"],
+    matchKey: "mountain-soul",
+    color: GUIDE_STEELCAPS_BROWN,
+    icon: { kind: "dragonSoul", id: "mountain" },
+  },
+  {
     patterns: ["Protoplasm Harness", "Protoplasm"],
     matchKey: "protoplasm-harness",
     color: GUIDE_PROTOPLASM_GREEN,
@@ -199,6 +211,18 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "3036" },
   },
   { patterns: ["Hubris"], matchKey: "hubris", color: GUIDE_HUBRIS_BROWN, icon: { kind: "item", id: "6697" } },
+  {
+    patterns: ["Profane Hydra", "Profane"],
+    matchKey: "profane-hydra",
+    color: GUIDE_DARK_RED,
+    icon: { kind: "item", id: "6698" },
+  },
+  {
+    patterns: ["The Brutalizer", "Brutalizer"],
+    matchKey: "brutalizer",
+    boldOnly: true,
+    icon: { kind: "item", id: "2020" },
+  },
   {
     patterns: ["Hail of Blades"],
     matchKey: "hail-of-blades",

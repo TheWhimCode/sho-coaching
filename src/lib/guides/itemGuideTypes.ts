@@ -72,6 +72,11 @@ export type GuideItemVariant = {
   label: string;
   header: string;
   description: string;
+  /** Optional link rendered at the end of the first description paragraph. */
+  descriptionLink?: {
+    label: string;
+    href: string;
+  };
   teamComp: GuideItemTeamComp;
   /** Champions this build is strong into — shown below the description. */
   goodAgainst: string[];
@@ -169,6 +174,7 @@ export type SerializedGuideItemVariant = {
   label: string;
   header: string;
   description: string;
+  descriptionLink: { label: string; href: string } | null;
   teamComp: SerializedGuideItemTeamComp;
   goodAgainst: SerializedGuideChampion[];
   activeChoiceIds: number[];

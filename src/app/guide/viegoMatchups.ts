@@ -121,7 +121,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Qiyana",
           explanation:
-            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\n\nWhat I do in this matchup is take some cocaine and then react to every ult by R'ing out myself. That way she never has R. Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD.\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
+            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\n\nWhat I do in this matchup is take some cocaine and then react to every ult by R'ing out myself. That way she never has R. You can not get stunned by her ult. Respect her! Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD.\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
         },
         {
           champion: "Zed",

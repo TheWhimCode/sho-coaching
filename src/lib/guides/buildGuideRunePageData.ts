@@ -67,14 +67,16 @@ function serializeTab(
     if (icon) summonerSpellIcons[id] = icon;
   }
 
-  const selectedByRow = [
-    build.statShards.offense,
-    build.statShards.flex,
-    build.statShards.defense,
+  const selectedByRow: number[][] = [
+    [build.statShards.offense],
+    [build.statShards.flex],
+    Array.isArray(build.statShards.defense)
+      ? build.statShards.defense
+      : [build.statShards.defense],
   ];
 
   const statShardRows = STAT_SHARD_ROW_OPTIONS.map((optionIds, rowIdx) => ({
-    selectedId: selectedByRow[rowIdx],
+    selectedIds: selectedByRow[rowIdx],
     shards: optionIds
       .map((id) => {
         const icon = getStatShardIconUrl(id);

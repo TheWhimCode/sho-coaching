@@ -180,7 +180,7 @@ function ItemTile({
   } | null>(null);
   const [portalMounted, setPortalMounted] = useState(false);
   const interactive = Boolean(onSelect);
-  const hoverEnabled = !inactive && !crossed;
+  const hoverEnabled = !crossed;
   const showHover = hovered && hoverEnabled;
   const showTip = showHover || tipVisible;
 
@@ -342,6 +342,20 @@ function isChoiceItemInactive(
   if (pathInactive) return true;
   const hasSelection = Boolean(activeChoiceIds && activeChoiceIds.length > 0);
   return hasSelection && !activeChoiceIds!.includes(itemId);
+}
+
+function resolveChoiceSelect(
+  itemId: number,
+  onChoiceSelect?: (itemId: number) => void,
+  selectableChoiceIds?: ReadonlySet<number> | null
+) {
+  if (!onChoiceSelect) return undefined;
+  if (selectableChoiceIds != null && !selectableChoiceIds.has(itemId)) return undefined;
+  return () => onChoiceSelect(itemId);
+}
+
+function tabSelectableChoiceIds(tab: SerializedGuideItemTab): Set<number> {
+  return new Set(tab.variants.flatMap((variant) => variant.activeChoiceIds));
 }
 
 function connectorPath(
@@ -733,12 +747,14 @@ function ChoiceColumn({
   items,
   stepIndex,
   activeChoiceIds,
+  selectableChoiceIds,
   rowInactive = false,
   onChoiceSelect,
 }: {
   items: SerializedGuideItem[];
   stepIndex: number;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   rowInactive?: boolean;
   onChoiceSelect?: (itemId: number) => void;
 }) {
@@ -760,7 +776,7 @@ function ChoiceColumn({
             inactive={
               rowInactive || (hasSelection && !activeChoiceIds!.includes(item.id))
             }
-            onSelect={onChoiceSelect ? () => onChoiceSelect(item.id) : undefined}
+            onSelect={resolveChoiceSelect(item.id, onChoiceSelect, selectableChoiceIds)}
           />
         </Fragment>
       ))}
@@ -825,12 +841,14 @@ function ItemStepColumn({
   step,
   stepIndex,
   activeChoiceIds,
+  selectableChoiceIds,
   rowInactive = false,
   onChoiceSelect,
 }: {
   step: SerializedGuideItemStep;
   stepIndex: number;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   rowInactive?: boolean;
   onChoiceSelect?: (itemId: number) => void;
 }) {
@@ -841,6 +859,7 @@ function ItemStepColumn({
           items={step.items}
           stepIndex={stepIndex}
           activeChoiceIds={activeChoiceIds}
+          selectableChoiceIds={selectableChoiceIds}
           rowInactive={rowInactive}
           onChoiceSelect={onChoiceSelect}
         />
@@ -858,6 +877,7 @@ function SharedPathDivergeColumn({
   items,
   keyFn = sharedPathDivergeKey,
   activeChoiceIds,
+  selectableChoiceIds,
   rowInactive = false,
   onChoiceSelect,
 }: {
@@ -865,6 +885,7 @@ function SharedPathDivergeColumn({
   items: SerializedGuideItem[];
   keyFn?: (pathIndex: number, itemId: number) => string;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   rowInactive?: boolean;
   onChoiceSelect?: (itemId: number) => void;
 }) {
@@ -886,7 +907,7 @@ function SharedPathDivergeColumn({
             inactive={
               rowInactive || (hasSelection && !activeChoiceIds!.includes(item.id))
             }
-            onSelect={onChoiceSelect ? () => onChoiceSelect(item.id) : undefined}
+            onSelect={resolveChoiceSelect(item.id, onChoiceSelect, selectableChoiceIds)}
           />
         </Fragment>
       ))}
@@ -898,6 +919,7 @@ function SharedPathRow({
   pathIndex,
   path,
   activeChoiceIds,
+  selectableChoiceIds,
   activePathIndex,
   onChoiceSelect,
   onPathSelect,
@@ -906,6 +928,7 @@ function SharedPathRow({
   pathIndex: number;
   path: SerializedGuideItemSharedPath["paths"][number];
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   activePathIndex?: number | null;
   onChoiceSelect?: (itemId: number) => void;
   onPathSelect?: (pathIndex: number) => void;
@@ -948,6 +971,7 @@ function SharedPathRow({
           pathIndex={pathIndex}
           items={path.diverge!}
           activeChoiceIds={activeChoiceIds}
+          selectableChoiceIds={selectableChoiceIds}
           rowInactive={rowInactive}
           onChoiceSelect={onChoiceSelect}
         />
@@ -961,6 +985,7 @@ function SharedPathRow({
             items={path.endDiverge!}
             keyFn={sharedPathEndDivergeKey}
             activeChoiceIds={activeChoiceIds}
+            selectableChoiceIds={selectableChoiceIds}
             rowInactive={rowInactive}
             onChoiceSelect={onChoiceSelect}
           />
@@ -1166,14 +1191,35 @@ function BuildDetailSection({
         <h3 className="break-words text-center text-xl font-bold tracking-tight text-[#FAD4E8]/90 sm:text-left sm:text-2xl">
           <GuideLabelWithNew isNew={activeVariant.isNew}>{activeVariant.header}</GuideLabelWithNew>
         </h3>
-        <div className="mt-5 min-w-0 max-w-full break-words text-left text-sm leading-[1.75] text-[#F5E6D3]/62 [overflow-wrap:anywhere] sm:mt-6 sm:min-h-[11em] sm:text-base">
+        <div className="mt-5 min-w-0 max-w-full break-words text-left text-sm leading-[1.75] [overflow-wrap:anywhere] sm:mt-6 sm:min-h-[11em] sm:text-base">
           {activeVariant.description.split("\n").map((paragraph, index) => (
-            <p key={index} className={clsx("min-w-0 max-w-full", index > 0 && "mt-[0.5em]")}>
+            <p
+              key={index}
+              className={clsx(
+                "min-w-0 max-w-full",
+                index === 0
+                  ? "mb-[1.15em] font-medium text-[#F5E6D3]/88"
+                  : clsx("text-[#F5E6D3]/62", index > 1 && "mt-[0.5em]")
+              )}
+            >
               {renderGuideHighlightedTextWithViegoAbilities(
                 paragraph,
                 guideTextIcons,
                 viegoAbilityIcons
               )}
+              {index === 0 && activeVariant.descriptionLink ? (
+                <>
+                  {" "}
+                  <a
+                    href={activeVariant.descriptionLink.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-[#5865F2] transition hover:text-[#7289DA]"
+                  >
+                    {activeVariant.descriptionLink.label}
+                  </a>
+                </>
+              ) : null}
             </p>
           ))}
         </div>
@@ -1367,6 +1413,7 @@ function ItemSharedPathsLayoutMobile({
   sharedPath,
   onLaneGapMeasure,
   activeChoiceIds,
+  selectableChoiceIds,
   activePathIndex,
   onChoiceSelect,
   onPathSelect,
@@ -1374,6 +1421,7 @@ function ItemSharedPathsLayoutMobile({
   sharedPath: SerializedGuideItemSharedPath;
   onLaneGapMeasure?: (widthPx: number) => void;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   activePathIndex?: number | null;
   onChoiceSelect?: (itemId: number) => void;
   onPathSelect?: (pathIndex: number) => void;
@@ -1477,9 +1525,11 @@ function ItemSharedPathsLayoutMobile({
                     compact
                     compactSpacing="tight"
                     inactive={choiceInactive(diverge[0].id, path1Inactive)}
-                    onSelect={
-                      onChoiceSelect ? () => onChoiceSelect(diverge[0].id) : undefined
-                    }
+                    onSelect={resolveChoiceSelect(
+                      diverge[0].id,
+                      onChoiceSelect,
+                      selectableChoiceIds
+                    )}
                   />
                   <ItemTile
                     item={diverge[1]}
@@ -1487,9 +1537,11 @@ function ItemSharedPathsLayoutMobile({
                     compact
                     compactSpacing="tight"
                     inactive={choiceInactive(diverge[1].id, path1Inactive)}
-                    onSelect={
-                      onChoiceSelect ? () => onChoiceSelect(diverge[1].id) : undefined
-                    }
+                    onSelect={resolveChoiceSelect(
+                      diverge[1].id,
+                      onChoiceSelect,
+                      selectableChoiceIds
+                    )}
                   />
                 </div>
               ) : null}
@@ -1535,6 +1587,7 @@ function ItemSharedPathsLayout({
   sharedPath,
   onLaneGapMeasure,
   activeChoiceIds,
+  selectableChoiceIds,
   activePathIndex,
   onChoiceSelect,
   onPathSelect,
@@ -1542,6 +1595,7 @@ function ItemSharedPathsLayout({
   sharedPath: SerializedGuideItemSharedPath;
   onLaneGapMeasure?: (widthPx: number) => void;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   activePathIndex?: number | null;
   onChoiceSelect?: (itemId: number) => void;
   onPathSelect?: (pathIndex: number) => void;
@@ -1618,6 +1672,7 @@ function ItemSharedPathsLayout({
             sharedPath={sharedPath}
             onLaneGapMeasure={onLaneGapMeasure}
             activeChoiceIds={activeChoiceIds}
+            selectableChoiceIds={selectableChoiceIds}
             activePathIndex={activePathIndex}
             onChoiceSelect={onChoiceSelect}
             onPathSelect={onPathSelect}
@@ -1631,6 +1686,7 @@ function ItemSharedPathsLayout({
             sharedPath={sharedPath}
             onLaneGapMeasure={onLaneGapMeasure}
             activeChoiceIds={activeChoiceIds}
+            selectableChoiceIds={selectableChoiceIds}
             onChoiceSelect={onChoiceSelect}
           />
         </div>
@@ -1657,6 +1713,7 @@ function ItemSharedPathsLayout({
                 pathIndex={pathIndex}
                 path={path}
                 activeChoiceIds={activeChoiceIds}
+                selectableChoiceIds={selectableChoiceIds}
                 activePathIndex={activePathIndex}
                 onChoiceSelect={onChoiceSelect}
                 onPathSelect={onPathSelect}
@@ -1676,11 +1733,13 @@ function ItemBuildPathMobile({
   steps,
   onLaneGapMeasure,
   activeChoiceIds,
+  selectableChoiceIds,
   onChoiceSelect,
 }: {
   steps: SerializedGuideItemStep[];
   onLaneGapMeasure?: (widthPx: number) => void;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   onChoiceSelect?: (itemId: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1764,7 +1823,11 @@ function ItemBuildPathMobile({
               compact
               flushEdge="end"
               inactive={choiceInactive(leftChoice.id)}
-              onSelect={onChoiceSelect ? () => onChoiceSelect(leftChoice.id) : undefined}
+              onSelect={resolveChoiceSelect(
+                leftChoice.id,
+                onChoiceSelect,
+                selectableChoiceIds
+              )}
             />
           </div>
 
@@ -1774,7 +1837,11 @@ function ItemBuildPathMobile({
               tileKey={`0-${centerChoice.id}`}
               compact
               inactive={choiceInactive(centerChoice.id)}
-              onSelect={onChoiceSelect ? () => onChoiceSelect(centerChoice.id) : undefined}
+              onSelect={resolveChoiceSelect(
+                centerChoice.id,
+                onChoiceSelect,
+                selectableChoiceIds
+              )}
             />
             {fixedSteps.map((step, stepIndex) => {
               if (step.type !== "fixed") return null;
@@ -1798,7 +1865,11 @@ function ItemBuildPathMobile({
               compact
               flushEdge="start"
               inactive={choiceInactive(rightChoice.id)}
-              onSelect={onChoiceSelect ? () => onChoiceSelect(rightChoice.id) : undefined}
+              onSelect={resolveChoiceSelect(
+                rightChoice.id,
+                onChoiceSelect,
+                selectableChoiceIds
+              )}
             />
           </div>
         </div>
@@ -1880,22 +1951,13 @@ function buildMobileBranchedSharedPathConnectors(
   if (path.endDiverge && path.endDiverge.length > 0) {
     const lastItem = path.items[path.items.length - 1];
     const lastKey = sharedPathTileKey(0, path.items.length - 1, lastItem.id);
-    const [endLeft, endRight] = path.endDiverge;
 
-    // Leave from IE bottom center, vertical-first into Cyclo / Shieldbow tops.
-    if (endLeft) {
+    // Leave from IE bottom center, vertical-first into each final-item top.
+    for (const endItem of path.endDiverge) {
       pushPath(
         point(lastKey, "bottom"),
-        point(sharedPathEndDivergeKey(0, endLeft.id), "top"),
-        isChoiceItemInactive(endLeft.id, activeChoiceIds),
-        { sCurve: "vertical-first" }
-      );
-    }
-    if (endRight) {
-      pushPath(
-        point(lastKey, "bottom"),
-        point(sharedPathEndDivergeKey(0, endRight.id), "top"),
-        isChoiceItemInactive(endRight.id, activeChoiceIds),
+        point(sharedPathEndDivergeKey(0, endItem.id), "top"),
+        isChoiceItemInactive(endItem.id, activeChoiceIds),
         { sCurve: "vertical-first" }
       );
     }
@@ -1992,11 +2054,13 @@ function ItemSharedPathBranchesMobile({
   sharedPath,
   onLaneGapMeasure,
   activeChoiceIds,
+  selectableChoiceIds,
   onChoiceSelect,
 }: {
   sharedPath: SerializedGuideItemSharedPath;
   onLaneGapMeasure?: (widthPx: number) => void;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   onChoiceSelect?: (itemId: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -2080,7 +2144,11 @@ function ItemSharedPathBranchesMobile({
                 compact
                 flushEdge="end"
                 inactive={choiceInactive(diverge[0].id)}
-                onSelect={onChoiceSelect ? () => onChoiceSelect(diverge[0].id) : undefined}
+                onSelect={resolveChoiceSelect(
+                  diverge[0].id,
+                  onChoiceSelect,
+                  selectableChoiceIds
+                )}
               />
             </div>
             <div className="flex justify-start pl-1">
@@ -2090,7 +2158,11 @@ function ItemSharedPathBranchesMobile({
                 compact
                 flushEdge="start"
                 inactive={choiceInactive(diverge[1].id)}
-                onSelect={onChoiceSelect ? () => onChoiceSelect(diverge[1].id) : undefined}
+                onSelect={resolveChoiceSelect(
+                  diverge[1].id,
+                  onChoiceSelect,
+                  selectableChoiceIds
+                )}
               />
             </div>
           </div>
@@ -2105,37 +2177,49 @@ function ItemSharedPathBranchesMobile({
           ))}
 
           {endDiverge.length > 0 ? (
-            <div className={clsx("grid w-full grid-cols-2 items-start", ITEM_MOBILE_PATH_COL_GAP)}>
-              {endDiverge[0] ? (
-                <div className="flex justify-end pr-1">
-                  <ItemTile
-                    item={endDiverge[0]}
-                    tileKey={sharedPathEndDivergeKey(0, endDiverge[0].id)}
-                    compact
-                    flushEdge="end"
-                    inactive={choiceInactive(endDiverge[0].id)}
-                    onSelect={
-                      onChoiceSelect ? () => onChoiceSelect(endDiverge[0].id) : undefined
-                    }
-                  />
-                </div>
-              ) : (
-                <div />
+            <div
+              className={clsx(
+                "grid w-full items-start",
+                ITEM_MOBILE_PATH_COL_GAP,
+                endDiverge.length >= 3 ? "grid-cols-3" : "grid-cols-2"
               )}
-              {endDiverge[1] ? (
-                <div className="flex justify-start pl-1">
-                  <ItemTile
-                    item={endDiverge[1]}
-                    tileKey={sharedPathEndDivergeKey(0, endDiverge[1].id)}
-                    compact
-                    flushEdge="start"
-                    inactive={choiceInactive(endDiverge[1].id)}
-                    onSelect={
-                      onChoiceSelect ? () => onChoiceSelect(endDiverge[1].id) : undefined
-                    }
-                  />
-                </div>
-              ) : null}
+            >
+              {endDiverge.map((item, index) => {
+                const isFirst = index === 0;
+                const flushEdge =
+                  endDiverge.length === 2
+                    ? isFirst
+                      ? "end"
+                      : "start"
+                    : undefined;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={clsx(
+                      "flex",
+                      endDiverge.length === 2
+                        ? isFirst
+                          ? "justify-end pr-1"
+                          : "justify-start pl-1"
+                        : "justify-center"
+                    )}
+                  >
+                    <ItemTile
+                      item={item}
+                      tileKey={sharedPathEndDivergeKey(0, item.id)}
+                      compact
+                      flushEdge={flushEdge}
+                      inactive={choiceInactive(item.id)}
+                      onSelect={resolveChoiceSelect(
+                        item.id,
+                        onChoiceSelect,
+                        selectableChoiceIds
+                      )}
+                    />
+                  </div>
+                );
+              })}
             </div>
           ) : null}
         </div>
@@ -2149,11 +2233,13 @@ function ItemBuildPath({
   steps,
   onLaneGapMeasure,
   activeChoiceIds,
+  selectableChoiceIds,
   onChoiceSelect,
 }: {
   steps: SerializedGuideItemStep[];
   onLaneGapMeasure?: (widthPx: number) => void;
   activeChoiceIds?: number[] | null;
+  selectableChoiceIds?: ReadonlySet<number> | null;
   onChoiceSelect?: (itemId: number) => void;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -2222,6 +2308,7 @@ function ItemBuildPath({
             steps={steps}
             onLaneGapMeasure={onLaneGapMeasure}
             activeChoiceIds={activeChoiceIds}
+            selectableChoiceIds={selectableChoiceIds}
             onChoiceSelect={onChoiceSelect}
           />
         </div>
@@ -2247,6 +2334,7 @@ function ItemBuildPath({
                 step={step}
                 stepIndex={idx}
                 activeChoiceIds={activeChoiceIds}
+                selectableChoiceIds={selectableChoiceIds}
                 onChoiceSelect={onChoiceSelect}
               />
             </Fragment>
@@ -2271,12 +2359,15 @@ function TabBuildContent({
   onChoiceSelect?: (itemId: number) => void;
   onPathSelect?: (pathIndex: number) => void;
 }) {
+  const selectableChoiceIds = useMemo(() => tabSelectableChoiceIds(tab), [tab]);
+
   if (tab.sharedPath) {
     return (
       <ItemSharedPathsLayout
         sharedPath={tab.sharedPath}
         onLaneGapMeasure={onLaneGapMeasure}
         activeChoiceIds={variant?.activeChoiceIds}
+        selectableChoiceIds={selectableChoiceIds}
         activePathIndex={variant?.activePathIndex}
         onChoiceSelect={onChoiceSelect}
         onPathSelect={onPathSelect}
@@ -2289,6 +2380,7 @@ function TabBuildContent({
       steps={tab.steps}
       onLaneGapMeasure={onLaneGapMeasure}
       activeChoiceIds={variant?.activeChoiceIds}
+      selectableChoiceIds={selectableChoiceIds}
       onChoiceSelect={onChoiceSelect}
     />
   );

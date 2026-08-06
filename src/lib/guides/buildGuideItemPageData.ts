@@ -103,6 +103,7 @@ function serializeVariant(
     label: variant.label,
     header: variant.header,
     description: variant.description,
+    descriptionLink: variant.descriptionLink ?? null,
     teamComp: serializeTeamComp(variant.teamComp, guideChampion),
     goodAgainst: variant.goodAgainst.map(serializeChampion),
     activeChoiceIds: variant.activeChoiceIds,

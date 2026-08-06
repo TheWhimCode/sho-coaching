@@ -1,4 +1,5 @@
 import { statIconUrl } from "@/app/skillcheck/items/statIcons";
+import { dragonSoulIconUrl } from "@/lib/datadragon/dragonSouls";
 import { jungleCampIconUrl } from "@/lib/datadragon/jungleCamps";
 import { ensureItemsData, itemIconUrl } from "@/lib/datadragon/items";
 import { ensureRunesAssets, runeIconUrl } from "@/lib/datadragon/runes";
@@ -17,6 +18,8 @@ function resolveEntityIcon(icon: GuideTextEntityIcon): string | null {
       return statIconUrl(icon.name) ?? null;
     case "camp":
       return jungleCampIconUrl(icon.id);
+    case "dragonSoul":
+      return dragonSoulIconUrl(icon.id);
   }
 }
 

@@ -38,15 +38,14 @@ function RuneIcon({
   selected,
   mode,
   large = false,
-  situational = false,
-  situationalEdge = "right",
+  situationalBadge,
 }: {
   rune: SerializedRune;
   selected: boolean;
   mode: TreeMode;
   large?: boolean;
-  situational?: boolean;
-  situationalEdge?: "left" | "right";
+  /** 1-based option number for situational alternatives. */
+  situationalBadge?: number;
 }) {
   const accent = TREE_ACCENT[mode];
   const size = large ? "size-14 sm:size-16 lg:size-[4.5rem]" : "size-9 sm:size-11 lg:size-12";
@@ -66,39 +65,62 @@ function RuneIcon({
           loading="eager"
         />
       </div>
-      {situational && selected ? (
+      {situationalBadge != null && selected ? (
         <span
-          aria-hidden
-          title="Situational"
+          aria-label={`Option ${situationalBadge}`}
           className={clsx(
-            "pointer-events-none absolute top-1/2 z-10 h-2 w-1 -translate-y-1/2 bg-[#B8D8EA] sm:h-2.5 sm:w-1.5",
-            situationalEdge === "left"
-              ? "-left-px rounded-l-full"
-              : "-right-px rounded-r-full"
+            "pointer-events-none absolute -left-0.5 -top-0.5 z-10 flex items-center justify-center rounded-full",
+            "bg-[#B8D8EA] font-bold leading-none text-[#1A121C]",
+            large
+              ? "size-4 text-[0.6rem] sm:size-5 sm:text-[0.7rem]"
+              : "size-3.5 text-[0.55rem] sm:size-4 sm:text-[0.6rem]"
           )}
-        />
+        >
+          {situationalBadge}
+        </span>
       ) : null}
     </div>
   );
 }
 
-function StatShardIcon({ shard, selected }: { shard: SerializedRune; selected: boolean }) {
+function StatShardIcon({
+  shard,
+  selected,
+  optionBadge,
+}: {
+  shard: SerializedRune;
+  selected: boolean;
+  optionBadge?: number;
+}) {
   return (
-    <div
-      className={clsx(
-        "relative aspect-square size-6 shrink-0 flex-none overflow-hidden rounded-full border-2 bg-[#352839]/80 transition sm:size-8",
-        selected
-          ? "border-[#F5E6D3]/40 shadow-[0_0_8px_rgba(245,230,211,0.14)]"
-          : "border-transparent opacity-35 grayscale"
-      )}
-      title={shard.name}
-    >
-      <GuideImage
-        src={shard.icon}
-        alt={shard.name}
-        className="h-full w-full object-cover"
-        loading="eager"
-      />
+    <div className="relative aspect-square size-6 shrink-0 flex-none sm:size-8" title={shard.name}>
+      <div
+        className={clsx(
+          "h-full w-full overflow-hidden rounded-full border-2 bg-[#352839]/80 transition",
+          selected
+            ? "border-[#F5E6D3]/40 shadow-[0_0_8px_rgba(245,230,211,0.14)]"
+            : "border-transparent opacity-35 grayscale"
+        )}
+      >
+        <GuideImage
+          src={shard.icon}
+          alt={shard.name}
+          className="h-full w-full object-cover"
+          loading="eager"
+        />
+      </div>
+      {optionBadge != null && selected ? (
+        <span
+          aria-label={`Option ${optionBadge}`}
+          className={clsx(
+            "pointer-events-none absolute -left-0.5 -top-0.5 z-10 flex items-center justify-center rounded-full",
+            "size-3 bg-[#B8D8EA] text-[0.5rem] font-bold leading-none text-[#1A121C]",
+            "sm:size-3.5 sm:text-[0.55rem]"
+          )}
+        >
+          {optionBadge}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -117,20 +139,32 @@ function StatShardGrid({
         className
       )}
     >
-      {rows.map((row, rowIdx) => (
-        <div
-          key={rowIdx}
-          className="flex items-center justify-center gap-2 sm:gap-3.5"
-        >
-          {row.shards.map((shard) => (
-            <StatShardIcon
-              key={`${rowIdx}-${shard.id}`}
-              shard={shard}
-              selected={shard.id === row.selectedId}
-            />
-          ))}
-        </div>
-      ))}
+      {rows.map((row, rowIdx) => {
+        const showOptionBadges = row.selectedIds.length > 1;
+
+        return (
+          <div
+            key={rowIdx}
+            className="flex items-center justify-center gap-2 sm:gap-3.5"
+          >
+            {row.shards.map((shard) => {
+              const optionIndex = row.selectedIds.indexOf(shard.id);
+              const selected = optionIndex >= 0;
+
+              return (
+                <StatShardIcon
+                  key={`${rowIdx}-${shard.id}`}
+                  shard={shard}
+                  selected={selected}
+                  optionBadge={
+                    showOptionBadges && selected ? optionIndex + 1 : undefined
+                  }
+                />
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -153,7 +187,6 @@ function RuneTreePanel({
   statShardClassName?: string;
 }) {
   const selected = new Set(selectedIds);
-  const situational = new Set(situationalIds);
   const slots = hideKeystone ? tree.slots.slice(1) : tree.slots;
 
   return (
@@ -169,19 +202,10 @@ function RuneTreePanel({
                 isKeystoneRow ? "gap-1.5 sm:gap-2.5" : "gap-1 sm:gap-3.5 lg:gap-4"
               )}
             >
-              {row.map((rune, runeIdx) => {
-                const isSituational = situational.has(rune.id);
-                const nextSituational =
-                  isSituational &&
-                  runeIdx < row.length - 1 &&
-                  situational.has(row[runeIdx + 1].id);
-                const prevSituational =
-                  isSituational && runeIdx > 0 && situational.has(row[runeIdx - 1].id);
-                const situationalEdge: "left" | "right" = nextSituational
-                  ? "right"
-                  : prevSituational
-                    ? "left"
-                    : "right";
+              {row.map((rune) => {
+                const situationalIndex = situationalIds.indexOf(rune.id);
+                const situationalBadge =
+                  situationalIndex >= 0 ? situationalIndex + 1 : undefined;
 
                 return (
                   <div key={rune.id} className="relative flex flex-none items-center justify-center">
@@ -190,8 +214,7 @@ function RuneTreePanel({
                       selected={selected.has(rune.id)}
                       mode={mode}
                       large={isKeystoneRow}
-                      situational={isSituational}
-                      situationalEdge={situationalEdge}
+                      situationalBadge={situationalBadge}
                     />
                   </div>
                 );
