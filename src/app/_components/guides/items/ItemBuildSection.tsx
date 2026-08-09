@@ -308,10 +308,10 @@ function ItemTile({
           loading="lazy"
         />
         {crossed ? <GuideCrossOverlay /> : null}
-        {item.isNew ? (
-          <GuideNewBadge className="pointer-events-none absolute -right-1 -top-1 z-10 text-[6px] sm:text-[7px]" />
-        ) : null}
       </div>
+      {item.isNew ? (
+        <GuideNewBadge className="pointer-events-none absolute -right-1 -top-1 z-10 text-[6px] sm:text-[7px]" />
+      ) : null}
       {portalMounted && showTip && tipLayout
         ? createPortal(
             <ItemExplanationPanel

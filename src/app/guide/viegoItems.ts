@@ -70,14 +70,13 @@ const MID_PROFANE_ITEM: GuideItemEntry = {
   id: 6698,
   title: "Profane Hydra",
   explanation:
-    "Testing Profane right now. Might be good on mid cuz it only does slightly less damage and oneshots the waves. If you wanna try this, start Brutalizer",
+    "Need this for waveclear. Still does high damage and helps in lane. Can cast it during W dash and after W -> Q for ranged poke.",
 };
 
 const MID_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
   paths: [
     {
-      diverge: [BASTIONBREAKER_START_ITEM, MID_PROFANE_ITEM],
-      items: [...MAIN_SHARED_CORE_ITEMS, BASTIONBREAKER_CYCLO_ITEM],
+      items: [MID_PROFANE_ITEM, ...MAIN_SHARED_CORE_ITEMS, BASTIONBREAKER_CYCLO_ITEM],
     },
   ],
 };
@@ -113,9 +112,15 @@ const BASTIONBREAKER_VARIANT: GuideItemVariant = {
 
 const MID_BASTIONBREAKER_VARIANT: GuideItemVariant = {
   ...BASTIONBREAKER_VARIANT,
-  activeChoiceIds: [2520],
+  header: "Viego midlane works!!",
+  activeChoiceIds: [],
   description:
-    "Bastionbreaker is broken atm, just build it every time. Don't stress about using the passive.\nRespect until level 3, then abuse your high AD HOB short trades. With ignite you can oneshot squishies, especially once you hit 6.\nThen use that tempo to crash your waves rotate around the map and look for skirmishes as much as possible until sidelane starts.",
+    "Profane gives you the waveclear you need to get to rotate to all the skirmishes. Build boots after first item, usually Gluttonous.\nRespect until level 3, then abuse your high AD HOB short trades. With Ignite you can oneshot squishies, especially once you hit 6.\nThen use that tempo to crash your waves rotate around the map and look for skirmishes as much as possible until sidelane starts.",
+  teamComp: {
+    ally: ["Volibear", "Lee Sin", "Viego", "Viktor", "Rell"],
+    enemy: ["Fiora", "Ekko", "Sylas", "Yunara", "Nautilus"],
+  },
+  goodAgainst: ["Sylas", "Yone", "Xerath", "Vladimir", "Diana", "Azir"],
 };
 
 const SITUATIONAL_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
@@ -179,14 +184,12 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
     {
       id: 3008,
       title: "Gluttonous Greaves",
-      isNew: true,
       explanation:
         "These are your go-to boots if you can stack them. Delaying your itemspikes can be greedy, but building them after LDR can make them difficult to stack.",
     },
     {
       id: 3047,
       title: "Plated Steelcaps",
-      isNew: true,
       explanation:
         "These are your go-to against full AD comps. Generally don't finish them before LDR + Cloak.",
     },

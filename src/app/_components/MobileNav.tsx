@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { FaDiscord, FaTiktok } from "react-icons/fa";
+import { FaDiscord, FaTiktok, FaInstagram } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
 const EXIT_DURATION = 0.35;
@@ -133,16 +133,22 @@ export default function MobileNav() {
                   Icon: FaDiscord,
                 },
                 {
-                  key: "tiktok",
-                  href: "https://www.tiktok.com/@itsMinooooo",
-                  label: "TikTok",
-                  Icon: FaTiktok,
-                },
-                {
                   key: "x",
                   href: "https://x.com/itsMinooooo_",
                   label: "X",
                   Icon: FaXTwitter,
+                },
+                {
+                  key: "instagram",
+                  href: "https://www.instagram.com/itsminooooo_/",
+                  label: "Instagram",
+                  Icon: FaInstagram,
+                },
+                {
+                  key: "tiktok",
+                  href: "https://www.tiktok.com/@itsMinooooo",
+                  label: "TikTok",
+                  Icon: FaTiktok,
                 },
               ].map(({ key, href, label, Icon }, idx) => (
                 <motion.a

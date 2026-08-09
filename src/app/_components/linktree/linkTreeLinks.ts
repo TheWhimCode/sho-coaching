@@ -32,26 +32,6 @@ export type LinkTreeLink = {
 
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
-    id: "coaching",
-    label: "Coaching",
-    description: "1-on-1 League of Legends coaching",
-    href: "/coaching",
-    external: false,
-    hidden: true,
-    Icon: GraduationCap,
-    accent: "#E8C676",
-    glow: "rgba(148, 163, 184, 0.32)",
-    iconGradient:
-      "linear-gradient(145deg, #030712 0%, #0f172a 32%, #1e293b 62%, #334155 88%, #475569 100%)",
-    iconColor: "#e2e8f0",
-    iconRadiantStops: [
-      { offset: "0%", color: "#fde68a" },
-      { offset: "38%", color: "#c4b5fd" },
-      { offset: "68%", color: "#fbbf24" },
-      { offset: "100%", color: "#f5e6b8" },
-    ],
-  },
-  {
     id: "twitch",
     label: "Twitch",
     description: "Check in when I'm live (often)",
@@ -101,5 +81,24 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     glow: "rgba(240, 171, 207, 0.45)",
     iconGradient: "transparent",
     iconColor: "#F5E6D3",
+  },
+  {
+    id: "coaching",
+    label: "Coaching",
+    description: "1-on-1 League of Legends coaching",
+    href: "/coaching",
+    external: false,
+    Icon: GraduationCap,
+    accent: "#E8C676",
+    glow: "rgba(148, 163, 184, 0.32)",
+    iconGradient:
+      "linear-gradient(145deg, #030712 0%, #0f172a 32%, #1e293b 62%, #334155 88%, #475569 100%)",
+    iconColor: "#e2e8f0",
+    iconRadiantStops: [
+      { offset: "0%", color: "#fde68a" },
+      { offset: "38%", color: "#c4b5fd" },
+      { offset: "68%", color: "#fbbf24" },
+      { offset: "100%", color: "#f5e6b8" },
+    ],
   },
 ];

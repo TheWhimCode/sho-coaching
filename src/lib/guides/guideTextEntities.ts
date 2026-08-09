@@ -94,6 +94,12 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "3047" },
   },
   {
+    patterns: ["Gluttonous Greaves", "Gluttonous", "Gluttenous"],
+    matchKey: "gluttonous",
+    color: GUIDE_DARK_RED,
+    icon: { kind: "item", id: "3008" },
+  },
+  {
     patterns: ["Armored Advance"],
     matchKey: "armored-advance",
     color: GUIDE_STEELCAPS_BROWN,
@@ -323,6 +329,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
   {
     patterns: ["Ignite"],
     matchKey: "ignite",
+    displayAs: "Ignite",
     color: GUIDE_CONQUEROR_ORANGE,
     icon: { kind: "spell", id: 14 },
   },
