@@ -1,5 +1,5 @@
 import type { ComponentType, CSSProperties } from "react";
-import { FaDiscord, FaTwitch, FaXTwitter } from "react-icons/fa6";
+import { FaDiscord, FaInstagram, FaTwitch, FaXTwitter } from "react-icons/fa6";
 import { GraduationCap, BookOpen } from "lucide-react";
 
 export type LinkTreeIconProps = {
@@ -28,6 +28,8 @@ export type LinkTreeLink = {
   iconRadiantStops?: IconRadiantStop[];
   /** Flip to false to show again on the homepage */
   hidden?: boolean;
+  /** Small "New" badge next to the title */
+  isNew?: boolean;
 };
 
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
@@ -101,5 +103,19 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     glow: "rgba(240, 171, 207, 0.45)",
     iconGradient: "transparent",
     iconColor: "#F5E6D3",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    description: "Clips, vibes, and more",
+    href: "https://www.instagram.com/itsminooooo/",
+    external: true,
+    isNew: true,
+    Icon: FaInstagram,
+    accent: "#E1306C",
+    glow: "rgba(225, 48, 108, 0.45)",
+    iconGradient:
+      "linear-gradient(145deg, #f58529 0%, #dd2a7b 42%, #8134af 72%, #515bd4 100%)",
+    iconColor: "#ffffff",
   },
 ];

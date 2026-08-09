@@ -87,7 +87,16 @@ export default function LinkTreeButton({ link, index }: Props) {
         </div>
 
         <div className="min-w-0 flex-1 text-left">
-          <div className={LINKTREE_TITLE}>{link.label}</div>
+          <div className={LINKTREE_TITLE}>
+            <span className="relative inline-block max-w-full align-top">
+              {link.label}
+              {link.isNew ? (
+                <span className="pointer-events-none absolute left-full top-1/2 ml-1.5 -translate-y-[70%] whitespace-nowrap text-[8px] font-medium leading-none text-[var(--link-accent)] sm:text-[9px]">
+                  New
+                </span>
+              ) : null}
+            </span>
+          </div>
           <div className={LINKTREE_DESCRIPTION}>{link.description}</div>
         </div>
 
