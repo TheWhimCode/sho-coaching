@@ -529,10 +529,6 @@ const DEMON_STACK_TOP = "-top-7 md:-top-6";
 
 const AFTERGLOW_BLOCK_GAP_PB = "pb-20 md:pb-24 lg:pb-28 xl:pb-36 2xl:pb-40";
 const AFTERGLOW_BLOCK_GAP_MT = "mt-20 md:mt-24 lg:mt-28 xl:mt-36 2xl:mt-40";
-const COACHING_FADE_SECTION_HEIGHT =
-  "min-h-[130dvh] lg:min-h-[150dvh] xl:min-h-[165dvh]";
-/** Long vertical wash: dark afterglow → pastel pink at the bottom. */
-const BLACK_TO_PINK_GRADIENT = `linear-gradient(180deg, ${ABOUT_SECTION_BG} 0%, ${ABOUT_SECTION_BG} 6%, #0a101f 16%, #151028 28%, #2a1a32 42%, #523652 56%, #7a4d68 70%, #9E5880 84%, #C192AB 94%, #D0B0C4 100%)`;
 
 function RankDemonCredentials({
   sectionRef,
@@ -744,65 +740,6 @@ function PlayForMyselfPanel({ inView }: { inView: boolean }) {
         bodyClosing="I play based on what's possible."
       />
     </motion.div>
-  );
-}
-
-function CoachingPanel({ inView }: { inView: boolean }) {
-  return (
-    <motion.div
-      className="relative w-full max-w-sm sm:max-w-md md:max-w-[22rem] lg:max-w-md xl:max-w-xl 2xl:max-w-xl"
-      initial={{ opacity: 0, x: -72, y: 36 }}
-      animate={inView ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: -72, y: 36 }}
-      transition={{ duration: 0.65, ease: EASE }}
-    >
-      <PinkPanelCard
-        demonMode
-        eyebrow="Coaching"
-        title="I have 5 years of coaching experience!"
-        body={
-          "In 2020 I started coaching and got something like ~2000 sessions done since then for all roles and ranks.\n\n" +
-          "Feel free to check it out, I swear it's lowkey goated."
-        }
-        stats={[
-          { value: "500+", label: "Student reviews" },
-          { value: "4.9/5", label: "Average rating" },
-        ]}
-        cta={{ label: "Learn more", href: "/coaching" }}
-      />
-    </motion.div>
-  );
-}
-
-function CoachingFadeSection() {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const scrollRoot = useContext(OverlayScrollRootContext);
-  const panelInView = useTriggerAtViewportHeight(
-    panelRef,
-    scrollRoot,
-    PANEL_VIEWPORT_TRIGGER_RATIO
-  );
-
-  return (
-    <section
-      className={clsx(
-        "relative px-5 pb-24 pt-0 md:px-8 md:pb-32",
-        COACHING_FADE_SECTION_HEIGHT
-      )}
-    >
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{ background: BLACK_TO_PINK_GRADIENT }}
-        aria-hidden
-      />
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-start pt-20 md:pt-28 lg:pt-36 xl:pt-40 xl:max-w-7xl">
-        <div
-          ref={panelRef}
-          className="mr-auto w-full md:ml-[5%] xl:ml-[8%] 2xl:ml-[10%]"
-        >
-          <CoachingPanel inView={panelInView} />
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -1228,8 +1165,6 @@ export default function AboutMinoClient() {
           />
 
           <RankAfterglowSection />
-
-          <CoachingFadeSection />
 
           <section className="flex min-h-[45vh] flex-col items-center justify-center px-5 pb-28 pt-20 text-center md:px-8 md:pb-36 md:pt-28">
             <p className="text-base text-fg-muted/50 md:text-lg">

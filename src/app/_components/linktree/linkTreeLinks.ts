@@ -62,7 +62,7 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
     id: "x",
     label: "X",
-    description: "League, femboys and Vtubing",
+    description: "League, femboys and VTubing",
     href: "https://x.com/itsMinooooo_",
     external: true,
     Icon: FaXTwitter,
@@ -87,8 +87,8 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
     id: "instagram",
     label: "Instagram",
-    description: "Clips, vibes, and more",
-    href: "https://www.instagram.com/itsminooooo/",
+    description: "Same as TikTok without the TikTok",
+    href: "https://www.instagram.com/itsMinooooo_/",
     external: true,
     isNew: true,
     Icon: FaInstagram,
