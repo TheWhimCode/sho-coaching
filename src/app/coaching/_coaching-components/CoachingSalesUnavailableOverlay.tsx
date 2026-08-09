@@ -13,7 +13,7 @@ export default function CoachingSalesUnavailableOverlay() {
           Coaching temporarily unavailable, I don&apos;t have the time/energy right now!
         </p>
         <p className="mt-3 text-sm leading-relaxed text-white/62 sm:text-base">
-          If you REALLY wanna do a session, reach out on{" "}
+          DM me on{" "}
           <Link
             href={COACHING_DISCORD_URL}
             target="_blank"
@@ -21,8 +21,8 @@ export default function CoachingSalesUnavailableOverlay() {
             className="font-semibold text-[#8FB8E6] underline decoration-[#8FB8E6]/45 underline-offset-2 transition hover:text-[#B8D8EA]"
           >
             Discord
-          </Link>
-          .
+          </Link>{" "}
+          with an offer if you want
         </p>
       </div>
     </div>

@@ -521,8 +521,11 @@ export default function GameStagesSection({
           <div
             className={clsx(
               "col-start-1 row-start-1 transition-opacity duration-300 ease-out",
-              showContent ? "pointer-events-none opacity-0" : "opacity-100"
+              showContent
+                ? "pointer-events-none h-0 min-h-0 overflow-hidden opacity-0"
+                : "opacity-100"
             )}
+            aria-hidden
           >
             <GameStagesSectionSkeleton data={data} />
           </div>

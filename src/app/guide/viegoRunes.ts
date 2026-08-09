@@ -60,7 +60,7 @@ const VIEGO_MID_BUILD: GuideRuneBuild = {
   statShards: {
     offense: 5008, // Adaptive Force
     flex: 5008, // Adaptive Force
-    defense: 5011, // Health Scaling
+    defense: [5011, 5013], // Health Scaling, Tenacity
   },
   summonerSpells: {
     spellIds: [4, 14], // Flash, Ignite
@@ -73,7 +73,7 @@ const VIEGO_MID_BUILD: GuideRuneBuild = {
       title: "Insane short trades",
       treeLabel: "DOMINATION",
       body:
-        "Going full AD with HOB gives you insane short trade potential with E and W.",
+        "Going full AD with HOB gives you insane short trade potential with E and W. But respect in between those trades, don't get harassed out!",
     },
   ],
   secondarySection: {

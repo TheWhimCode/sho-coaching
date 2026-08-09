@@ -13,7 +13,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Talon", possessionValue: 5 },
         { champion: "Kha'Zix", possessionValue: 8 },
         { champion: "Rengar", possessionValue: 6 },
-        { champion: "Qiyana", possessionValue: 6 },
       ],
     },
     {
@@ -26,6 +25,7 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Graves", possessionValue: 5 },
         { champion: "Jax", possessionValue: 7 },
         { champion: "Kayn", possessionValue: 5 },
+        { champion: "Qiyana", possessionValue: 6 },
         { champion: "Rammus", possessionValue: 8 },
         { champion: "Shaco", possessionValue: 5 },
         { champion: "Xin Zhao", possessionValue: 8, isNew: true },

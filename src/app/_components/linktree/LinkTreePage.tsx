@@ -8,6 +8,8 @@ import { LINKTREE_LIST, LINKTREE_PAGE_INNER } from "./linktreeUi";
 
 export default function LinkTreePage() {
   const visibleLinks = LINK_TREE_LINKS.filter((link) => !link.hidden);
+  const coachingLink = visibleLinks.find((link) => link.id === "coaching");
+  const linksBeforeAbout = visibleLinks.filter((link) => link.id !== "coaching");
 
   return (
     <section className="relative isolate min-h-[100svh] w-full overflow-x-hidden text-white vignette">
@@ -15,10 +17,16 @@ export default function LinkTreePage() {
 
       <div className={LINKTREE_PAGE_INNER}>
         <ul className={LINKTREE_LIST}>
-          {visibleLinks.map((link, i) => (
+          {linksBeforeAbout.map((link, i) => (
             <LinkTreeButton key={link.id} link={link} index={i} />
           ))}
-          <AboutMinoButton index={visibleLinks.length} />
+          <AboutMinoButton index={linksBeforeAbout.length} />
+          {coachingLink ? (
+            <LinkTreeButton
+              link={coachingLink}
+              index={linksBeforeAbout.length + 1}
+            />
+          ) : null}
         </ul>
       </div>
     </section>

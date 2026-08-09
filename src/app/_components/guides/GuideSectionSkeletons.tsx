@@ -600,17 +600,36 @@ function ItemSharedPathBranchesMobileSkeleton({
             <SkeletonTile key={item.id} compact className="mx-1" />
           ))}
           {path.endDiverge && path.endDiverge.length > 0 ? (
-            <div className="grid w-full grid-cols-2 items-start gap-x-6">
-              <div className="flex justify-end pr-1">
-                <SkeletonTile compact className="ml-1 mr-0" />
-              </div>
-              {path.endDiverge[1] ? (
-                <div className="flex justify-start pl-1">
-                  <SkeletonTile compact className="ml-0 mr-1" />
-                </div>
-              ) : (
-                <div />
+            <div
+              className={clsx(
+                "grid w-full items-start gap-x-6",
+                path.endDiverge.length >= 3 ? "grid-cols-3" : "grid-cols-2"
               )}
+            >
+              {path.endDiverge.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={clsx(
+                    "flex",
+                    path.endDiverge!.length === 2
+                      ? index === 0
+                        ? "justify-end pr-1"
+                        : "justify-start pl-1"
+                      : "justify-center"
+                  )}
+                >
+                  <SkeletonTile
+                    compact
+                    className={
+                      path.endDiverge!.length === 2
+                        ? index === 0
+                          ? "ml-1 mr-0"
+                          : "ml-0 mr-1"
+                        : "mx-1"
+                    }
+                  />
+                </div>
+              ))}
             </div>
           ) : null}
         </div>

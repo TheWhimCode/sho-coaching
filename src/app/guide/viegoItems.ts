@@ -14,7 +14,7 @@ const MAIN_COLLECTOR_EXPLANATION =
   "Always best second. Double Lethality -> %pen. Insane item on Viego.";
 
 const IE_EXPLANATION =
-  "Q and R scale with IE critdamage, but I found that even against squishies LDR does pretty much the same damage. The itempath is a lot worse on IE as well and it's more expensive, so I default to Noon -> LDR -> IE.";
+  "This rounds out your crit build. With double Lethality start, LDR 3rd is always better, but IE 4th is definitely a requirement. It does CRAZY damage.";
 
 const SERPENTS_EXPLANATION =
   "Delayed Serpent's Fang vs high midgame shield comps.";
@@ -36,7 +36,7 @@ const HUBRIS_START_ITEM: GuideItemEntry = {
   id: 6697,
   title: "Hubris",
   explanation:
-    "Highest scaling damage in the game. High AD + Crit + Armor Pen is the key. Best baseline item, especially in low elo.",
+    "Best scaling AD item in the game. Makes your earlygame weaker, respect that. Play for 3 items.",
 };
 
 const MAIN_SHARED_CORE_ITEMS: GuideItemEntry[] = [
@@ -59,27 +59,41 @@ const BASTIONBREAKER_SHIELDBOW_ITEM: GuideItemEntry = {
     "Build this when most enemies have more than 140 or less than 85 armor. And sometimes to survive unavoidable damage in teamfights.",
 };
 
-const BASTIONBREAKER_PATH_ITEMS: GuideItemEntry[] = [
-  BASTIONBREAKER_START_ITEM,
-  ...MAIN_SHARED_CORE_ITEMS,
-  BASTIONBREAKER_CYCLO_ITEM,
-];
+const MAIN_SERPENTS_ITEM: GuideItemEntry = {
+  id: 6695,
+  title: "Serpent's Fang",
+  explanation:
+    "Against shields that come online later. Seraphs, Steraks, Mountain Soul, Locket",
+};
+
+const MID_PROFANE_ITEM: GuideItemEntry = {
+  id: 6698,
+  title: "Profane Hydra",
+  explanation:
+    "Need this for waveclear. Still does high damage and helps in lane. Can cast it during W dash and after W -> Q for ranged poke.",
+};
+
+const MID_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
+  paths: [
+    {
+      items: [MID_PROFANE_ITEM, ...MAIN_SHARED_CORE_ITEMS, BASTIONBREAKER_CYCLO_ITEM],
+    },
+  ],
+};
 
 const MAIN_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
   paths: [
     {
       diverge: [BASTIONBREAKER_START_ITEM, HUBRIS_START_ITEM],
       items: MAIN_SHARED_CORE_ITEMS,
-      endDiverge: [BASTIONBREAKER_CYCLO_ITEM, BASTIONBREAKER_SHIELDBOW_ITEM],
+      endDiverge: [
+        BASTIONBREAKER_CYCLO_ITEM,
+        BASTIONBREAKER_SHIELDBOW_ITEM,
+        MAIN_SERPENTS_ITEM,
+      ],
     },
   ],
 };
-
-const MID_BUILD_STEPS: NonNullable<GuideItemSectionConfig["tabs"][number]["steps"]> =
-  BASTIONBREAKER_PATH_ITEMS.map((item) => ({
-    type: "fixed" as const,
-    items: [item],
-  }));
 
 const BASTIONBREAKER_VARIANT: GuideItemVariant = {
   id: "bastionbreaker",
@@ -87,13 +101,26 @@ const BASTIONBREAKER_VARIANT: GuideItemVariant = {
   header: "The twink crusher.",
   description:
     "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.\nI build this 50% of games",
-  activeChoiceIds: [2520, 6699, 6673],
+  activeChoiceIds: [2520, 6699, 6673, 6695],
   activePathIndex: 0,
   teamComp: {
     ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
     enemy: ["Kayle", "Kha'Zix", "Syndra", "Tristana", "Senna"],
   },
   goodAgainst: ["Kha'Zix", "Talon", "Qiyana", "Kindred", "Quinn", "Hwei"],
+};
+
+const MID_BASTIONBREAKER_VARIANT: GuideItemVariant = {
+  ...BASTIONBREAKER_VARIANT,
+  header: "Viego midlane works!!",
+  activeChoiceIds: [],
+  description:
+    "Profane gives you the waveclear you need to get to rotate to all the skirmishes. Build boots after first item, usually Gluttonous.\nRespect until level 3, then abuse your high AD HOB short trades. With Ignite you can oneshot squishies, especially once you hit 6.\nThen use that tempo to crash your waves rotate around the map and look for skirmishes as much as possible until sidelane starts.",
+  teamComp: {
+    ally: ["Volibear", "Lee Sin", "Viego", "Viktor", "Rell"],
+    enemy: ["Fiora", "Ekko", "Sylas", "Yunara", "Nautilus"],
+  },
+  goodAgainst: ["Aurelion Sol", "Yone", "Kassadin", "Vladimir", "Diana", "Ekko"],
 };
 
 const SITUATIONAL_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
@@ -157,14 +184,12 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
     {
       id: 3008,
       title: "Gluttonous Greaves",
-      isNew: true,
       explanation:
         "These are your go-to boots if you can stack them. Delaying your itemspikes can be greedy, but building them after LDR can make them difficult to stack.",
     },
     {
       id: 3047,
       title: "Plated Steelcaps",
-      isNew: true,
       explanation:
         "These are your go-to against full AD comps. Generally don't finish them before LDR + Cloak.",
     },
@@ -219,10 +244,10 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           header: "Max damage & scaling",
           description:
             "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.\nI build this 30% of games",
-          activeChoiceIds: [6697, 6699, 6673],
+          activeChoiceIds: [6697, 6699, 6673, 6695],
           activePathIndex: 0,
           teamComp: {
-            ally: ["Garen", "Viego", "Lissandra", "Vayne", "Lulu"],
+            ally: ["Garen", "Viego", "Lissandra", "Vayne", "Leona"],
             enemy: ["Kled", "Jarvan IV", "Sylas", "Samira", "Camille"],
           },
           goodAgainst: ["Skarner", "Darius", "Nautilus", "Sylas", "Nunu", "Hecarim"],
@@ -255,23 +280,23 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Serpent's Fang",
           header: "Usual anti-shield build",
           description:
-            "Serpent's Fang is amazing against shield users. Often those shields come delayed though.\nA toplaner who won't be in the game until midgame, Seraph's Shieldbow Sterak's Locket buyers... This is an amazing second item and super cheap, so you get your LDR asap :3",
+            "High shields on multiple targets. Think: \"will I pretty much always hit a shield when fighting?\"\nA toplaner who won't be in the game until midgame, Seraph's Shieldbow Sterak's Locket buyers... This is an amazing second item and super cheap, so you get your LDR asap :3",
           activeChoiceIds: [],
           activePathIndex: 1,
           teamComp: {
             ally: ["Gwen", "Viego", "Anivia", "Sivir", "Yuumi"],
             enemy: ["Gnar", "Ivern", "Akshan", "Kai'Sa", "Rell"],
           },
-          goodAgainst: ["Ryze", "Ambessa", "Yasuo", "Kai'Sa", "Cassiopeia", "Camille"],
+          goodAgainst: ["Shen", "Ambessa", "Yasuo", "Kai'Sa", "Cassiopeia", "Camille"],
         },
       ],
     },
     {
       id: "mid",
       label: "Midlane",
-      steps: MID_BUILD_STEPS,
+      sharedPath: MID_SHARED_PATH,
       defaultVariantId: "bastionbreaker",
-      variants: [BASTIONBREAKER_VARIANT],
+      variants: [MID_BASTIONBREAKER_VARIANT],
     },
   ],
 };

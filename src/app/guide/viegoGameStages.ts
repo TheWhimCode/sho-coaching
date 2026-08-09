@@ -56,7 +56,7 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
           summary: "You are pretty weak early. Think about and react well to invades.",
           body: [
             "Watch out for invades, you're pretty weak in early 1v1s. Think about what the enemy is playing.",
-            "Champions like Bel'Veth or Kayn love to go for a level 1 Raptors cheese to then fight you at your Red. Ward for that or check by kiting your Red out a little bit.",
+            "Champions like Kayn love to go for a level 1 Raptors cheese to then fight you at your Red. Ward for that or check by kiting your Red out a little bit.",
             "Usually, I start the game by warding the opposite buff of the side I start, to see if I'm getting cheesed.",
             "The most important piece of advice I have for getting invaded is that you stay calm and rational. If you can't win the 1v1, give up your camps. If you can't take their camps in return because the enemies will stop you, don't die trying.",
           ].join("\n\n"),
@@ -65,7 +65,6 @@ export const VIEGO_GAME_STAGES_SECTION: GuideGameStageSectionConfig = {
             { id: "shaco", champion: "Shaco", label: "HOB Shaco" },
             { id: "briar", champion: "Briar", label: "Briar" },
             { id: "rengar", champion: "Rengar", label: "Rengar" },
-            { id: "belveth", champion: "Bel'Veth", label: "Bel'Veth" },
             { id: "kindred", champion: "Kindred", label: "Kindred" },
             { id: "unusual-ignite-hob", champions: ["Master Yi", "Kayn", "Vi"], label: "Unusual Ignite/HOB users" },
           ],
