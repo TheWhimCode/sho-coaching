@@ -6,7 +6,7 @@ import { SITE_LOGO } from "@/lib/coaching/coachingClipVideos";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Crown } from "lucide-react";
 import { FaDiscord, FaTiktok, FaInstagram } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import { useNavChrome } from "@/app/_components/navChrome";
@@ -226,6 +226,14 @@ export default function NavBar({
                   className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
                 >
                   <FaTiktok className="h-5 w-5" />
+                </Link>
+                <Link
+                  href="https://throne.com/itsmino"
+                  target="_blank"
+                  aria-label="Throne"
+                  className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-orange-400"
+                >
+                  <Crown className="h-5 w-5" />
                 </Link>
               </div>
             </div>

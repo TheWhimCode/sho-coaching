@@ -1,6 +1,6 @@
 import type { ComponentType, CSSProperties } from "react";
 import { FaDiscord, FaInstagram, FaTwitch, FaXTwitter } from "react-icons/fa6";
-import { GraduationCap, BookOpen } from "lucide-react";
+import { BookOpen, Crown, GraduationCap } from "lucide-react";
 
 export type LinkTreeIconProps = {
   className?: string;
@@ -73,6 +73,20 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     iconColor: "#ffffff",
   },
   {
+    id: "throne",
+    label: "Throne",
+    description: "Buy me a lil gift if you wanna :3",
+    href: "https://throne.com/itsmino",
+    external: true,
+    isNew: true,
+    Icon: Crown,
+    accent: "#F2B8C6",
+    glow: "rgba(242, 184, 198, 0.42)",
+    iconGradient:
+      "linear-gradient(145deg, #2a1520 0%, #4a2433 35%, #7a3d52 65%, #b86b82 100%)",
+    iconColor: "#ffffff",
+  },
+  {
     id: "viego-guide",
     label: "Viego Guide",
     description: "Lethality & Hail of Blades Viego guide",
@@ -90,7 +104,6 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     description: "Same as TikTok without the TikTok",
     href: "https://www.instagram.com/itsMinooooo_/",
     external: true,
-    isNew: true,
     Icon: FaInstagram,
     accent: "#E1306C",
     glow: "rgba(225, 48, 108, 0.45)",

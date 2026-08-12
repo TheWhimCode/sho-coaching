@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Crown } from "lucide-react";
 import { FaDiscord, FaTiktok, FaInstagram } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
@@ -149,6 +149,12 @@ export default function MobileNav() {
                   href: "https://www.tiktok.com/@itsMinooooo",
                   label: "TikTok",
                   Icon: FaTiktok,
+                },
+                {
+                  key: "throne",
+                  href: "https://throne.com/itsmino",
+                  label: "Throne",
+                  Icon: Crown,
                 },
               ].map(({ key, href, label, Icon }, idx) => (
                 <motion.a
