@@ -53,6 +53,7 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         },
         { champion: "Elise", possessionValue: 4 },
         { champion: "Fiddlesticks", possessionValue: 5 },
+        { champion: "Hecarim", possessionValue: 7 },
         { champion: "Karthus", possessionValue: 5 },
         { champion: "Maokai", possessionValue: 5 },
         { champion: "Nasus", possessionValue: 5 },
@@ -93,7 +94,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
           explanation:
             "It's super hard for Gwen to play into 3 item Viego. She's supposed to be a scaling pick like Yi or Ekko, but when she finally hits her 3 items you can kill her super easily with your team and oneshot her if she ever facechecks a fully charged W. You can R into her W or even dash into it with your W.\n\nBut respect her level 6 all in. You're not supposed to 1v1 her in midgame.",
         },
-        { champion: "Hecarim", possessionValue: 7 },
         { champion: "Lillia", possessionValue: 5 },
         { champion: "Naafiri", possessionValue: 6 },
         {

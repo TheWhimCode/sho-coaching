@@ -111,7 +111,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Hecarim",
           explanation:
-            "He relies heavily on having his Q stacks active. At Scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He cannot start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
+            "While he can build DD second, this matchup is a lot harder. He becomes too tanky in the midgame.\n\nHe relies heavily on having his Q stacks active. At Scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He cannot start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
         },
         {
           champion: "Jax",
