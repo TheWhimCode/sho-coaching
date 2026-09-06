@@ -34,6 +34,18 @@ export type LinkTreeLink = {
 
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
+    id: "viego-guide",
+    label: "Viego Guide",
+    description: "Lethality & Hail of Blades Viego guide",
+    href: "/guide",
+    external: false,
+    Icon: BookOpen,
+    accent: "#F0ABCF",
+    glow: "rgba(240, 171, 207, 0.45)",
+    iconGradient: "transparent",
+    iconColor: "#F5E6D3",
+  },
+  {
     id: "twitch",
     label: "Twitch",
     description: "Check in when I'm live (often)",
@@ -85,18 +97,6 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     iconGradient:
       "linear-gradient(145deg, #2a1520 0%, #4a2433 35%, #7a3d52 65%, #b86b82 100%)",
     iconColor: "#ffffff",
-  },
-  {
-    id: "viego-guide",
-    label: "Viego Guide",
-    description: "Lethality & Hail of Blades Viego guide",
-    href: "/guide",
-    external: false,
-    Icon: BookOpen,
-    accent: "#F0ABCF",
-    glow: "rgba(240, 171, 207, 0.45)",
-    iconGradient: "transparent",
-    iconColor: "#F5E6D3",
   },
   {
     id: "instagram",
