@@ -114,10 +114,9 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
     id: "coaching",
     label: "Coaching",
-    description: "1-on-1 League of Legends coaching",
+    description: "Available until Saturday",
     href: "/coaching",
     external: false,
-    hidden: true,
     Icon: GraduationCap,
     accent: "#E8C676",
     glow: "rgba(148, 163, 184, 0.32)",

@@ -32,7 +32,7 @@ export const CFG_SERVER = Object.freeze({
     LEAD_MINUTES:     int("LEAD_MINUTES", 1080),
     /** Rolling bookable horizon from now; also capped at upcoming Saturday in guards. */
     MAX_ADVANCE_DAYS: int("MAX_ADVANCE_DAYS", 5),
-    PER_DAY_CAP:      int("PER_DAY_CAP", 3),
+    PER_DAY_CAP:      int("PER_DAY_CAP", 2),
   }),
 });
 
