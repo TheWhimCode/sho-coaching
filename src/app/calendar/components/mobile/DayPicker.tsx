@@ -2,6 +2,7 @@
 
 import { addDays, format, isSameDay, isToday, differenceInCalendarDays } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
+import { BOOKING_UI_FETCH_DAYS } from "@/lib/booking/bookingHorizon";
 
 type Props = {
   month: Date | string | number | null | undefined;
@@ -56,7 +57,7 @@ function computeAnchor(month: Props["month"], displayableDayKeys?: Set<string>) 
 
 function inWindow(anchor: Date, d: Date) {
   const diff = differenceInCalendarDays(d, anchor);
-  return diff >= 0 && diff < 14;
+  return diff >= 0 && diff < BOOKING_UI_FETCH_DAYS;
 }
 
 export default function DayPicker({
@@ -69,7 +70,7 @@ export default function DayPicker({
   loading,
   error,
 }: Props) {
-  // Keep a stable "anchor" for the 14-day window.
+  // Keep a stable "anchor" for the booking-window days.
   // It should not change when selecting a day (otherwise the selected day jumps to the top).
   const [anchor, setAnchor] = useState<Date>(() => computeAnchor(month, displayableDayKeys));
 
@@ -89,15 +90,15 @@ export default function DayPicker({
     }
   }, [selectedDate, anchor]);
 
-  // UI-only: render the next 14 calendar days starting from anchor
+  // UI-only: render the bookable calendar days starting from anchor
   const days = useMemo(() => {
     const list: Date[] = [];
-    for (let i = 0; i < 14; i++) list.push(addDays(anchor, i));
+    for (let i = 0; i < BOOKING_UI_FETCH_DAYS; i++) list.push(addDays(anchor, i));
     return list;
   }, [anchor]);
 
-  const left = days.slice(0, 7);
-  const right = days.slice(7, 14);
+  const left = days.slice(0, Math.ceil(BOOKING_UI_FETCH_DAYS / 2));
+  const right = days.slice(Math.ceil(BOOKING_UI_FETCH_DAYS / 2));
 
   if (loading) {
     return (

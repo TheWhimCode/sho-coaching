@@ -13,6 +13,7 @@ import StepQuickSuccess from "./_components/StepQuickSuccess";
 import type { DiscordIdentity, QuickbookConfig, RiotVerified } from "./_components/types";
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
+import { BOOKING_UI_FETCH_DAYS } from "@/lib/booking/bookingHorizon";
 
 import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
@@ -88,7 +89,7 @@ export default function QuickbookClient({
         start.setUTCHours(0, 0, 0, 0);
 
         const end = new Date(start);
-        end.setUTCDate(end.getUTCDate() + 14);
+        end.setUTCDate(end.getUTCDate() + BOOKING_UI_FETCH_DAYS);
         end.setUTCHours(23, 59, 59, 999);
 
         const rows = await fetchSlots(start, end, totalMinutes);

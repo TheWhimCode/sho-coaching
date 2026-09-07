@@ -12,6 +12,7 @@ import {
   getAllAvailabilityRules,
 } from "@/engine/scheduling/availability/repository";
 import { SLOT_SIZE_MIN } from "@/engine/scheduling/time/timeMath";
+import { CFG_SERVER } from "@/lib/config.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ const utcMidnight = (d = new Date()) => {
 export async function POST() {
   const today = utcMidnight();
   const end = new Date(today);
-  end.setUTCDate(end.getUTCDate() + 15);
+  end.setUTCDate(end.getUTCDate() + CFG_SERVER.booking.MAX_ADVANCE_DAYS + 1);
   const now = new Date();
 
   // 1) delete all past slots (any status)

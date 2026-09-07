@@ -12,6 +12,7 @@ import DayPicker from "@/app/calendar/components/mobile/DayPicker";
 
 import { fetchSlots } from "@/utils/api";
 import type { Slot } from "@/utils/api";
+import { BOOKING_UI_FETCH_DAYS } from "@/lib/booking/bookingHorizon";
 
 import type { DiscordIdentity, QuickbookConfig } from "./types";
 
@@ -130,7 +131,7 @@ export default function StepQuickCalendar({
     start.setUTCHours(0, 0, 0, 0);
 
     const end = new Date(start);
-    end.setUTCDate(end.getUTCDate() + 14);
+    end.setUTCDate(end.getUTCDate() + BOOKING_UI_FETCH_DAYS);
     end.setUTCHours(23, 59, 59, 999);
 
     (async () => {

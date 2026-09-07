@@ -14,6 +14,7 @@ import {
   getAllAvailabilityRules,
 } from "@/engine/scheduling/availability/repository";
 import { SLOT_SIZE_MIN } from "@/engine/scheduling/time/timeMath";
+import { CFG_SERVER } from "@/lib/config.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,7 +54,7 @@ async function cleanupUnpaidBookings() {
 async function manageSlots() {
   const today = utcMidnight();
   const end = new Date(today);
-  end.setUTCDate(end.getUTCDate() + 15);
+  end.setUTCDate(end.getUTCDate() + CFG_SERVER.booking.MAX_ADVANCE_DAYS + 1);
   const now = new Date();
 
   const delPast = await prisma.slot.deleteMany({

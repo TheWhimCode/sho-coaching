@@ -23,6 +23,7 @@ import PrimaryCTA from "@/app/_components/small/buttons/PrimaryCTA";
 import OutlineCTA from "@/app/_components/small/buttons/OutlineCTA";
 import { ArrowLeft } from "lucide-react";
 import type { ProductId } from "@/engine/session";
+import { BOOKING_UI_FETCH_DAYS } from "@/lib/booking/bookingHorizon";
 
 type Props = {
   sessionType: string;
@@ -160,7 +161,7 @@ useEffect(() => {
   start.setUTCHours(0, 0, 0, 0);
 
   const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 14);
+  end.setUTCDate(end.getUTCDate() + BOOKING_UI_FETCH_DAYS);
   end.setUTCHours(23, 59, 59, 999);
 
   const effectiveHoldKey =

@@ -30,8 +30,9 @@ export const CFG_SERVER = Object.freeze({
   booking: Object.freeze({
     BUFFER_AFTER_MIN: int("BUFFER_AFTER_MIN", 30),
     LEAD_MINUTES:     int("LEAD_MINUTES", 1080),
-    MAX_ADVANCE_DAYS: int("MAX_ADVANCE_DAYS", 15),
-    PER_DAY_CAP:      int("PER_DAY_CAP", 2),
+    /** Rolling bookable horizon from now; also capped at upcoming Saturday in guards. */
+    MAX_ADVANCE_DAYS: int("MAX_ADVANCE_DAYS", 5),
+    PER_DAY_CAP:      int("PER_DAY_CAP", 3),
   }),
 });
 

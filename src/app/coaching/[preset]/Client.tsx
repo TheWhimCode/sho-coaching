@@ -11,6 +11,7 @@ import { getPreset, type Preset } from "@/engine/session/rules/preset";
 import { titlesByPreset } from "@/engine/session/metadata/labels";
 import { useSearchParams } from "next/navigation";
 import { defineSession } from "@/engine/session/config/defineSession";
+import { BOOKING_UI_FETCH_DAYS } from "@/lib/booking/bookingHorizon";
 
 export default function Client({ preset }: { preset: string }) {
   // ⭐ normalize route param once
@@ -194,7 +195,7 @@ export default function Client({ preset }: { preset: string }) {
     // Start from now so API guards (minStart) apply: Instant = 2h lead, others = default lead
     const start = new Date(now.getTime());
     const end = new Date(start);
-    end.setDate(end.getDate() + 14);
+    end.setDate(end.getDate() + BOOKING_UI_FETCH_DAYS);
     end.setHours(23, 59, 59, 999);
 
     const totalMinutes = session.liveMin + session.liveBlocks * 45;

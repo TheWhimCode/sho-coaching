@@ -25,6 +25,7 @@ import {
   type Preset,
 } from "@/engine/session";
 import type { ProductId } from "@/engine/session";
+import { BOOKING_UI_FETCH_DAYS } from "@/lib/booking/bookingHorizon";
 import {
   PARTICLE_BG_MOBILE_VIDEO,
   PARTICLE_BG_VIDEO,
@@ -203,7 +204,7 @@ export default function SessionHero({
       try {
         const start = new Date();
         const end = new Date(start);
-        end.setDate(start.getDate() + 21);
+        end.setDate(start.getDate() + BOOKING_UI_FETCH_DAYS);
         end.setUTCHours(23, 59, 59, 999);
         const rows = await fetchSlots(start, end, liveMinutes, userHoldKey, preset);
         if (!on) return;
