@@ -37,7 +37,7 @@ type Props = {
   productId?: ProductId;
   /** If user returned from checkout (cancel), pass their holdKey so their held slot is still selectable */
   userHoldKey?: string | null;
-  /** e.g. "instant" for Instant Insights — used for scheduling lead-time override (2h buffer) */
+  /** e.g. "instant" for Instant Insights — used for scheduling lead-time (or all presets when short lead is enabled) */
   preset?: string | null;
 };
 

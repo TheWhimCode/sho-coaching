@@ -192,7 +192,7 @@ export default function Client({ preset }: { preset: string }) {
     }
 
     const now = new Date();
-    // Start from now so API guards (minStart) apply: Instant = 2h lead, others = default lead
+    // Start from now so API guards (minStart) apply (shared Instant lead when enabled)
     const start = new Date(now.getTime());
     const end = new Date(start);
     end.setDate(end.getDate() + BOOKING_UI_FETCH_DAYS);

@@ -1,5 +1,9 @@
 import { CFG_SERVER } from "@/lib/config.server";
 import { addMin } from "../time/timeMath";
+import {
+  INSTANT_LEAD_MINUTES,
+  USE_INSTANT_LEAD_FOR_ALL,
+} from "../presetLead";
 
 export type GuardsOptions = {
   /** Override lead time (minutes from now until earliest bookable slot). e.g. 120 for 2h for Instant Insights. */
@@ -18,7 +22,10 @@ export function endOfUpcomingSaturdayUtc(now: Date): Date {
 
 export function guards(now = new Date(), opts?: GuardsOptions) {
   const { LEAD_MINUTES, MAX_ADVANCE_DAYS } = CFG_SERVER.booking;
-  const leadMin = opts?.leadMinutes ?? LEAD_MINUTES;
+  const defaultLead = USE_INSTANT_LEAD_FOR_ALL
+    ? INSTANT_LEAD_MINUTES
+    : LEAD_MINUTES;
+  const leadMin = opts?.leadMinutes ?? defaultLead;
   const minStart = addMin(now, leadMin);
 
   // Rolling horizon from today, uniquely capped at end of this week’s Saturday.
