@@ -34,6 +34,25 @@ export type LinkTreeLink = {
 
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
+    id: "coaching",
+    label: "Coaching",
+    description: "Available until Saturday",
+    href: "/coaching",
+    external: false,
+    Icon: GraduationCap,
+    accent: "#E8C676",
+    glow: "rgba(148, 163, 184, 0.32)",
+    iconGradient:
+      "linear-gradient(145deg, #030712 0%, #0f172a 32%, #1e293b 62%, #334155 88%, #475569 100%)",
+    iconColor: "#e2e8f0",
+    iconRadiantStops: [
+      { offset: "0%", color: "#fde68a" },
+      { offset: "38%", color: "#c4b5fd" },
+      { offset: "68%", color: "#fbbf24" },
+      { offset: "100%", color: "#f5e6b8" },
+    ],
+  },
+  {
     id: "viego-guide",
     label: "Viego Guide",
     description: "Lethality & Hail of Blades Viego guide",
@@ -110,24 +129,5 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     iconGradient:
       "linear-gradient(145deg, #f58529 0%, #dd2a7b 42%, #8134af 72%, #515bd4 100%)",
     iconColor: "#ffffff",
-  },
-  {
-    id: "coaching",
-    label: "Coaching",
-    description: "Available until Saturday",
-    href: "/coaching",
-    external: false,
-    Icon: GraduationCap,
-    accent: "#E8C676",
-    glow: "rgba(148, 163, 184, 0.32)",
-    iconGradient:
-      "linear-gradient(145deg, #030712 0%, #0f172a 32%, #1e293b 62%, #334155 88%, #475569 100%)",
-    iconColor: "#e2e8f0",
-    iconRadiantStops: [
-      { offset: "0%", color: "#fde68a" },
-      { offset: "38%", color: "#c4b5fd" },
-      { offset: "68%", color: "#fbbf24" },
-      { offset: "100%", color: "#f5e6b8" },
-    ],
   },
 ];
