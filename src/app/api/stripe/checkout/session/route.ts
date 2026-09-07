@@ -2,7 +2,7 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED, RUSH_BUNDLE_ENABLED, rushBundleBlockedResponse } from "@/lib/coaching/coachingSales";
 import { resolveBookingAmountCentsAfterCoupon } from "@/engine/session/rules/resolveBookingPrice";
 import type { ProductId } from "@/engine/session/model/product";
 
@@ -27,6 +27,10 @@ export async function POST(req: Request) {
   } = await req.json().catch(() => ({}));
 
   console.log("[checkout/session] body", { method, bookingId });
+
+  if (parseProductId(bodyProductId) === "rush" && !RUSH_BUNDLE_ENABLED) {
+    return rushBundleBlockedResponse();
+  }
 
   if (!bookingId) {
     try {

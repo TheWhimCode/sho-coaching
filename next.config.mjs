@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV !== "production";
-const coachingSalesEnabled = process.env.NEXT_PUBLIC_COACHING_SALES_ENABLED === "true";
+const coachingSalesEnabled = process.env.NEXT_PUBLIC_COACHING_SALES_ENABLED !== "false";
 
 const scriptSrc = [
   "'self'",

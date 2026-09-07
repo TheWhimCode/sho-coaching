@@ -33,6 +33,7 @@ type Props = {
   price: string | ReactNode;
   preset: Preset;
   active?: boolean;
+  unavailable?: boolean;
   onClick: () => void;
   onHover: (p: Preset | null) => void;
   isMobile: boolean;
@@ -44,28 +45,41 @@ export default function PresetButton({
   price,
   preset,
   active,
+  unavailable = false,
   onClick,
   onHover,
   isMobile,
 }: Props) {
-  const isBundle = preset === "rush" && active;
+  const isBundle = preset === "rush" && active && !unavailable;
   const { ring } = colorsByPreset[preset];
 
   return (
     <div className="relative">
       <button
         type="button"
-        onClick={onClick}
-        onMouseEnter={() => onHover(preset)}
+        onClick={unavailable ? undefined : onClick}
+        disabled={unavailable}
+        aria-disabled={unavailable || undefined}
+        onMouseEnter={() => {
+          if (unavailable) return;
+          onHover(preset);
+        }}
         onMouseLeave={() => onHover(null)}
         className={[
-          "relative w-full rounded-xl text-left transition overflow-hidden border cursor-pointer",
+          "relative w-full rounded-xl text-left transition overflow-hidden border",
+          unavailable
+            ? "cursor-not-allowed opacity-60"
+            : "cursor-pointer",
           isMobile
             ? "bg-black/[.04] hover:bg-black/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]"
             : "bg-white/[.04] hover:bg-white/[.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,.35)]",
-          active
+          unavailable
+            ? "border-white/10"
+            : active
             ? "border-[rgba(120,160,255,.55)] shadow-[0_0_6px_rgba(56,124,255,.35)]"
             : "border-white/12",
+          unavailable && isMobile ? "hover:bg-black/[.04]" : "",
+          unavailable && !isMobile ? "hover:bg-white/[.04]" : "",
         ].join(" ")}
       >
         <span
@@ -76,7 +90,9 @@ export default function PresetButton({
         <div className="relative flex items-center px-4 py-3">
           <div className="grow">
             <div className="font-semibold">{label}</div>
-            <div className="text-xs opacity-85">{sub}</div>
+            <div className="text-xs opacity-85">
+              {unavailable ? "Currently unavailable" : sub}
+            </div>
           </div>
 
           {preset === "rush" ? (

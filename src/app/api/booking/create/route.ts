@@ -5,7 +5,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { CheckoutZ } from "@/engine/checkout";
 import { resolveBookingAmountCents } from "@/engine/session/rules/resolveBookingPrice";
 import type { ProductId } from "@/engine/session/model/product";
-import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED, RUSH_BUNDLE_ENABLED, rushBundleBlockedResponse } from "@/lib/coaching/coachingSales";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +51,10 @@ export async function POST(req: Request) {
   const productIdRaw = (body.productId ?? null) as string | null;
   const productId =
     productIdRaw && productIdRaw.trim() ? (productIdRaw.trim() as ProductId) : null;
+
+  if (productId === "rush" && !RUSH_BUNDLE_ENABLED) {
+    return rushBundleBlockedResponse();
+  }
   const liveBlocks = Number.isFinite(Number(body.liveBlocks))
     ? Math.max(0, Math.min(2, parseInt(String(body.liveBlocks), 10)))
     : 0;

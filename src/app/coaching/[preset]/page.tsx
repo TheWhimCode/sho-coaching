@@ -1,7 +1,7 @@
 import Client from "./Client";
 import { SITE_URL } from "@/lib/site";
 import { coachingSessionBanner } from "@/lib/coaching/coachingClipVideos";
-import { COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
+import { COACHING_SALES_ENABLED, RUSH_BUNDLE_ENABLED } from "@/lib/coaching/coachingSales";
 import { redirect } from "next/navigation";
 
 export default async function Page({
@@ -14,6 +14,9 @@ export default async function Page({
   }
 
   const { preset } = await params;
+  if (preset === "rush" && !RUSH_BUNDLE_ENABLED) {
+    redirect("/coaching");
+  }
   return <Client preset={preset} />;
 }
 

@@ -33,7 +33,7 @@ export function computePriceWithProduct(c: SessionConfig) {
   const p = c.productId ? products[c.productId] : undefined;
 
   if (p?.isBundle && p.preset === "rush") {
-    const priceEUR = resolveRushBundlePriceEUR(p.priceOverrideEUR ?? 90);
+    const priceEUR = resolveRushBundlePriceEUR(p.priceOverrideEUR ?? 110);
     const listPriceEUR = RUSH_BUNDLE_COMPARE_AT_EUR;
     return {
       priceEUR,

@@ -45,19 +45,18 @@ export const products: Record<ProductId, Product> = {
     customizationAllowed: false,
     durationOverrideMin: 60,
     sessionsCount: 4,
-    priceOverrideEUR: 90,
+    priceOverrideEUR: 110,
   },
 };
 
-/** Per-session tier labels in Elo Rush UI (display only). */
-export const RUSH_BUNDLE_SESSION_PRICES_EUR = [40, 35, 30, 25] as const;
+/** Per-session tier labels in Elo Rush UI (display only; totals €110). */
+export const RUSH_BUNDLE_SESSION_PRICES_EUR = [35, 30, 25, 20] as const;
 
 /** Compare-at strikethrough: 4 × €40 single-session list (€160). */
 export const RUSH_BUNDLE_COMPARE_AT_EUR = baseListPriceEUR(BASE_MINUTES) * 4;
 
-/** Tier discount vs session 1 list price (€40). */
+/** Tier discount vs €40 single-session list price. */
 export function rushBundleDiscountPercent(sessionPriceEUR: number): number {
-  return Math.round(
-    (1 - sessionPriceEUR / RUSH_BUNDLE_SESSION_PRICES_EUR[0]) * 100
-  );
+  const singleListEUR = RUSH_BUNDLE_COMPARE_AT_EUR / 4;
+  return Math.round((1 - sessionPriceEUR / singleListEUR) * 100);
 }

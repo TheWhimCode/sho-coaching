@@ -34,15 +34,9 @@ export type ComputedPrice = {
   discountPercent: number;
 };
 
-function parseDiscountPercent(raw: string | undefined): number {
-  const n = parseInt(String(raw ?? ""), 10);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  return Math.min(100, n);
-}
-
-/** Active site-wide promo from PRICING_DISCOUNT_PERCENT env (0 = charge list prices). */
+/** Active site-wide promo. Currently forced off — charge list prices. */
 export function getPricingDiscountPercent(): number {
-  return parseDiscountPercent(process.env.PRICING_DISCOUNT_PERCENT);
+  return 0;
 }
 
 export function hasPromoDiscount(): boolean {

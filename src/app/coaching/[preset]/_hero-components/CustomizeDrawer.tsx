@@ -18,6 +18,7 @@ import { X } from "@phosphor-icons/react";
 import GlassPanel from "@/app/_components/panels/GlassPanel";
 import PresetButton from "./PresetButton";
 import CustomizationControls from "./CustomizationControls";
+import { RUSH_BUNDLE_ENABLED } from "@/lib/coaching/coachingSales";
 
 function PresetIcon({ preset, size = 28 }: { preset: Preset; size?: number }) {
   const Icon = iconsByPreset[preset].icon;
@@ -201,7 +202,7 @@ function Content({
   isMobile: boolean;
   setHoverPreset: (p: Preset | null) => void;
 }) {
-  const isBundle = session.productId === "rush";
+  const isBundle = session.productId === "rush" && RUSH_BUNDLE_ENABLED;
   const rushPrice = useMemo(
     () =>
       computePriceWithProduct({
@@ -318,8 +319,8 @@ function Content({
           <PresetButton
             label="Elo Rush"
             sub="60 min ⨯4"
-price={
-<span className="
+            price={
+              <span className="
   inline-flex items-center
   bg-gradient-to-br from-[#1E9FFF] to-[#FF8C00]
   bg-clip-text text-transparent font-extrabold
@@ -328,9 +329,12 @@ price={
   
     €{formatPriceEUR(rushPrice)}
   </span>
-}            preset="rush"
+            }
+            preset="rush"
             active={isBundle}
+            unavailable={!RUSH_BUNDLE_ENABLED}
             onClick={() => {
+              if (!RUSH_BUNDLE_ENABLED) return;
               if (isBundle) {
                 changeAndClear({ ...session, productId: undefined });
               } else {

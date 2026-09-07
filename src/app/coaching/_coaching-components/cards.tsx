@@ -14,6 +14,7 @@ import TransitionOverlay from "@/app/coaching/_coaching-components/components/Ov
 import { motion, type Variants } from "framer-motion";
 import { useNavChrome } from "@/app/_components/navChrome";
 import { COACHING_CARD_IMAGES } from "@/app/coaching/coachingPageAssets";
+import { RUSH_BUNDLE_ENABLED } from "@/lib/coaching/coachingSales";
 
 type PresetSlug = "vod" | "signature" | "rush";
 
@@ -171,6 +172,9 @@ function Card({
   const [navQueuedTo, setNavQueuedTo] = useState<string | null>(null);
   const cancelledRef = useRef(false);
 
+  const bundleUnavailable = item.slug === "rush" && !RUSH_BUNDLE_ENABLED;
+  const interactionDisabled = salesDisabled || bundleUnavailable;
+
   const c = colorsByPreset[item.slug as Preset] ?? colorsByPreset.custom;
   const cssVars = {
     ["--ring" as const]: c.ring,
@@ -207,7 +211,7 @@ function Card({
   }, [router, navQueuedTo]);
 
   const handleNavigate = (e: React.MouseEvent | React.KeyboardEvent) => {
-    if (salesDisabled) return;
+    if (interactionDisabled) return;
     e.preventDefault();
     e.stopPropagation();
     if (overlayActive) return;
@@ -235,12 +239,13 @@ function Card({
       <motion.div
         className={[
           "relative group outline-none transition-all duration-300 focus-visible:outline-none",
-          salesDisabled ? "cursor-default" : "cursor-pointer hover:-translate-y-1",
+          interactionDisabled ? "cursor-default" : "cursor-pointer hover:-translate-y-1",
         ].join(" ")}
-        role={salesDisabled ? undefined : "link"}
-        tabIndex={salesDisabled ? -1 : 0}
-        onClick={salesDisabled ? undefined : handleNavigate}
-        onKeyDown={salesDisabled ? undefined : handleKeyDown}
+        role={interactionDisabled ? undefined : "link"}
+        tabIndex={interactionDisabled ? -1 : 0}
+        onClick={interactionDisabled ? undefined : handleNavigate}
+        onKeyDown={interactionDisabled ? undefined : handleKeyDown}
+        aria-disabled={bundleUnavailable || undefined}
         variants={cardVariants}
       >
         {item.badge ? (
@@ -253,15 +258,28 @@ function Card({
           style={cssVars}
           className={[
             "relative flex flex-col h-full overflow-hidden rounded-3xl border bg-white/[.03] backdrop-blur-md transition-[border-color,box-shadow] duration-300",
-            salesDisabled
+            interactionDisabled
               ? "border-white/10"
               : item.featured
               ? "border-[color-mix(in_srgb,var(--ring)_48%,rgba(255,255,255,0.14))] shadow-[0_0_32px_-14px_var(--glow)]"
               : "border-white/10",
-            !salesDisabled &&
+            !interactionDisabled &&
               "group-hover:border-[var(--ring)] group-hover:shadow-[0_0_10px_1px_var(--glow)] group-focus-visible:border-[var(--ring)] group-focus-visible:shadow-[0_0_10px_1px_var(--glow)]",
           ].join(" ")}
         >
+          {bundleUnavailable ? (
+            <>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 z-30 rounded-3xl bg-black/55"
+              />
+              <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center px-4">
+                <span className="text-xl max-sm:text-lg font-semibold tracking-wide text-white/90">
+                  Currently unavailable
+                </span>
+              </div>
+            </>
+          ) : null}
           {/* Desktop/Tablet media */}
           <div className="relative w-full aspect-square overflow-hidden rounded-t-3xl max-sm:hidden">
             <Image

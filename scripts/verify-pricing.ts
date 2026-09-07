@@ -44,7 +44,7 @@ check(
 const rush = computePriceWithProduct(
   clamp({ liveMin: 60, liveBlocks: 0, followups: 0, productId: "rush" })
 );
-check("Elo Rush bundle", rush.amountCents, 90);
+check("Elo Rush bundle", rush.amountCents, 110);
 
 check(
   "resolve 60m+block via booking",

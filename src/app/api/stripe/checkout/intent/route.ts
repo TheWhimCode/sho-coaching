@@ -8,7 +8,7 @@ import type { ProductId } from "@/engine/session/model/product";
 import { rateLimit } from "@/lib/rateLimit";
 import { CFG_SERVER } from "@/lib/config.server";
 import { getStripePaymentMethodTypes } from "@/engine/checkout";
-import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED, RUSH_BUNDLE_ENABLED, rushBundleBlockedResponse } from "@/lib/coaching/coachingSales";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,6 +76,10 @@ export async function POST(req: Request) {
 
     if (!holdKey) {
       return NextResponse.json({ error: "missing_hold" }, { status: 400 });
+    }
+
+    if (parseProductId(bodyProductId) === "rush" && !RUSH_BUNDLE_ENABLED) {
+      return rushBundleBlockedResponse();
     }
 
     let slotId: string;
