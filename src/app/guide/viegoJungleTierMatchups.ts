@@ -9,7 +9,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       subtitle: "P-please don't hurt me >.<",
       tone: "nightmare",
       matchups: [
-        { champion: "Lee Sin", possessionValue: 9 },
         { champion: "Talon", possessionValue: 5 },
         { champion: "Kha'Zix", possessionValue: 8 },
         { champion: "Rengar", possessionValue: 6 },
@@ -21,11 +20,20 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       subtitle: "It's winnable!!",
       tone: "difficult",
       matchups: [
+        { champion: "Qiyana", possessionValue: 6 },
+        { champion: "Hecarim", possessionValue: 7 },
+        { champion: "Lee Sin", possessionValue: 9 },
+        {
+          champion: "Shyvana",
+          possessionValue: 5,
+          isNew: true,
+          explanation:
+            "Gets surprisingly tanky, be careful fighting her alone. Especially her guaranteed fear means you have to respect her in a fight. You outscale and generally you like playing against bruisers that engage your team. Farm and wait for her to misstep.",
+        },
         { champion: "Kindred", possessionValue: 4 },
         { champion: "Graves", possessionValue: 5 },
         { champion: "Jax", possessionValue: 7 },
         { champion: "Kayn", possessionValue: 5 },
-        { champion: "Qiyana", possessionValue: 6 },
         { champion: "Rammus", possessionValue: 8 },
         { champion: "Shaco", possessionValue: 5 },
         { champion: "Xin Zhao", possessionValue: 8, isNew: true },
@@ -53,20 +61,12 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         },
         { champion: "Elise", possessionValue: 4 },
         { champion: "Fiddlesticks", possessionValue: 5 },
-        { champion: "Hecarim", possessionValue: 7 },
         { champion: "Karthus", possessionValue: 5 },
         { champion: "Maokai", possessionValue: 5 },
         { champion: "Nasus", possessionValue: 5 },
         { champion: "Nocturne", possessionValue: 5 },
         { champion: "Poppy", possessionValue: 6 },
         { champion: "Sejuani", possessionValue: 6 },
-        {
-          champion: "Shyvana",
-          possessionValue: 5,
-          isNew: true,
-          explanation:
-            "Gets surprisingly tanky, be careful fighting her alone. Especially her guaranteed fear means you have to respect her in a fight. You outscale and generally you like playing against bruisers that engage your team. Farm and wait for her to misstep.",
-        },
         { champion: "Wukong", possessionValue: 6 },
         {
           champion: "Zac",
