@@ -16,7 +16,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Talon",
           explanation:
-            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead. He can just find you in your jungle, attack, and you explode.\nDon't ever waste tempo. He will instantly snatch up all your camps. So I always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\nBut his reset is pretty bad.",
+            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead. He can just find you in your jungle, attack, and you explode.\nDon't ever waste tempo. He will instantly snatch up all your camps. So I always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\nBut his reset is pretty bad.\n\nThe matchup can become playable if your teammates don't have shields, and you can build Collector into Shieldbow plus Steelcaps. That way he can never quite 100-0 you. So you get a chance to fight back, and you become less interesting of a target for him.",
         },
         {
           champion: "Kha'Zix",
@@ -26,7 +26,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Rengar",
           explanation:
-            "He can always oneshot you with his ult. He won't invade you as much as other champions, but from midgame onwards you always gotta consider that he can just randomly press R and kill you. It can also be hard to kill him until your 3rd item, so early skirmishes are a coin flip. Watch out for his level 3 invade.",
+            "He can always oneshot you with his ult. He won't invade you as much as other champions, but from midgame onwards you always gotta consider that he can just randomly press R and kill you. It can also be hard to kill him until your 3rd item, so early skirmishes are a coin flip. Watch out for his level 3 invade.\n\nThe matchup can become playable if your teammates don't have shields, and you can build Collector into Shieldbow plus Steelcaps. That way he can never quite 100-0 you. So you get a chance to fight back, and you become less interesting of a target for him.",
         },
         {
           champion: "Kindred",
