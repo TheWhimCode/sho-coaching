@@ -20,7 +20,7 @@ import {
   itemSectionHasNew,
   jungleMatchupsSectionHasNew,
 } from "@/lib/guides/guideWhatsNew";
-import { SHOW_GUIDE_POSSESSIONS_SECTION } from "@/lib/guides/guideFeatureFlags";
+import { SHOW_GUIDE_COACHING_AD, SHOW_GUIDE_POSSESSIONS_SECTION } from "@/lib/guides/guideFeatureFlags";
 import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
 import type { GuideItemPageData } from "@/lib/guides/itemGuideTypes";
 import type { GuideJungleTierMatchupPageData } from "@/lib/guides/matchupGuideTypes";
@@ -221,7 +221,7 @@ export default function ViegoGuideClient({
             </p>
           </div>
 
-          <GuideCoachingAd />
+          {SHOW_GUIDE_COACHING_AD && <GuideCoachingAd />}
 
         </header>
 

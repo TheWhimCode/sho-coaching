@@ -35,6 +35,7 @@ export type LinkTreeLink = {
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
     id: "coaching",
+    hidden: true,
     label: "Coaching",
     description: "Available until Saturday",
     href: "/coaching",
