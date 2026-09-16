@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 const TABS = [
-  { id: "hub", label: "📊 Hub", href: "/admin/HUB", match: (p: string) => p === "/admin" || /^\/admin\/hub$/i.test(p) },
+  { id: "social", label: "🎬 Social", href: "/admin/social", match: (p: string) => p === "/admin" || p.startsWith("/admin/social") },
+  { id: "hub", label: "📊 Hub", href: "/admin/HUB", match: (p: string) => /^\/admin\/hub$/i.test(p) },
   {
     id: "slots",
     label: "🕐 Availability",
@@ -33,7 +34,7 @@ const TABS = [
 ] as const;
 
 function activeTabId(pathname: string) {
-  return TABS.find((tab) => tab.match(pathname))?.id ?? "hub";
+  return TABS.find((tab) => tab.match(pathname))?.id ?? "social";
 }
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
@@ -55,14 +56,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               href={tab.href}
               prefetch={false}
               aria-current={isActive ? "page" : undefined}
-              className={`px-8 py-4 text-xl font-semibold ring-2 transition rounded-r-xl
+              className={`flex items-center gap-2 px-8 py-4 text-xl font-semibold ring-2 transition rounded-r-xl
                 ${
                   isActive
                     ? "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white ring-white/20 shadow-[0_0_20px_rgba(120,0,255,0.5)]"
                     : "bg-black/50 text-white/80 hover:text-white ring-white/15"
                 }`}
             >
-              {tab.label}
+              <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none">{tab.label.split(" ")[0]}</span>
+              <span>{tab.label.split(" ").slice(1).join(" ")}</span>
             </Link>
           );
         })}
@@ -81,6 +83,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 key={tab.id}
                 href={tab.href}
                 prefetch={false}
+                aria-label={tab.label}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex-1 h-12 rounded-xl text-xl ring-1 transition flex items-center justify-center
                   ${
@@ -89,14 +92,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                       : "text-white/70 ring-white/15 hover:text-white"
                   }`}
               >
-                {tab.label.split(" ")[0]}
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none">{tab.label.split(" ")[0]}</span>
               </Link>
             );
           })}
         </div>
       </motion.div>
 
-      <div className="pt-6 pb-28 md:pb-0 md:pl-28">{children}</div>
+      <div className={`pt-6 pb-28 md:pb-0 ${active === "social" ? "md:pl-60" : "md:pl-28"}`}>{children}</div>
     </>
   );
 }

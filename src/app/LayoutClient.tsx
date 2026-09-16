@@ -28,8 +28,10 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   const isGuide = p === "/guide" || p.startsWith("/guide/");
 
   const isHome = p === "/";
+  const isAdmin = p === "/admin" || p.startsWith("/admin/");
 
   const logoOnly =
+    isAdmin ||
     isHome ||
     isSkillcheck ||
     isCoachingDetail ||
@@ -42,13 +44,13 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   const showNavBar = true;
 
 const showFooter = !(isHome || isCoachingDetail || isCheckout || isQuickbook);
-  const showNavSpacer = showNavBar && !logoOnly;
+  const showNavSpacer = showNavBar && (!logoOnly || isAdmin);
 
   return (
     <>
       <ScrollbarInit />
 
-      <MobileNav />
+      {!isAdmin && <MobileNav />}
       <NavBar logoOnly={logoOnly} />
 
       <div className={showNavSpacer ? "h-16 md:h-20" : "h-0"} />

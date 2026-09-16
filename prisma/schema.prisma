@@ -419,6 +419,21 @@ model SiteConfig {
   @@schema("public")
 }
 
+model SocialIdea {
+  id        String   @id @default(cuid())
+  title     String
+  notes     String   @default("")
+  platform  String
+  status    String   @default("idea")
+  dueDate   String?
+  reference String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+  @@schema("public")
+}
+
 model AxomEvent {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
