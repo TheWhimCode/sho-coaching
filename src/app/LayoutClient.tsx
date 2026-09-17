@@ -44,7 +44,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
   const showNavBar = true;
 
 const showFooter = !(isHome || isCoachingDetail || isCheckout || isQuickbook);
-  const showNavSpacer = showNavBar && (!logoOnly || isAdmin);
+  const showNavSpacer = showNavBar && !logoOnly;
 
   return (
     <>
