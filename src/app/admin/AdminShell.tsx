@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const TABS = [
   { id: "social", label: "🎬 Social", href: "/admin/social", match: (p: string) => p === "/admin" || p.startsWith("/admin/social") },
@@ -40,6 +42,10 @@ function activeTabId(pathname: string) {
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
   const active = activeTabId(pathname);
+  const hideNavByDefault = active === "social";
+  const [navOpen, setNavOpen] = useState(!hideNavByDefault);
+  const showSideNav = !hideNavByDefault || navOpen;
+  useEffect(() => { setNavOpen(!hideNavByDefault); }, [hideNavByDefault]);
 
   return (
     <>
@@ -48,7 +54,18 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         animate={{ y: 0, opacity: 1 }}
         className="hidden md:flex fixed z-50 left-0 top-1/2 -translate-y-1/2 flex-col items-stretch gap-3"
       >
-        {TABS.map((tab) => {
+        {hideNavByDefault && (
+          <button
+            type="button"
+            aria-label={navOpen ? "Hide admin navigation" : "Show admin navigation"}
+            aria-expanded={navOpen}
+            onClick={() => setNavOpen(open => !open)}
+            className="self-start ml-1 mb-0.5 flex h-6 w-6 items-center justify-center rounded-r-md bg-black/50 text-white/65 ring-1 ring-white/15 hover:text-white hover:bg-black/70"
+          >
+            {navOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+          </button>
+        )}
+        {showSideNav && TABS.map((tab) => {
           const isActive = active === tab.id;
           return (
             <Link
@@ -99,7 +116,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </div>
       </motion.div>
 
-      <div className={`pt-6 pb-28 md:pb-0 ${active === "social" ? "md:pl-60" : "md:pl-28"}`}>{children}</div>
+      <div className={`pt-6 pb-28 md:pb-0 ${showSideNav ? (active === "social" ? "md:pl-60" : "md:pl-28") : "md:pl-10"}`}>{children}</div>
     </>
   );
 }

@@ -15,9 +15,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const parsed = socialIdeaSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Check the title, date, and reference link." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Check the title, checklist, and planned date." }, { status: 400 });
   try {
-    return NextResponse.json(await prisma.socialIdea.create({ data: parsed.data }), { status: 201 });
+    return NextResponse.json(await prisma.socialIdea.create({ data: { ...parsed.data, placedAt: parsed.data.plannedDate ? new Date() : null } }), { status: 201 });
   } catch {
     return NextResponse.json({ error: "Could not save your idea. Try again." }, { status: 500 });
   }

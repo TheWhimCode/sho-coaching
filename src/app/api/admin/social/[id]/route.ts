@@ -12,10 +12,18 @@ function failure(error: unknown) {
 
 export async function PATCH(req: Request, context: Context) {
   const parsed = socialIdeaSchema.partial().strict().safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Check the title, date, and reference link." }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "Check the title, checklist, and planned date." }, { status: 400 });
   const { id } = await context.params;
   try {
-    return NextResponse.json(await prisma.socialIdea.update({ where: { id }, data: parsed.data }));
+    const updated = await prisma.$transaction(async tx => {
+      const current = await tx.socialIdea.findUniqueOrThrow({ where: { id } });
+      const moved = parsed.data.plannedDate !== undefined && parsed.data.plannedDate !== current.plannedDate;
+      return tx.socialIdea.update({ where: { id }, data: {
+        ...parsed.data,
+        ...(moved ? { placedAt: parsed.data.plannedDate ? new Date() : null } : {}),
+      } });
+    });
+    return NextResponse.json(updated);
   } catch (error) { return failure(error); }
 }
 
