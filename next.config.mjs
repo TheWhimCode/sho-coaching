@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV !== "production";
-const coachingSalesEnabled = process.env.NEXT_PUBLIC_COACHING_SALES_ENABLED !== "false";
+const coachingSalesEnabled = false;
 
 const scriptSrc = [
   "'self'",
@@ -93,6 +93,8 @@ const nextConfig = {
         { source: "/checkout", destination: "/coaching", permanent: false },
         { source: "/checkout/cancel", destination: "/coaching", permanent: false },
         { source: "/checkout/success", destination: "/coaching", permanent: false },
+        { source: "/quickbook", destination: "/coaching", permanent: false },
+        { source: "/quickbook/:path*", destination: "/coaching", permanent: false },
         { source: "/terms", destination: "/", permanent: false },
         { source: "/privacy", destination: "/", permanent: false },
         { source: "/imprint", destination: "/", permanent: false },

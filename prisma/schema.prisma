@@ -6,7 +6,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
-  schemas   = ["public", "skillcheck", "axom"]
+  schemas   = ["public", "skillcheck", "axom", "admin"]
 
 }
 
@@ -423,6 +423,7 @@ model SocialIdea {
   checklist Json @default("[]")
   plannedDate String?
   placedAt DateTime?
+  sortOrder Int @default(0)
   id        String   @id @default(cuid())
   title     String
   notes     String   @default("")
@@ -434,7 +435,8 @@ model SocialIdea {
   updatedAt DateTime @updatedAt
 
   @@index([createdAt])
-  @@schema("public")
+  @@index([platform, sortOrder])
+  @@schema("admin")
 }
 
 model AxomEvent {

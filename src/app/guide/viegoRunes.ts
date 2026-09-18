@@ -16,7 +16,7 @@ const VIEGO_JUNGLE_BUILD: GuideRuneBuild = {
   statShards: {
     offense: 5005, // Attack Speed
     flex: 5008, // Adaptive Force
-    defense: [5013, 5001], // Tenacity, Health Scaling
+    defense: [5011, 5013], // Health, Tenacity
   },
   summonerSpells: {
     spellIds: [4, 11], // Flash, Smite

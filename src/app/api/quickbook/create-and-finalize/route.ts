@@ -5,6 +5,7 @@ import { resolveCanonicalStudent } from "@/lib/students/resolveCanonicalStudent"
 import { rateLimit } from "@/lib/rateLimit";
 import { SlotStatus } from "@prisma/client";
 import { notifyDiscordBotSessionPaid } from "@/lib/discord/sessionPaidWebhook";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 
 /**
  * Notes:
@@ -49,6 +50,8 @@ function getIP(req: Request) {
 /* ----------------------- POST ----------------------- */
 
 export async function POST(req: Request) {
+  if (!COACHING_SALES_ENABLED) return coachingSalesBlockedResponse();
+
   const ip = getIP(req);
   if (!rateLimit(`quickbook:create:${ip}`, 30, 60_000)) {
     return noStore({ error: "rate_limited" }, 429);

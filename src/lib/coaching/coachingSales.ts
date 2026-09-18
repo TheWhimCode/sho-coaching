@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
-/** Set `NEXT_PUBLIC_COACHING_SALES_ENABLED=false` to pause purchases. */
-export const COACHING_SALES_ENABLED =
-  process.env.NEXT_PUBLIC_COACHING_SALES_ENABLED !== "false";
+/**
+ * Flip to `true` when coaching bookings should be sold again.
+ * Kept as a hard flag so a pause is explicit in code, not an env default.
+ */
+export const COACHING_SALES_ENABLED = false;
 
 /**
  * Elo Rush / multi-session bundles. Flip to `true` when ready to sell again.

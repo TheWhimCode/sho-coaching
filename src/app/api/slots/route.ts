@@ -4,6 +4,7 @@ import { z } from "zod";
 import { rateLimit } from "@/lib/rateLimit";
 
 import { getAvailableSlots } from "@/engine/scheduling/slots/getAvailableSlots";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,8 @@ function getIP(req: Request) {
 /* ---------- GET ---------- */
 
 export async function GET(req: Request) {
+  if (!COACHING_SALES_ENABLED) return coachingSalesBlockedResponse();
+
   const ip = getIP(req);
   if (!rateLimit(`slots:${ip}`, 300, 60_000)) {
     return noStore({ error: "rate_limited" }, 429);

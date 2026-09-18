@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { getLeadMinutesOverride } from "@/engine/scheduling/presetLead";
 import { holdSlots } from "@/engine/scheduling/holds/holdSlots";
 import { releaseHold } from "@/engine/scheduling/holds/releaseHold";
+import { coachingSalesBlockedResponse, COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
 
 
 export const runtime = "nodejs";
@@ -40,6 +41,8 @@ function getIP(req: Request) {
 /* ---------- POST: acquire / refresh hold ---------- */
 
 export async function POST(req: Request) {
+  if (!COACHING_SALES_ENABLED) return coachingSalesBlockedResponse();
+
   const ip = getIP(req);
   if (!rateLimit(`holds:post:${ip}`, 60, 60_000)) {
     return noStore({ error: "rate_limited" }, 429);
