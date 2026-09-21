@@ -429,6 +429,7 @@ model SocialIdea {
   notes     String   @default("")
   platform  String
   status    String   @default("idea")
+  energy    Int?
   dueDate   String?
   reference String   @default("")
   createdAt DateTime @default(now())
@@ -436,6 +437,55 @@ model SocialIdea {
 
   @@index([createdAt])
   @@index([platform, sortOrder])
+  @@schema("admin")
+}
+
+model WhatNowCategory {
+  id            String   @id
+  label         String
+  defaultEnergy Int
+  hidden        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@schema("admin")
+}
+
+model WhatNowChoice {
+  id          String   @id @default(cuid())
+  questionId  String
+  label       String
+  next        String?
+  minEnergy   Int?
+  maxEnergy   Int?
+  categories  String[]
+  sortOrder   Int      @default(0)
+
+  @@index([questionId, sortOrder])
+  @@schema("admin")
+}
+
+model WhatNowQuestion {
+  id        String @id
+  prompt    String
+  sortOrder Int    @default(0)
+
+  @@schema("admin")
+}
+
+model WhatNowTask {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @default("")
+  energy       Int?
+  category     String
+  subcategory  String   @default("")
+  steps        Json     @default("[]")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([energy])
+  @@index([category, subcategory])
   @@schema("admin")
 }
 

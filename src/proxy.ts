@@ -12,6 +12,11 @@ function ctEqual(a: Uint8Array, b: Uint8Array) {
   return out === 0;
 }
 
+function withNoIndex(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  return response;
+}
+
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -34,7 +39,7 @@ export function proxy(req: NextRequest) {
     pathname.startsWith("/admin/login") ||
     pathname.startsWith("/api/admin/auth")
   ) {
-    return NextResponse.next();
+    return withNoIndex(NextResponse.next());
   }
 
   if (pathname.startsWith("/api/admin/slots/cron")) {
@@ -47,16 +52,16 @@ export function proxy(req: NextRequest) {
   }
 
   const authed = req.cookies.get("admin_auth")?.value === "1";
-  if (authed) return NextResponse.next();
+  if (authed) return withNoIndex(NextResponse.next());
 
   if (pathname.startsWith("/api")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withNoIndex(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   const url = req.nextUrl.clone();
   url.pathname = "/admin/login";
   url.searchParams.set("next", pathname);
-  return NextResponse.redirect(url);
+  return withNoIndex(NextResponse.redirect(url));
 }
 
 export const config = {

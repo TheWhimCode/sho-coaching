@@ -38,3 +38,9 @@ test("accepts social, life, and VTubing categories", () => {
   assert.equal(patch.safeParse({ platform: "unity" }).success, true);
   assert.equal(patch.safeParse({ platform: "youtube" }).success, false);
 });
+test("accepts an energy override or clearing it back to the category default", () => {
+  assert.deepEqual(patch.parse({ energy: 4 }), { energy: 4 });
+  assert.deepEqual(patch.parse({ energy: null }), { energy: null });
+  assert.equal(patch.safeParse({ energy: 0 }).success, false);
+  assert.equal(patch.safeParse({ energy: 11 }).success, false);
+});

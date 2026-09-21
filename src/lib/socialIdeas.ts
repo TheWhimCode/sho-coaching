@@ -34,12 +34,13 @@ export const socialIdeaSchema = z.object({
     const date = new Date(`${value}T12:00:00Z`);
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
   }).nullable(),
+  energy: z.number().int().min(1).max(10).nullable().optional(),
 });
 export const reorderIdeasSchema = z.object({
   ids: z.array(z.string().trim().min(1).max(100)).min(1).max(200),
 });
 export type SocialIdeaInput = z.infer<typeof socialIdeaSchema>;
-export type SocialIdea = Omit<SocialIdeaInput, "status"> & { id: string; status: "idea" | "completed"; sortOrder: number; placedAt: string | null; createdAt: string; updatedAt: string };
+export type SocialIdea = Omit<SocialIdeaInput, "status" | "energy"> & { id: string; status: "idea" | "completed"; energy: number | null; sortOrder: number; placedAt: string | null; createdAt: string; updatedAt: string };
 export function isDayKey(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }

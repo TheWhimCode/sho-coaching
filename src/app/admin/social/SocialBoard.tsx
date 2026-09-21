@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, useDroppable, DragOverlay, pointerWithin, closestCenter, type CollisionDetection, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, useDroppable, useDraggable, DragOverlay, pointerWithin, closestCenter, type CollisionDetection, type DragEndEvent, type Modifier } from "@dnd-kit/core";
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Box, Boxes, Check, ChevronLeft, ChevronRight, Eye, EyeOff, GripVertical, Heart, House, Plus, Search, Sparkles, Trash2, Utensils, X } from "lucide-react";
 import { FaTiktok, FaXTwitter, FaRedditAlien } from "react-icons/fa6";
 import { isCompleted, isDayKey, isLifePlatform, isSocialPlatform, isVtubePlatform, type SocialIdea, type SocialIdeaInput } from "@/lib/socialIdeas";
+import { categoryDefaultEnergy } from "@/lib/whatNow";
+import WhatNowSurvey from "./WhatNowSurvey";
 import styles from "./social.module.css";
 
 const socials = [
@@ -35,6 +37,9 @@ const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 function dateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
 function dayAt(key: string, offset: number) { const date = new Date(`${key}T12:00:00`); date.setDate(date.getDate() + offset); return date; }
+const tilePrefix = "tile:";
+function tileId(id: string) { return `${tilePrefix}${id}`; }
+function ideaIdFromDrag(id: string) { return id.startsWith(tilePrefix) ? id.slice(tilePrefix.length) : id; }
 function monthDay(key: string) { const date = dayAt(key, 0); return `${months[date.getMonth()]} ${date.getDate()}`; }
 function staysOnDay(idea: SocialIdea, key: string) {
   return idea.plannedDate === key && (key >= dateKey(new Date()) || isCompleted(idea));
@@ -48,7 +53,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 function IdeaEditor({ idea, platform, onClose, onSaved, onUpdated, onDelete }: { idea: SocialIdea | null; platform: Platform; onClose: () => void; onSaved: (idea: SocialIdea) => void; onUpdated: (idea: SocialIdea) => void; onDelete: () => Promise<void> }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const notesView = useRef<HTMLParagraphElement>(null);
-  const [draft, setDraft] = useState<SocialIdeaInput>(idea ? { title: idea.title, notes: idea.notes, platform: idea.platform, status: idea.status, checklist: idea.checklist, plannedDate: idea.plannedDate } : { title: "", notes: "", platform, status: "idea", checklist: [], plannedDate: null });
+  const [draft, setDraft] = useState<SocialIdeaInput>(idea ? { title: idea.title, notes: idea.notes, platform: idea.platform, status: idea.status, checklist: idea.checklist, plannedDate: idea.plannedDate, energy: idea.energy } : { title: "", notes: "", platform, status: "idea", checklist: [], plannedDate: null, energy: null });
   const [reading, setReading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,7 +72,7 @@ function IdeaEditor({ idea, platform, onClose, onSaved, onUpdated, onDelete }: {
     if (saving) return;
     const next = { ...draft, title: draft.title.trim(), notes: readingNotes().trim(), checklist: draft.checklist.filter(task => task.text.trim()).map(task => ({ ...task, text: task.text.trim() })) };
     if (!next.title) { onClose(); return; }
-    if (idea && next.title === idea.title && next.notes === idea.notes && next.plannedDate === idea.plannedDate && next.status === idea.status && JSON.stringify(next.checklist) === JSON.stringify(idea.checklist)) { onClose(); return; }
+    if (idea && next.title === idea.title && next.notes === idea.notes && next.plannedDate === idea.plannedDate && next.status === idea.status && next.energy === idea.energy && JSON.stringify(next.checklist) === JSON.stringify(idea.checklist)) { onClose(); return; }
     setSaving(true); setError("");
     try { onSaved(await request<SocialIdea>(`/api/admin/social${idea ? `/${idea.id}` : ""}`, { method: idea ? "PATCH" : "POST", body: JSON.stringify(next) })); }
     catch (error) { setError((error as Error).message); setSaving(false); }
@@ -103,6 +108,7 @@ function IdeaEditor({ idea, platform, onClose, onSaved, onUpdated, onDelete }: {
         <label className={styles.field}>Description<textarea rows={5} maxLength={5000} placeholder={lifeDraft ? "Notes, reminders, details…" : "Your hook, script, and talking points…"} value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} /></label>
         <label className={styles.field}>Timeline placement<input type="date" value={draft.plannedDate ?? ""} onChange={e => setDraft({ ...draft, plannedDate: e.target.value || null })} /></label>
         {draft.plannedDate && <button type="button" className={styles.secondary} onClick={() => setDraft({ ...draft, plannedDate: null })}>Remove from timeline</button>}
+        <label className={styles.field}>Energy override<span>Blank uses this category’s default ({categoryDefaultEnergy[draft.platform] ?? 5}/10)</span><input type="number" min={1} max={10} value={draft.energy ?? ""} onChange={e => { const value = e.target.value; setDraft({ ...draft, energy: value === "" ? null : Math.min(10, Math.max(1, Number(value) || 1)) }); }} placeholder={`${categoryDefaultEnergy[draft.platform] ?? 5}`} /></label>
       </fieldset>
       {error && <p className={styles.error} role="alert">{error}</p>}
       {idea && <div className={styles.deleteConfirm}>{confirmDelete ? <><span>Delete this {lifeDraft ? "task" : "idea"}?</span><button type="button" disabled={saving} onClick={async () => { setSaving(true); try { await onDelete(); } catch (error) { setError((error as Error).message); setSaving(false); } }}>Delete</button><button type="button" onClick={() => setConfirmDelete(false)}>Keep</button></> : <button type="button" onClick={() => setConfirmDelete(true)}><Trash2 size={14} /> Delete {lifeDraft ? "task" : "idea"}</button>}</div>}
@@ -116,6 +122,20 @@ function stackItems<T>(items: T[], count: number) {
   const stacks = Array.from({ length: count }, () => [] as T[]);
   items.forEach((item, index) => stacks[index % count].push(item));
   return stacks;
+}
+function dayCarrySize() {
+  const node = document.querySelector(`.${styles.dayBlock}`);
+  if (!node) return 0;
+  const rect = node.getBoundingClientRect();
+  return Math.max(1, Math.round(Math.min(rect.width, rect.height) * .86));
+}
+function centerCarry({ transform, draggingNodeRect, overlayNodeRect }: Parameters<Modifier>[0]) {
+  if (!draggingNodeRect || !overlayNodeRect) return transform;
+  return {
+    ...transform,
+    x: transform.x + (draggingNodeRect.width - overlayNodeRect.width) / 2,
+    y: transform.y + (draggingNodeRect.height - overlayNodeRect.height) / 2,
+  };
 }
 function collisionDetection(args: Parameters<CollisionDetection>[0]) {
   const pointer = pointerWithin(args);
@@ -163,12 +183,43 @@ function tileRect(widths: number[], heights: number[], gap: number, column: numb
     height: heights[row],
   };
 }
-function DayTiles({ ideas }: { ideas: SocialIdea[] }) {
+function TimelineTile({ idea, disabled, movable, entering, style, onEntered, onShowTip, onHideTip }: { idea: SocialIdea; disabled?: boolean; movable?: boolean; entering?: boolean; style: React.CSSProperties; onEntered?: () => void; onShowTip: (event: React.MouseEvent<HTMLElement>, title: string) => void; onHideTip: () => void }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: tileId(idea.id), disabled: disabled || !movable, attributes: { role: "img", tabIndex: -1 } });
+  return <span
+    ref={movable ? setNodeRef : undefined}
+    {...(movable ? { ...listeners, ...attributes } : {})}
+    data-platform={idea.platform}
+    data-completed={isCompleted(idea) || undefined}
+    data-movable={movable || undefined}
+    data-dragging={isDragging || undefined}
+    data-enter={entering || undefined}
+    className={styles.segment}
+    style={isDragging ? { ...style, opacity: .35 } : style}
+    aria-label={movable ? `Drag ${idea.title} to another day` : idea.title}
+    onAnimationEnd={event => { if (entering && event.target === event.currentTarget) onEntered?.(); }}
+    onMouseEnter={event => { if (!isDragging) onShowTip(event, idea.title); }}
+    onMouseMove={event => { if (!isDragging) onShowTip(event, idea.title); }}
+    onMouseLeave={onHideTip}
+  />;
+}
+function DayTiles({ ideas, disabled, movable, ready }: { ideas: SocialIdea[]; disabled?: boolean; movable?: boolean; ready?: boolean }) {
   const placed = sortPlaced(ideas);
   const { columns, rows } = dayGrid(placed.length);
   const box = useRef<HTMLDivElement>(null);
+  const seen = useRef({ primed: false, key: "" });
+  const [entering, setEntering] = useState<string[]>([]);
   const [size, setSize] = useState({ width: 0, height: 0, dpr: 1 });
   const [tip, setTip] = useState<{ title: string; x: number; y: number } | null>(null);
+  const placedKey = placed.map(idea => idea.id).join("\0");
+  if (!ready) seen.current = { primed: false, key: placedKey };
+  else if (!seen.current.primed) seen.current = { primed: true, key: placedKey };
+  else if (placedKey !== seen.current.key && size.width) {
+    const prevIds = seen.current.key ? seen.current.key.split("\0") : [];
+    const ids = placedKey ? placedKey.split("\0") : [];
+    const newcomers = ids.filter(id => !prevIds.includes(id));
+    seen.current = { primed: true, key: placedKey };
+    if (newcomers.length) setEntering(current => [...current, ...newcomers.filter(id => !current.includes(id))]);
+  }
   useLayoutEffect(() => {
     const node = box.current;
     if (!node) return;
@@ -206,24 +257,24 @@ function DayTiles({ ideas }: { ideas: SocialIdea[] }) {
         const row = Math.floor(index / columns);
         const rect = widths.length && heights.length ? tileRect(widths, heights, gap, column, row) : null;
         const style = rect ? { left: rect.left / size.dpr, top: rect.top / size.dpr, width: rect.width / size.dpr, height: rect.height / size.dpr } : { visibility: "hidden" as const };
-        return <span key={idea.id} data-platform={idea.platform} data-completed={isCompleted(idea) || undefined} className={styles.segment} style={style} aria-label={idea.title} onMouseEnter={event => showTip(event, idea.title)} onMouseMove={event => showTip(event, idea.title)} onMouseLeave={() => setTip(null)} />;
+        return <TimelineTile key={idea.id} idea={idea} disabled={disabled} movable={movable} entering={entering.includes(idea.id)} style={style} onEntered={() => setEntering(current => current.filter(id => id !== idea.id))} onShowTip={showTip} onHideTip={() => setTip(null)} />;
       })}
     </div>
     </div>
     {tip && <div className={styles.segmentTip} style={{ left: tip.x, top: tip.y }} role="tooltip">{tip.title}</div>}
   </>;
 }
-function TimelineDay({ date, ideas, disabled, onOpen }: { date: Date; ideas: SocialIdea[]; disabled: boolean; onOpen: () => void }) {
+function TimelineDay({ date, ideas, disabled, ready, onOpen }: { date: Date; ideas: SocialIdea[]; disabled: boolean; ready: boolean; onOpen: () => void }) {
   const key = dateKey(date);
   const { setNodeRef, isOver } = useDroppable({ id: key, disabled });
   return <div ref={setNodeRef} className={`${styles.timelineDay} ${isOver ? styles.dropOver : ""}`} data-today={key === dateKey(new Date())}>
     <div className={styles.dayHit} role="button" tabIndex={0} onClick={onOpen} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onOpen(); } }} aria-label={`Open ${weekdays[date.getDay()]} ${date.getDate()}`}>
       <div className={styles.dayLabel}>{weekdays[date.getDay()]}<strong>{date.getDate()}</strong></div>
-      <DayTiles ideas={ideas} />
+      <DayTiles ideas={ideas} disabled={disabled} movable ready={ready} />
     </div>
   </div>;
 }
-function DayFocus({ date, ideas, disabled, onBack, onOpenIdea }: { date: Date; ideas: SocialIdea[]; disabled: boolean; onBack: () => void; onOpenIdea: (idea: SocialIdea) => void }) {
+function DayFocus({ date, ideas, disabled, ready, onBack, onOpenIdea }: { date: Date; ideas: SocialIdea[]; disabled: boolean; ready: boolean; onBack: () => void; onOpenIdea: (idea: SocialIdea) => void }) {
   const key = dateKey(date);
   const { setNodeRef, isOver } = useDroppable({ id: key, disabled });
   const placed = sortPlaced(ideas);
@@ -242,7 +293,7 @@ function DayFocus({ date, ideas, disabled, onBack, onOpenIdea }: { date: Date; i
     <div className={styles.dayFocusBody}>
       <div ref={setNodeRef} className={`${styles.dayFocusSquare} ${isOver ? styles.dropOver : ""}`}>
         <div className={styles.dayLabel}>{weekdays[date.getDay()]}<strong>{date.getDate()}</strong></div>
-        <DayTiles ideas={ideas} />
+        <DayTiles ideas={ideas} ready={ready} />
       </div>
       <div className={styles.dayFocusPanel}>
         <h2>{weekdays[date.getDay()]}, {months[date.getMonth()]} {date.getDate()}</h2>
@@ -293,10 +344,13 @@ export default function SocialBoard() {
   const [query, setQuery] = useState("");
   const [hidePlanned, setHidePlanned] = useState(false);
   const [editor, setEditor] = useState<{ idea: SocialIdea | null; platform: Platform } | null>(null);
+  const [survey, setSurvey] = useState(false);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
+  const skipDayClick = useRef(false);
   const [start, setStart] = useState(() => dateKey(new Date()));
   const [dragging, setDragging] = useState<string | null>(null);
+  const [carrySize, setCarrySize] = useState(0);
   const [focused, setFocused] = useState<Platform | null>(null);
   const [boardPage, setBoardPage] = useState<BoardPage>("social");
   const [visiblePlatforms, setVisiblePlatforms] = useState<Record<Platform, boolean>>({ tiktok: true, twitter: true, reddit: true, selfcare: true, food: true, home: true, vtubing: true, blender: true, unity: true });
@@ -325,7 +379,7 @@ export default function SocialBoard() {
   function neighbor(offset: number) { return pages[pages.indexOf(boardPage) + offset]; }
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.metaKey || event.ctrlKey || event.altKey || dragging || editor) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || dragging || editor || survey) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable='true'], dialog")) return;
       if (selectedDay) {
@@ -339,19 +393,18 @@ export default function SocialBoard() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [boardPage, dragging, editor, selectedDay]);
+  }, [boardPage, dragging, editor, survey, selectedDay]);
   async function update(idea: SocialIdea, patch: Partial<SocialIdeaInput>) {
-    if (lock.current) return;
     const today = dateKey(new Date());
     const next = { ...patch };
     if (next.status === "idea" && idea.plannedDate && idea.plannedDate < today) next.plannedDate = null;
-    lock.current = true; setBusy(true); setError("");
+    setError("");
     setIdeas(items => items.map(item => item.id === idea.id ? { ...item, ...next, ...("plannedDate" in next ? { placedAt: next.plannedDate ? new Date().toISOString() : null } : {}) } : item));
     try { saved(await request<SocialIdea>(`/api/admin/social/${idea.id}`, { method: "PATCH", body: JSON.stringify(next) })); }
     catch (error) {
       setError((error as Error).message);
       setIdeas(items => items.map(item => item.id === idea.id ? idea : item));
-    } finally { lock.current = false; setBusy(false); }
+    }
   }
   async function remove(idea: SocialIdea) {
     if (lock.current) return; lock.current = true; setBusy(true); setError("");
@@ -360,14 +413,16 @@ export default function SocialBoard() {
   }
   function dropped(event: DragEndEvent) {
     setDragging(null);
+    window.setTimeout(() => { skipDayClick.current = false; }, 0);
     const overId = event.over ? String(event.over.id) : "";
-    const idea = ideas.find(item => item.id === event.active.id);
+    const activeId = String(event.active.id);
+    const idea = ideas.find(item => item.id === ideaIdFromDrag(activeId));
     if (!idea || !overId) return;
     if (isDayKey(overId)) {
       if (idea.plannedDate !== overId) void update(idea, { plannedDate: overId });
       return;
     }
-    if (overId === idea.id) return;
+    if (activeId.startsWith(tilePrefix) || overId === idea.id) return;
     const previous = ideas;
     const next = moveInPlatform(ideas, idea.id, overId);
     if (next === previous) return;
@@ -383,13 +438,15 @@ export default function SocialBoard() {
   const lifePage = boardPage === "life";
   const today = dateKey(new Date());
   const timelineIdeas = ideas.filter(idea => visiblePlatforms[idea.platform]);
+  const dragIdea = dragging ? ideas.find(idea => idea.id === ideaIdFromDrag(dragging)) : undefined;
+  function openDay(key: string) { if (!skipDayClick.current) setSelectedDay(key); }
   return <section className={styles.board}>
-    <header className={styles.header}><div><p className={styles.eyebrow}><span /> YOUR CREATIVE SPACE</p><h1>Social studio<span>.</span></h1><p className={styles.subtitle}>Make room for your next good idea.</p></div><button className={styles.primary} disabled={loading || busy} onClick={() => setEditor({ idea: null, platform: pageStart[boardPage] })}><Plus size={19} />{lifePage ? "New task" : "New idea"}</button></header>
+    <header className={styles.header}><div><p className={styles.eyebrow}><span /> YOUR CREATIVE SPACE</p><h1>Social studio<span>.</span></h1><p className={styles.subtitle}>Make room for your next good idea.</p></div><div className={styles.headerActions}><button type="button" className={styles.secondary} onClick={() => setSurvey(true)}>What now?</button><button className={styles.primary} disabled={loading || busy} onClick={() => setEditor({ idea: null, platform: pageStart[boardPage] })}><Plus size={19} />{lifePage ? "New task" : "New idea"}</button></div></header>
     {error && <div className={styles.error} role="alert">{error}<button onClick={load}>Reload</button></div>}
-    <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={event => setDragging(String(event.active.id))} onDragCancel={() => setDragging(null)} onDragEnd={dropped}>
-      <section className={styles.timeline} aria-label="Release timeline">{selectedDay ? <DayFocus date={dayAt(selectedDay, 0)} ideas={timelineIdeas.filter(idea => staysOnDay(idea, selectedDay))} disabled={loading || busy} onBack={() => setSelectedDay(null)} onOpenIdea={open} /> : <>
+    <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={event => { skipDayClick.current = true; const id = String(event.active.id); setDragging(id); if (id.startsWith(tilePrefix)) setCarrySize(dayCarrySize()); }} onDragCancel={() => { setDragging(null); window.setTimeout(() => { skipDayClick.current = false; }, 0); }} onDragEnd={dropped}>
+      <section className={styles.timeline} aria-label="Release timeline">{selectedDay ? <DayFocus date={dayAt(selectedDay, 0)} ideas={timelineIdeas.filter(idea => staysOnDay(idea, selectedDay))} disabled={loading || busy} ready={!loading} onBack={() => setSelectedDay(null)} onOpenIdea={open} /> : <>
         <div className={styles.timelineHeading}><div><h2>Your release timeline</h2></div><div className={styles.timelineControls}><div className={styles.timelineFilters}>{categories.map(({ id, name }) => <button type="button" key={id} className={styles.filterToggle} data-platform={id} aria-pressed={visiblePlatforms[id]} onClick={() => setVisiblePlatforms(current => ({ ...current, [id]: !current[id] }))}>{name}</button>)}</div><div className={styles.timelineNav}><button className={styles.iconButton} aria-label="Previous two weeks" onClick={() => setStart(dateKey(dayAt(start, -14)))}><ChevronLeft size={18} /></button><button className={styles.secondary} onClick={() => setStart(dateKey(new Date()))}>Today</button><button className={styles.iconButton} aria-label="Next two weeks" onClick={() => setStart(dateKey(dayAt(start, 14)))}><ChevronRight size={18} /></button></div></div></div>
-        <div className={styles.timelineGrid}>{Array.from({ length: 14 }, (_, index) => { const date = dayAt(start, index); const key = dateKey(date); return <TimelineDay key={key} date={date} ideas={timelineIdeas.filter(idea => staysOnDay(idea, key))} disabled={loading || busy} onOpen={() => setSelectedDay(key)} />; })}</div>
+        <div className={styles.timelineGrid}>{Array.from({ length: 14 }, (_, index) => { const date = dayAt(start, index); const key = dateKey(date); return <TimelineDay key={key} date={date} ideas={timelineIdeas.filter(idea => staysOnDay(idea, key))} disabled={loading || busy} ready={!loading} onOpen={() => openDay(key)} />; })}</div>
       </>}</section>
       <div className={styles.toolbar}><span>{pageCount} {lifePage ? "tasks" : "ideas"}</span><div className={styles.toolbarTools}><label className={styles.search}><Search size={17} /><input aria-label="Search ideas" placeholder={lifePage ? "Find a task…" : "Find an idea…"} value={query} onChange={e => setQuery(e.target.value)} /></label><button type="button" className={styles.filterToggle} aria-pressed={hidePlanned} onClick={() => setHidePlanned(on => !on)}><EyeOff size={14} />Hide planned</button></div></div>
         <div className={styles.columns} data-focused={focused || undefined} aria-busy={loading || busy}>{pageCategories.map(({ id, name, caption, Icon }) => { const items = visible.filter(idea => idea.platform === id); const lifeColumn = isLifePlatform(id); return <section key={id} className={styles.column} data-platform={id}>
@@ -404,8 +461,9 @@ export default function SocialBoard() {
           </header>
           <div className={styles.cards}>{loading ? (focused ? <div className={styles.cardColumns}>{[0, 1, 2].map(col => <div key={col} className={styles.cardStack}>{[0, 1].map(n => <div key={n} className={styles.skeleton} />)}</div>)}</div> : [0, 1].map(n => <div key={n} className={styles.skeleton} />)) : <CategoryCards items={items} focused={Boolean(focused)} busy={busy} open={open} update={(idea, patch) => void update(idea, patch)} remove={idea => { void remove(idea).catch(error => setError((error as Error).message)); }} />}{!loading && !items.length && <div className={styles.empty}><Icon size={30} /><p>{query ? "No matching items" : lifeColumn ? "Room for your next task" : "Room for your next idea"}</p></div>}{!loading && <button className={styles.addCard} disabled={busy} onClick={() => setEditor({ idea: null, platform: id })}><Plus size={16} />{lifeColumn ? "Add a task" : "Add an idea"}</button>}</div>
         </section>; })}</div>
-      <DragOverlay dropAnimation={null}>{dragging && <div className={styles.dragPreview}>{ideas.find(idea => idea.id === dragging)?.title}</div>}</DragOverlay>
+      <DragOverlay dropAnimation={null} modifiers={dragging?.startsWith(tilePrefix) ? [centerCarry] : undefined}>{dragIdea && (dragging?.startsWith(tilePrefix) ? <div className={styles.tilePreview} data-platform={dragIdea.platform} style={carrySize ? { width: carrySize, height: carrySize } : undefined}>{dragIdea.title}</div> : <div className={styles.dragPreview}>{dragIdea.title}</div>)}</DragOverlay>
     </DndContext>
+    {survey && <WhatNowSurvey onClose={() => setSurvey(false)} onOpenIdea={id => { const idea = ideas.find(item => item.id === id); if (idea) open(idea); }} />}
     {editor && <IdeaEditor idea={editor.idea} platform={editor.platform} onClose={() => setEditor(null)} onDelete={async () => { if (editor.idea) await remove(editor.idea); }} onSaved={idea => { saved(idea); setEditor(null); }} onUpdated={idea => { saved(idea); setEditor(current => current ? { ...current, idea } : current); }} />}
   </section>;
 }
