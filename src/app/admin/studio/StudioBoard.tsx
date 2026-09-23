@@ -8,7 +8,7 @@ import { FaTiktok, FaXTwitter, FaRedditAlien } from "react-icons/fa6";
 import { isCompleted, isDayKey, isLifePlatform, isSocialPlatform, isVtubePlatform, type SocialIdea, type SocialIdeaInput } from "@/lib/socialIdeas";
 import { categoryDefaultEnergy } from "@/lib/whatNow";
 import WhatNowSurvey from "./WhatNowSurvey";
-import styles from "./social.module.css";
+import styles from "./studio.module.css";
 
 const socials = [
   { id: "tiktok", name: "TikTok", caption: "The next good take", Icon: FaTiktok },
@@ -337,7 +337,7 @@ function CategoryCards({ items, focused, busy, open, update, remove }: { items: 
   </SortableContext>;
 }
 
-export default function SocialBoard() {
+export default function StudioBoard() {
   const [ideas, setIdeas] = useState<SocialIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -441,14 +441,14 @@ export default function SocialBoard() {
   const dragIdea = dragging ? ideas.find(idea => idea.id === ideaIdFromDrag(dragging)) : undefined;
   function openDay(key: string) { if (!skipDayClick.current) setSelectedDay(key); }
   return <section className={styles.board}>
-    <header className={styles.header}><div><p className={styles.eyebrow}><span /> YOUR CREATIVE SPACE</p><h1>Social studio<span>.</span></h1><p className={styles.subtitle}>Make room for your next good idea.</p></div><div className={styles.headerActions}><button type="button" className={styles.secondary} onClick={() => setSurvey(true)}>What now?</button><button className={styles.primary} disabled={loading || busy} onClick={() => setEditor({ idea: null, platform: pageStart[boardPage] })}><Plus size={19} />{lifePage ? "New task" : "New idea"}</button></div></header>
+    <header className={styles.header}><div><p className={styles.eyebrow}><span /> YOUR EVERYDAY WORKSPACE</p><h1>Studio<span>.</span></h1><p className={styles.subtitle}>A little space to create, plan, and get things done.</p></div><div className={styles.headerActions}><button type="button" className={styles.secondary} onClick={() => setSurvey(true)}>What now?</button><button className={styles.primary} disabled={loading || busy} onClick={() => setEditor({ idea: null, platform: pageStart[boardPage] })}><Plus size={19} />{lifePage ? "New task" : "New idea"}</button></div></header>
     {error && <div className={styles.error} role="alert">{error}<button onClick={load}>Reload</button></div>}
     <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={event => { skipDayClick.current = true; const id = String(event.active.id); setDragging(id); if (id.startsWith(tilePrefix)) setCarrySize(dayCarrySize()); }} onDragCancel={() => { setDragging(null); window.setTimeout(() => { skipDayClick.current = false; }, 0); }} onDragEnd={dropped}>
-      <section className={styles.timeline} aria-label="Release timeline">{selectedDay ? <DayFocus date={dayAt(selectedDay, 0)} ideas={timelineIdeas.filter(idea => staysOnDay(idea, selectedDay))} disabled={loading || busy} ready={!loading} onBack={() => setSelectedDay(null)} onOpenIdea={open} /> : <>
-        <div className={styles.timelineHeading}><div><h2>Your release timeline</h2></div><div className={styles.timelineControls}><div className={styles.timelineFilters}>{categories.map(({ id, name }) => <button type="button" key={id} className={styles.filterToggle} data-platform={id} aria-pressed={visiblePlatforms[id]} onClick={() => setVisiblePlatforms(current => ({ ...current, [id]: !current[id] }))}>{name}</button>)}</div><div className={styles.timelineNav}><button className={styles.iconButton} aria-label="Previous two weeks" onClick={() => setStart(dateKey(dayAt(start, -14)))}><ChevronLeft size={18} /></button><button className={styles.secondary} onClick={() => setStart(dateKey(new Date()))}>Today</button><button className={styles.iconButton} aria-label="Next two weeks" onClick={() => setStart(dateKey(dayAt(start, 14)))}><ChevronRight size={18} /></button></div></div></div>
+      <section className={styles.timeline} aria-label="Planning timeline">{selectedDay ? <DayFocus date={dayAt(selectedDay, 0)} ideas={timelineIdeas.filter(idea => staysOnDay(idea, selectedDay))} disabled={loading || busy} ready={!loading} onBack={() => setSelectedDay(null)} onOpenIdea={open} /> : <>
+        <div className={styles.timelineHeading}><div><h2>Your timeline</h2></div><div className={styles.timelineControls}><div className={styles.timelineFilters}>{categories.map(({ id, name }) => <button type="button" key={id} className={styles.filterToggle} data-platform={id} aria-pressed={visiblePlatforms[id]} onClick={() => setVisiblePlatforms(current => ({ ...current, [id]: !current[id] }))}>{name}</button>)}</div><div className={styles.timelineNav}><button className={styles.iconButton} aria-label="Previous two weeks" onClick={() => setStart(dateKey(dayAt(start, -14)))}><ChevronLeft size={18} /></button><button className={styles.secondary} onClick={() => setStart(dateKey(new Date()))}>Today</button><button className={styles.iconButton} aria-label="Next two weeks" onClick={() => setStart(dateKey(dayAt(start, 14)))}><ChevronRight size={18} /></button></div></div></div>
         <div className={styles.timelineGrid}>{Array.from({ length: 14 }, (_, index) => { const date = dayAt(start, index); const key = dateKey(date); return <TimelineDay key={key} date={date} ideas={timelineIdeas.filter(idea => staysOnDay(idea, key))} disabled={loading || busy} ready={!loading} onOpen={() => openDay(key)} />; })}</div>
       </>}</section>
-      <div className={styles.toolbar}><span>{pageCount} {lifePage ? "tasks" : "ideas"}</span><div className={styles.toolbarTools}><label className={styles.search}><Search size={17} /><input aria-label="Search ideas" placeholder={lifePage ? "Find a task…" : "Find an idea…"} value={query} onChange={e => setQuery(e.target.value)} /></label><button type="button" className={styles.filterToggle} aria-pressed={hidePlanned} onClick={() => setHidePlanned(on => !on)}><EyeOff size={14} />Hide planned</button></div></div>
+      <div className={styles.toolbar}><span>{pageCount} {lifePage ? "tasks" : "ideas"}</span><div className={styles.toolbarTools}><label className={styles.search}><Search size={17} /><input aria-label="Search ideas and tasks" placeholder={lifePage ? "Find a task…" : "Find an idea…"} value={query} onChange={e => setQuery(e.target.value)} /></label><button type="button" className={styles.filterToggle} aria-pressed={hidePlanned} onClick={() => setHidePlanned(on => !on)}><EyeOff size={14} />Hide planned</button></div></div>
         <div className={styles.columns} data-focused={focused || undefined} aria-busy={loading || busy}>{pageCategories.map(({ id, name, caption, Icon }) => { const items = visible.filter(idea => idea.platform === id); const lifeColumn = isLifePlatform(id); return <section key={id} className={styles.column} data-platform={id}>
           <header className={styles.columnHeader}>
             <button type="button" className={styles.focusCategory} onClick={() => showFocus(focused === id ? null : id)} aria-pressed={focused === id} aria-label={focused === id ? `Show all categories` : `Show only ${name}`}>

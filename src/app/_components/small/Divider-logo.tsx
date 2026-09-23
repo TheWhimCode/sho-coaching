@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { SITE_LOGO } from "@/lib/coaching/coachingClipVideos";
 type Props = {
   className?: string;
   /** base color of the line + logo shape */
@@ -13,8 +14,8 @@ type Props = {
 export default function DividerWithLogo({
   className,
   color = "rgba(255,255,255,0.10)",
-  logoSrc = "/images/Logo_blue.png",
-  logoSize = 24,
+  logoSrc = SITE_LOGO,
+  logoSize = 30,
   vertical = false,
 }: Props) {
   const logoStyle: React.CSSProperties = {
