@@ -33,6 +33,12 @@ const TABS = [
     href: "/admin/skillcheck",
     match: (p: string) => p.startsWith("/admin/skillcheck"),
   },
+  {
+    id: "recipes",
+    label: "🍳 Recipes",
+    href: "/admin/recipes",
+    match: (p: string) => p.startsWith("/admin/recipes"),
+  },
 ] as const;
 
 function activeTabId(pathname: string) {
@@ -116,7 +122,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </div>
       </motion.div>
 
-      <div className={`pt-6 pb-28 md:pb-0 ${showSideNav ? (active === "social" ? "md:pl-60" : "md:pl-28") : "md:pl-10"}`}>{children}</div>
+      <div className={`pt-6 pb-28 md:pb-0 ${showSideNav ? (active === "social" || active === "recipes" ? "md:pl-60" : "md:pl-28") : "md:pl-10"}`}>{children}</div>
     </>
   );
 }
