@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const TABS = [
   { id: "studio", label: "✨ Studio", href: "/admin/studio", match: (p: string) => p === "/admin" || (p.startsWith("/admin/studio") || p.startsWith("/admin/social")) },
+  { id: "workout", label: "🏋️ Workout", href: "/admin/workout", match: (p: string) => p.startsWith("/admin/workout") },
+  { id: "health", label: "🥗 Health", href: "/admin/health", match: (p: string) => p.startsWith("/admin/health") },
   { id: "hub", label: "📊 Hub", href: "/admin/HUB", match: (p: string) => /^\/admin\/hub$/i.test(p) },
   {
     id: "recipes",
@@ -24,48 +25,42 @@ function activeTabId(pathname: string) {
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
   const active = activeTabId(pathname);
-  const [openPath, setOpenPath] = useState<string | null>(null);
-  const navOpen = openPath === pathname;
-  const showSideNav = navOpen;
+  const [hovering, setHovering] = useState(false);
+  useEffect(() => { setHovering(false); }, [pathname]);
 
   return (
     <>
-      <motion.div
-        initial={{ y: -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="hidden md:flex fixed z-50 left-0 top-1/2 -translate-y-1/2 flex-col items-stretch gap-3"
+      <div
+        className={`hidden md:block fixed z-50 left-0 top-20 bottom-0 ${hovering ? "w-56" : "w-7"}`}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
       >
-          <button
-            type="button"
-            aria-label={navOpen ? "Hide admin navigation" : "Show admin navigation"}
-            aria-expanded={navOpen}
-            onClick={() => setOpenPath(navOpen ? null : pathname)}
-            className="self-start ml-1 mb-0.5 flex h-6 w-6 items-center justify-center rounded-r-md bg-black/50 text-white/65 ring-1 ring-white/15 hover:text-white hover:bg-black/70"
-          >
-            {navOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-          </button>
-        {showSideNav && TABS.map((tab) => {
-          const isActive = active === tab.id;
-          return (
-            <Link
-              key={tab.id}
-              href={tab.href}
-              prefetch={false}
-              onClick={() => setOpenPath(null)}
-              aria-current={isActive ? "page" : undefined}
-              className={`flex items-center gap-2 px-8 py-4 text-xl font-semibold ring-2 transition rounded-r-xl
-                ${
-                  isActive
-                    ? "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white ring-white/20 shadow-[0_0_20px_rgba(120,0,255,0.5)]"
-                    : "bg-black/50 text-white/80 hover:text-white ring-white/15"
-                }`}
-            >
-              <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none">{tab.label.split(" ")[0]}</span>
-              <span>{tab.label.split(" ").slice(1).join(" ")}</span>
-            </Link>
-          );
-        })}
-      </motion.div>
+        <div className="absolute left-0 -translate-y-1/2" style={{ top: "calc(50vh - 5rem)" }} aria-hidden={!hovering}>
+          <div className={`flex flex-col items-stretch gap-3 transition-opacity duration-300 ${hovering ? "opacity-100" : "pointer-events-none opacity-0"}`}>
+            {TABS.map((tab) => {
+              const isActive = active === tab.id;
+              return (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  prefetch={false}
+                  tabIndex={hovering ? undefined : -1}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex items-center gap-2 px-8 py-4 text-xl font-semibold ring-2 transition rounded-r-xl
+                    ${
+                      isActive
+                        ? "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white ring-white/20 shadow-[0_0_20px_rgba(120,0,255,0.5)]"
+                        : "bg-black/50 text-white/80 hover:text-white ring-white/15"
+                    }`}
+                >
+                  <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none">{tab.label.split(" ")[0]}</span>
+                  <span>{tab.label.split(" ").slice(1).join(" ")}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       <motion.div
         initial={{ y: 12, opacity: 0 }}

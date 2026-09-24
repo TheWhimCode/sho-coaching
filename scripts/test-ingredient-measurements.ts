@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { ingredientGrams, stockAfterEdit, recipeNutritionFromIngredients } from '../src/lib/ingredient-measurements';
+
+assert.equal(ingredientGrams({ count: 5, groceryItem: { gramsPerCount: 3 } }), 15);
+assert.equal(ingredientGrams({ count: 0.5, groceryItem: { gramsPerCount: 250 } }), 125);
+assert.equal(ingredientGrams({ weightGrams: 70, count: 1, groceryItem: { gramsPerCount: 200 } }), 70);
+assert.equal(ingredientGrams({ count: 5 }), null);
+assert.equal(ingredientGrams({ count: 0 }), 0);
+const tub = { purchasedCount: 1, purchasedWeightGrams: 250, groceryItem: { gramsPerCount: 250 } };
+assert.deepEqual(stockAfterEdit({ purchasedCount: 1, purchasedWeightGrams: 250, groceryItem: { gramsPerCount: 50 } }, 'count', 5), { count: 5, grams: 250 });
+assert.deepEqual(stockAfterEdit(tub, 'grams', 125), { count: 0.5, grams: 125 });
+assert.deepEqual(stockAfterEdit(tub, 'count', 0.5), { count: 0.5, grams: 125 });
+assert.deepEqual(stockAfterEdit(tub, 'count', 0), { count: 0, grams: 0 });
+assert.throws(() => stockAfterEdit(tub, 'count', -1));
+assert.throws(() => stockAfterEdit(tub, 'count', NaN));
+const recipe = { servings: 2, ingredients: [{ optional: false, count: 5, groceryItem: { gramsPerCount: 3, nutritionPer100g: { calories: 100, proteinGrams: 10 } } }], nutrition: { basis: 'saved estimate', calories: 900, sodiumMg: 12 } };
+assert.equal(recipeNutritionFromIngredients(recipe).calories, 7.5);
+assert.equal(recipeNutritionFromIngredients(recipe).proteinGrams, 0.75);
+assert.equal(recipeNutritionFromIngredients(recipe).sodiumMg, 12);
+assert.equal(recipeNutritionFromIngredients(recipe).ironMg, null);
+assert.equal(recipeNutritionFromIngredients({ ...recipe, ingredients: [...recipe.ingredients, { optional: false, count: 1, groceryItem: { gramsPerCount: 3, nutritionPer100g: {} } }] }).calories, 900);
+assert.equal(recipeNutritionFromIngredients({ ...recipe, servings: 0 }).calories, 900);
+console.log('Ingredient/count conversion and nutrition tests passed.');

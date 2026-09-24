@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import { readMealDrafts, scaleNutrition, validServings, mealNutrition } from '../src/lib/meal-portions';
+
+assert.deepEqual(readMealDrafts({ 'day:lunch': 'pasta', 'day:dinner': '' }), { 'day:lunch': { recipeId: 'pasta', servings: 1 } });
+const meals = { 'day:lunch': { recipeId: 'pasta', servings: 0.5 }, 'day:dinner': { recipeId: 'hummus', servings: 2 } };
+assert.deepEqual(readMealDrafts(JSON.parse(JSON.stringify(meals))), meals);
+assert.deepEqual(readMealDrafts(null), {});
+assert.deepEqual(readMealDrafts([]), {});
+assert.equal(readMealDrafts({ lunch: { recipeId: 'pasta', servings: -2 } }).lunch.servings, 1);
+for (const invalid of [0, -1, Infinity, NaN, 101]) assert.equal(validServings(invalid), false);
+for (const valid of [0.5, 1, 1.5, 2]) assert.equal(validServings(valid), true);
+const nutrition = { calories: 655, proteinGrams: 17, vitaminDMcg: null, sodiumMg: 0 };
+assert.deepEqual(scaleNutrition(nutrition, 2), { calories: 1310, proteinGrams: 34, vitaminDMcg: null, sodiumMg: 0 });
+assert.equal(scaleNutrition(nutrition, 0.5).proteinGrams, 8.5);
+assert.equal(nutrition.calories, 655);
+console.log('Meal draft compatibility, serving validation, fractional scaling and missing nutrient tests passed.');
+assert.deepEqual(readMealDrafts({ lunch: { recipeId: 'pasta', servings: 2, addonRecipeId: 'spinach' } }), { lunch: { recipeId: 'pasta', servings: 2, addonRecipeId: 'spinach' } });
+assert.equal(mealNutrition({ calories: 500 }, 2, { calories: 50 }).calories, 1050);
+assert.equal(mealNutrition({ calories: 500 }, 3, { calories: 50 }).calories, 1550);
+assert.equal(mealNutrition({ calories: 500 }, 2, { calories: null }).calories, null);
+assert.equal(mealNutrition({ proteinGrams: null }, 2, { proteinGrams: 4 }).proteinGrams, null);
+console.log('Add-on draft persistence and non-scaling nutrition tests passed.');

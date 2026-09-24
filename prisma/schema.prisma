@@ -490,6 +490,241 @@ model WhatNowTask {
   @@schema("admin")
 }
 
+model Recipe {
+  id             String             @id @default(cuid())
+  slug           String             @unique
+  title          String
+  familyKey      String?
+  familyTitle    String?
+  variantLabel   String?
+  summary        String             @default("")
+  servings       Int?               @default(2)
+  prepMinutes    Int                @default(0)
+  cookMinutes    Int                @default(0)
+  tags           String[]           @default([])
+  notes          String             @default("")
+  referenceImage String             @default("")
+  calories       Int?
+  proteinGrams   Float?
+  carbsGrams     Float?
+  fatGrams       Float?
+  nutrition      RecipeNutrition?
+  ingredients    RecipeIngredient[]
+  steps          RecipeStep[]
+  mealPlans      MealPlan[]
+  cooks          RecipeCook[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([title])
+  @@index([familyKey])
+  @@schema("admin")
+}
+
+model RecipeNutrition {
+  id              String   @id @default(cuid())
+  recipeId        String   @unique
+  recipe          Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  calories        Float?
+  proteinGrams    Float?
+  carbsGrams      Float?
+  fatGrams        Float?
+  fibreGrams      Float?
+  saturatedFatGrams Float?
+  sugarGrams      Float?
+  sodiumMg        Float?
+  potassiumMg     Float?
+  calciumMg       Float?
+  magnesiumMg     Float?
+  ironMg          Float?
+  zincMg          Float?
+  vitaminDMcg     Float?
+  vitaminB12McG   Float?
+  folateMcg       Float?
+  iodineMcg       Float?
+  omega3AlAGrams  Float?
+  omega3EpaDhaMg  Float?
+  basis           String   @default("per serving")
+  updatedAt       DateTime @updatedAt
+
+  @@schema("admin")
+}
+
+model DailyNutritionTarget {
+  id              String   @id @default(cuid())
+  calories        Float?
+  proteinGrams    Float?
+  carbsGrams      Float?
+  fatGrams        Float?
+  fibreGrams      Float?
+  sodiumMg        Float?
+  potassiumMg     Float?
+  calciumMg       Float?
+  magnesiumMg     Float?
+  ironMg          Float?
+  zincMg          Float?
+  vitaminDMcg     Float?
+  vitaminB12McG   Float?
+  folateMcg       Float?
+  iodineMcg       Float?
+  omega3AlAGrams  Float?
+  omega3EpaDhaMg  Float?
+  trainingDay     Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+
+  @@unique([trainingDay])
+  @@schema("admin")
+}
+
+model RecipeIngredient {
+  id       String @id @default(cuid())
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  groceryItemId String?
+  groceryItem   GroceryItem? @relation(fields: [groceryItemId], references: [id], onDelete: SetNull)
+  quantity      Decimal?
+  weightGrams   Decimal? @db.Decimal(12, 3)
+  count         Decimal? @db.Decimal(12, 6)
+  // Optional recipe-specific override; count labels remain recipe display text.
+  gramsPerCount Decimal? @db.Decimal(12, 3)
+  amount   String @default("")
+  unit     String @default("")
+  name     String
+  note     String @default("")
+  optional Boolean @default(false)
+  sortOrder Int   @default(0)
+
+  @@index([recipeId, sortOrder])
+  @@index([groceryItemId])
+  @@schema("admin")
+}
+
+model RecipeStep {
+  id       String @id @default(cuid())
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  text     String
+  sortOrder Int   @default(0)
+
+  @@index([recipeId, sortOrder])
+  @@schema("admin")
+}
+
+model GroceryItem {
+  id          String             @id @default(cuid())
+  name        String
+  category    String             @default("")
+  gramsPerCount Decimal?         @db.Decimal(12, 3)
+  weightBasis String            @default("")
+  // Nutrient keys match RecipeNutrition; missing keys mean unknown, not zero.
+  nutritionPer100g Json?
+  nutritionSource String        @default("")
+  ingredients RecipeIngredient[]
+  lots        GroceryLot[]
+  shoppingItem ShoppingItem?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([name])
+  @@schema("admin")
+}
+
+model GroceryLot {
+  id              String                @id @default(cuid())
+  groceryItemId   String
+  groceryItem     GroceryItem           @relation(fields: [groceryItemId], references: [id], onDelete: Cascade)
+  purchasedAmount String
+  remainingAmount String
+  purchasedCount Decimal?             @db.Decimal(12, 6)
+  remainingCount Decimal?             @db.Decimal(12, 6)
+  purchasedWeightGrams Decimal?         @db.Decimal(12, 3)
+  remainingWeightGrams Decimal?         @db.Decimal(12, 3)
+  purchasedAt     DateTime              @default(now())
+  openedAt        DateTime?
+  usualShelfLifeDays Int?
+  expiresAt       DateTime?
+  reservations    GroceryReservation[]
+  transactions    GroceryTransaction[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([groceryItemId, expiresAt])
+  @@schema("admin")
+}
+
+model ShoppingItem {
+  id            String      @id @default(cuid())
+  groceryItemId String      @unique
+  groceryItem   GroceryItem @relation(fields: [groceryItemId], references: [id], onDelete: Cascade)
+  grams         Decimal     @db.Decimal(12, 3)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@schema("admin")
+}
+
+model MealPlan {
+  id           String                @id @default(cuid())
+  recipeId     String
+  recipe       Recipe                @relation(fields: [recipeId], references: [id], onDelete: Restrict)
+  plannedDate  String
+  mealSlot     String
+  servings     Int                   @default(1)
+  status       String                @default("planned")
+  cookedAt     DateTime?
+  reservations GroceryReservation[]
+  transactions GroceryTransaction[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@index([plannedDate, status])
+  @@unique([plannedDate, mealSlot])
+  @@schema("admin")
+}
+
+model GroceryReservation {
+  id         String     @id @default(cuid())
+  mealPlanId String
+  mealPlan   MealPlan   @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  groceryLotId String
+  groceryLot GroceryLot @relation(fields: [groceryLotId], references: [id], onDelete: Cascade)
+  amount     Decimal    @db.Decimal(12, 3)
+  createdAt  DateTime   @default(now())
+
+  @@unique([mealPlanId, groceryLotId])
+  @@index([groceryLotId])
+  @@schema("admin")
+}
+
+model GroceryTransaction {
+  id         String      @id @default(cuid())
+  groceryLotId String
+  groceryLot GroceryLot  @relation(fields: [groceryLotId], references: [id], onDelete: Cascade)
+  mealPlanId String?
+  mealPlan   MealPlan?   @relation(fields: [mealPlanId], references: [id], onDelete: SetNull)
+  amountDelta Decimal    @db.Decimal(12, 3)
+  reason     String
+  recipeCookId String?
+  recipeCook RecipeCook? @relation(fields: [recipeCookId], references: [id], onDelete: SetNull)
+  createdAt  DateTime    @default(now())
+
+  @@index([groceryLotId, createdAt])
+  @@index([mealPlanId])
+  @@schema("admin")
+}
+
+model RecipeCook {
+  // Client-generated request ID makes retries safe.
+  id String @id
+  recipeId String
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Restrict)
+  servings Float
+  createdAt DateTime @default(now())
+  transactions GroceryTransaction[]
+
+  @@schema("admin")
+}
+
 model AxomEvent {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
