@@ -142,6 +142,7 @@ function collisionDetection(args: Parameters<CollisionDetection>[0]) {
   const days = pointer.filter(hit => isDayKey(String(hit.id)));
   if (days.length) return days;
   if (pointer.length) return pointer;
+  if (args.pointerCoordinates && String(args.active.id).startsWith(tilePrefix)) return [];
   const closest = closestCenter(args);
   const closestDays = closest.filter(hit => isDayKey(String(hit.id)));
   return closestDays.length ? closestDays : closest;
@@ -417,12 +418,16 @@ export default function SocialBoard() {
     const overId = event.over ? String(event.over.id) : "";
     const activeId = String(event.active.id);
     const idea = ideas.find(item => item.id === ideaIdFromDrag(activeId));
-    if (!idea || !overId) return;
+    if (!idea) return;
     if (isDayKey(overId)) {
       if (idea.plannedDate !== overId) void update(idea, { plannedDate: overId });
       return;
     }
-    if (activeId.startsWith(tilePrefix) || overId === idea.id) return;
+    if (activeId.startsWith(tilePrefix)) {
+      void update(idea, { plannedDate: null });
+      return;
+    }
+    if (!overId || overId === idea.id) return;
     const previous = ideas;
     const next = moveInPlatform(ideas, idea.id, overId);
     if (next === previous) return;
