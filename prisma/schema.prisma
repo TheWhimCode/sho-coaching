@@ -670,7 +670,13 @@ model MealPlan {
   plannedDate  String
   mealSlot     String
   servings     Int                   @default(1)
+  addonRecipeId String?
+  // "planned" claims raw groceries; "cooked" is fully covered by portions in the fridge.
   status       String                @default("planned")
+  // How many of this slot's servings came from an already-cooked batch.
+  cookedServings Int                 @default(0)
+  recipeCookId String?
+  recipeCook   RecipeCook?           @relation(fields: [recipeCookId], references: [id], onDelete: SetNull)
   cookedAt     DateTime?
   reservations GroceryReservation[]
   transactions GroceryTransaction[]
@@ -678,6 +684,8 @@ model MealPlan {
   updatedAt    DateTime              @updatedAt
 
   @@index([plannedDate, status])
+  @@index([recipeId, plannedDate])
+  @@index([recipeCookId])
   @@unique([plannedDate, mealSlot])
   @@schema("admin")
 }
@@ -719,9 +727,13 @@ model RecipeCook {
   recipeId String
   recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Restrict)
   servings Float
+  // Portions still in the fridge, not yet assigned to a planned meal.
+  remainingServings Float @default(0)
   createdAt DateTime @default(now())
   transactions GroceryTransaction[]
+  mealPlans MealPlan[]
 
+  @@index([recipeId])
   @@schema("admin")
 }
 

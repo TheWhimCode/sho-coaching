@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Recipe, RecipeIngredient } from "./recipes";
-import { recipeCategories } from "./categories";
+import { recipeCategories, recipeCategoryGroups } from "./categories";
 import styles from "./recipes.module.css";
 
 function minutes(total: number) {
@@ -39,7 +39,15 @@ function familiesOf(recipes: Recipe[]) {
 type GroceryRow = { id: string; name: string; count: number | null; grams: number | null; inStock: boolean };
 type ShoppingRow = { id: string; name: string; grams: number };
 
-export default function RecipesBoard({ recipes, category, recipeId }: { recipes: Recipe[]; category: string | null; recipeId: string | null }) {
+// Servings you can cook from stock right now: the tightest ingredient decides.
+function servingsInStock(recipe: Recipe) {
+  const perBatch = recipe.servings ?? 1;
+  const needs = recipe.ingredients.filter(item => item.needGrams != null && item.needGrams > 0);
+  if (!needs.length) return 0;
+  return Math.min(100, ...needs.map(item => Math.floor(((item.haveGrams ?? 0) + 0.000001) / (item.needGrams! / perBatch))));
+}
+
+export default function RecipesBoard({ recipes, fridge, category, recipeId }: { recipes: Recipe[]; fridge: Record<string, number>; category: string | null; recipeId: string | null }) {
   const router = useRouter();
   const [groceries, setGroceries] = useState<GroceryRow[] | null>(null);
   const [shopping, setShopping] = useState<ShoppingRow[] | null>(null);
@@ -48,7 +56,26 @@ export default function RecipesBoard({ recipes, category, recipeId }: { recipes:
   const [savingGrocery, setSavingGrocery] = useState<string | null>(null);
   const [shopMessage, setShopMessage] = useState("");
   const [shoppingBusy, setShoppingBusy] = useState(false);
-  useEffect(() => { setShopMessage(""); }, [recipeId]);
+  const [cookServings, setCookServings] = useState<number | null>(null);
+  const [cooking, setCooking] = useState(false);
+  const [cookMessage, setCookMessage] = useState<{ text: string; error: boolean } | null>(null);
+  useEffect(() => { setShopMessage(""); setCookMessage(null); setCookServings(null); }, [recipeId]);
+
+  async function cook(recipe: Recipe, servings: number) {
+    setCookMessage(null);
+    setCooking(true);
+    try {
+      const response = await fetch("/api/admin/recipes/cook", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipeId: recipe.id, servings, requestId: crypto.randomUUID() }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Could not cook this recipe.");
+      const assigned = Number(result.assigned ?? 0);
+      const remaining = Number(result.remaining ?? 0);
+      const parts = [assigned > 0 ? `${assigned} went to planned meals` : null, remaining > 0 ? `${remaining} in the fridge` : null].filter(Boolean);
+      setCookMessage({ text: `Cooked ${servings} ${servings === 1 ? "serving" : "servings"}${parts.length ? ` · ${parts.join(" · ")}` : ""}. Ingredients were taken from your groceries.`, error: false });
+      router.refresh();
+    } catch (error) { setCookMessage({ text: error instanceof Error ? error.message : "Could not cook this recipe.", error: true }); }
+    finally { setCooking(false); }
+  }
 
   function go(nextCategory: string | null, nextRecipe: string | null) {
     const params = new URLSearchParams();
@@ -139,6 +166,9 @@ export default function RecipesBoard({ recipes, category, recipeId }: { recipes:
   const stockedGroceries = (groceries ?? []).filter(item => item.inStock).length;
   const shorts = selected?.ingredients.filter(isShort) ?? [];
   const picker = !selected && activeCategory ? familiesOf(categoryRecipes) : [];
+  const maxCook = selected ? servingsInStock(selected) : 0;
+  const servingsToCook = cookServings ?? Math.max(1, Math.min(selected?.servings ?? 1, maxCook || 1));
+  const inFridge = selected ? fridge[selected.id] ?? 0 : 0;
 
   return (
     <div className={styles.page}>
@@ -151,16 +181,23 @@ export default function RecipesBoard({ recipes, category, recipeId }: { recipes:
         <div className={styles.headerActions}><button className={styles.groceryButton} onClick={() => void openPantry()}>Groceries</button></div>
       </header>
 
-      {!selected && !activeCategory && <div className={styles.categories} aria-label="Recipe categories">
-        {recipeCategories.map(item => {
-          const count = recipes.filter(recipe => item.match(recipe)).length;
-          return <button key={item.id} type="button" onClick={() => go(item.id, null)}>
-            <strong>{item.title}</strong>
-            <span>{item.detail}</span>
-            <em>{count} {count === 1 ? "recipe" : "recipes"}</em>
-          </button>;
-        })}
-      </div>}
+      {!selected && !activeCategory && recipeCategoryGroups.map(group => {
+        const items = recipeCategories.filter(item => item.group === group.id);
+        if (!items.length) return null;
+        return <section key={group.id} className={styles.categoryGroup} aria-label={`${group.title} categories`}>
+          <h2>{group.title}</h2>
+          <div className={styles.categories}>
+            {items.map(item => {
+              const count = recipes.filter(recipe => item.match(recipe)).length;
+              return <button key={item.id} type="button" onClick={() => go(item.id, null)}>
+                <strong>{item.title}</strong>
+                <span>{item.detail}</span>
+                <em>{count} {count === 1 ? "recipe" : "recipes"}</em>
+              </button>;
+            })}
+          </div>
+        </section>;
+      })}
 
       {!selected && activeCategory && <div className={styles.categories} aria-label={`${activeCategory.title} recipes`}>
         {picker.map(family => {
@@ -202,7 +239,23 @@ export default function RecipesBoard({ recipes, category, recipeId }: { recipes:
             <div><dt>Prep</dt><dd>{minutes(selected.prepMinutes)}</dd></div>
             <div><dt>Cook</dt><dd>{minutes(selected.cookMinutes)}</dd></div>
             {selected.servings !== null && <div><dt>Serves</dt><dd>{selected.servings}</dd></div>}
+            {inFridge > 0 && <div><dt>Fridge</dt><dd>{inFridge} {inFridge === 1 ? "portion" : "portions"}</dd></div>}
           </dl>
+          <section className={styles.cookBlock} aria-label="Cook this recipe">
+            <div>
+              <strong>Cook</strong>
+              <span>{maxCook > 0 ? `Stock covers ${maxCook} ${maxCook === 1 ? "serving" : "servings"}. Ingredients are taken from your groceries; portions go to planned meals first, the rest to the fridge.` : "Not enough in stock to cook this right now."}</span>
+            </div>
+            <div className={styles.cookControls}>
+              <div className={styles.stepper} role="group" aria-label="Servings to cook">
+                <button type="button" aria-label="Fewer servings" disabled={cooking || servingsToCook <= 1} onClick={() => setCookServings(Math.max(1, servingsToCook - 1))}>−</button>
+                <output aria-live="polite">{servingsToCook}</output>
+                <button type="button" aria-label="More servings" disabled={cooking || servingsToCook >= maxCook} onClick={() => setCookServings(Math.min(maxCook, servingsToCook + 1))}>+</button>
+              </div>
+              <button type="button" className={styles.cookButton} disabled={cooking || maxCook < 1 || servingsToCook > maxCook} onClick={() => void cook(selected, servingsToCook)}>{cooking ? "Cooking…" : `Cook ${servingsToCook} ${servingsToCook === 1 ? "serving" : "servings"}`}</button>
+            </div>
+            {cookMessage && <p className={cookMessage.error ? styles.cookError : styles.shopMessage} role={cookMessage.error ? "alert" : "status"}>{cookMessage.text}</p>}
+          </section>
           <div className={styles.columns}>
             <section className={styles.block}>
               <h3>Ingredients</h3>

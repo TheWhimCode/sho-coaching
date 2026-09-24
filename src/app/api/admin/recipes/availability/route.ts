@@ -1,17 +1,11 @@
 import { prisma } from '@/lib/prisma';
-import { availableRecipeServings, availableWithAddon } from '@/lib/recipe-availability';
+import { isDateKey, localDateKey, recipeAvailability } from '@/lib/meal-plan';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const recipes = await prisma.recipe.findMany({ include: { ingredients: { include: { groceryItem: { include: { lots: true } } } } } });
-  const addons = recipes.filter(recipe => recipe.tags.includes('add-on'));
-  return Response.json({
-    recipes: Object.fromEntries(recipes.map(recipe => [recipe.id, availableRecipeServings(recipe)])),
-    withAddons: Object.fromEntries(recipes.filter(recipe => !recipe.tags.includes('add-on')).map(recipe => [recipe.id,
-      Object.fromEntries(addons.map(addon => [addon.id, availableWithAddon(recipe, addon)])),
-    ])),
-  }, {
-    headers: { 'Cache-Control': 'no-store' },
-  });
+// `from` is the planner's first day; planned meals from that day on still hold their stock.
+export async function GET(request: Request) {
+  const from = new URL(request.url).searchParams.get('from');
+  const availability = await recipeAvailability(prisma, isDateKey(from) ? from : localDateKey());
+  return Response.json(availability, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   }
   try {
     const result = await cookRecipe(input.recipeId, input.servings, input.requestId);
-    return Response.json({ id: result.id, servings: result.servings });
+    return Response.json({ id: result.id, servings: result.servings, remaining: result.remainingServings, assigned: result.servings - result.remainingServings });
   } catch (error) {
     if (error instanceof StockError) return Response.json({ error: error.message }, { status: 409 });
     return Response.json({ error: 'Could not save. Your stock has not been partially deducted. Please retry.' }, { status: 500 });

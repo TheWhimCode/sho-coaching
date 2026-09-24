@@ -9,7 +9,6 @@ const TABS = [
   { id: "studio", label: "✨ Studio", href: "/admin/studio", match: (p: string) => p === "/admin" || (p.startsWith("/admin/studio") || p.startsWith("/admin/social")) },
   { id: "workout", label: "🏋️ Workout", href: "/admin/workout", match: (p: string) => p.startsWith("/admin/workout") },
   { id: "health", label: "🥗 Health", href: "/admin/health", match: (p: string) => p.startsWith("/admin/health") },
-  { id: "hub", label: "📊 Hub", href: "/admin/HUB", match: (p: string) => /^\/admin\/hub$/i.test(p) },
   {
     id: "recipes",
     label: "🍳 Recipes",

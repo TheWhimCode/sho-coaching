@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { ingredientGrams, numberOrNull } from './ingredient-measurements';
+import { assignCookToPlans } from './meal-plan';
 
 export class StockError extends Error {}
 
@@ -34,7 +35,7 @@ export async function consumeRecipe(tx: Prisma.TransactionClient, recipeId: stri
           const previous = requirements.get(ingredient.groceryItemId)?.grams ?? 0;
           requirements.set(ingredient.groceryItemId, { grams: previous + grams * servings / (recipe.servings ?? 1), name: ingredient.name });
         }
-        const cooked = await tx.recipeCook.create({ data: { id: requestId, recipeId, servings } });
+        const cooked = await tx.recipeCook.create({ data: { id: requestId, recipeId, servings, remainingServings: servings } });
         for (const [groceryItemId, requirement] of requirements) {
           let needed = requirement.grams;
           const lots = await tx.groceryLot.findMany({ where: { groceryItemId }, include: { groceryItem: true }, orderBy: [{ expiresAt: { sort: 'asc', nulls: 'last' } }, { purchasedAt: 'asc' }] });
@@ -58,5 +59,7 @@ export async function consumeRecipe(tx: Prisma.TransactionClient, recipeId: stri
           }
           if (needed >= 0.0005) throw new StockError(`Not enough ${requirement.name} in stock (missing approximately ${Math.ceil(needed)} g).`);
         }
-        return cooked;
+        // Planned meals waiting on this recipe take their portions now; the rest sits in the fridge.
+        const { remaining } = await assignCookToPlans(tx, cooked);
+        return { ...cooked, remainingServings: remaining };
 }

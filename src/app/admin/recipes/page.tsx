@@ -8,7 +8,12 @@ export const dynamic = "force-dynamic";
 
 export default async function RecipesPage({ searchParams }: { searchParams: Promise<{ category?: string; recipe?: string }> }) {
   const params = await searchParams;
-  const stored = await prisma.recipe.findMany({ orderBy: { createdAt: "asc" }, include: { ingredients: { orderBy: { sortOrder: "asc" }, include: { groceryItem: { include: { lots: true } } } }, steps: { orderBy: { sortOrder: "asc" } }, nutrition: true } });
+  const [stored, cooks] = await Promise.all([
+    prisma.recipe.findMany({ orderBy: { createdAt: "asc" }, include: { ingredients: { orderBy: { sortOrder: "asc" }, include: { groceryItem: { include: { lots: true } } } }, steps: { orderBy: { sortOrder: "asc" } }, nutrition: true } }),
+    prisma.recipeCook.groupBy({ by: ["recipeId"], _sum: { remainingServings: true }, where: { remainingServings: { gt: 0 } } }),
+  ]);
+  // Free cooked portions per recipe: not yet assigned to a planned meal.
+  const fridge = Object.fromEntries(cooks.map(cook => [cook.recipeId, Math.floor((cook._sum.remainingServings ?? 0) + 0.000001)]));
   const rows = stored.map(recipe => ({ ...recipe, nutrition: recipeNutritionFromIngredients(recipe) }));
   const recipes: Recipe[] = rows.map((recipe) => ({
     id: recipe.id,
@@ -41,5 +46,5 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
       ].map(([label, value, unit]) => ({ label: label as string, value: value as number | null, unit: unit as string })).filter((item) => item.value !== null && item.value >= (item.unit === "g" ? 0.1 : 1)),
     },
   }));
-  return <RecipesBoard recipes={recipes} category={params.category ?? null} recipeId={params.recipe ?? null} />;
+  return <RecipesBoard recipes={recipes} fridge={fridge} category={params.category ?? null} recipeId={params.recipe ?? null} />;
 }
