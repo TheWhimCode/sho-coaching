@@ -5,7 +5,7 @@ import { ChevronLeft, RefreshCw } from "lucide-react";
 import type { WhatNowCandidate } from "@/lib/whatNow";
 import { engineForChoice, guideProgress, type MoodEngine } from "@/lib/whatNowEngines";
 import { mergeFilters, pickManyFromFilter, type SurveyChoice, type SurveyTree, type WhatNowFilter } from "@/lib/whatNowSurvey";
-import styles from "./social.module.css";
+import styles from "./studio.module.css";
 
 type Frame = {
   engineId: string;

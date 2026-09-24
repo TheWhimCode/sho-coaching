@@ -47,7 +47,9 @@ const showFooter = !(isHome || isCoachingDetail || isCheckout || isQuickbook);
   const showNavSpacer = showNavBar && !logoOnly;
 
   return (
-    <>
+    // OverlayScrollbars reparents scroll-root's children. Keep one stable
+    // element around all React-managed siblings so route updates stay inside it.
+    <div>
       <ScrollbarInit />
 
       {!isAdmin && <MobileNav />}
@@ -71,6 +73,6 @@ const showFooter = !(isHome || isCoachingDetail || isCheckout || isQuickbook);
           <Footer />
         </div>
       </div>
-    </>
+    </div>
   );
 }

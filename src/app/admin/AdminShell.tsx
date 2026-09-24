@@ -2,37 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const TABS = [
-  { id: "social", label: "🎬 Social", href: "/admin/social", match: (p: string) => p === "/admin" || p.startsWith("/admin/social") },
+  { id: "studio", label: "✨ Studio", href: "/admin/studio", match: (p: string) => p === "/admin" || (p.startsWith("/admin/studio") || p.startsWith("/admin/social")) },
   { id: "hub", label: "📊 Hub", href: "/admin/HUB", match: (p: string) => /^\/admin\/hub$/i.test(p) },
-  {
-    id: "slots",
-    label: "🕐 Availability",
-    href: "/admin/availability",
-    match: (p: string) => p.startsWith("/admin/availability"),
-  },
-  {
-    id: "sessions",
-    label: "📅 Sessions",
-    href: "/admin/sessions",
-    match: (p: string) => p.startsWith("/admin/sessions"),
-  },
-  {
-    id: "students",
-    label: "🎓 Students",
-    href: "/admin/students",
-    match: (p: string) => p.startsWith("/admin/students"),
-  },
-  {
-    id: "skillcheck",
-    label: "⚡ Skillcheck",
-    href: "/admin/skillcheck",
-    match: (p: string) => p.startsWith("/admin/skillcheck"),
-  },
   {
     id: "recipes",
     label: "🍳 Recipes",
@@ -42,16 +18,15 @@ const TABS = [
 ] as const;
 
 function activeTabId(pathname: string) {
-  return TABS.find((tab) => tab.match(pathname))?.id ?? "social";
+  return TABS.find((tab) => tab.match(pathname))?.id;
 }
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
   const active = activeTabId(pathname);
-  const hideNavByDefault = active === "social";
-  const [navOpen, setNavOpen] = useState(!hideNavByDefault);
-  const showSideNav = !hideNavByDefault || navOpen;
-  useEffect(() => { setNavOpen(!hideNavByDefault); }, [hideNavByDefault]);
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const navOpen = openPath === pathname;
+  const showSideNav = navOpen;
 
   return (
     <>
@@ -60,17 +35,15 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         animate={{ y: 0, opacity: 1 }}
         className="hidden md:flex fixed z-50 left-0 top-1/2 -translate-y-1/2 flex-col items-stretch gap-3"
       >
-        {hideNavByDefault && (
           <button
             type="button"
             aria-label={navOpen ? "Hide admin navigation" : "Show admin navigation"}
             aria-expanded={navOpen}
-            onClick={() => setNavOpen(open => !open)}
+            onClick={() => setOpenPath(navOpen ? null : pathname)}
             className="self-start ml-1 mb-0.5 flex h-6 w-6 items-center justify-center rounded-r-md bg-black/50 text-white/65 ring-1 ring-white/15 hover:text-white hover:bg-black/70"
           >
             {navOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
           </button>
-        )}
         {showSideNav && TABS.map((tab) => {
           const isActive = active === tab.id;
           return (
@@ -78,6 +51,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               key={tab.id}
               href={tab.href}
               prefetch={false}
+              onClick={() => setOpenPath(null)}
               aria-current={isActive ? "page" : undefined}
               className={`flex items-center gap-2 px-8 py-4 text-xl font-semibold ring-2 transition rounded-r-xl
                 ${
@@ -122,7 +96,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </div>
       </motion.div>
 
-      <div className={`pt-6 pb-28 md:pb-0 ${showSideNav ? (active === "social" || active === "recipes" ? "md:pl-60" : "md:pl-28") : "md:pl-10"}`}>{children}</div>
+      <div className="pt-6 pb-28 md:pb-0 md:pl-10">{children}</div>
     </>
   );
 }

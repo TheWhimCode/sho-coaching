@@ -134,8 +134,8 @@ export default function NavBar({
         <Image
           src={SITE_LOGO}
           alt="Mino logo"
-          width={38}
-          height={38}
+          width={46}
+          height={46}
           priority
           unoptimized
           className="rounded-md"

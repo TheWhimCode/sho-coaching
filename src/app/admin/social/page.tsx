@@ -1,5 +1,5 @@
-import SocialBoard from "./SocialBoard";
+import { redirect } from "next/navigation";
 
 export default function SocialPage() {
-  return <SocialBoard />;
+  redirect("/admin/studio");
 }
