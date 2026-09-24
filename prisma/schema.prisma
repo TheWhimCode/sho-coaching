@@ -481,6 +481,7 @@ model WhatNowTask {
   category     String
   subcategory  String   @default("")
   steps        Json     @default("[]")
+  private      Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
