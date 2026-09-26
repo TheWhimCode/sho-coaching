@@ -1,5 +1,5 @@
 INSERT INTO "admin"."Recipe" ("id", "slug", "title", "summary", "servings", "prepMinutes", "cookMinutes", "tags", "notes", "referenceImage", "createdAt", "updatedAt") VALUES
-('recipe-hummus-snack', 'hummus-snack', 'Hummus snack plate', 'A quick hummus, cucumber, and tortilla-chip snack plate.', 1, 5, 0, ARRAY['snack', 'quick', 'vegetarian'], '', '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+('recipe-hummus-snack', 'hummus-snack', 'Hummus snack plate', 'A quick hummus, cucumber, and tortilla-chip snack plate.', 1, 5, 0, ARRAY['snack', 'quick'], '', '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO "admin"."RecipeIngredient" ("id", "recipeId", "groceryItemId", "amount", "unit", "name", "note", "optional", "sortOrder") VALUES
 ('hummus-snack-hummus', 'recipe-hummus-snack', 'grocery-hummus', 'half a tub', '', 'hummus', '', false, 0),

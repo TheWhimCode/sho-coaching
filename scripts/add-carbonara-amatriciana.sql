@@ -6,10 +6,10 @@ WITH added AS (
   VALUES
     ('recipe-carbonara', 'carbonara', 'Carbonara',
      'Spaghetti with egg yolks, pecorino, guanciale, and pepper.',
-     2, ARRAY['dinner', 'pasta'], 'Preparation and cooking times have not been specified.', CURRENT_TIMESTAMP),
+     2, ARRAY['pasta'], 'Preparation and cooking times have not been specified.', CURRENT_TIMESTAMP),
     ('recipe-amatriciana', 'amatriciana', 'Amatriciana',
      'Guanciale, puréed tomato, chili pepper, white wine, and pecorino.',
-     2, ARRAY['dinner', 'pasta'], 'Ingredients as supplied; pasta quantity and preparation and cooking times have not been specified.', CURRENT_TIMESTAMP)
+     2, ARRAY['pasta'], 'Ingredients as supplied; pasta quantity and preparation and cooking times have not been specified.', CURRENT_TIMESTAMP)
   ON CONFLICT ("slug") DO NOTHING
   RETURNING "id"
 )
@@ -18,7 +18,7 @@ INSERT INTO "admin"."RecipeIngredient"
 SELECT ingredient.id, ingredient.recipe_id, ingredient.amount, ingredient.unit,
        ingredient.name, ingredient.quantity, ingredient.sort_order
 FROM (VALUES
-  ('carbonara-spaghetti', 'recipe-carbonara', '200', 'g', 'spaghetti', 200::DECIMAL, 0),
+  ('carbonara-spaghetti', 'recipe-carbonara', '150', 'g', 'pasta', 150::DECIMAL, 0),
   ('carbonara-yolks', 'recipe-carbonara', '4', '', 'egg yolks', 4::DECIMAL, 1),
   ('carbonara-pecorino', 'recipe-carbonara', '100', 'g', 'pecorino', 100::DECIMAL, 2),
   ('carbonara-guanciale', 'recipe-carbonara', '80', 'g', 'guanciale', 80::DECIMAL, 3),

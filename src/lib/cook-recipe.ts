@@ -29,7 +29,7 @@ export async function consumeRecipe(tx: Prisma.TransactionClient, recipeId: stri
         const requirements = new Map<string, { grams: number; name: string }>();
         for (const ingredient of recipe.ingredients) {
           // Optional garnish and unmeasured pantry essentials do not block cooking.
-          if (ingredient.optional || (!ingredient.amount.trim() && ingredient.count === null && ingredient.weightGrams === null)) continue;
+          if (ingredient.optional || ingredient.pantryStaple || ingredient.groceryItem?.pantryStaple || (!ingredient.amount.trim() && ingredient.count === null && ingredient.weightGrams === null)) continue;
           const grams = ingredientGrams(ingredient);
           if (grams === null || !ingredient.groceryItemId) throw new StockError(`A gram equivalent is missing for ${ingredient.name}.`);
           const previous = requirements.get(ingredient.groceryItemId)?.grams ?? 0;

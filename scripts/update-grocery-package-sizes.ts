@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const sizes = [['spaghetti', 500], ['pasta', 500], ['almond milk', 1000]] as const;
+const sizes = [['pasta', 500], ['almond milk', 1000]] as const;
 
 async function main() {
   await prisma.$transaction(async tx => {
@@ -49,7 +49,7 @@ async function main() {
     const product = await prisma.groceryItem.findUniqueOrThrow({ where: { name } });
     assert.equal(Number(product.gramsPerCount), grams);
   }
-  console.log('Verified: banana references consolidated; spaghetti 500 g, pasta 500 g, almond milk 1000 g per count.');
+  console.log('Verified: banana references consolidated; pasta 500 g, almond milk 1000 g per count.');
 }
 
 main().catch(error => { console.error(error.message); process.exitCode = 1; }).finally(() => prisma.$disconnect());

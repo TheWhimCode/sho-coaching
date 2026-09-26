@@ -502,6 +502,7 @@ model Recipe {
   prepMinutes    Int                @default(0)
   cookMinutes    Int                @default(0)
   tags           String[]           @default([])
+  methodText     String             @default("")
   notes          String             @default("")
   referenceImage String             @default("")
   calories       Int?
@@ -592,6 +593,8 @@ model RecipeIngredient {
   name     String
   note     String @default("")
   optional Boolean @default(false)
+  // Always-available cooking items (for example oil, salt, and spices) never block stock.
+  pantryStaple Boolean @default(false)
   sortOrder Int   @default(0)
 
   @@index([recipeId, sortOrder])
@@ -615,10 +618,15 @@ model GroceryItem {
   name        String
   category    String             @default("")
   gramsPerCount Decimal?         @db.Decimal(12, 3)
+  unitsPerPurchase Decimal?      @db.Decimal(12, 3)
   weightBasis String            @default("")
   // Nutrient keys match RecipeNutrition; missing keys mean unknown, not zero.
   nutritionPer100g Json?
   nutritionSource String        @default("")
+  // Keep nutrient definitions for pantry staples without tracking their stock.
+  pantryStaple Boolean          @default(false)
+  // Spices are intentionally excluded from recipe nutrition estimates.
+  excludeFromNutrition Boolean  @default(false)
   ingredients RecipeIngredient[]
   lots        GroceryLot[]
   shoppingItem ShoppingItem?

@@ -10,6 +10,7 @@ function lotInStock(row: { remainingCount: Parameters<typeof numberOrNull>[0]; r
 
 export async function GET() {
   const items = await prisma.groceryItem.findMany({
+    where: { pantryStaple: false },
     include: { lots: true }, orderBy: { name: 'asc' },
   });
   return Response.json(items.flatMap(item => item.lots.length ? item.lots.map(row => ({

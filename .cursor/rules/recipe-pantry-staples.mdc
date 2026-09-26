@@ -1,0 +1,18 @@
+---
+description: Apply the project’s pantry-staple and recipe-measurement conventions when creating or editing recipes.
+alwaysApply: true
+---
+
+# Recipe pantry-staple convention
+
+Apply these rules whenever adding or editing recipes and their grocery links.
+
+- Dry spices and pepper are `pantryStaple: true` recipe ingredients. Keep them visible with practical measures from the source recipe (`tsp` or `tbsp`), but do not link them to a `GroceryItem`, add them to the shopping list, deduct stock, or include them in nutrition totals.
+- Cooking oils and salt are `pantryStaple: true` but remain linked to their `GroceryItem`. Do not require or deduct pantry stock. Keep their underlying gram weights for nutrition; display a practical measure such as tablespoons or teaspoons in the recipe.
+- Salt means Bad Reichenhaller AlpenJodSalz. It is always measured for this personal recipe collection and included in sodium and iodine totals. Store its exact weight in grams; use a teaspoon display only when its grams-per-teaspoon conversion is known. If a source says “to taste” and no personal default is configured, request a fixed amount rather than guessing.
+- For non-staple ingredients, use linked groceries and gram weights so stock and nutrition are calculated. Reuse an existing grocery definition instead of creating duplicates.
+- Prefer the source recipe’s practical measures for display. Use grams only as the underlying calculation weight when the ingredient is tracked for stock or nutrition.
+- Prefer everyday count measures in the recipe when a grocery has a known conversion: for example, show `6 cloves garlic` while retaining 18 g, and show `1 yellow onion` while retaining 150 g. Store the matching `count` on the recipe ingredient and `gramsPerCount` on the grocery.
+- For whole packaged ingredients such as cans, use the actual package size as the grocery conversion and recipe amount. For example, show `1 can crushed tomatoes` with 400 g underneath, rather than a converted 397 g amount that leaves unusable stock. Use grams only when a recipe intentionally uses part of a package.
+
+Example: `2 tsp paprika` is an unlinked pantry-staple ingredient; `4 tbsp olive oil` is a linked pantry-staple ingredient with a 60 g underlying weight.

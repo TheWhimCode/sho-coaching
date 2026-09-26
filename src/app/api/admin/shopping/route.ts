@@ -7,8 +7,17 @@ function listed(row: { id: string; grams: { toString(): string }; groceryItem: {
   return { id: row.id, name: row.groceryItem.name, grams: Number(row.grams) };
 }
 
+function shoppingPackGrams(groceryItem: {
+  gramsPerCount: Parameters<typeof numberOrNull>[0];
+  unitsPerPurchase: Parameters<typeof numberOrNull>[0];
+}) {
+  const gramsPerUnit = numberOrNull(groceryItem.gramsPerCount);
+  const unitsPerPurchase = numberOrNull(groceryItem.unitsPerPurchase) ?? 1;
+  return gramsPerUnit == null ? null : gramsPerUnit * unitsPerPurchase;
+}
+
 export async function GET() {
-  const rows = await prisma.shoppingItem.findMany({ include: { groceryItem: true }, orderBy: { groceryItem: { name: 'asc' } } });
+  const rows = await prisma.shoppingItem.findMany({ where: { groceryItem: { pantryStaple: false } }, include: { groceryItem: true }, orderBy: { groceryItem: { name: 'asc' } } });
   return Response.json(rows.map(listed));
 }
 
@@ -35,13 +44,13 @@ async function addRecipe(recipeId: string) {
   if (!recipe) return Response.json({ error: 'Recipe not found.' }, { status: 404 });
   let added = 0;
   for (const ingredient of recipe.ingredients) {
-    if (ingredient.optional || (!ingredient.amount.trim() && ingredient.count == null && ingredient.weightGrams == null)) continue;
+    if (ingredient.optional || ingredient.pantryStaple || ingredient.groceryItem?.pantryStaple || (!ingredient.amount.trim() && ingredient.count == null && ingredient.weightGrams == null)) continue;
     const need = ingredientGrams(ingredient);
     if (need == null || need <= 0 || !ingredient.groceryItemId || !ingredient.groceryItem) continue;
     const have = stockedGrams(ingredient.groceryItem.lots, ingredient.groceryItem.gramsPerCount);
     const existing = await prisma.shoppingItem.findUnique({ where: { groceryItemId: ingredient.groceryItemId } });
     const listedGrams = existing ? Number(existing.grams) : 0;
-    const grams = nextShoppingGrams(have, listedGrams, need, numberOrNull(ingredient.groceryItem.gramsPerCount));
+    const grams = nextShoppingGrams(have, listedGrams, need, shoppingPackGrams(ingredient.groceryItem));
     if (grams <= listedGrams + 0.000001) continue;
     await prisma.shoppingItem.upsert({
       where: { groceryItemId: ingredient.groceryItemId },
@@ -54,7 +63,7 @@ async function addRecipe(recipeId: string) {
 }
 
 async function purchase() {
-  const rows = await prisma.shoppingItem.findMany({ include: { groceryItem: true } });
+  const rows = await prisma.shoppingItem.findMany({ where: { groceryItem: { pantryStaple: false } }, include: { groceryItem: true } });
   await prisma.$transaction(async tx => {
     for (const row of rows) {
       const added = Number(row.grams);

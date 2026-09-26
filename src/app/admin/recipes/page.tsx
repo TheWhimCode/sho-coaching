@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function RecipesPage({ searchParams }: { searchParams: Promise<{ category?: string; recipe?: string }> }) {
   const params = await searchParams;
   const [stored, cooks] = await Promise.all([
-    prisma.recipe.findMany({ orderBy: { createdAt: "asc" }, include: { ingredients: { orderBy: { sortOrder: "asc" }, include: { groceryItem: { include: { lots: true } } } }, steps: { orderBy: { sortOrder: "asc" } }, nutrition: true } }),
+    prisma.recipe.findMany({ orderBy: { createdAt: "asc" }, include: { ingredients: { orderBy: { sortOrder: "asc" }, include: { groceryItem: { include: { lots: true } } } }, steps: { orderBy: { sortOrder: "asc" } } } }),
     prisma.recipeCook.groupBy({ by: ["recipeId"], _sum: { remainingServings: true }, where: { remainingServings: { gt: 0 } } }),
   ]);
   // Free cooked portions per recipe: not yet assigned to a planned meal.
@@ -26,12 +26,14 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
     prepMinutes: recipe.prepMinutes,
     cookMinutes: recipe.cookMinutes,
     tags: recipe.tags,
-    calories: recipe.calories,
+    calories: recipe.nutrition.calories,
+    methodText: recipe.methodText,
     notes: recipe.notes,
     ingredients: recipe.ingredients.map((ingredient) => {
       const unmeasured = !ingredient.amount.trim() && ingredient.count == null && ingredient.weightGrams == null;
-      const needGrams = ingredient.optional || unmeasured ? null : ingredientGrams(ingredient);
-      const haveGrams = ingredient.groceryItem ? stockedGrams(ingredient.groceryItem.lots, ingredient.groceryItem.gramsPerCount) : null;
+      // Pantry staples are displayed for cooking but deliberately have no stock status.
+      const needGrams = ingredient.optional || ingredient.pantryStaple || ingredient.groceryItem?.pantryStaple || unmeasured ? null : ingredientGrams(ingredient);
+      const haveGrams = ingredient.pantryStaple || ingredient.groceryItem?.pantryStaple || !ingredient.groceryItem ? null : stockedGrams(ingredient.groceryItem.lots, ingredient.groceryItem.gramsPerCount);
       return {
         id: ingredient.id, amount: ingredient.amount, unit: ingredient.unit, name: ingredient.name, note: ingredient.note, optional: ingredient.optional,
         groceryItemId: ingredient.groceryItemId,
@@ -42,7 +44,7 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
     nutrition: {
       basis: recipe.nutrition?.basis ?? "estimated per serving; excludes optional garnish",
       values: [
-        ["Calories", recipe.nutrition?.calories ?? recipe.calories, "kcal"], ["Protein", recipe.nutrition?.proteinGrams ?? recipe.proteinGrams, "g"], ["Carbs", recipe.nutrition?.carbsGrams ?? recipe.carbsGrams, "g"], ["Fat", recipe.nutrition?.fatGrams ?? recipe.fatGrams, "g"], ["Fibre", recipe.nutrition?.fibreGrams ?? null, "g"], ["Saturated fat", recipe.nutrition?.saturatedFatGrams ?? null, "g"], ["Sugar", recipe.nutrition?.sugarGrams ?? null, "g"], ["Sodium", recipe.nutrition?.sodiumMg ?? null, "mg"], ["Potassium", recipe.nutrition?.potassiumMg ?? null, "mg"], ["Calcium", recipe.nutrition?.calciumMg ?? null, "mg"], ["Magnesium", recipe.nutrition?.magnesiumMg ?? null, "mg"], ["Iron", recipe.nutrition?.ironMg ?? null, "mg"], ["Zinc", recipe.nutrition?.zincMg ?? null, "mg"], ["Vitamin D", recipe.nutrition?.vitaminDMcg ?? null, "mcg"], ["Vitamin B12", recipe.nutrition?.vitaminB12McG ?? null, "mcg"], ["Folate", recipe.nutrition?.folateMcg ?? null, "mcg"], ["Iodine", recipe.nutrition?.iodineMcg ?? null, "mcg"], ["Omega-3 ALA", recipe.nutrition?.omega3AlAGrams ?? null, "g"], ["Omega-3 EPA/DHA", recipe.nutrition?.omega3EpaDhaMg ?? null, "mg"],
+        ["Calories", recipe.nutrition.calories, "kcal"], ["Protein", recipe.nutrition.proteinGrams, "g"], ["Carbs", recipe.nutrition.carbsGrams, "g"], ["Fat", recipe.nutrition.fatGrams, "g"], ["Fibre", recipe.nutrition?.fibreGrams ?? null, "g"], ["Saturated fat", recipe.nutrition?.saturatedFatGrams ?? null, "g"], ["Sugar", recipe.nutrition?.sugarGrams ?? null, "g"], ["Sodium", recipe.nutrition?.sodiumMg ?? null, "mg"], ["Potassium", recipe.nutrition?.potassiumMg ?? null, "mg"], ["Calcium", recipe.nutrition?.calciumMg ?? null, "mg"], ["Magnesium", recipe.nutrition?.magnesiumMg ?? null, "mg"], ["Iron", recipe.nutrition?.ironMg ?? null, "mg"], ["Zinc", recipe.nutrition?.zincMg ?? null, "mg"], ["Vitamin D", recipe.nutrition?.vitaminDMcg ?? null, "mcg"], ["Vitamin B12", recipe.nutrition?.vitaminB12McG ?? null, "mcg"], ["Folate", recipe.nutrition?.folateMcg ?? null, "mcg"], ["Iodine", recipe.nutrition?.iodineMcg ?? null, "mcg"], ["Omega-3 ALA", recipe.nutrition?.omega3AlAGrams ?? null, "g"], ["Omega-3 EPA/DHA", recipe.nutrition?.omega3EpaDhaMg ?? null, "mg"],
       ].map(([label, value, unit]) => ({ label: label as string, value: value as number | null, unit: unit as string })).filter((item) => item.value !== null && item.value >= (item.unit === "g" ? 0.1 : 1)),
     },
   }));

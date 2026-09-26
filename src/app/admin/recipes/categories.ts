@@ -22,6 +22,5 @@ export const recipeCategories: RecipeCategory[] = [
   { id: 'quick', group: 'quick', title: 'Low energy', detail: 'Short to cook', match: recipe => recipe.tags.includes('quick') },
   { id: 'snack', group: 'quick', title: 'Snacks', detail: 'Small plates', match: recipe => recipe.tags.includes('snack') },
   { id: 'low-calorie', group: 'other', title: 'Low calorie', detail: 'Under 600 kcal', match: recipe => recipe.calories != null && recipe.calories < 600 },
-  { id: 'meal-prep', group: 'other', title: 'Meal prep', detail: 'Cook once, eat all week', match: recipe => recipe.tags.includes('meal-prep') },
   { id: 'add-on', group: 'other', title: 'Add-ons', detail: 'Added once per meal', match: recipe => recipe.tags.includes('add-on') },
 ];

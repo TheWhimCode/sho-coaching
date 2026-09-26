@@ -5,7 +5,7 @@ INSERT INTO "admin"."Recipe" (
 ) VALUES (
   'recipe-small-smoothie', 'small-smoothie', 'Small smoothie', 'smoothie', 'Smoothie', 'Small',
   'A smaller Greek-yogurt fruit smoothie with pecans and cacao nibs.',
-  NULL, 5, 0, ARRAY['breakfast', 'smoothie', 'vegetarian'],
+  NULL, 5, 0, ARRAY['breakfast', 'smoothie'],
   'Nutrition assumes plain 2% Greek yogurt and unsweetened almond milk.',
   '', 544, 37.4, 58, 21.2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 )

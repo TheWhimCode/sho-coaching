@@ -2,12 +2,12 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { StockError } from './cook-recipe';
 import { availableRecipeServings, availableWithAddon } from './recipe-availability';
+import { mealSlots, type MealSlot } from './meal-slots';
+export { mealSlots, type MealSlot } from './meal-slots';
 
 type Db = Prisma.TransactionClient;
 
-export const mealSlots = ['lunch', 'dinner'] as const;
-export type MealSlot = (typeof mealSlots)[number];
-const slotOrder: Record<string, number> = { lunch: 0, dinner: 1 };
+const slotOrder: Record<string, number> = Object.fromEntries(mealSlots.map((slot, index) => [slot, index]));
 
 export function isDateKey(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);

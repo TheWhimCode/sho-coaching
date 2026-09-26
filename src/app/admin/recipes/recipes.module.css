@@ -82,8 +82,10 @@
 .categories strong { font-size: 22px; letter-spacing: -0.04em; }
 .categories span, .categories em { color: #9c96b1; font-size: 12px; font-style: normal; }
 .groceryBackdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: #030511c9; }
-.groceryDialog { width: min(980px, 100%); max-height: min(680px, calc(100dvh - 40px)); overflow: auto; padding: 24px; border: 1px solid #e8c56b55; border-radius: 18px; background: #151422; }
+.groceryDialog { width: min(980px, 100%); max-height: min(680px, calc(100dvh - 40px)); overflow: hidden; padding: 24px; border: 1px solid #e8c56b55; border-radius: 18px; background: #151422; }
 .pantryColumns { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.8fr); gap: 28px; }
+.groceryList, .shoppingList { max-height: min(470px, calc(100dvh - 255px)); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.groceryList::-webkit-scrollbar, .shoppingList::-webkit-scrollbar { display: none; }
 .shopPane { padding-left: 22px; border-left: 1px solid #ffffff12; }
 .shopPane ul { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
 .shopPane li { display: grid; grid-template-columns: minmax(0, 1fr) auto 24px; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #ffffff0c; }
@@ -324,6 +326,7 @@
   gap: 14px;
   counter-reset: step;
 }
+.methodText { margin: 0; color: #d9d3ea; font-size: 14px; line-height: 1.65; }
 
 .steps li {
   display: grid;

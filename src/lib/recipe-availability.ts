@@ -6,8 +6,8 @@ type Lot = {
   expiresAt: Date | null; purchasedAt: Date; openedAt: Date | null; usualShelfLifeDays: number | null;
 };
 type Ingredient = Parameters<typeof ingredientGrams>[0] & {
-  optional: boolean; amount: string; groceryItemId: string | null;
-  groceryItem?: { gramsPerCount?: Numeric; lots: Lot[] } | null;
+  optional: boolean; pantryStaple?: boolean; amount: string; groceryItemId: string | null;
+  groceryItem?: { gramsPerCount?: Numeric; lots: Lot[]; pantryStaple?: boolean } | null;
 };
 type StockRecipe = { servings: number | null; ingredients: Ingredient[] };
 
@@ -41,7 +41,7 @@ export function availableRecipeServings(recipe: { servings: number | null; ingre
   if (yieldCount <= 0 || recipe.ingredients.length === 0) return 0;
   const needs = new Map<string, { grams: number; available: number }>();
   for (const ingredient of recipe.ingredients) {
-    if (ingredient.optional || (!ingredient.amount.trim() && ingredient.count == null && ingredient.weightGrams == null)) continue;
+    if (ingredient.optional || ingredient.pantryStaple || ingredient.groceryItem?.pantryStaple || (!ingredient.amount.trim() && ingredient.count == null && ingredient.weightGrams == null)) continue;
     const grams = ingredientGrams(ingredient);
     if (grams === 0) continue;
     if (grams === null || !ingredient.groceryItemId || !ingredient.groceryItem) return 0;

@@ -34,6 +34,45 @@ export type LinkTreeLink = {
 
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
   {
+    id: "twitch",
+    label: "Twitch",
+    description: "Check in when I'm live (often)",
+    href: "https://www.twitch.tv/itsMinooooo",
+    external: true,
+    Icon: FaTwitch,
+    accent: "#9146FF",
+    glow: "rgba(145, 70, 255, 0.5)",
+    iconGradient:
+      "linear-gradient(145deg, #3b0764 0%, #5b21b6 38%, #772CE8 62%, #9146FF 88%, #a78bfa 100%)",
+    iconColor: "#ffffff",
+  },
+  {
+    id: "throne",
+    label: "Throne",
+    description: "Buy me a lil gift if you wanna :3",
+    href: "https://throne.com/itsmino",
+    external: true,
+    isNew: true,
+    Icon: Crown,
+    accent: "#F2B8C6",
+    glow: "rgba(242, 184, 198, 0.42)",
+    iconGradient:
+      "linear-gradient(145deg, #2a1520 0%, #4a2433 35%, #7a3d52 65%, #b86b82 100%)",
+    iconColor: "#ffffff",
+  },
+  {
+    id: "viego-guide",
+    label: "Viego Guide",
+    description: "Lethality & Hail of Blades Viego guide",
+    href: "/guide",
+    external: false,
+    Icon: BookOpen,
+    accent: "#F0ABCF",
+    glow: "rgba(240, 171, 207, 0.45)",
+    iconGradient: "transparent",
+    iconColor: "#F5E6D3",
+  },
+  {
     id: "coaching",
     hidden: true,
     label: "Coaching",
@@ -52,31 +91,6 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
       { offset: "68%", color: "#fbbf24" },
       { offset: "100%", color: "#f5e6b8" },
     ],
-  },
-  {
-    id: "viego-guide",
-    label: "Viego Guide",
-    description: "Lethality & Hail of Blades Viego guide",
-    href: "/guide",
-    external: false,
-    Icon: BookOpen,
-    accent: "#F0ABCF",
-    glow: "rgba(240, 171, 207, 0.45)",
-    iconGradient: "transparent",
-    iconColor: "#F5E6D3",
-  },
-  {
-    id: "twitch",
-    label: "Twitch",
-    description: "Check in when I'm live (often)",
-    href: "https://www.twitch.tv/itsMinooooo",
-    external: true,
-    Icon: FaTwitch,
-    accent: "#9146FF",
-    glow: "rgba(145, 70, 255, 0.5)",
-    iconGradient:
-      "linear-gradient(145deg, #3b0764 0%, #5b21b6 38%, #772CE8 62%, #9146FF 88%, #a78bfa 100%)",
-    iconColor: "#ffffff",
   },
   {
     id: "discord",
@@ -102,20 +116,6 @@ export const LINK_TREE_LINKS: LinkTreeLink[] = [
     glow: "rgba(231, 233, 234, 0.28)",
     iconGradient:
       "linear-gradient(145deg, #000000 0%, #0a0a0a 40%, #171717 70%, #262626 100%)",
-    iconColor: "#ffffff",
-  },
-  {
-    id: "throne",
-    label: "Throne",
-    description: "Buy me a lil gift if you wanna :3",
-    href: "https://throne.com/itsmino",
-    external: true,
-    isNew: true,
-    Icon: Crown,
-    accent: "#F2B8C6",
-    glow: "rgba(242, 184, 198, 0.42)",
-    iconGradient:
-      "linear-gradient(145deg, #2a1520 0%, #4a2433 35%, #7a3d52 65%, #b86b82 100%)",
     iconColor: "#ffffff",
   },
   {

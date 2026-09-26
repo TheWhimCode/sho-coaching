@@ -29,12 +29,12 @@ export const nutrientKeys = [
 export function recipeNutritionFromIngredients(recipe: {
   servings: number | null;
   ingredients: (Parameters<typeof ingredientGrams>[0] & {
-    optional: boolean;
-    groceryItem?: { gramsPerCount?: Numeric; nutritionPer100g?: unknown } | null;
+    optional: boolean; pantryStaple?: boolean;
+    groceryItem?: { gramsPerCount?: Numeric; nutritionPer100g?: unknown; excludeFromNutrition?: boolean } | null;
   })[];
-  nutrition?: (Partial<Record<typeof nutrientKeys[number], number | null>> & { basis: string }) | null;
 }) {
-  const required = recipe.ingredients.filter(i => !i.optional);
+  // Unlinked pantry staples are kept for readable instructions, not nutrition totals.
+  const required = recipe.ingredients.filter(i => !i.optional && !i.groceryItem?.excludeFromNutrition && !(i.pantryStaple && !i.groceryItem));
   const servings = recipe.servings ?? 1;
   let computed = 0;
   const values = Object.fromEntries(nutrientKeys.map(key => {
@@ -49,15 +49,15 @@ export function recipeNutritionFromIngredients(recipe: {
       return true;
     });
     if (complete) computed++;
-    return [key, complete ? total / servings : recipe.nutrition?.[key] ?? null];
+    return [key, complete ? total / servings : null];
   })) as Record<typeof nutrientKeys[number], number | null>;
   return {
     ...values,
     basis: computed === nutrientKeys.length
-      ? 'Estimated per serving from ingredient weights; excludes optional garnish; no cooking-loss adjustment.'
+      ? 'Estimated per serving from groceries, including measured oil and salt; excludes spices and optional garnish; no cooking-loss adjustment.'
       : computed > 0
-        ? 'Estimated per serving: ingredient totals where complete; saved recipe estimates for missing data.'
-        : recipe.nutrition?.basis ?? 'Ingredient nutrition incomplete; saved recipe estimates where available.',
+        ? 'Estimated per serving from groceries, including measured oil and salt; excludes spices and optional garnish. Missing nutrient values remain unknown; no cooking-loss adjustment.'
+        : 'Nutrition incomplete: required ingredient weights or grocery nutrient values are missing.',
   };
 }
 

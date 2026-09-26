@@ -277,7 +277,7 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
             </section>
             <section className={styles.block}>
               <h3>Method</h3>
-              <ol className={styles.steps}>{selected.steps.map(step => <li key={step.id}>{step.text}</li>)}</ol>
+              {selected.methodText ? <p className={styles.methodText}>{selected.methodText}</p> : <ol className={styles.steps}>{selected.steps.map(step => <li key={step.id}>{step.text}</li>)}</ol>}
             </section>
           </div>
           {selected.notes ? <p className={styles.notes}><strong>Notes</strong>{selected.notes}</p> : null}
@@ -296,16 +296,20 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
             <span className={styles.groceryCount}>{groceryNeedle ? `${visibleGroceries.length} matching` : `${stockedGroceries} items in stock`} · Count and grams stay linked when a weight is known.</span>
             <input className={styles.grocerySearch} aria-label="Find a grocery" placeholder="Find a grocery, including empty ones…" value={groceryQuery} onChange={event => setGroceryQuery(event.target.value)} />
             {groceryError && <div role="alert">{groceryError}</div>}
-            {visibleGroceries.map(item => <p key={item.id}><strong>{item.name}</strong>{(["count", "grams"] as const).map(field => <label key={`${field}-${item[field]}`}>{field === "count" ? "Count" : "Grams"}<input type="number" min="0" step="any" disabled={savingGrocery !== null} aria-label={`${item.name} ${field}`} defaultValue={item[field] ?? ""} placeholder="Unknown" onBlur={event => { if (event.target.value !== String(item[field] ?? "")) void updateGrocery(item.id, field, event.target.value); }} /></label>)}<button disabled={savingGrocery !== null} className={styles.clearGrocery} aria-label={`Set ${item.name} to zero`} onClick={() => void updateGrocery(item.id, "count", "0")}>×</button></p>)}
-            {groceryNeedle && !visibleGroceries.length && <p className={styles.groceryEmpty}>No groceries match that search.</p>}
+            <div className={styles.groceryList}>
+              {visibleGroceries.map(item => <p key={item.id}><strong>{item.name}</strong>{(["count", "grams"] as const).map(field => <label key={`${field}-${item[field]}`}>{field === "count" ? "Count" : "Grams"}<input type="number" min="0" step="any" disabled={savingGrocery !== null} aria-label={`${item.name} ${field}`} defaultValue={item[field] ?? ""} placeholder="Unknown" onBlur={event => { if (event.target.value !== String(item[field] ?? "")) void updateGrocery(item.id, field, event.target.value); }} /></label>)}<button disabled={savingGrocery !== null} className={styles.clearGrocery} aria-label={`Set ${item.name} to zero`} onClick={() => void updateGrocery(item.id, "count", "0")}>×</button></p>)}
+              {groceryNeedle && !visibleGroceries.length && <p className={styles.groceryEmpty}>No groceries match that search.</p>}
+            </div>
           </div>
           <div className={styles.shopPane}>
             <h2>Shopping</h2>
             <span className={styles.groceryCount}>Amounts are rounded up to a pack when one is known.</span>
-            <ul>
-              {shopping.map(item => <li key={item.id}><strong>{item.name}</strong><span>{formatGrams(item.grams)} g</span><button type="button" disabled={shoppingBusy} aria-label={`Remove ${item.name} from the shopping list`} onClick={() => void removeShopping(item.id)}>×</button></li>)}
-            </ul>
-            {!shopping.length && <p className={styles.groceryEmpty}>Nothing to buy.</p>}
+            <div className={styles.shoppingList}>
+              <ul>
+                {shopping.map(item => <li key={item.id}><strong>{item.name}</strong><span>{formatGrams(item.grams)} g</span><button type="button" disabled={shoppingBusy} aria-label={`Remove ${item.name} from the shopping list`} onClick={() => void removeShopping(item.id)}>×</button></li>)}
+              </ul>
+              {!shopping.length && <p className={styles.groceryEmpty}>Nothing to buy.</p>}
+            </div>
             <button type="button" className={styles.purchaseButton} disabled={shoppingBusy || !shopping.length} onClick={() => void purchaseShopping()}>Purchase</button>
           </div>
         </div>

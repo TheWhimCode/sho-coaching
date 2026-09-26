@@ -5,7 +5,7 @@ INSERT INTO "admin"."Recipe" (
 ) VALUES (
   'recipe-big-smoothie', 'big-smoothie', 'Big smoothie', 'smoothie', 'Smoothie', 'Big',
   'A large Greek-yogurt fruit smoothie with pecans and cacao nibs.',
-  NULL, 5, 0, ARRAY['breakfast', 'smoothie', 'vegetarian'], 
+  NULL, 5, 0, ARRAY['breakfast', 'smoothie'], 
   'Fruit handfuls are standardized to 80 g mango and 60 g raspberries. Nutrition assumes plain 2% Greek yogurt and unsweetened almond milk.',
   '', 766, 52, 82.3, 30, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
 )
