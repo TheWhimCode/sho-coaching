@@ -33,6 +33,7 @@ const imgSrc = [
   "https://ddragon.leagueoflegends.com", // allow champion images
   "https://raw.communitydragon.org",     // allow rank emblems (CDragon)
   "https://videos.its-mino.com",
+  "https://studio.its-mino.com",
   "https://i.vimeocdn.com",
   "https://vumbnail.com",
   "https://static-cdn.jtvnw.net",
@@ -76,6 +77,7 @@ const nextConfig = {
       { protocol: "https", hostname: "ddragon.leagueoflegends.com" },
       { protocol: "https", hostname: "raw.communitydragon.org" }, // ✅ allow rank emblems
       { protocol: "https", hostname: "videos.its-mino.com" },
+      { protocol: "https", hostname: "studio.its-mino.com" },
     ],
   },
 

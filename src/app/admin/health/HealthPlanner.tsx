@@ -51,7 +51,7 @@ function mealsFromSlots(rows: ServerSlot[]): Meals {
 }
 const dailyBreakfast: PlannerRecipe = {
   id: "daily-breakfast-clif-bar",
-  title: "Peanut Butter Crunch Clif Bar",
+  title: "Cereal Bar",
   portionable: false,
   isAddon: false,
   familyKey: null,
@@ -197,7 +197,7 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
   }
   function sum(items: PlannerRecipe[], key: string) {
     const known = items.filter(r => r.nutrition[key] != null);
-    return { value: known.reduce((n, r) => n + (r.nutrition[key] ?? 0), 0), known: known.length };
+    return { value: Math.round(known.reduce((n, r) => n + (r.nutrition[key] ?? 0), 0) * 10) / 10, known: known.length };
   }
   const plannedDailyMeals = active ? selected(active) : [];
   const weeklyMainCount = days.reduce((total, day) => total + selected(dayKey(day), mainMealSlots).length, 0);

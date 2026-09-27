@@ -12,6 +12,7 @@ for (const valid of [0.5, 1, 1.5, 2]) assert.equal(validServings(valid), true);
 const nutrition = { calories: 655, proteinGrams: 17, vitaminDMcg: null, sodiumMg: 0 };
 assert.deepEqual(scaleNutrition(nutrition, 2), { calories: 1310, proteinGrams: 34, vitaminDMcg: null, sodiumMg: 0 });
 assert.equal(scaleNutrition(nutrition, 0.5).proteinGrams, 8.5);
+assert.equal(scaleNutrition({ calories: 10.2 }, 3).calories, 30.6);
 assert.equal(nutrition.calories, 655);
 console.log('Meal draft compatibility, serving validation, fractional scaling and missing nutrient tests passed.');
 assert.deepEqual(readMealDrafts({ lunch: { recipeId: 'pasta', servings: 2, addonRecipeId: 'spinach' } }), { lunch: { recipeId: 'pasta', servings: 2, addonRecipeId: 'spinach' } });

@@ -18,6 +18,10 @@ export function ingredientGrams(ingredient: {
   return count !== null && conversion !== null && conversion > 0 ? count * conversion : null;
 }
 
+export function roundNutrient(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
 export const nutrientKeys = [
   'calories', 'proteinGrams', 'carbsGrams', 'fatGrams', 'fibreGrams',
   'saturatedFatGrams', 'sugarGrams', 'sodiumMg', 'potassiumMg', 'calciumMg',
@@ -49,7 +53,7 @@ export function recipeNutritionFromIngredients(recipe: {
       return true;
     });
     if (complete) computed++;
-    return [key, complete ? total / servings : null];
+    return [key, complete ? roundNutrient(total / servings) : null];
   })) as Record<typeof nutrientKeys[number], number | null>;
   return {
     ...values,

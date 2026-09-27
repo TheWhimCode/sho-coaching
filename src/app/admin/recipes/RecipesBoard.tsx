@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Recipe, RecipeIngredient } from "./recipes";
 import { recipeCategories, recipeCategoryGroups } from "./categories";
@@ -25,6 +25,33 @@ function formatGrams(value: number) {
   const rounded = Math.round(value * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
+
+function CardImage({ src }: { src: string }) {
+  const [ready, setReady] = useState(false);
+  return (
+    <div className={styles.previewFrame}>
+      {!ready && <span className={styles.cardShimmer} aria-hidden="true" />}
+      <img
+        className={styles.preview}
+        src={src}
+        alt=""
+        data-ready={ready ? "" : undefined}
+        onLoad={() => setReady(true)}
+        onError={() => setReady(true)}
+        ref={(node) => {
+          if (node?.complete && node.naturalWidth > 0) setReady(true);
+        }}
+      />
+    </div>
+  );
+}
+
+const nutritionGroups = [
+  { title: "Energy and macros", labels: ["Calories", "Fat", "Saturated fat", "Carbs", "Sugar", "Fibre", "Protein"] },
+  { title: "Minerals", labels: ["Sodium", "Potassium", "Calcium", "Magnesium", "Iron", "Zinc", "Iodine"] },
+  { title: "Vitamins", labels: ["Vitamin D", "Vitamin B12", "Folate"] },
+  { title: "Omega-3", labels: ["Omega-3 ALA", "Omega-3 EPA/DHA"] },
+];
 
 function familiesOf(recipes: Recipe[]) {
   return recipes.reduce<{ key: string; title: string; recipes: Recipe[] }[]>((groups, item) => {
@@ -160,6 +187,15 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
   const families = familiesOf(selected ? categoryRecipes : []);
   const selectedFamilyKey = selected?.familyKey ?? selected?.id;
   const selectedFamily = families.find(family => family.key === selectedFamilyKey);
+  const variantSwitcher = selected && selectedFamily && selectedFamily.recipes.length > 1 ? (
+    <div className={styles.variants} aria-label={`${selectedFamily.title} version`}>
+      {selectedFamily.recipes.map(variant => (
+        <button key={variant.id} type="button" aria-pressed={variant.id === selected.id} onClick={() => go(activeCategory?.id ?? null, variant.id)}>
+          {variant.variantLabel ?? variant.title}
+        </button>
+      ))}
+    </div>
+  ) : null;
   const groceryNeedle = groceryQuery.trim().toLowerCase();
   const visibleGroceries = (groceries ?? []).filter(item => groceryNeedle ? item.name.toLowerCase().includes(groceryNeedle) : item.inStock)
     .sort((a, b) => Number(b.inStock) - Number(a.inStock) || a.name.localeCompare(b.name));
@@ -169,6 +205,18 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
   const maxCook = selected ? servingsInStock(selected) : 0;
   const servingsToCook = cookServings ?? Math.max(1, Math.min(selected?.servings ?? 1, maxCook || 1));
   const inFridge = selected ? fridge[selected.id] ?? 0 : 0;
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "ArrowLeft" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+      if (groceries !== null || (!selected && !activeCategory)) return;
+      event.preventDefault();
+      go(selected ? activeCategory?.id ?? null : null, null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [groceries, selected, activeCategory]);
 
   return (
     <div className={styles.page}>
@@ -202,7 +250,8 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
       {!selected && activeCategory && <div className={styles.categories} aria-label={`${activeCategory.title} recipes`}>
         {picker.map(family => {
           const item = family.recipes[0];
-          return <button key={family.key} type="button" onClick={() => go(activeCategory.id, item.id)}>
+          return <button key={family.key} type="button" className={styles.photoCard} onClick={() => go(activeCategory.id, item.id)}>
+            {item.referenceImage ? <CardImage src={item.referenceImage} /> : <div className={styles.previewPlaceholder} aria-hidden="true" />}
             <strong>{family.title}</strong>
             <span>{family.recipes.length > 1 ? `${family.recipes.length} versions` : `${minutes(item.prepMinutes + item.cookMinutes)}${item.servings === null ? "" : ` · serves ${item.servings}`}`}</span>
           </button>;
@@ -214,34 +263,40 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
         <nav className={styles.list} aria-label="Recipes">
           {families.map(family => {
             const item = family.recipes[0];
-            return <button key={family.key} type="button" aria-current={family.key === selectedFamilyKey} onClick={() => go(activeCategory?.id ?? null, item.id)}>
+            return <button key={family.key} type="button" className={item.referenceImage ? styles.photoItem : undefined} aria-current={family.key === selectedFamilyKey} onClick={() => go(activeCategory?.id ?? null, item.id)}>
+              {item.referenceImage && <img className={styles.thumb} src={item.referenceImage} alt="" />}
               <strong>{family.title}</strong>
               <span>{family.recipes.length > 1 ? `${family.recipes.length} versions` : `${minutes(item.prepMinutes + item.cookMinutes)}${item.servings === null ? "" : ` · serves ${item.servings}`}`}</span>
             </button>;
           })}
         </nav>
         <article className={styles.sheet}>
-          <div className={styles.titleRow}>
-            <h2>{selected.title}</h2>
-            {selectedFamily && selectedFamily.recipes.length > 1 ? (
-              <div className={styles.variants} aria-label={`${selectedFamily.title} version`}>
-                {selectedFamily.recipes.map(variant => (
-                  <button key={variant.id} type="button" aria-pressed={variant.id === selected.id} onClick={() => go(activeCategory?.id ?? null, variant.id)}>
-                    {variant.variantLabel ?? variant.title}
-                  </button>
-                ))}
+          {selected.referenceImage ? (
+            <div className={styles.heroBanner}>
+              <img className={styles.hero} src={selected.referenceImage} alt="" />
+              <div className={styles.titleRow}>
+                <div className={styles.heroCopy}>
+                  <h2>{selected.title}</h2>
+                  {selected.summary ? <p className={styles.summary}>{selected.summary}</p> : null}
+                </div>
+                {variantSwitcher}
               </div>
-            ) : null}
-          </div>
-          <p className={styles.summary}>{selected.summary}</p>
+            </div>
+          ) : (
+            <div className={styles.titleRow}>
+              <h2>{selected.title}</h2>
+              {variantSwitcher}
+            </div>
+          )}
+          {!selected.referenceImage && selected.summary ? <p className={styles.summary}>{selected.summary}</p> : null}
           <ul className={styles.tags}>{selected.tags.map(tag => <li key={tag}>{tag}</li>)}</ul>
-          <dl className={styles.stats}>
+          {(selected.prepMinutes > 0 || selected.cookMinutes > 0 || selected.servings !== null || inFridge > 0) && <dl className={styles.stats}>
             <div><dt>Prep</dt><dd>{minutes(selected.prepMinutes)}</dd></div>
             <div><dt>Cook</dt><dd>{minutes(selected.cookMinutes)}</dd></div>
             {selected.servings !== null && <div><dt>Serves</dt><dd>{selected.servings}</dd></div>}
             {inFridge > 0 && <div><dt>Fridge</dt><dd>{inFridge} {inFridge === 1 ? "portion" : "portions"}</dd></div>}
-          </dl>
-          <section className={styles.cookBlock} aria-label="Cook this recipe">
+          </dl>}
+          {selected.ingredients.length > 0 && <section className={styles.cookBlock} aria-label="Cook this recipe">
             <div>
               <strong>Cook</strong>
               <span>{maxCook > 0 ? `Stock covers ${maxCook} ${maxCook === 1 ? "serving" : "servings"}. Ingredients are taken from your groceries; portions go to planned meals first, the rest to the fridge.` : "Not enough in stock to cook this right now."}</span>
@@ -255,8 +310,8 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
               <button type="button" className={styles.cookButton} disabled={cooking || maxCook < 1 || servingsToCook > maxCook} onClick={() => void cook(selected, servingsToCook)}>{cooking ? "Cooking…" : `Cook ${servingsToCook} ${servingsToCook === 1 ? "serving" : "servings"}`}</button>
             </div>
             {cookMessage && <p className={cookMessage.error ? styles.cookError : styles.shopMessage} role={cookMessage.error ? "alert" : "status"}>{cookMessage.text}</p>}
-          </section>
-          <div className={styles.columns}>
+          </section>}
+          {(selected.ingredients.length > 0 || selected.methodText || selected.steps.length > 0) && <div className={styles.columns}>
             <section className={styles.block}>
               <h3>Ingredients</h3>
               <ul className={styles.ingredients}>
@@ -279,11 +334,24 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
               <h3>Method</h3>
               {selected.methodText ? <p className={styles.methodText}>{selected.methodText}</p> : <ol className={styles.steps}>{selected.steps.map(step => <li key={step.id}>{step.text}</li>)}</ol>}
             </section>
-          </div>
+          </div>}
           {selected.notes ? <p className={styles.notes}><strong>Notes</strong>{selected.notes}</p> : null}
-          {selected.nutrition ? <section className={styles.nutrition}>
-            <div><p>Estimated nutrition</p><span>{selected.nutrition.basis}</span></div>
-            <dl>{selected.nutrition.values.map(item => <div key={item.label}><dt>{item.label}</dt><dd>{item.value === null ? "—" : `${item.value} ${item.unit}`}</dd></div>)}</dl>
+          {selected.nutrition && selected.nutrition.values.length > 0 ? <section className={styles.nutrition}>
+            <h3>Estimated nutrition</h3>
+            <table>
+              <thead><tr><th scope="col">Nutrient</th><th scope="col">Per serving</th></tr></thead>
+              <tbody>
+                {nutritionGroups.map(group => {
+                  const rows = group.labels.flatMap(label => selected.nutrition?.values.filter(item => item.label === label) ?? []);
+                  if (!rows.length) return null;
+                  return <Fragment key={group.title}>
+                    <tr className={styles.nutritionGroup}><th colSpan={2} scope="colgroup">{group.title}</th></tr>
+                    {rows.map(item => <tr key={item.label}><th scope="row">{item.label}</th><td>{item.value === null ? "—" : `${formatGrams(item.value)} ${item.unit}`}</td></tr>)}
+                  </Fragment>;
+                })}
+              </tbody>
+            </table>
+            <p className={styles.nutritionNote}>{selected.nutrition.basis}</p>
           </section> : null}
         </article>
       </div>}

@@ -27,6 +27,7 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
     cookMinutes: recipe.cookMinutes,
     tags: recipe.tags,
     calories: recipe.nutrition.calories,
+    referenceImage: recipe.referenceImage,
     methodText: recipe.methodText,
     notes: recipe.notes,
     ingredients: recipe.ingredients.map((ingredient) => {

@@ -1,3 +1,5 @@
+import { roundNutrient } from './ingredient-measurements';
+
 export type PlannedMeal = { recipeId: string; servings: number; addonRecipeId?: string };
 export type Meals = Record<string, PlannedMeal>;
 
@@ -19,10 +21,10 @@ export function mealNutrition(nutrition: Record<string, number | null>, servings
   const scaled = scaleNutrition(nutrition, servings);
   if (!addon) return scaled;
   return Object.fromEntries([...new Set([...Object.keys(scaled), ...Object.keys(addon)])].map(key => [key,
-    scaled[key] == null || addon[key] == null ? null : scaled[key] + addon[key],
+    scaled[key] == null || addon[key] == null ? null : roundNutrient(scaled[key] + addon[key]),
   ]));
 }
 
 export function scaleNutrition(nutrition: Record<string, number | null>, servings: number) {
-  return Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, value === null ? null : value * servings]));
+  return Object.fromEntries(Object.entries(nutrition).map(([key, value]) => [key, value === null ? null : roundNutrient(value * servings)]));
 }

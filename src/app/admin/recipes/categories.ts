@@ -19,6 +19,10 @@ export const recipeCategoryGroups: RecipeCategoryGroup[] = [
 export const recipeCategories: RecipeCategory[] = [
   { id: 'pasta', group: 'main', title: 'Pasta', detail: 'Sauces and noodles', match: recipe => recipe.tags.includes('pasta') },
   { id: 'curry', group: 'main', title: 'Curry', detail: 'Spiced and saucy', match: recipe => recipe.tags.includes('curry') },
+  { id: 'soup', group: 'main', title: 'Soup', detail: 'Warm and comforting', match: recipe => recipe.tags.includes('soup') },
+  { id: 'burger', group: 'main', title: 'Burger', detail: 'A bun and a patty', match: recipe => recipe.tags.includes('burger') },
+  { id: 'salad', group: 'main', title: 'Salad', detail: 'Cold plates', match: recipe => recipe.tags.includes('salad') },
+  { id: 'dessert', group: 'other', title: 'Dessert', detail: 'After the meal', match: recipe => recipe.tags.includes('dessert') },
   { id: 'quick', group: 'quick', title: 'Low energy', detail: 'Short to cook', match: recipe => recipe.tags.includes('quick') },
   { id: 'snack', group: 'quick', title: 'Snacks', detail: 'Small plates', match: recipe => recipe.tags.includes('snack') },
   { id: 'low-calorie', group: 'other', title: 'Low calorie', detail: 'Under 600 kcal', match: recipe => recipe.calories != null && recipe.calories < 600 },
