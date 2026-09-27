@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { nutrientKeys } from '@/lib/ingredient-measurements';
 import { z } from 'zod';
 
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
         ...(grocery.gramsPerCount !== undefined ? { gramsPerCount: grocery.gramsPerCount } : {}),
         ...(grocery.unitsPerPurchase !== undefined ? { unitsPerPurchase: grocery.unitsPerPurchase } : {}),
         ...(grocery.weightBasis !== undefined ? { weightBasis: grocery.weightBasis } : {}),
-        ...(grocery.nutritionPer100g !== undefined ? { nutritionPer100g: grocery.nutritionPer100g } : {}),
+        ...(grocery.nutritionPer100g !== undefined ? { nutritionPer100g: grocery.nutritionPer100g === null ? Prisma.DbNull : grocery.nutritionPer100g } : {}),
         ...(grocery.nutritionSource !== undefined ? { nutritionSource: grocery.nutritionSource } : {}),
       };
       await tx.groceryItem.upsert({

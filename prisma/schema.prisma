@@ -671,6 +671,24 @@ model ShoppingItem {
   @@schema("admin")
 }
 
+// One-off food log entries, independent of recipes, groceries and cooked stock.
+model OutsideMeal {
+  id          String   @id
+  date        String
+  mealSlot    String
+  name        String
+  amount      Float    @default(1)
+  portion     String
+  nutrition   Json
+  notes       String   @default("")
+  source      String   @default("AI photo estimate")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date, mealSlot])
+  @@schema("admin")
+}
+
 model MealPlan {
   id           String                @id @default(cuid())
   recipeId     String
