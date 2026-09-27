@@ -7,6 +7,6 @@ alwaysApply: true
 
 When the user asks to add or update a recipe, grocery, pantry staple, or kitchen stock, read `docs/ADD_RECIPE.md` before making changes.
 
-- Use the recipe content API/data layer; never create a Prisma migration for routine recipe or grocery content.
+- Use the recipe content API/data layer; never create a Prisma migration for routine recipe or grocery content. The recipe/grocery migrations dated 2026-09-24 to 2026-09-26 are legacy, not a pattern to copy. See `AGENTS.md`.
 - Preserve the distinction between shopping/stock (`pantryStaple`) and nutrition (`excludeFromNutrition`).
 - Reuse the project's canonical grocery names and package sizes. Do not create near-duplicates.

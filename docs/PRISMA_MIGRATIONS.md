@@ -1,5 +1,7 @@
 # Prisma & Postgres: doing it reliably in Cursor
 
+> **Migrations are for schema changes only.** Recipes, groceries, stock, meal plans and other content go through the app's API/data layer, never through a migration. See `AGENTS.md`. The content-inserting migrations dated 2026-09-24 to 2026-09-26 are legacy and must not be extended or copied.
+
 ## Will changes in Cursor work reliably?
 
 Yes. Working in Cursor with the real codebase and terminal is the right way to do it. The main causes of "migration problems" in the past were usually:
