@@ -9,23 +9,17 @@ export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
   const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const from = dateKey(firstDay);
-  const to = dateKey(lastDay);
   const [mealPlans, studioItems, outsideMeals] = await Promise.all([
     prisma.mealPlan.findMany({
-      where: { plannedDate: { gte: from, lte: to } },
       include: { recipe: { select: { title: true } } },
       orderBy: [{ plannedDate: "asc" }, { mealSlot: "asc" }],
     }),
     prisma.socialIdea.findMany({
-      where: { plannedDate: { gte: from, lte: to }, status: { not: "completed" } },
+      where: { plannedDate: { not: null }, status: { not: "completed" } },
       select: { id: true, title: true, notes: true, plannedDate: true, plannedTime: true, platform: true, energy: true },
       orderBy: [{ plannedDate: "asc" }, { sortOrder: "asc" }],
     }),
     prisma.outsideMeal.findMany({
-      where: { date: { gte: from, lte: to } },
       select: { id: true, name: true, date: true, mealSlot: true },
       orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     }),

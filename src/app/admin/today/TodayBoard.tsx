@@ -19,7 +19,7 @@ const planStart = new Date(2026, 8, 25, 12);
 
 function dateKey(date: Date) { return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-"); }
 function dateAt(key: string) { return new Date(`${key}T12:00:00`); }
-function displayDate(key: string) { return dateAt(key).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }); }
+function displayDate(key: string) { return dateAt(key).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }); }
 function workoutFor(key: string) {
   const elapsed = Math.max(0, Math.floor((dateAt(key).getTime() - planStart.getTime()) / 86_400_000));
   if (elapsed % 2 !== 1) return null;
@@ -30,17 +30,87 @@ export default function TodayBoard({ initialDate, meals, studioItems, outsideMea
   const [view, setView] = useState<View>("day");
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
+  const [monthCursor, setMonthCursor] = useState(() => { const date = dateAt(initialDate); return { year: date.getFullYear(), month: date.getMonth() }; });
+  const [monthDir, setMonthDir] = useState<"next" | "prev" | "">("");
+  const monthPane = useRef<HTMLDivElement>(null);
+  const monthSwipe = useRef<{ x: number; y: number; pointer: number; active: boolean } | null>(null);
+  const monthSwiped = useRef(false);
+  const narrow = useRef(false);
   const selectedMeals = meals.filter(item => item.date === selectedDate);
   const selectedOutside = outsideMeals.filter(item => item.date === selectedDate);
   const selectedStudio = studioItems.filter(item => item.plannedDate === selectedDate);
   const selectedWorkout = workoutFor(selectedDate);
   const month = useMemo(() => {
-    const date = dateAt(initialDate);
-    const first = new Date(date.getFullYear(), date.getMonth(), 1, 12);
-    const last = new Date(date.getFullYear(), date.getMonth() + 1, 0, 12);
+    const first = new Date(monthCursor.year, monthCursor.month, 1, 12);
+    const last = new Date(monthCursor.year, monthCursor.month + 1, 0, 12);
     const leading = (first.getDay() + 6) % 7;
-    return { label: first.toLocaleDateString(undefined, { month: "long", year: "numeric" }), days: Array.from({ length: leading + last.getDate() }, (_, i) => i < leading ? null : new Date(date.getFullYear(), date.getMonth(), i - leading + 1, 12)) };
-  }, [initialDate]);
+    return { label: first.toLocaleDateString("en-US", { month: "long", year: "numeric" }), days: Array.from({ length: leading + last.getDate() }, (_, i) => i < leading ? null : new Date(monthCursor.year, monthCursor.month, i - leading + 1, 12)) };
+  }, [monthCursor]);
+  function shiftMonth(offset: number) {
+    setMonthDir(offset > 0 ? "next" : "prev");
+    setMonthCursor(current => { const date = new Date(current.year, current.month + offset, 1, 12); return { year: date.getFullYear(), month: date.getMonth() }; });
+  }
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const apply = () => { narrow.current = query.matches; };
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, []);
+  useEffect(() => {
+    if (view !== "month") return;
+    function onKey(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey || appointmentOpen) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("input, textarea, select, [contenteditable='true'], dialog")) return;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") { event.preventDefault(); shiftMonth(1); }
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") { event.preventDefault(); shiftMonth(-1); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view, appointmentOpen]);
+  useEffect(() => {
+    const node = monthPane.current;
+    if (!node) return;
+    let lockedUntil = 0;
+    function onWheel(event: WheelEvent) {
+      if (!narrow.current) return;
+      if (Math.abs(event.deltaY) < 16 && Math.abs(event.deltaX) < 16) return;
+      event.preventDefault();
+      const now = Date.now();
+      if (now < lockedUntil) return;
+      lockedUntil = now + 380;
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      shiftMonth(delta > 0 ? 1 : -1);
+    }
+    node.addEventListener("wheel", onWheel, { passive: false });
+    return () => node.removeEventListener("wheel", onWheel);
+  }, [view]);
+  function monthSwipeStart(event: React.PointerEvent<HTMLElement>) {
+    if (!narrow.current) return;
+    monthSwipe.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId, active: false };
+  }
+  function monthSwipeMove(event: React.PointerEvent<HTMLElement>) {
+    const start = monthSwipe.current;
+    if (!start || start.pointer !== event.pointerId) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (!start.active) {
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      if (Math.abs(dy) > Math.abs(dx)) { monthSwipe.current = null; return; }
+      start.active = true;
+      try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* The pointer can already be gone. */ }
+    }
+  }
+  function monthSwipeEnd(event: React.PointerEvent<HTMLElement>) {
+    const start = monthSwipe.current;
+    monthSwipe.current = null;
+    if (!start?.active) return;
+    monthSwiped.current = true;
+    const dx = event.clientX - start.x;
+    if (dx <= -48) shiftMonth(1);
+    else if (dx >= 48) shiftMonth(-1);
+  }
 
   return <main className={styles.page}>
     <header className={styles.header}>
@@ -54,13 +124,13 @@ export default function TodayBoard({ initialDate, meals, studioItems, outsideMea
       </div>
     </header>
 
-    {view === "day" ? <DayOverview date={selectedDate} meals={selectedMeals} outsideMeals={selectedOutside} studioItems={selectedStudio} appointments={appointments.filter(item => item.date === selectedDate)} workout={selectedWorkout} /> : <>
-      <section className={styles.monthHeader}><div><p>{month.label}</p><small>Click a day to inspect its planned items.</small></div><div className={styles.monthKeys}><span><i data-kind="meal" /> Meals</span><span><i data-kind="studio" /> Studio</span><span><i data-kind="workout" /> Workout</span><span><i data-kind="appointment" /> Appointments</span></div></section>
-      <section className={styles.calendar} aria-label={`${month.label} calendar`}>
+    {view === "day" ? <DayOverview date={selectedDate} meals={selectedMeals} outsideMeals={selectedOutside} studioItems={selectedStudio} appointments={appointments.filter(item => item.date === selectedDate)} workout={selectedWorkout} /> : <div ref={monthPane} className={styles.monthPane}>
+      <section className={styles.monthHeader}><div className={styles.monthNav}><button type="button" aria-label="Previous month" onClick={() => shiftMonth(-1)}><ChevronLeft size={18} /></button><div><p>{month.label}</p><small>Click a day to inspect its planned items.</small></div><button type="button" aria-label="Next month" onClick={() => shiftMonth(1)}><ChevronRight size={18} /></button></div></section>
+      <section key={month.label} className={styles.calendar} data-dir={monthDir || undefined} aria-label={`${month.label} calendar`} onPointerDown={monthSwipeStart} onPointerMove={monthSwipeMove} onPointerUp={monthSwipeEnd} onPointerCancel={() => { monthSwipe.current = null; }} onClickCapture={event => { if (!monthSwiped.current) return; monthSwiped.current = false; event.preventDefault(); event.stopPropagation(); }}>
         {weekdays.map(day => <p key={day} className={styles.weekday}>{day}</p>)}
-        {month.days.map((day, index) => day ? <CalendarDay key={dateKey(day)} date={dateKey(day)} today={initialDate} selected={selectedDate} meals={meals} studioItems={studioItems} outsideMeals={outsideMeals} appointments={appointments} onSelect={() => { setSelectedDate(dateKey(day)); setView("day"); }} /> : <div key={`blank-${index}`} className={styles.blank} />)}
+        {month.days.map((day, index) => day ? <CalendarDay key={dateKey(day)} date={dateKey(day)} today={initialDate} selected={selectedDate} studioItems={studioItems} appointments={appointments} onSelect={() => { setSelectedDate(dateKey(day)); setView("day"); }} /> : <div key={`blank-${index}`} className={styles.blank} />)}
       </section>
-    </>}
+    </div>}
     {appointmentOpen && <AppointmentDialog defaultDate={selectedDate} onClose={() => setAppointmentOpen(false)} />}
   </main>;
 }
@@ -79,12 +149,11 @@ function TaskColumns({ items }: { items: StudioItem[] }) {
   const rows = Array.from({ length: Math.ceil(items.length / 2) }, (_, index) => items.slice(index * 2, index * 2 + 2));
   return <div className={styles.taskRows}>{rows.map(pair => <div key={pair.map(item => item.id).join("-")} className={styles.taskRow}>{pair.map((item, index) => { const swatch = <span className={styles.taskSwatch} data-platform={item.platform} />; const name = <span className={styles.taskName}>{item.title}</span>; return <span key={item.id} className={styles.taskSide} data-side={index === 0 ? "left" : "right"}>{index === 0 ? <>{name}{swatch}</> : <>{swatch}{name}</>}</span>; })}</div>)}</div>;
 }
-function CalendarDay({ date, today, selected, meals, studioItems, outsideMeals, appointments, onSelect }: { date: string; today: string; selected: string; meals: Meal[]; studioItems: StudioItem[]; outsideMeals: OutsideMeal[]; appointments: Appointment[]; onSelect: () => void }) {
-  const mealCount = meals.filter(item => item.date === date).length + outsideMeals.filter(item => item.date === date).length;
-  const studioCount = studioItems.filter(item => item.plannedDate === date).length;
-  const workout = workoutFor(date);
-  const dayAppointments = appointments.filter(item => item.date === date);
-  return <button type="button" className={styles.calendarDay} data-today={date === today || undefined} data-selected={date === selected || undefined} onClick={onSelect}><strong>{dateAt(date).getDate()}</strong><div className={styles.dots}>{mealCount > 0 && <span data-kind="meal">{mealCount > 1 ? mealCount : ""}</span>}{studioCount > 0 && <span data-kind="studio">{studioCount > 1 ? studioCount : ""}</span>}{workout && <span data-kind="workout" />}{dayAppointments.slice(0, 2).map(item => <span key={item.id} data-kind="appointment">{clockLabel(item.time)} {item.title}</span>)}</div></button>;
+function CalendarDay({ date, today, selected, studioItems, appointments, onSelect }: { date: string; today: string; selected: string; studioItems: StudioItem[]; appointments: Appointment[]; onSelect: () => void }) {
+  const blocks = studioItems.filter(item => item.plannedDate === date);
+  const dayAppointments = appointments.filter(item => item.date === date).sort((a, b) => a.time.localeCompare(b.time));
+  const extra = Math.max(0, dayAppointments.length - 2);
+  return <button type="button" className={styles.calendarDay} data-today={date === today || undefined} data-selected={date === selected || undefined} onClick={onSelect} aria-label={displayDate(date)}><div className={styles.blockArea}><strong>{dateAt(date).getDate()}</strong>{blocks.map(item => <span key={item.id} className={styles.monthBlock} data-platform={item.platform} />)}</div><div className={styles.appointmentRows}><div>{dayAppointments[0] && <span>{clockLabel(dayAppointments[0].time)} {dayAppointments[0].title}</span>}</div><div>{dayAppointments[1] && <span>{clockLabel(dayAppointments[1].time)} {dayAppointments[1].title}</span>}{extra > 0 && <em className={styles.appointmentMore}>+{extra}</em>}</div></div></button>;
 }
 
 function AppointmentDialog({ defaultDate, onClose }: { defaultDate: string; onClose: () => void }) {

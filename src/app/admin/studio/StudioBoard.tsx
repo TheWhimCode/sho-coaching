@@ -34,6 +34,8 @@ type BoardPage = (typeof pages)[number];
 const pageKey = "admin-social-board-page";
 const focusKey = "admin-social-board-focus";
 const pageStart: Record<BoardPage, Platform> = { social: "tiktok", life: "selfcare", vtubing: "vtubing" };
+function categoryPage(id: string): BoardPage { return pages.find(page => catalog[page].some(category => category.id === id)) ?? "social"; }
+function categoryStart(page: BoardPage) { const index = categories.findIndex(category => categoryPage(category.id) === page); return index < 0 ? 0 : index; }
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 function dateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
@@ -363,27 +365,54 @@ export default function StudioBoard() {
   const [boardPage, setBoardPage] = useState<BoardPage>("social");
   const [visiblePlatforms, setVisiblePlatforms] = useState<Record<Platform, boolean>>({ tiktok: true, twitter: true, reddit: true, selfcare: true, food: true, home: true, vtubing: true, blender: true, unity: true, appointment: true });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [narrow, setNarrow] = useState(false);
+  const [categoryIndex, setCategoryIndex] = useState(0);
+  const [swipeX, setSwipeX] = useState(0);
+  const swipe = useRef<{ x: number; y: number; pointer: number; active: boolean } | null>(null);
+  const swiped = useRef(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), useSensor(KeyboardSensor));
   async function load() { setLoading(true); setError(""); try { setIdeas(await request<SocialIdea[]>(`/api/admin/social?today=${dateKey(new Date())}`)); } catch (error) { setError((error as Error).message); } finally { setLoading(false); } }
   useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 760px)");
+    const apply = () => setNarrow(query.matches);
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, []);
   useEffect(() => {
     const storedPage = localStorage.getItem(pageKey);
     const storedFocus = localStorage.getItem(focusKey);
     const focus = categories.find(category => category.id === storedFocus)?.id;
     if (focus) {
       setFocused(focus);
-      const page = pages.find(item => catalog[item].some(category => category.id === focus));
-      if (page) setBoardPage(page);
-    } else if (storedPage && pages.includes(storedPage as BoardPage)) setBoardPage(storedPage as BoardPage);
+      setBoardPage(categoryPage(focus));
+      setCategoryIndex(Math.max(0, categories.findIndex(category => category.id === focus)));
+    } else if (storedPage && pages.includes(storedPage as BoardPage)) {
+      const page = storedPage as BoardPage;
+      setBoardPage(page);
+      setCategoryIndex(categoryStart(page));
+    }
   }, []);
   function saved(idea: SocialIdea) { setIdeas(items => items.some(item => item.id === idea.id) ? items.map(item => item.id === idea.id ? idea : item) : [idea, ...items]); }
   function open(idea: SocialIdea) { if (!lock.current) setEditor({ idea, platform: idea.platform }); }
   function showFocus(platform: Platform | null) {
     setFocused(platform);
-    if (platform) localStorage.setItem(focusKey, platform);
-    else localStorage.removeItem(focusKey);
+    if (platform) {
+      localStorage.setItem(focusKey, platform);
+      const index = categories.findIndex(category => category.id === platform);
+      if (index >= 0) setCategoryIndex(index);
+      setBoardPage(categoryPage(platform));
+    } else localStorage.removeItem(focusKey);
   }
-  function showPage(page: BoardPage) { setBoardPage(page); showFocus(null); localStorage.setItem(pageKey, page); }
+  function showPage(page: BoardPage) { setBoardPage(page); showFocus(null); localStorage.setItem(pageKey, page); setCategoryIndex(categoryStart(page)); }
+  function goToCategory(index: number) {
+    const next = Math.min(Math.max(index, 0), categories.length - 1);
+    setCategoryIndex(next);
+    const page = categoryPage(categories[next].id);
+    setBoardPage(page);
+    localStorage.setItem(pageKey, page);
+  }
   function neighbor(offset: number) { return pages[pages.indexOf(boardPage) + offset]; }
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -394,6 +423,11 @@ export default function StudioBoard() {
         if (event.key === "Escape") { event.preventDefault(); setSelectedDay(null); }
         return;
       }
+      if (narrow && !focused) {
+        if (event.key === "ArrowRight" && categoryIndex < categories.length - 1) { event.preventDefault(); goToCategory(categoryIndex + 1); }
+        if (event.key === "ArrowLeft" && categoryIndex > 0) { event.preventDefault(); goToCategory(categoryIndex - 1); }
+        return;
+      }
       const nextPage = neighbor(1);
       const previousPage = neighbor(-1);
       if (event.key === "ArrowRight" && nextPage) { event.preventDefault(); showPage(nextPage); }
@@ -401,7 +435,7 @@ export default function StudioBoard() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [boardPage, dragging, editor, survey, selectedDay]);
+  }, [boardPage, dragging, editor, survey, selectedDay, narrow, focused, categoryIndex]);
   async function update(idea: SocialIdea, patch: Partial<SocialIdeaInput>) {
     const today = dateKey(new Date());
     const next = { ...patch };
@@ -445,7 +479,39 @@ export default function StudioBoard() {
     });
   }
   const visible = ideas.filter(idea => idea.platform !== "appointment" && !isCompleted(idea) && (!hidePlanned || !idea.plannedDate) && `${idea.title} ${idea.notes} ${idea.checklist.map(task => task.text).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
-  const pageCategories = focused ? categories.filter(category => category.id === focused) : catalog[boardPage];
+  const paging = narrow && !focused;
+  const safeCategory = Math.min(categoryIndex, categories.length - 1);
+  const shownCategories = paging ? categories.slice(safeCategory, safeCategory + 1) : focused ? categories.filter(category => category.id === focused) : catalog[boardPage];
+  function swipeStart(event: React.PointerEvent<HTMLDivElement>) {
+    if (!paging || dragging) return;
+    const target = event.target as HTMLElement;
+    if (target.closest(`.${styles.dragHandle}, .${styles.iconButton}, .${styles.addCard}`)) return;
+    swipe.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId, active: false };
+  }
+  function swipeMove(event: React.PointerEvent<HTMLDivElement>) {
+    const start = swipe.current;
+    if (!start || start.pointer !== event.pointerId) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (!start.active) {
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      if (Math.abs(dy) > Math.abs(dx)) { swipe.current = null; return; }
+      start.active = true;
+      try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* The pointer can already be gone. */ }
+    }
+    const rubber = (safeCategory === 0 && dx > 0) || (safeCategory === categories.length - 1 && dx < 0);
+    setSwipeX(rubber ? dx * 0.25 : dx);
+  }
+  function swipeEnd(event: React.PointerEvent<HTMLDivElement>) {
+    const start = swipe.current;
+    swipe.current = null;
+    if (!start?.active) return;
+    swiped.current = true;
+    const dx = event.clientX - start.x;
+    if (dx <= -48 && safeCategory < categories.length - 1) goToCategory(safeCategory + 1);
+    else if (dx >= 48 && safeCategory > 0) goToCategory(safeCategory - 1);
+    setSwipeX(0);
+  }
   const pageCount = visible.filter(idea => catalog[boardPage].some(category => category.id === idea.platform)).length;
   const lifePage = boardPage === "life";
   const today = dateKey(new Date());
@@ -461,7 +527,7 @@ export default function StudioBoard() {
         <div className={styles.timelineGrid}>{Array.from({ length: 14 }, (_, index) => { const date = dayAt(start, index); const key = dateKey(date); return <TimelineDay key={key} date={date} ideas={timelineIdeas.filter(idea => staysOnDay(idea, key))} disabled={loading || busy} ready={!loading} onOpen={() => openDay(key)} />; })}</div>
       </>}</section>
       <div className={styles.toolbar}><span>{pageCount} {lifePage ? "tasks" : "ideas"}</span><div className={styles.toolbarTools}><label className={styles.search}><Search size={17} /><input aria-label="Search ideas and tasks" placeholder={lifePage ? "Find a task…" : "Find an idea…"} value={query} onChange={e => setQuery(e.target.value)} /></label><button type="button" className={styles.filterToggle} aria-pressed={hidePlanned} onClick={() => setHidePlanned(on => !on)}><EyeOff size={14} />Hide planned</button></div></div>
-        <div className={styles.columns} data-focused={focused || undefined} aria-busy={loading || busy}>{pageCategories.map(({ id, name, caption, Icon }) => { const items = visible.filter(idea => idea.platform === id); const lifeColumn = isLifePlatform(id); return <section key={id} className={styles.column} data-platform={id}>
+        <div className={styles.columns} data-focused={focused || undefined} data-paging={paging || undefined} aria-busy={loading || busy} style={paging && swipeX ? { transform: `translateX(${swipeX}px)` } : undefined} onPointerDown={swipeStart} onPointerMove={swipeMove} onPointerUp={swipeEnd} onPointerCancel={() => { swipe.current = null; setSwipeX(0); }} onClickCapture={event => { if (!swiped.current) return; swiped.current = false; event.preventDefault(); event.stopPropagation(); }}>{shownCategories.map(({ id, name, caption, Icon }) => { const items = visible.filter(idea => idea.platform === id); const lifeColumn = isLifePlatform(id); return <section key={id} className={styles.column} data-platform={id}>
           <header className={styles.columnHeader}>
             <button type="button" className={styles.focusCategory} onClick={() => showFocus(focused === id ? null : id)} aria-pressed={focused === id} aria-label={focused === id ? `Show all categories` : `Show only ${name}`}>
               <span className={styles.platformIcon}><Icon size={21} /></span>
