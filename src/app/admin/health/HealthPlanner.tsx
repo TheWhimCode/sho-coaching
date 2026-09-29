@@ -147,7 +147,14 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
     setCheckingStock(true);
     setStockError(false);
     fetch(`/api/admin/recipes/availability?from=${firstDay}`, { cache: 'no-store', signal: controller.signal })
-      .then(response => { if (!response.ok) throw new Error('Stock check failed'); return response.json(); })
+      .then(response => {
+        if (response.status === 401) {
+          window.location.assign('/admin/login?next=%2Fadmin%2Fhealth');
+          throw new Error('Sign-in required');
+        }
+        if (!response.ok) throw new Error('Stock check failed');
+        return response.json();
+      })
       .then(data => { if (!controller.signal.aborted) { setAvailability(data.recipes); setWithAddons(data.withAddons); setCooked(data.cooked ?? {}); } })
       .catch(() => { if (!controller.signal.aborted) { setStockError(true); setAvailability({}); } })
       .finally(() => { if (!controller.signal.aborted) setCheckingStock(false); });

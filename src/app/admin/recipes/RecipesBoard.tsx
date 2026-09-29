@@ -86,6 +86,9 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
   const [cookServings, setCookServings] = useState<number | null>(null);
   const [cooking, setCooking] = useState(false);
   const [cookMessage, setCookMessage] = useState<{ text: string; error: boolean } | null>(null);
+  const [fridgeInventory, setFridgeInventory] = useState(fridge);
+  const [adjustingFridge, setAdjustingFridge] = useState<string | null>(null);
+  useEffect(() => { setFridgeInventory(fridge); }, [fridge]);
   useEffect(() => { setShopMessage(""); setCookMessage(null); setCookServings(null); }, [recipeId]);
 
   async function cook(recipe: Recipe, servings: number) {
@@ -124,6 +127,19 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
       router.refresh();
     } catch (error) { setGroceryError(error instanceof Error ? error.message : "Could not save groceries."); }
     finally { setSavingGrocery(null); }
+  }
+
+  async function removeFridgeServing(recipeId: string) {
+    setGroceryError("");
+    setAdjustingFridge(recipeId);
+    try {
+      const response = await fetch('/api/admin/recipes/fridge', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipeId }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? 'Could not update the fridge.');
+      setFridgeInventory(current => ({ ...current, [recipeId]: Number(result.remaining) || 0 }));
+      router.refresh();
+    } catch (error) { setGroceryError(error instanceof Error ? error.message : 'Could not update the fridge.'); }
+    finally { setAdjustingFridge(null); }
   }
 
   async function openPantry() {
@@ -204,7 +220,9 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
   const picker = !selected && activeCategory ? familiesOf(categoryRecipes) : [];
   const maxCook = selected ? servingsInStock(selected) : 0;
   const servingsToCook = cookServings ?? Math.max(1, Math.min(selected?.servings ?? 1, maxCook || 1));
-  const inFridge = selected ? fridge[selected.id] ?? 0 : 0;
+  const inFridge = selected ? fridgeInventory[selected.id] ?? 0 : 0;
+  const fridgeItems = recipes.filter(recipe => (fridgeInventory[recipe.id] ?? 0) > 0)
+    .sort((a, b) => a.title.localeCompare(b.title));
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "ArrowLeft" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
@@ -358,6 +376,15 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
 
       {groceries !== null && shopping !== null && <div className={styles.groceryBackdrop} onClick={() => setGroceries(null)}><section className={styles.groceryDialog} role="dialog" aria-modal="true" aria-label="Groceries and shopping" onClick={event => event.stopPropagation()}>
         <button onClick={() => setGroceries(null)}>Close</button>
+        {fridgeItems.length > 0 && <aside className={styles.fridgeInventory} aria-label="Fridge inventory">
+          <div className={styles.fridgeSlots}>
+            {fridgeItems.map(recipe => <article className={styles.fridgeSlot} key={recipe.id}>
+              <img src={recipe.referenceImage} alt="" />
+              <span aria-label={`${fridgeInventory[recipe.id]} ${fridgeInventory[recipe.id] === 1 ? 'serving' : 'servings'}`}>{fridgeInventory[recipe.id]}</span>
+              <button type="button" disabled={adjustingFridge !== null} aria-label={`Remove one serving of ${recipe.title} from the fridge`} onClick={() => void removeFridgeServing(recipe.id)}>−</button>
+            </article>)}
+          </div>
+        </aside>}
         <div className={styles.pantryColumns}>
           <div>
             <h2>Groceries</h2>

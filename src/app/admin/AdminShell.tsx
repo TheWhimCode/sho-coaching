@@ -6,16 +6,23 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 const TABS = [
-  { id: "studio", label: "✨ Studio", href: "/admin/studio", match: (p: string) => p === "/admin" || (p.startsWith("/admin/studio") || p.startsWith("/admin/social")) },
-  { id: "workout", label: "🏋️ Workout", href: "/admin/workout", match: (p: string) => p.startsWith("/admin/workout") },
-  { id: "health", label: "🥗 Health", href: "/admin/health", match: (p: string) => p.startsWith("/admin/health") },
-  {
-    id: "recipes",
-    label: "🍳 Recipes",
-    href: "/admin/recipes",
-    match: (p: string) => p.startsWith("/admin/recipes"),
-  },
+  { id: "today", label: "Today", icon: "📅", href: "/admin/today", match: (p: string) => p === "/admin" || p.startsWith("/admin/today") },
+  { id: "studio", label: "Studio", icon: "📋", href: "/admin/studio", match: (p: string) => p.startsWith("/admin/studio") || p.startsWith("/admin/social") },
+  { id: "workout", label: "Workout", icon: "", href: "/admin/workout", match: (p: string) => p.startsWith("/admin/workout") },
+  { id: "recipes", label: "Recipes", icon: "🍳", href: "/admin/recipes", match: (p: string) => p.startsWith("/admin/recipes") },
+  { id: "health", label: "Health", icon: "🥗", href: "/admin/health", match: (p: string) => p.startsWith("/admin/health") },
 ] as const;
+
+function TabGlyph({ id, icon }: { id: string; icon: string }) {
+  if (id !== "workout") return icon;
+  return <svg viewBox="0 0 24 24" width="1.15em" height="1.15em" aria-hidden="true">
+    <rect x="1" y="6.5" width="3.4" height="11" rx="1.1" fill="#8D93A0" />
+    <rect x="4.6" y="8.2" width="2.5" height="7.6" rx="0.7" fill="#E4E7EE" />
+    <rect x="6.8" y="10.5" width="10.4" height="3" rx="1.2" fill="#C5CAD3" />
+    <rect x="16.9" y="8.2" width="2.5" height="7.6" rx="0.7" fill="#E4E7EE" />
+    <rect x="19.6" y="6.5" width="3.4" height="11" rx="1.1" fill="#8D93A0" />
+  </svg>;
+}
 
 function activeTabId(pathname: string) {
   return TABS.find((tab) => tab.match(pathname))?.id;
@@ -30,12 +37,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   return (
     <>
       <div
-        className={`hidden md:block fixed z-50 left-0 top-20 bottom-0 ${hovering ? "w-56" : "w-7"}`}
+        className={`hidden md:block fixed z-50 left-0 top-20 bottom-0 ${hovering ? "w-16" : "w-3"}`}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
-        <div className="absolute left-0 -translate-y-1/2" style={{ top: "calc(50vh - 5rem)" }} aria-hidden={!hovering}>
-          <div className={`flex flex-col items-stretch gap-3 transition-opacity duration-300 ${hovering ? "opacity-100" : "pointer-events-none opacity-0"}`}>
+        <div className="absolute left-2 -translate-y-1/2" style={{ top: "calc(50vh - 5rem)" }} aria-hidden={!hovering}>
+          <div className={`flex flex-col items-start gap-2 transition-opacity duration-300 ${hovering ? "opacity-100" : "pointer-events-none opacity-0"}`}>
             {TABS.map((tab) => {
               const isActive = active === tab.id;
               return (
@@ -44,16 +51,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                   href={tab.href}
                   prefetch={false}
                   tabIndex={hovering ? undefined : -1}
+                  aria-label={tab.label}
                   aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-2 px-8 py-4 text-xl font-semibold ring-2 transition rounded-r-xl
+                  className={`flex h-11 w-11 items-center justify-center rounded-lg text-lg leading-none ring-1 transition
                     ${
                       isActive
-                        ? "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white ring-white/20 shadow-[0_0_20px_rgba(120,0,255,0.5)]"
+                        ? "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white ring-white/20 shadow-[0_0_12px_rgba(120,0,255,0.45)]"
                         : "bg-black/50 text-white/80 hover:text-white ring-white/15"
                     }`}
                 >
-                  <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none">{tab.label.split(" ")[0]}</span>
-                  <span>{tab.label.split(" ").slice(1).join(" ")}</span>
+                  <span aria-hidden="true" className="flex items-center justify-center leading-none"><TabGlyph id={tab.id} icon={tab.icon} /></span>
                 </Link>
               );
             })}
@@ -83,7 +90,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                       : "text-white/70 ring-white/15 hover:text-white"
                   }`}
               >
-                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none">{tab.label.split(" ")[0]}</span>
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center text-xl leading-none"><TabGlyph id={tab.id} icon={tab.icon} /></span>
               </Link>
             );
           })}

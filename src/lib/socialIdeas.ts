@@ -4,7 +4,8 @@ export const socialPlatforms = ["tiktok", "twitter", "reddit"] as const;
 export const lifePlatforms = ["selfcare", "food", "home"] as const;
 export const vtubePlatforms = ["vtubing"] as const;
 export const makePlatforms = ["blender", "unity"] as const;
-export const ideaPlatforms = [...socialPlatforms, ...lifePlatforms, ...vtubePlatforms, ...makePlatforms] as const;
+export const appointmentPlatforms = ["appointment"] as const;
+export const ideaPlatforms = [...socialPlatforms, ...lifePlatforms, ...vtubePlatforms, ...makePlatforms, ...appointmentPlatforms] as const;
 export type IdeaPlatform = (typeof ideaPlatforms)[number];
 export function isSocialPlatform(platform: string) {
   return (socialPlatforms as readonly string[]).includes(platform);
@@ -34,6 +35,7 @@ export const socialIdeaSchema = z.object({
     const date = new Date(`${value}T12:00:00Z`);
     return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
   }).nullable(),
+  plannedTime: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   energy: z.number().int().min(1).max(10).nullable().optional(),
 });
 export const reorderIdeasSchema = z.object({

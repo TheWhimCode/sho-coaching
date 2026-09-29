@@ -422,6 +422,7 @@ model SiteConfig {
 model SocialIdea {
   checklist Json @default("[]")
   plannedDate String?
+  plannedTime String?
   placedAt DateTime?
   sortOrder Int @default(0)
   id        String   @id @default(cuid())

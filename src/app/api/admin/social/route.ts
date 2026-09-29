@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const today = new URL(req.url).searchParams.get("today");
     if (today && isDayKey(today)) {
       await prisma.socialIdea.updateMany({
-        where: { plannedDate: { not: null, lt: today }, status: { not: "completed" } },
+        where: { plannedDate: { not: null, lt: today }, status: { not: "completed" }, platform: { not: "appointment" } },
         data: { plannedDate: null, placedAt: null },
       });
     }

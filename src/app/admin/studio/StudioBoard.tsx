@@ -8,6 +8,7 @@ import { FaTiktok, FaXTwitter, FaRedditAlien } from "react-icons/fa6";
 import { isCompleted, isDayKey, isLifePlatform, isSocialPlatform, isVtubePlatform, type SocialIdea, type SocialIdeaInput } from "@/lib/socialIdeas";
 import { categoryDefaultEnergy } from "@/lib/whatNow";
 import WhatNowSurvey from "./WhatNowSurvey";
+import { HourTimeInput, clockLabel, normalizeHour } from "../HourTimeInput";
 import styles from "./studio.module.css";
 
 const socials = [
@@ -42,7 +43,7 @@ function tileId(id: string) { return `${tilePrefix}${id}`; }
 function ideaIdFromDrag(id: string) { return id.startsWith(tilePrefix) ? id.slice(tilePrefix.length) : id; }
 function monthDay(key: string) { const date = dayAt(key, 0); return `${months[date.getMonth()]} ${date.getDate()}`; }
 function staysOnDay(idea: SocialIdea, key: string) {
-  return idea.plannedDate === key && (key >= dateKey(new Date()) || isCompleted(idea));
+  return idea.plannedDate === key && (idea.platform === "appointment" || key >= dateKey(new Date()) || isCompleted(idea));
 }
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { "Content-Type": "application/json" }, cache: "no-store" });
@@ -59,6 +60,7 @@ function IdeaEditor({ idea, platform, onClose, onSaved, onUpdated, onDelete }: {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const lifeDraft = isLifePlatform(draft.platform);
+  const appointmentDraft = draft.platform === "appointment";
   useEffect(() => { dialog.current?.showModal(); }, []);
   useLayoutEffect(() => {
     if (!reading || !notesView.current || document.activeElement === notesView.current) return;
@@ -71,8 +73,13 @@ function IdeaEditor({ idea, platform, onClose, onSaved, onUpdated, onDelete }: {
   async function persist() {
     if (saving) return;
     const next = { ...draft, title: draft.title.trim(), notes: readingNotes().trim(), checklist: draft.checklist.filter(task => task.text.trim()).map(task => ({ ...task, text: task.text.trim() })) };
+    if (next.platform === "appointment") {
+      const plannedTime = normalizeHour(next.plannedTime ?? "");
+      if (!plannedTime) { setError("Use 24-hour time, like 14:30."); return; }
+      next.plannedTime = plannedTime;
+    }
     if (!next.title) { onClose(); return; }
-    if (idea && next.title === idea.title && next.notes === idea.notes && next.plannedDate === idea.plannedDate && next.status === idea.status && next.energy === idea.energy && JSON.stringify(next.checklist) === JSON.stringify(idea.checklist)) { onClose(); return; }
+    if (idea && next.title === idea.title && next.notes === idea.notes && next.plannedDate === idea.plannedDate && next.plannedTime === idea.plannedTime && next.status === idea.status && next.energy === idea.energy && JSON.stringify(next.checklist) === JSON.stringify(idea.checklist)) { onClose(); return; }
     setSaving(true); setError("");
     try { onSaved(await request<SocialIdea>(`/api/admin/social${idea ? `/${idea.id}` : ""}`, { method: idea ? "PATCH" : "POST", body: JSON.stringify(next) })); }
     catch (error) { setError((error as Error).message); setSaving(false); }
@@ -97,18 +104,19 @@ function IdeaEditor({ idea, platform, onClose, onSaved, onUpdated, onDelete }: {
       <div className={styles.readingContent}><h2 id="idea-heading">{draft.title || "Untitled"}</h2><p ref={notesView} contentEditable suppressContentEditableWarning spellCheck={false} autoCorrect="off" autoCapitalize="off" role="textbox" aria-label="Description" onBlur={() => { void saveReadingNotes(); }} onPaste={event => { event.preventDefault(); const text = event.clipboardData.getData("text/plain").slice(0, 5000); document.execCommand("insertText", false, text); }} onKeyDown={event => { if ((event.metaKey || event.ctrlKey) && ["b", "i", "u"].includes(event.key.toLowerCase())) event.preventDefault(); }} /></div>
       {error && <p className={styles.error} role="alert">{error}</p>}
     </> : <form onSubmit={save}>
-      <div className={styles.dialogHeading}><h2 id="idea-heading">{idea ? (lifeDraft ? "Edit task" : "Edit idea") : (lifeDraft ? "A new task" : "A new idea")}</h2><div className={styles.dialogHeadingActions}><button type="button" className={styles.recordButton} disabled={saving} aria-label="Recording view" onClick={() => setReading(true)}><Eye size={18} /></button><button type="button" aria-label="Close editor" disabled={saving} onClick={onClose} className={styles.iconButton}><X size={20} /></button></div></div>
+      <div className={styles.dialogHeading}><h2 id="idea-heading">{appointmentDraft ? "Appointment" : idea ? (lifeDraft ? "Edit task" : "Edit idea") : (lifeDraft ? "A new task" : "A new idea")}</h2><div className={styles.dialogHeadingActions}><button type="button" className={styles.recordButton} disabled={saving} aria-label="Recording view" onClick={() => setReading(true)}><Eye size={18} /></button><button type="button" aria-label="Close editor" disabled={saving} onClick={onClose} className={styles.iconButton}><X size={20} /></button></div></div>
       <fieldset disabled={saving} className={styles.editorFields}>
-        <label className={styles.field}>Title<input autoFocus required maxLength={180} value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} placeholder={lifeDraft ? "What's the task?" : "What's the idea?"} /></label>
-        <div className={styles.checklistEditor}><h3>Checklist</h3>{draft.checklist.map((task, index) => <div className={styles.taskEditor} key={task.id}>
+        <label className={styles.field}>{appointmentDraft ? "Event name" : "Title"}<input autoFocus required maxLength={180} value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} placeholder={appointmentDraft ? "What is happening?" : lifeDraft ? "What's the task?" : "What's the idea?"} /></label>
+        {!appointmentDraft && <div className={styles.checklistEditor}><h3>Checklist</h3>{draft.checklist.map((task, index) => <div className={styles.taskEditor} key={task.id}>
           <input type="checkbox" aria-label={`Complete task ${index + 1}`} checked={task.done} onChange={e => taskChange(task.id, { done: e.target.checked })} />
           <input aria-label={`Task ${index + 1}`} required maxLength={500} value={task.text} placeholder="What do you need to do?" onChange={e => taskChange(task.id, { text: e.target.value })} />
           <button type="button" className={styles.iconButton} aria-label={`Remove task ${index + 1}`} onClick={() => setDraft(d => ({ ...d, checklist: d.checklist.filter(item => item.id !== task.id) }))}><X size={16} /></button>
-        </div>)}<button type="button" className={styles.addCard} disabled={draft.checklist.length >= 100} onClick={() => setDraft(d => ({ ...d, checklist: [...d.checklist, { id: crypto.randomUUID(), text: "", done: false }] }))}><Plus size={16} />Add a task</button></div>
-        <label className={styles.field}>Description<textarea rows={5} maxLength={5000} placeholder={lifeDraft ? "Notes, reminders, details…" : "Your hook, script, and talking points…"} value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} /></label>
+        </div>)}<button type="button" className={styles.addCard} disabled={draft.checklist.length >= 100} onClick={() => setDraft(d => ({ ...d, checklist: [...d.checklist, { id: crypto.randomUUID(), text: "", done: false }] }))}><Plus size={16} />Add a task</button></div>}
+        <label className={styles.field}>{appointmentDraft ? "Details" : "Description"}<textarea rows={5} maxLength={5000} placeholder={appointmentDraft || lifeDraft ? "Notes, reminders, details…" : "Your hook, script, and talking points…"} value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} /></label>
         <label className={styles.field}>Timeline placement<input type="date" value={draft.plannedDate ?? ""} onChange={e => setDraft({ ...draft, plannedDate: e.target.value || null })} /></label>
+        {appointmentDraft && <label className={styles.field}>Time<HourTimeInput required value={draft.plannedTime ?? ""} onChange={value => setDraft({ ...draft, plannedTime: value || null })} /></label>}
         {draft.plannedDate && <button type="button" className={styles.secondary} onClick={() => setDraft({ ...draft, plannedDate: null })}>Remove from timeline</button>}
-        <label className={styles.field}>Energy override<span>Blank uses this category’s default ({categoryDefaultEnergy[draft.platform] ?? 5}/10)</span><input type="number" min={1} max={10} value={draft.energy ?? ""} onChange={e => { const value = e.target.value; setDraft({ ...draft, energy: value === "" ? null : Math.min(10, Math.max(1, Number(value) || 1)) }); }} placeholder={`${categoryDefaultEnergy[draft.platform] ?? 5}`} /></label>
+        {!appointmentDraft && <label className={styles.field}>Energy override<span>Blank uses this category’s default ({categoryDefaultEnergy[draft.platform] ?? 5}/10)</span><input type="number" min={1} max={10} value={draft.energy ?? ""} onChange={e => { const value = e.target.value; setDraft({ ...draft, energy: value === "" ? null : Math.min(10, Math.max(1, Number(value) || 1)) }); }} placeholder={`${categoryDefaultEnergy[draft.platform] ?? 5}`} /></label>}
       </fieldset>
       {error && <p className={styles.error} role="alert">{error}</p>}
       {idea && <div className={styles.deleteConfirm}>{confirmDelete ? <><span>Delete this {lifeDraft ? "task" : "idea"}?</span><button type="button" disabled={saving} onClick={async () => { setSaving(true); try { await onDelete(); } catch (error) { setError((error as Error).message); setSaving(false); } }}>Delete</button><button type="button" onClick={() => setConfirmDelete(false)}>Keep</button></> : <button type="button" onClick={() => setConfirmDelete(true)}><Trash2 size={14} /> Delete {lifeDraft ? "task" : "idea"}</button>}</div>}
@@ -287,7 +295,8 @@ function DayFocus({ date, ideas, disabled, ready, onBack, onOpenIdea }: { date: 
   const unityCount = placed.filter(idea => idea.platform === "unity").length;
   const checks = placed.reduce((total, idea) => total + idea.checklist.length, 0);
   const checksDone = placed.reduce((total, idea) => total + idea.checklist.filter(task => task.done).length, 0);
-  const mix = [socialCount && `${socialCount} social`, lifeCount && `${lifeCount} life`, vtubeCount && `${vtubeCount} VTubing`, blenderCount && `${blenderCount} Blender`, unityCount && `${unityCount} Unity`].filter(Boolean);
+  const appointmentCount = placed.filter(idea => idea.platform === "appointment").length;
+  const mix = [socialCount && `${socialCount} social`, lifeCount && `${lifeCount} life`, vtubeCount && `${vtubeCount} VTubing`, blenderCount && `${blenderCount} Blender`, unityCount && `${unityCount} Unity`, appointmentCount && `${appointmentCount} appointment${appointmentCount === 1 ? "" : "s"}`].filter(Boolean);
   const mixText = mix.length ? ` · ${mix.join(" · ")}` : "";
   return <div className={styles.dayFocus}>
     <div className={styles.dayFocusTop}><button type="button" className={styles.dayBack} onClick={onBack}><ChevronLeft size={16} />Back</button></div>
@@ -301,7 +310,7 @@ function DayFocus({ date, ideas, disabled, ready, onBack, onOpenIdea }: { date: 
         <p className={styles.dayFocusMeta}>{placed.length ? `${placed.length} planned${mixText}${checks ? ` · ${checksDone}/${checks} done` : ""}` : "Nothing planned yet"}</p>
         {placed.length ? <div className={styles.dayFocusList} style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(88px, 1fr))` }}>
           {placed.map((idea, index) => {
-            const category = categories.find(item => item.id === idea.platform);
+            const category = categories.find(item => item.id === idea.platform) ?? (idea.platform === "appointment" ? { name: idea.plannedTime ? `Appointment · ${clockLabel(idea.plannedTime)}` : "Appointment" } : undefined);
             const done = idea.checklist.filter(task => task.done).length;
             const total = idea.checklist.length;
             return <button key={idea.id} type="button" className={styles.dayFocusItem} data-platform={idea.platform} style={{ gridColumn: (index % columns) + 1, gridRow: Math.floor(index / columns) + 1 }} onClick={() => onOpenIdea(idea)}>
@@ -320,14 +329,12 @@ function DayFocus({ date, ideas, disabled, ready, onBack, onOpenIdea }: { date: 
 }
 function IdeaCard({ idea, busy, open, update, remove }: { idea: SocialIdea; busy: boolean; open: () => void; update: (patch: Partial<SocialIdeaInput>) => void; remove: () => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging, isOver } = useSortable({ id: idea.id, disabled: busy });
-  const [confirm, setConfirm] = useState(false);
   const completed = isCompleted(idea);
   return <article ref={setNodeRef} className={styles.card} data-dragging={isDragging || undefined} data-over={isOver && !isDragging || undefined} data-completed={completed || undefined} style={{ transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined, opacity: isDragging ? .35 : 1 }}>
-    <div className={styles.cardTop}><button className={styles.dragHandle} {...attributes} {...listeners} disabled={busy} aria-label={`Drag ${idea.title} to reorder or onto the timeline`}><GripVertical size={18} /></button><button className={styles.iconButton} disabled={busy} aria-label={`Delete ${idea.title}`} onClick={() => setConfirm(true)}><Trash2 size={15} /></button></div>
+    <div className={styles.cardTop}><button className={styles.dragHandle} {...attributes} {...listeners} disabled={busy} aria-label={`Drag ${idea.title} to reorder or onto the timeline`}><GripVertical size={18} /></button><button className={styles.iconButton} disabled={busy} aria-label={`Delete ${idea.title}`} onClick={remove}><Trash2 size={15} /></button></div>
     <button className={styles.cardContent} onClick={open}><h3>{idea.title}</h3></button>
     <ul className={styles.checklist}>{idea.checklist.map(task => <li key={task.id}><label data-done={task.done}><input type="checkbox" checked={task.done} disabled={busy} onChange={e => update({ checklist: idea.checklist.map(item => item.id === task.id ? { ...item, done: e.target.checked } : item) })} /><span>{task.text}</span></label></li>)}</ul>
     {!idea.checklist.length && <button className={styles.addTaskLink} onClick={open}>+ Add the first task</button>}
-    {confirm && <div className={styles.deleteConfirm}><span>Delete this idea?</span><button disabled={busy} onClick={remove}>Delete</button><button onClick={() => setConfirm(false)}>Keep</button></div>}
     <div className={styles.cardFooter}>{idea.plannedDate && <span className={styles.cardDate}>{monthDay(idea.plannedDate)}</span>}<button type="button" className={styles.doneButton} data-on={completed || undefined} disabled={busy} onClick={() => update({ status: completed ? "idea" : "completed" })}><Check size={14} />{completed ? "Completed" : "Done"}</button></div>
   </article>;
 }
@@ -354,7 +361,7 @@ export default function StudioBoard() {
   const [carrySize, setCarrySize] = useState(0);
   const [focused, setFocused] = useState<Platform | null>(null);
   const [boardPage, setBoardPage] = useState<BoardPage>("social");
-  const [visiblePlatforms, setVisiblePlatforms] = useState<Record<Platform, boolean>>({ tiktok: true, twitter: true, reddit: true, selfcare: true, food: true, home: true, vtubing: true, blender: true, unity: true });
+  const [visiblePlatforms, setVisiblePlatforms] = useState<Record<Platform, boolean>>({ tiktok: true, twitter: true, reddit: true, selfcare: true, food: true, home: true, vtubing: true, blender: true, unity: true, appointment: true });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), useSensor(KeyboardSensor));
   async function load() { setLoading(true); setError(""); try { setIdeas(await request<SocialIdea[]>(`/api/admin/social?today=${dateKey(new Date())}`)); } catch (error) { setError((error as Error).message); } finally { setLoading(false); } }
@@ -398,7 +405,7 @@ export default function StudioBoard() {
   async function update(idea: SocialIdea, patch: Partial<SocialIdeaInput>) {
     const today = dateKey(new Date());
     const next = { ...patch };
-    if (next.status === "idea" && idea.plannedDate && idea.plannedDate < today) next.plannedDate = null;
+    if (next.status === "idea" && idea.platform !== "appointment" && idea.plannedDate && idea.plannedDate < today) next.plannedDate = null;
     setError("");
     setIdeas(items => items.map(item => item.id === idea.id ? { ...item, ...next, ...("plannedDate" in next ? { placedAt: next.plannedDate ? new Date().toISOString() : null } : {}) } : item));
     try { saved(await request<SocialIdea>(`/api/admin/social/${idea.id}`, { method: "PATCH", body: JSON.stringify(next) })); }
@@ -437,12 +444,12 @@ export default function StudioBoard() {
       setIdeas(previous);
     });
   }
-  const visible = ideas.filter(idea => !isCompleted(idea) && (!hidePlanned || !idea.plannedDate) && `${idea.title} ${idea.notes} ${idea.checklist.map(task => task.text).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
+  const visible = ideas.filter(idea => idea.platform !== "appointment" && !isCompleted(idea) && (!hidePlanned || !idea.plannedDate) && `${idea.title} ${idea.notes} ${idea.checklist.map(task => task.text).join(" ")}`.toLowerCase().includes(query.toLowerCase()));
   const pageCategories = focused ? categories.filter(category => category.id === focused) : catalog[boardPage];
   const pageCount = visible.filter(idea => catalog[boardPage].some(category => category.id === idea.platform)).length;
   const lifePage = boardPage === "life";
   const today = dateKey(new Date());
-  const timelineIdeas = ideas.filter(idea => visiblePlatforms[idea.platform]);
+  const timelineIdeas = ideas.filter(idea => idea.platform === "appointment" || visiblePlatforms[idea.platform]);
   const dragIdea = dragging ? ideas.find(idea => idea.id === ideaIdFromDrag(dragging)) : undefined;
   function openDay(key: string) { if (!skipDayClick.current) setSelectedDay(key); }
   return <section className={styles.board}>
