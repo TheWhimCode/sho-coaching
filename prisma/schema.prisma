@@ -578,6 +578,20 @@ model DailyNutritionTarget {
   @@schema("admin")
 }
 
+model WorkoutLog {
+  id         String   @id @default(cuid())
+  workoutDate String
+  exercise   String
+  sets       Int
+  reps       Int
+  weightKg   Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([workoutDate, exercise])
+  @@schema("admin")
+}
+
 model RecipeIngredient {
   id       String @id @default(cuid())
   recipeId String
