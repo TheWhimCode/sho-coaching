@@ -112,6 +112,9 @@
 .fridgeSlot button:hover { color: #fff; border-color: #ffffff88; background: #080914e6; }
 .fridgeSlot button:disabled { opacity: .4; cursor: default; }
 .pantryColumns { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.8fr); gap: 28px; }
+.groceryTabs { display: flex; gap: 5px; margin: 12px 0 9px; }
+.groceryTabs button { padding: 6px 9px; border: 1px solid #ffffff18; border-radius: 7px; color: #aaa2b7; background: #ffffff05; font-size: 10px; cursor: pointer; }
+.groceryTabs button[aria-selected="true"] { border-color: #e8c56b75; color: #f3dda0; background: #e8c56b17; }
 .groceryList, .shoppingList { max-height: min(470px, calc(100dvh - 255px)); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
 .groceryList::-webkit-scrollbar, .shoppingList::-webkit-scrollbar { display: none; }
 .shopPane { padding-left: 22px; border-left: 1px solid #ffffff12; }
@@ -124,6 +127,7 @@
 .onHand { display: block; margin-top: 3px; color: #8f89a4; font-size: 11px; font-style: normal; }
 .short b, .short .onHand { color: #f0a39a; }
 .groceryDialog p label { min-width: 0; font-size: 10px; color: #b8afc2; }
+.groceryDialog p strong small { display: block; margin-top: 3px; color: #90889d; font-size: 9px; font-weight: 400; }
 .groceryDialog p label input { margin-top: 4px; }
 .groceryDialog > button { float: right; color: #b8afc2; font-size: 12px; cursor: pointer; }.groceryDialog h2 { margin-bottom: 4px; }.groceryCount { display: block; margin-bottom: 12px; color: #90889d; font-size: 11px; }.grocerySearch { width: 100%; margin: 0 0 8px; padding: 8px 10px; border: 1px solid #ffffff18; border-radius: 8px; color: #f2edf8; background: #080914; font-size: 13px; }.groceryDialog .groceryEmpty { display: block; margin: 8px 0 0; padding: 0; border: 0; color: #90889d; font-size: 12px; }.groceryDialog p { display: grid; grid-template-columns: minmax(0, 1fr) 100px 60px 24px; align-items: center; gap: 10px; margin: 0; padding: 10px 0; border-top: 1px solid #ffffff0c; color: #eee8f5; }.groceryDialog p input { width: 100%; padding: 7px 8px; border: 1px solid #ffffff18; border-radius: 7px; color: #f2edf8; background: #080914; font-size: 12px; }.groceryDialog p span { color: #cdb88b; font-size: 11px; }.clearGrocery { color: #b8a3ae; font-size: 20px; cursor: pointer; }.clearGrocery:hover { color: #f0b0a8; }
 

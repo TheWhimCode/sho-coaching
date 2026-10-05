@@ -7,6 +7,12 @@
 .weekInfo strong { font-size: 24px; color: #d7e9df; font-weight: 500; }
 .weekInfo strong span { font-size: 12px; color: #8d95a3; }
 .weekInfo p { margin-top: 6px; font-size: 12px; color: #9792a8; }
+.testMode { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 16px; padding: 13px 16px; border: 1px solid #ffffff17; border-radius: 13px; background: #ffffff04; }
+.testMode strong { color: #d9eee3; font-size: 13px; font-weight: 600; }
+.testMode p { margin-top: 3px; color: #9792a8; font-size: 11px; }
+.testMode button { flex: 0 0 auto; padding: 8px 11px; border: 1px solid #b8dac955; border-radius: 8px; color: #cce8d7; font-size: 11px; cursor: pointer; }
+.testMode[data-active="true"] { border-color: #b8dac980; background: #b8dac910; }
+.testMode[data-active="true"] button { background: #b8dac922; }
 .calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
 .dayCard { padding: 10px; min-width: 0; border: 1px solid #ffffff0f; border-radius: 15px; background: #101322; transition: border-color .15s; }
 .dayCard[data-active="true"] { border-color: #a9d3bb75; background: linear-gradient(160deg, #b8dac910, transparent), #111523; }

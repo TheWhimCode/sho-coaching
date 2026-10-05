@@ -63,7 +63,7 @@ function familiesOf(recipes: Recipe[]) {
   }, []);
 }
 
-type GroceryRow = { id: string; name: string; count: number | null; grams: number | null; inStock: boolean };
+type GroceryRow = { id: string; name: string; count: number | null; grams: number | null; purchasedAt: string; inStock: boolean };
 type ShoppingRow = { id: string; name: string; grams: number };
 
 // Servings you can cook from stock right now: the tightest ingredient decides.
@@ -79,6 +79,7 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
   const [groceries, setGroceries] = useState<GroceryRow[] | null>(null);
   const [shopping, setShopping] = useState<ShoppingRow[] | null>(null);
   const [groceryQuery, setGroceryQuery] = useState("");
+  const [groceryTab, setGroceryTab] = useState<"stock" | "recent">("stock");
   const [groceryError, setGroceryError] = useState("");
   const [savingGrocery, setSavingGrocery] = useState<string | null>(null);
   const [shopMessage, setShopMessage] = useState("");
@@ -144,6 +145,7 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
 
   async function openPantry() {
     setGroceryQuery("");
+    setGroceryTab("stock");
     setGroceryError("");
     setGroceries(null);
     setShopping(null);
@@ -213,8 +215,12 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
     </div>
   ) : null;
   const groceryNeedle = groceryQuery.trim().toLowerCase();
-  const visibleGroceries = (groceries ?? []).filter(item => groceryNeedle ? item.name.toLowerCase().includes(groceryNeedle) : item.inStock)
-    .sort((a, b) => Number(b.inStock) - Number(a.inStock) || a.name.localeCompare(b.name));
+  const visibleGroceries = (groceries ?? []).filter(item => {
+    if (groceryNeedle) return item.name.toLowerCase().includes(groceryNeedle);
+    return groceryTab === "recent" ? Boolean(item.purchasedAt) : item.inStock;
+  }).sort((a, b) => groceryTab === "recent"
+    ? b.purchasedAt.localeCompare(a.purchasedAt) || a.name.localeCompare(b.name)
+    : Number(b.inStock) - Number(a.inStock) || a.name.localeCompare(b.name));
   const stockedGroceries = (groceries ?? []).filter(item => item.inStock).length;
   const shorts = selected?.ingredients.filter(isShort) ?? [];
   const picker = !selected && activeCategory ? familiesOf(categoryRecipes) : [];
@@ -388,12 +394,16 @@ export default function RecipesBoard({ recipes, fridge, category, recipeId }: { 
         <div className={styles.pantryColumns}>
           <div>
             <h2>Groceries</h2>
-            <span className={styles.groceryCount}>{groceryNeedle ? `${visibleGroceries.length} matching` : `${stockedGroceries} items in stock`} · Count and grams stay linked when a weight is known.</span>
+            <div className={styles.groceryTabs} role="tablist" aria-label="Grocery views">
+              <button type="button" role="tab" aria-selected={groceryTab === "stock"} onClick={() => setGroceryTab("stock")}>In stock</button>
+              <button type="button" role="tab" aria-selected={groceryTab === "recent"} onClick={() => setGroceryTab("recent")}>Recently added</button>
+            </div>
+            <span className={styles.groceryCount}>{groceryNeedle ? `${visibleGroceries.length} matching` : groceryTab === "recent" ? `${visibleGroceries.length} recent additions · newest first` : `${stockedGroceries} items in stock`} · Count and grams stay linked when a weight is known.</span>
             <input className={styles.grocerySearch} aria-label="Find a grocery" placeholder="Find a grocery, including empty ones…" value={groceryQuery} onChange={event => setGroceryQuery(event.target.value)} />
             {groceryError && <div role="alert">{groceryError}</div>}
             <div className={styles.groceryList}>
-              {visibleGroceries.map(item => <p key={item.id}><strong>{item.name}</strong>{(["count", "grams"] as const).map(field => <label key={`${field}-${item[field]}`}>{field === "count" ? "Count" : "Grams"}<input type="number" min="0" step="any" disabled={savingGrocery !== null} aria-label={`${item.name} ${field}`} defaultValue={item[field] ?? ""} placeholder="Unknown" onBlur={event => { if (event.target.value !== String(item[field] ?? "")) void updateGrocery(item.id, field, event.target.value); }} /></label>)}<button disabled={savingGrocery !== null} className={styles.clearGrocery} aria-label={`Set ${item.name} to zero`} onClick={() => void updateGrocery(item.id, "count", "0")}>×</button></p>)}
-              {groceryNeedle && !visibleGroceries.length && <p className={styles.groceryEmpty}>No groceries match that search.</p>}
+              {visibleGroceries.map(item => <p key={item.id}><strong>{item.name}{groceryTab === "recent" && item.purchasedAt && <small>Added {new Date(item.purchasedAt).toLocaleDateString()}</small>}</strong>{(["count", "grams"] as const).map(field => <label key={`${field}-${item[field]}`}>{field === "count" ? "Count" : "Grams"}<input type="number" min="0" step="any" disabled={savingGrocery !== null} aria-label={`${item.name} ${field}`} defaultValue={item[field] ?? ""} placeholder="Unknown" onBlur={event => { if (event.target.value !== String(item[field] ?? "")) void updateGrocery(item.id, field, event.target.value); }} /></label>)}<button disabled={savingGrocery !== null} className={styles.clearGrocery} aria-label={`Set ${item.name} to zero`} onClick={() => void updateGrocery(item.id, "count", "0")}>×</button></p>)}
+              {!visibleGroceries.length && <p className={styles.groceryEmpty}>{groceryNeedle ? "No groceries match that search." : groceryTab === "recent" ? "No grocery lots have been added yet." : "Nothing is currently in stock."}</p>}
             </div>
           </div>
           <div className={styles.shopPane}>

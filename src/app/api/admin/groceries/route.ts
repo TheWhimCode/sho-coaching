@@ -16,8 +16,9 @@ export async function GET() {
   return Response.json(items.flatMap(item => item.lots.length ? item.lots.map(row => ({
     id: row.id, name: item.name,
     count: numberOrNull(row.remainingCount), grams: numberOrNull(row.remainingWeightGrams),
+    purchasedAt: row.purchasedAt.toISOString(),
     inStock: lotInStock(row),
-  })) : [{ id: item.id, name: item.name, count: null, grams: null, inStock: false }]));
+  })) : [{ id: item.id, name: item.name, count: null, grams: null, purchasedAt: '', inStock: false }]));
 }
 
 export async function PATCH(request: Request) {

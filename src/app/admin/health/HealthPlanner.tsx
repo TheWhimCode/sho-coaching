@@ -83,6 +83,8 @@ function addDays(d: Date, amount: number) {
 export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] }) {
   const [rangeStart, setRangeStart] = useState<Date | null>(null);
   const [meals, setMeals] = useState<Meals>({});
+  const [testMode, setTestMode] = useState(false);
+  const [testMeals, setTestMeals] = useState<Meals>({});
   const [outsideMeals, setOutsideMeals] = useState<OutsideMeal[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [picker, setPicker] = useState<{ date: string; slot: MealSlot } | null>(null);
@@ -102,6 +104,8 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
   const days = useMemo(() => rangeStart ? Array.from({ length: 7 }, (_, index) => addDays(rangeStart, index)) : [], [rangeStart]);
   const firstDay = days.length ? dayKey(days[0]) : null;
   const lastDay = days.length ? dayKey(days[6]) : null;
+  // Test meals live only in this browser. They never reserve cooked portions or groceries.
+  const displayedMeals = testMode ? testMeals : meals;
   useEffect(() => {
     setRangeStart(atNoon(new Date()));
   }, []);
@@ -142,7 +146,7 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
     else dialog.current?.close();
   }, [pickerOpen]);
   useEffect(() => {
-    if (!pickerOpen || !firstDay) return;
+    if (!pickerOpen || !firstDay || testMode) return;
     const controller = new AbortController();
     setCheckingStock(true);
     setStockError(false);
@@ -159,7 +163,7 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
       .catch(() => { if (!controller.signal.aborted) { setStockError(true); setAvailability({}); } })
       .finally(() => { if (!controller.signal.aborted) setCheckingStock(false); });
     return () => controller.abort();
-  }, [pickerOpen, firstDay]);
+  }, [pickerOpen, firstDay, testMode]);
   async function loadPlans(from: string, to: string, signal: AbortSignal): Promise<ServerSlot[]> {
     const response = await fetch(`/api/admin/meal-plan?from=${from}&to=${to}`, { cache: 'no-store', signal });
     if (!response.ok) throw new Error('Could not load plan');
@@ -183,10 +187,18 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
     const recipe = recipes.find(r => r.id === recipeId);
     const addonRecipeId = recipe ? chosenAddons[recipe.familyKey ?? recipe.id] : undefined;
     const servings = recipe?.portionable ? portions[recipe.familyKey ?? recipe.id] ?? 1 : 1;
-    if (recipe && (recipe.isAddon || checkingStock || stockError || maxAvailable(recipe) < servings)) return;
+    if (recipe && (recipe.isAddon || (!testMode && (checkingStock || stockError || maxAvailable(recipe) < servings)))) return;
     setPlanError("");
     setSaving(true);
     try {
+      if (testMode) {
+        const next = { ...testMeals };
+        if (recipe) next[key] = { recipeId, servings, ...(addonRecipeId ? { addonRecipeId } : {}) };
+        else delete next[key];
+        setTestMeals(next);
+        setPicker(null);
+        return;
+      }
       const response = recipe
         ? await fetch('/api/admin/meal-plan', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plannedDate: picker.date, mealSlot: picker.slot, recipeId, servings, addonRecipeId: addonRecipeId || null, from: firstDay }) })
         : await fetch(`/api/admin/meal-plan?date=${picker.date}&slot=${picker.slot}`, { method: 'DELETE' });
@@ -203,19 +215,19 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
   }
   function selected(date: string, selectedSlots: readonly MealSlot[] = slots): PlannerRecipe[] {
     const planned = selectedSlots.flatMap(slot => {
-      const meal = meals[date + ':' + slot];
+      const meal = displayedMeals[date + ':' + slot];
       const recipe = recipes.find(r => r.id === meal?.recipeId);
       const servings = recipe?.portionable ? meal.servings : 1;
       const addon = recipes.find(r => r.id === meal?.addonRecipeId && r.isAddon);
       return recipe ? [{ ...recipe, servings, nutrition: mealNutrition(recipe.nutrition, servings, addon?.nutrition) }] : [];
     });
-    return [...planned, ...outsideMeals.filter(meal => meal.date === date && selectedSlots.includes(meal.mealSlot)).map(meal => ({
+    return [...planned, ...(!testMode ? outsideMeals : []).filter(meal => meal.date === date && selectedSlots.includes(meal.mealSlot)).map(meal => ({
       id: meal.id, title: meal.name, portionable: false, isAddon: false,
       familyKey: null, familyTitle: null, variantLabel: null, nutrition: outsideMealNutrition(meal),
     }))];
   }
   function hasMeal(date: string, slot: MealSlot) {
-    return Boolean(meals[date + ':' + slot]?.recipeId) || outsideMeals.some(meal => meal.date === date && meal.mealSlot === slot);
+    return Boolean(displayedMeals[date + ':' + slot]?.recipeId) || (!testMode && outsideMeals.some(meal => meal.date === date && meal.mealSlot === slot));
   }
   function slotCount(date: string, selectedSlots: readonly MealSlot[]) {
     return selectedSlots.filter(slot => hasMeal(date, slot)).length;
@@ -261,7 +273,9 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
     const addonId = chosenAddons[recipe.familyKey ?? recipe.id];
     return addonId ? withAddons[recipe.id]?.[addonId] ?? 0 : availability[recipe.id] ?? 0;
   }
-  const availableRecipes = checkingStock || stockError ? [] : recipes.filter(recipe => !recipe.isAddon && maxAvailable(recipe) >= (recipe.portionable ? portions[recipe.familyKey ?? recipe.id] ?? 1 : 1));
+  const availableRecipes = testMode
+    ? recipes.filter(recipe => !recipe.isAddon)
+    : checkingStock || stockError ? [] : recipes.filter(recipe => !recipe.isAddon && maxAvailable(recipe) >= (recipe.portionable ? portions[recipe.familyKey ?? recipe.id] ?? 1 : 1));
   const recipeFamilies = availableRecipes.reduce<{ key: string; title: string; recipes: PlannerRecipe[] }[]>((families, recipe) => {
     const key = recipe.familyKey ?? recipe.id;
     const family = families.find(item => item.key === key);
@@ -278,6 +292,10 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
       <div><p className={styles.eyebrow}>YOUR SEVEN-DAY FOOD LOG</p><h1>A little planning.<br /><span>A well-fed week.</span></h1></div>
       <div className={styles.weekInfo}><strong>{weeklyMainCount}<span> / 14 meals · {weeklySnackCount} snacks</span></strong><p>{days.length ? days[0].toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " – " + days[6].toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "Loading week…"}</p></div>
     </header>
+    <section className={styles.testMode} data-active={testMode} aria-label="Test planning mode">
+      <div><strong>Test plan</strong><p>Try a healthy week without using or reserving any ingredients.</p></div>
+      <button type="button" role="switch" aria-checked={testMode} onClick={() => { setTestMode(current => { if (current) setTestMeals({}); return !current; }); setPicker(null); setPlanError(""); }}>{testMode ? "Test mode on" : "Turn on test mode"}</button>
+    </section>
     <section className={styles.calendar} aria-label="Seven-day meal planner">
       {days.map((date, i) => {
         const key = dayKey(date);
@@ -289,11 +307,11 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
           {slots.map(slot => {
             const isSnack = slot === 'snack-1' || slot === 'snack-2';
             const mealKey = key + ':' + slot;
-            const meal = meals[mealKey];
+            const meal = displayedMeals[mealKey];
             const recipe = recipes.find(r => r.id === meal?.recipeId);
             const addon = recipes.find(r => r.id === meal?.addonRecipeId && r.isAddon);
-            const outside = outsideMeals.filter(entry => entry.date === key && entry.mealSlot === slot);
-            return <button key={slot} className={`${styles.mealSlot} ${isSnack ? styles.snackSlot : ''}`} data-filled={!!recipe || outside.length > 0} aria-label={`Choose ${mealSlotLabels[slot]} for ${date.toLocaleDateString()}`} onClick={() => { setActive(key); setQuery(""); setPlanError(""); setPortions({}); setChosenAddons({}); setAddonPicker(null); setAvailability({}); setCheckingStock(true); setPicker({ date: key, slot }); }}>
+            const outside = testMode ? [] : outsideMeals.filter(entry => entry.date === key && entry.mealSlot === slot);
+            return <button key={slot} className={`${styles.mealSlot} ${isSnack ? styles.snackSlot : ''}`} data-filled={!!recipe || outside.length > 0} aria-label={`Choose ${mealSlotLabels[slot]} for ${date.toLocaleDateString()}`} onClick={() => { setActive(key); setQuery(""); setPlanError(""); setPortions({}); setChosenAddons({}); setAddonPicker(null); setAvailability({}); setCheckingStock(!testMode); setPicker({ date: key, slot }); }}>
               {isSnack && !recipe && !outside.length ? <><Plus size={13} /><small>{mealSlotLabels[slot]}</small></> : <><small>{mealSlotLabels[slot]}</small><span>{recipe?.title ?? (outside.length ? "Restaurant meal" : "Choose meal")}</span>{!recipe && !outside.length && <Plus size={14} />}</>}
               {recipe && addon && <span className={styles.dayAddon}>+ {addon.title}</span>}
               {outside.length > 0 && <span className={styles.dayAddon}>{outside.map(entry => entry.name).join(' + ')}</span>}
@@ -302,7 +320,7 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
         </article>;
       })}
     </section>
-    <p className={styles.helper}>Use Left and Right Arrow to browse days · Nutrition updates for the displayed seven-day window · Planned meals hold their ingredients until you cook</p>
+    <p className={styles.helper}>{testMode ? "Test mode is temporary: recipes are shown regardless of stock, and nothing is saved, reserved or deducted." : "Use Left and Right Arrow to browse days · Nutrition updates for the displayed seven-day window · Planned meals hold their ingredients until you cook"}</p>
     {planError && !pickerOpen && <p role="alert">{planError}</p>}
     {activeDay && <section id="daily-nutrition" className={styles.daily}>
       <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>{activeDay.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</p><h2>Your daily essentials</h2></div><span>{slotCount(active!, mainMealSlots)} of 2 meals · {slotCount(active!, snackSlots)} of 2 snacks</span></div>
@@ -328,16 +346,16 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
         <div className={styles.recipeOptions}>{matchingFamilies.map(family => {
           const first = family.recipes[0];
           const amount = portions[family.key] ?? 1;
-          const maxServings = Math.max(...family.recipes.map(maxAvailable));
+          const maxServings = testMode ? 20 : Math.max(...family.recipes.map(maxAvailable));
           const inFridge = family.recipes.reduce((total, recipe) => total + (cooked[recipe.id] ?? 0), 0);
           const addon = recipes.find(recipe => recipe.id === chosenAddons[family.key] && recipe.isAddon);
           const preview = mealNutrition(first.nutrition, first.portionable ? amount : 1, addon?.nutrition);
-          const addonOptions = recipes.filter(recipe => recipe.isAddon && family.recipes.some(main => (withAddons[main.id]?.[recipe.id] ?? 0) >= (main.portionable ? amount : 1)));
+          const addonOptions = recipes.filter(recipe => recipe.isAddon && (testMode || family.recipes.some(main => (withAddons[main.id]?.[recipe.id] ?? 0) >= (main.portionable ? amount : 1))));
           return <div className={styles.recipeOption} key={family.key}>
             <button className={styles.recipeChoice} disabled={saving} onClick={() => choose(first.id)}>
               <strong>{family.title}</strong>
               <span>{family.recipes.length > 1 ? `${family.recipes.length} versions` : `${preview.calories != null ? format(preview.calories) + " kcal" : "Energy not estimated"} · ${preview.proteinGrams != null ? format(preview.proteinGrams) + " g protein" : "Protein not estimated"}`}</span>
-              <span>{inFridge > 0 ? `${inFridge} in the fridge · ${maxServings} ${maxServings === 1 ? "serving" : "servings"} available` : `${maxServings} ${maxServings === 1 ? "serving" : "servings"} available`}</span>
+              <span>{testMode ? "Available in test mode · no ingredients used" : inFridge > 0 ? `${inFridge} in the fridge · ${maxServings} ${maxServings === 1 ? "serving" : "servings"} available` : `${maxServings} ${maxServings === 1 ? "serving" : "servings"} available`}</span>
               {addon && <span>+ {addon.title} · added once</span>}
             </button>
             {first.portionable && <div className={styles.portionStepper} role="group" aria-label={`${family.title} servings`}>
@@ -356,10 +374,10 @@ export default function HealthPlanner({ recipes }: { recipes: PlannerRecipe[] })
             </div>}
           </div>;
         })}</div>
-        {checkingStock ? <p role="status">Checking groceries…</p> : stockError ? <p role="alert">Could not check groceries. Close and reopen the picker to try again.</p> : !matchingFamilies.length && <p>{query.trim() ? 'No available recipes match your search.' : 'Nothing is available: no cooked portions in the fridge and no recipe has all its ingredients in stock. Update your groceries to see meals here.'}</p>}
+        {!testMode && (checkingStock ? <p role="status">Checking groceries…</p> : stockError ? <p role="alert">Could not check groceries. Close and reopen the picker to try again.</p> : !matchingFamilies.length && <p>{query.trim() ? 'No available recipes match your search.' : 'Nothing is available: no cooked portions in the fridge and no recipe has all its ingredients in stock. Update your groceries to see meals here.'}</p>)}
         {planError && <p role="alert">{planError}</p>}
         <button className={styles.remove} disabled={saving} onClick={() => choose('')}>{saving ? 'Saving…' : 'Leave this meal unplanned'}</button>
-        <p className={styles.footnote}>Available servings are cooked portions in the fridge plus what your unexpired groceries can still make, minus meals already planned this week. Optional ingredients and unmeasured essentials do not block a meal. Cook a recipe on the Recipes page to move its ingredients into the fridge.</p>
+        <p className={styles.footnote}>{testMode ? "This is a disposable test plan. Switching test mode off clears these choices and leaves your groceries and saved plan unchanged." : "Available servings are cooked portions in the fridge plus what your unexpired groceries can still make, minus meals already planned this week. Optional ingredients and unmeasured essentials do not block a meal. Cook a recipe on the Recipes page to move its ingredients into the fridge."}</p>
       </div>
     </dialog>
   </main>;
