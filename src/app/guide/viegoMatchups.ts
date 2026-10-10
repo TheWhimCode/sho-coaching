@@ -46,7 +46,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Rek'Sai",
           explanation:
-            "Hard early, but really easy to kill later. Just don't EVER become her target, focus her whenever she engages someone else.\n\nHer engage range is surprising, but you can charge stun when she E's forward. She can't knock you up if she can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when she's ulting, especially on a teammate. She always ends up behind the target from where she jumped. Fully charge W > oneshot > transform > W to go underground + E to gapclose > knockup + R.",
+            "Hard early, but really easy to kill later. Just don't EVER become her target, focus her whenever she engages someone else.\n\nHer engage range is surprising, but you can charge stun when she E's forward. She can't knock you up if she can't auto attack, so stun > walk out of range is useful.\n\nCan do the same when she's ulting, especially on a teammate. She always ends up behind the target from where she jumped. Fully charge W > oneshot > possess her > W to go underground + E to gapclose > knockup + R.",
         },
         {
           champion: "Shaco",
@@ -154,7 +154,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Ivern",
           explanation:
-            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nYou can Q > E yourself before transforming out, guaranteeing your next R and giving you survivability.",
+            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nYou can Q > E yourself before leaving the possession, guaranteeing your next R and giving you survivability.",
         },
         {
           champion: "Master Yi",
@@ -164,7 +164,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Nunu",
           explanation:
-            "Very hard for him to not just die to you instantly. You transform, become tanky, eat a minion or bottom laner, snowball into their Viktor and R his face. It's hard for Nunu, even if he gets Frozen Heart second.",
+            "Very hard for him to not just die to you instantly. You possess him, become tanky, eat a minion or bottom laner, snowball into their Viktor and R his face. It's hard for Nunu, even if he gets Frozen Heart second.",
         },
       ],
     },

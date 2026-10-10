@@ -5,7 +5,7 @@ const VIEGO_JUNGLE_BUILD: GuideRuneBuild = {
   primaryPerkIds: [
     9923, // Hail of Blades
     8143, // Sudden Impact
-    8137, // Sixth Sense
+    8140, // Grisly Mementos
     8135, // Treasure Hunter
   ],
   secondaryStyleId: 8000,

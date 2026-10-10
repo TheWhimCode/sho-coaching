@@ -22,15 +22,15 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
         "While possessing, you become untargetable. You dodge everything besides DoT.",
     },
     {
-      id: "transform",
+      id: "possession",
       label:
-        "Use the time it takes to transform to think about what to do after.",
+        "Use the time it takes to possess someone to think about what to do after.",
     },
   ],
   howItWorksDetails: [
-    "When you transform, you receive all their items, level, and stats (one more reason not to finish boots). Abilities apply your passive marks, but you also have the possessions passive:",
+    "When you possess someone, you receive all their items, level, and stats (one more reason not to finish boots). Abilities apply your passive marks, but you also have the possessions passive:",
     "You keep your own rune and you can't use their item actives. Passives like Seraph's, Shieldbow, Sterak's, and Protoplasm work though, keep that in mind (not GA though).",
-    "If you transform into someone who is fed, you'll be fed. If you transform into the 1/8 Kha'Zix, don't expect to oneshot.",
+    "If you possess someone who is fed, you'll be fed. If you possess the 1/8 Kha'Zix, don't expect to oneshot.",
   ],
   howItWorksPassiveExamples: ["Camille", "Anivia", "Shen"],
   bestToPossessHeading: "What champs are best to possess?",
@@ -153,7 +153,7 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
         {
           champion: "Akali",
           explanation:
-            "Her E and W are pretty strong and you have infinite energy, but she does feel underwhelming every time.\n\nHer W disappears when you transform out as well.",
+            "Her E and W are pretty strong and you have infinite energy, but she does feel underwhelming every time.\n\nHer W disappears when the possession ends as well.",
         },
         {
           champion: "Anivia",
@@ -217,7 +217,7 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
         {
           champion: "Milio",
           explanation:
-            "Can only Q -> R and keep W after transforming. Not enough.",
+            "Can only Q -> R and keep W after possessing him. Not enough.",
         },
         {
           champion: "Sona",
@@ -239,7 +239,7 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
         },
         {
           champion: "Gnar",
-          explanation: "Transforming into mini Gnar sounds really useful 😭",
+          explanation: "Possessing mini Gnar sounds really useful 😭",
         },
       ],
     },
@@ -251,7 +251,7 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
   whenNotToPossessItems: [
     {
       id: "squishy-surrounded",
-      text: "Transform into a squishy, immobile champ when you are surrounded",
+      text: "Possess a squishy, immobile champ when you are surrounded",
     },
     {
       id: "stunlock-chase",
@@ -267,7 +267,7 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
     },
     {
       id: "guaranteed-cc",
-      text: "Transform into a Caitlyn trap/other guaranteed CC",
+      text: "Possess a Caitlyn with a trap/other guaranteed CC",
     },
   ],
 };

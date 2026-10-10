@@ -53,7 +53,7 @@ export default function GuideDonationSection() {
 
       <div className="flex flex-col items-center">
         <p className="text-center text-lg font-semibold text-[#FAD4E8] sm:text-xl md:text-2xl">
-          The guide is free so I&apos;m still poor 😐
+          Please support me if you can &gt;.&lt;
         </p>
 
         <button

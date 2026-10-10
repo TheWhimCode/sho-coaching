@@ -113,16 +113,6 @@ function GuideCoachingAd() {
   );
 }
 
-function GuideFooter() {
-  return (
-    <footer className="mt-16 pb-4">
-      <Suspense fallback={null}>
-        <GuideDonationSection />
-      </Suspense>
-    </footer>
-  );
-}
-
 export default function ViegoGuideClient({
   runeData,
   itemData,
@@ -254,6 +244,12 @@ export default function ViegoGuideClient({
         </div>
 
         <div className="mt-16">
+          <Suspense fallback={null}>
+            <GuideDonationSection />
+          </Suspense>
+        </div>
+
+        <div className="mt-16">
           <CombosSection
             data={comboData}
             abilityIcons={viegoAbilityIcons}
@@ -278,8 +274,6 @@ export default function ViegoGuideClient({
             viegoAbilityIcons={viegoAbilityIcons}
           />
         </div>
-
-        <GuideFooter />
       </div>
     </div>
   );

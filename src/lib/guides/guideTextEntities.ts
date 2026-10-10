@@ -57,7 +57,7 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     matchKey: "you can not get stunned by her ult.",
     boldOnly: true,
   },
-  { patterns: ["already transforming"], matchKey: "already transforming", boldOnly: true },
+  { patterns: ["already possessing"], matchKey: "already possessing", boldOnly: true },
   { patterns: ["time-to-kill"], matchKey: "time-to-kill", color: GUIDE_DARK_RED, weight: 800 },
   {
     patterns: ["Voltaic Cyclosword", "Cyclosword", "Cyclo"],
