@@ -142,9 +142,9 @@ function BuildWhyPanel({
   const tags = decidingTags(trace);
 
   return (
-    <div className="mt-7 border-t border-[#B8D8EA]/18 bg-[#120F19]/95 px-6 pb-9 pt-7 text-left sm:px-10 sm:pb-12 sm:pt-9">
+    <div className="mt-7 border-t border-[#B8D8EA]/18 bg-[#120F19]/95 px-6 pb-4 pt-7 text-left sm:px-10 sm:pb-6 sm:pt-9">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="mr-2 text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#B8D8EA]/68">What decided it</p>
+        <p className="mr-2 text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#B8D8EA]/68">How the build was picked</p>
         {tags.map((tag) => (
           <span key={tag} className="rounded-full border border-[#F0ABCF]/22 bg-[#F0ABCF]/[0.07] px-2.5 py-1 text-[0.62rem] font-semibold text-[#F5E6D3]/72">
             {tag}
