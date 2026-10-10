@@ -796,6 +796,7 @@ model ChampionProfile {
   shields      ChampionShieldLevel
   damageType   ChampionDamageType
   damageThreat ChampionThreatLevel
+  deniesResets Boolean              @default(false)
   cc           ChampionCcLevel
   updatedAt    DateTime             @default(now()) @updatedAt
 

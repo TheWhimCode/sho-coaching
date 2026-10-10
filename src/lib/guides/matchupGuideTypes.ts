@@ -36,11 +36,31 @@ export type GuideMatchupPageData = {
 
 export type GuideJungleTierTone = "nightmare" | "difficult" | "even" | "favorable" | "free";
 
+export type GuideMatchupSnapshot = {
+  invadePressure: number;
+  oneVOneThreat: number;
+  tempo: number;
+};
+
+export type GuideMatchupUpgradeItem = {
+  id: number;
+  title?: string;
+};
+
+export type SerializedMatchupUpgradeItem = {
+  id: number;
+  name: string;
+  icon?: string;
+};
+
 export type GuideJungleTierMatchupEntry = {
   champion: string;
   banBadge?: "Minos Ban" | "Good Ban";
   possessionValue: number;
   explanation?: string;
+  snapshot?: GuideMatchupSnapshot;
+  gameplayStyle?: string;
+  upgradeItem?: GuideMatchupUpgradeItem;
   isNew?: boolean;
 };
 
@@ -65,6 +85,9 @@ export type SerializedJungleTierMatchup = {
   possessionValue: number;
   explanation: string | null;
   hasExplanation: boolean;
+  snapshot?: GuideMatchupSnapshot;
+  gameplayStyle?: string;
+  upgradeItem?: SerializedMatchupUpgradeItem;
   isNew?: boolean;
 };
 

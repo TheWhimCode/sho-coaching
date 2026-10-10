@@ -12,8 +12,8 @@ type TraitKey = "durability" | "shields" | "damageType" | "damageThreat" | "cc";
 const TRAIT_COLUMNS: { key: TraitKey; label: string; options: string[] }[] = [
   { key: "durability", label: "Durability", options: ["Squishy", "Bruiser", "Tanky"] },
   { key: "shields", label: "Shields", options: ["None", "Low", "Late", "High"] },
-  { key: "damageType", label: "Damage", options: ["AD", "AP", "Mixed"] },
-  { key: "damageThreat", label: "Threat", options: ["Low", "Medium", "High"] },
+  { key: "damageType", label: "Type", options: ["AD", "AP", "Mixed"] },
+  { key: "damageThreat", label: "Damage", options: ["Low", "Medium", "High"] },
   { key: "cc", label: "CC", options: ["None", "Low", "Medium", "High"] },
 ];
 

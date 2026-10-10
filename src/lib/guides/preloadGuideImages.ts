@@ -162,7 +162,11 @@ export function collectCombosSectionImageUrls(
 export function collectJungleTierMatchupSectionImageUrls(
   data: GuideJungleTierMatchupPageData
 ): string[] {
-  return data.tiers.flatMap((tier) => tier.matchups.map((matchup) => matchup.icon));
+  return data.tiers.flatMap((tier) =>
+    tier.matchups.flatMap((matchup) =>
+      matchup.upgradeItem?.icon ? [matchup.icon, matchup.upgradeItem.icon] : [matchup.icon]
+    )
+  );
 }
 
 export function collectGuideCriticalPreloadUrls(

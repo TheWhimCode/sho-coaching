@@ -2,11 +2,15 @@ import {
   champSquareUrlById,
   resolveChampionId,
 } from "@/lib/datadragon/champions";
+import { getItem, itemIconUrlFromPath } from "@/lib/datadragon/items";
 import type {
   GuideJungleTierMatchupPageData,
   GuideJungleTierMatchupSectionConfig,
+  GuideMatchupSnapshot,
   GuideMatchupSectionConfig,
+  GuideMatchupUpgradeItem,
   SerializedJungleTierMatchup,
+  SerializedMatchupUpgradeItem,
 } from "./matchupGuideTypes";
 
 function buildFeaturedExplanationMap(config: GuideMatchupSectionConfig) {
@@ -21,13 +25,28 @@ function buildFeaturedExplanationMap(config: GuideMatchupSectionConfig) {
   return map;
 }
 
+function serializeUpgradeItem(
+  item?: GuideMatchupUpgradeItem
+): SerializedMatchupUpgradeItem | undefined {
+  if (!item) return undefined;
+  const row = getItem(String(item.id));
+  return {
+    id: item.id,
+    name: item.title ?? row?.name ?? "Recommended item",
+    icon: row ? itemIconUrlFromPath(row.iconPath) || undefined : undefined,
+  };
+}
+
 function serializeTierMatchup(
   champion: string,
   possessionValue: number,
   explanation: string | undefined,
   featuredExplanations: Map<string, string>,
   isNew?: boolean,
-  banBadge?: SerializedJungleTierMatchup["banBadge"]
+  banBadge?: SerializedJungleTierMatchup["banBadge"],
+  snapshot?: GuideMatchupSnapshot,
+  gameplayStyle?: string,
+  upgradeItem?: GuideMatchupUpgradeItem
 ): SerializedJungleTierMatchup {
   const id = resolveChampionId(champion);
   const resolvedExplanation =
@@ -44,6 +63,9 @@ function serializeTierMatchup(
     hasExplanation: resolvedExplanation !== null,
     isNew,
     banBadge,
+    snapshot,
+    gameplayStyle,
+    upgradeItem: serializeUpgradeItem(upgradeItem),
   };
 }
 
@@ -69,7 +91,10 @@ export function buildGuideJungleTierMatchupPageData(
           entry.explanation,
           featuredExplanations,
           entry.isNew,
-          entry.banBadge
+          entry.banBadge,
+          entry.snapshot,
+          entry.gameplayStyle,
+          entry.upgradeItem
         )
       ),
     })),

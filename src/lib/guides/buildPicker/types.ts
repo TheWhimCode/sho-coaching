@@ -5,7 +5,7 @@ import type {
   ChampionShieldLevel,
   ChampionThreatLevel,
 } from "@prisma/client";
-import type { TreeTraceStep } from "./decisionTree";
+import type { BuildFloatTag, TreeTraceStep } from "./decisionTree";
 
 /** Riot platform shards the picker lets users choose from. */
 export const BUILD_PICKER_PLATFORMS = [
@@ -54,8 +54,14 @@ export type BuildRecommendation = {
   /** Id of the leaf node the tree ended on. */
   leafId: string;
   reason: string;
+  /** Picker-only boot inserted into the recommended item order. */
+  boot: { itemId: number; slot: 2 | 3 | 4 };
+  /** Optional higher-risk pivot shown beneath the recommendation. */
+  alternative?: { buildId: string; label: string };
   /** Every decision the tree evaluated, in order. */
   trace: TreeTraceStep[];
+  /** Champions whose traits selected the build, for the portrait popups. */
+  floatTags: BuildFloatTag[];
   /** Enemy champions without a `ChampionProfile` row; they were ignored. */
   missingProfiles: string[];
 };

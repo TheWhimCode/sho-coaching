@@ -55,6 +55,7 @@ async function recommend(
       shields: row.shields,
       damageType: row.damageType,
       damageThreat: row.damageThreat,
+      deniesResets: row.deniesResets,
       cc: row.cc,
     });
   }

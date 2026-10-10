@@ -150,7 +150,13 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       id: 3008,
       title: "Gluttonous Greaves",
       explanation:
-        "These are your go-to boots if you can stack them. Delaying your itemspikes can be greedy, but building them after LDR can make them difficult to stack.",
+        "These are your go-to boots. Build them after third item. In most games, you don't need to fully stack them for them to be really strong.",
+    },
+    {
+      id: 3009,
+      title: "Boots of Swiftness",
+      explanation:
+        "The Graves boots. Take these when the extra movement speed helps you stick to targets and dodge skillshots.",
     },
     {
       id: 3047,
@@ -163,12 +169,6 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       title: "Mercury's Treads",
       explanation:
         "You don't really want them, but sometimes there is too much CC to avoid. Generally not before LDR + Cloak of Agility.",
-    },
-    {
-      id: 3009,
-      title: "Boots of Swiftness",
-      explanation:
-        "Sometimes you get to fullbuild and didn't finish boots cuz nothing was good. Can go swifties here, before selling for Youmuu's. Rare.",
     },
   ],
   fullBuild: {
@@ -246,7 +246,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           id: "umbral-collector",
           label: "Umbral pivot",
           header: "Umbral pivot",
-          summary: "Umbral Glaive start, Cyclosword last.",
+          summary: "Budget or mid-game option.",
           description:
             "When you start building for Hubris but you fall behind, you can pivot into Umbral Glaive for more mid-game power.\nOr if you know that you won't be getting a lot of kills because your teammates have low volatility lanes and everyone is playing safe, you can go Umbral to provide other value to your team and get to your other items more quickly.",
           items: [
@@ -258,7 +258,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           ],
           activeChoiceIds: [],
           teamComp: { ally: [], enemy: [] },
-          goodAgainst: [],
+          goodAgainst: ["Shaco"],
         },
         {
           id: "hubris-ldr",
@@ -276,7 +276,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           ],
           activeChoiceIds: [],
           teamComp: { ally: [], enemy: [] },
-          goodAgainst: HUBRIS_GOOD_AGAINST,
+          goodAgainst: ["Skarner", "Darius", "Nautilus", "Sylas", "Nunu", "Garen"],
         },
         {
           id: "hubris-skip-anti-tank",
@@ -318,7 +318,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           id: "sit-serpents",
           label: "Anti-shield",
           header: "Anti-shield",
-          summary: "Early anti-shield damage against multiple shield-heavy targets.",
+          summary: "When you will always hit shields.",
           items: [
             { id: 6676, explanation: SITUATIONAL_COLLECTOR_EXPLANATION },
             { id: 6695, title: "Serpent's Fang", explanation: SERPENTS_EXPLANATION },
@@ -339,7 +339,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           id: "yun-tal-ldr",
           label: "Max midgame DPS",
           header: "Max midgame DPS",
-          summary: "Against full tank, low damage compositions.",
+          summary: "Against low-damage comps with BF start.",
           description:
             "Only run this build when you are confident that you will be able to DPS the enemy because they lack damage, and you have champions that will create enough space for you to auto-attack.\nWhen rushing Yun Tal, you need to get B.F. Sword on your first back. If you don't, switch into another build instead.\nYou can start Raptors into Krugs and clear them again on respawn. Combined with Triple Tonic, this gets you 1300 gold on your first back. Just make sure you can't get invaded on Raptors spawn if you plan this.",
           items: [

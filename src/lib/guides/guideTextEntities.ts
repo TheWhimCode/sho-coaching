@@ -348,6 +348,13 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "spell", id: 14 },
   },
   {
+    patterns: ["Exhaust"],
+    matchKey: "exhaust",
+    displayAs: "Exhaust",
+    color: GUIDE_STEELCAPS_BROWN,
+    icon: { kind: "spell", id: 3 },
+  },
+  {
     patterns: ["Green Smite", "Greensmite"],
     matchKey: "green-smite",
     color: "#4ADE80",

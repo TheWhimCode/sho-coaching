@@ -11,9 +11,100 @@ import type {
   GuideJungleTierMatchupPageData,
   SerializedJungleTier,
   SerializedJungleTierMatchup,
+  SerializedMatchupUpgradeItem,
 } from "@/lib/guides/matchupGuideTypes";
 import { collectJungleTierMatchupSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import { guideChampionIconImgClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
+
+const METER_TONE = {
+  blue: {
+    label: "text-[#73B3D2]",
+    track: "bg-[#73B3D2]/20",
+    fill: "bg-[#73B3D2] shadow-[0_0_3px_1px_rgba(115,179,210,0.38),0_0_6px_2px_rgba(115,179,210,0.2)]",
+  },
+  orange: {
+    label: "text-[#C4895C]",
+    track: "bg-[#C4895C]/22",
+    fill: "bg-[#C4895C] shadow-[0_0_3px_1px_rgba(196,137,92,0.28),0_0_6px_2px_rgba(196,137,92,0.14)]",
+  },
+  red: {
+    label: "text-[#FF526C]",
+    track: "bg-[#FF526C]/25",
+    fill: "bg-[#FF526C] shadow-[0_0_3px_1px_rgba(255,82,108,0.34),0_0_6px_2px_rgba(255,82,108,0.18)]",
+  },
+} as const;
+
+function meterTone(value: number) {
+  if (value >= 5) return METER_TONE.red;
+  if (value >= 3) return METER_TONE.orange;
+  return METER_TONE.blue;
+}
+
+const POSSESSION_TONE = {
+  low: {
+    label: "Useless possession",
+    card: "border-[#F5E6D3]/8 bg-[#120F19]/40",
+    labelText: "text-[#F5E6D3]/34",
+    score: "text-[#F5E6D3]/54",
+  },
+  decent: {
+    label: "Underwhelming possession",
+    card: "border-[#A6C4D4]/14 bg-[#18202A]/35",
+    labelText: "text-[#B8D8EA]/46",
+    score: "text-[#D7E8EF]/64",
+  },
+  great: {
+    label: "Great possession",
+    card: "border-[#73B3D2]/22 bg-[#163040]/35",
+    labelText: "text-[#73B3D2]/68",
+    score: "text-[#B8E4F7] [text-shadow:0_0_12px_rgba(115,179,210,0.16)]",
+  },
+  amazing: {
+    label: "Amazing possession",
+    card: "border-[#E78BC0]/48 bg-[linear-gradient(145deg,rgba(231,139,192,0.2),rgba(65,38,73,0.28)_70%)] shadow-[0_0_22px_rgba(231,139,192,0.1)]",
+    labelText: "text-[#F0ABCF]",
+    score: "text-[#FFD0E6] [text-shadow:0_0_18px_rgba(240,171,207,0.38)]",
+  },
+  perfect: {
+    label: "Perfect possession",
+    card: "border-[#E8C56B]/58 bg-[linear-gradient(145deg,rgba(232,197,107,0.24),rgba(75,57,27,0.26)_70%)] shadow-[0_0_26px_rgba(232,197,107,0.13)]",
+    labelText: "text-[#F6D67A]",
+    score: "text-[#FFE8A0] [text-shadow:0_0_20px_rgba(232,197,107,0.42)]",
+  },
+} as const;
+
+function possessionTone(value: number) {
+  if (value === 10) return POSSESSION_TONE.perfect;
+  if (value >= 8) return POSSESSION_TONE.amazing;
+  if (value >= 6) return POSSESSION_TONE.great;
+  if (value >= 4) return POSSESSION_TONE.decent;
+  return POSSESSION_TONE.low;
+}
+
+const METER_HINTS = {
+  "Invade Threat": {
+    low: "They can't really invade",
+    mid: "They might look for invade angles",
+    high: "They're always looking to find and kill you",
+  },
+  "Tempo Pressure": {
+    low: "Doesn't punish you as hard for wasting time",
+    mid: "They can crossmap comfortably",
+    high: "Waste time and they will always take your camps",
+  },
+  "1v1 Power": {
+    low: "You will usually be able to win",
+    mid: "They are generally favored until LDR",
+    high: "If you go in they will always annihilate you",
+  },
+} as const;
+
+function meterHint(label: keyof typeof METER_HINTS, value: number) {
+  const hints = METER_HINTS[label];
+  if (value >= 5) return hints.high;
+  if (value >= 3) return hints.mid;
+  return hints.low;
+}
 
 const DETAIL_DURATION_MS = 320;
 const DETAIL_HEIGHT_TRANSITION =
@@ -84,23 +175,26 @@ function TierIconButton({
   onSelect: () => void;
 }) {
   const accent = TIER_TONE[tone];
-  const clickable = matchup.hasExplanation;
+  const clickable = Boolean(matchup.explanation?.trim());
 
   return (
     <button
       type="button"
       disabled={!clickable}
       onClick={clickable ? onSelect : undefined}
+      aria-label={clickable ? matchup.name : `${matchup.name}, no matchup notes`}
       className={clsx(
         "relative flex min-w-0 flex-col items-center rounded-lg border px-1 py-1.5 sm:py-2",
+        "transition-[border-color,background-color,box-shadow,opacity] duration-200 ease-out",
         clickable
-          ? "transition-[border-color,background-color,box-shadow] duration-200 ease-out"
-          : "cursor-not-allowed border-[#F5E6D3]/8 bg-[#1E1724]/30 opacity-45",
-        clickable && (selected ? accent.cardSelected : accent.cardIdle)
+          ? selected
+            ? accent.cardSelected
+            : accent.cardIdle
+          : "cursor-not-allowed border-[#F5E6D3]/8 bg-[#120F19]/35 opacity-40"
       )}
     >
       {matchup.banBadge ? (
-        <span className="pointer-events-none absolute left-1/2 -top-px -translate-x-1/2 -translate-y-1/2 whitespace-nowrap bg-[#1E1724] px-1 text-[8px] font-semibold leading-none text-[#F0ABCF] sm:text-[9px]">
+        <span className="pointer-events-none absolute left-1/2 -top-px -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded bg-[#1E1724] px-1 text-[8px] font-semibold leading-none text-[#F0ABCF] sm:text-[9px]">
           {matchup.banBadge}
         </span>
       ) : null}
@@ -110,7 +204,7 @@ function TierIconButton({
       <div
         className={clsx(
           "relative h-8 w-8 shrink-0 overflow-hidden rounded-full bg-[#352839]/80 ring-2 sm:h-9 sm:w-9",
-          clickable ? accent.iconRing : "ring-[#F5E6D3]/15 grayscale"
+          clickable ? accent.iconRing : "ring-[#F5E6D3]/12"
         )}
       >
         <GuideImage
@@ -127,7 +221,7 @@ function TierIconButton({
             ? selected
               ? accent.nameSelected
               : "text-[#F5E6D3]/78"
-            : "text-[#F5E6D3]/38"
+            : "text-[#F5E6D3]/40"
         )}
       >
         {matchup.name}
@@ -168,13 +262,33 @@ function TierRow({
             key={matchup.id}
             matchup={matchup}
             tone={tier.tone}
-            selected={matchup.hasExplanation && selectedId === matchup.id}
+            selected={selectedId === matchup.id}
             onSelect={() => {
-              if (matchup.hasExplanation) onSelect(matchup.id);
+              onSelect(matchup.id);
             }}
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function MatchupUpgradeItem({
+  item,
+}: {
+  item: SerializedMatchupUpgradeItem;
+}) {
+  return (
+    <div className="mt-5 flex min-h-12 w-full items-center gap-3 border-y border-[#E8C56B]/18 bg-[#E8C56B]/[0.035] px-3 py-2">
+      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-sm bg-[#120F19] shadow-[0_0_10px_rgba(232,197,107,0.16)]">
+        {item.icon ? (
+          <GuideImage src={item.icon} alt={item.name} loading="lazy" className="h-full w-full scale-125 object-cover" />
+        ) : (
+          <span aria-hidden className="flex h-full w-full items-center justify-center text-xs font-bold text-[#F6D67A]/70">+</span>
+        )}
+      </div>
+      <p className="min-w-0 truncate text-xs font-semibold text-[#F5E6D3]/82">{item.name}</p>
+      <span className="ml-auto whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-[#F6D67A]/70">Higher value</span>
     </div>
   );
 }
@@ -187,11 +301,13 @@ function MatchupDetailPanel({
   guideTextIcons: Record<string, string>;
 }) {
   const accent = TIER_TONE[entry.tier.tone];
-  const detailText = entry.matchup.explanation ?? "";
+  const detailText = entry.matchup.explanation;
+  const possession = possessionTone(entry.matchup.possessionValue);
+  const isExceptionalPossession = entry.matchup.possessionValue >= 8;
 
   const explanationBody = (
     <>
-      {detailText.split("\n").map((paragraph, index) => (
+      {detailText?.split("\n").map((paragraph, index) => (
         <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
           {renderGuideHighlightedText(paragraph, guideTextIcons)}
         </p>
@@ -200,46 +316,88 @@ function MatchupDetailPanel({
   );
 
   return (
-    <div className="w-full min-w-0 max-w-full rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/55 p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
-        <div className="flex items-center gap-3 sm:contents">
-          <div
-            className={clsx(
-              "relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#352839]/80 ring-1 sm:h-[4.9rem] sm:w-[4.9rem]",
-              accent.detailRing
-            )}
-          >
-            <GuideImage
-              src={entry.matchup.icon}
-              alt={entry.matchup.name}
-              loading="lazy"
-              className={guideChampionIconImgClass}
-            />
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-0 sm:flex-initial sm:gap-0">
-            <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2.5 sm:gap-y-1">
-              <p
-                className={clsx(
-                  "text-sm font-semibold leading-none sm:text-base",
-                  accent.nameSelected
-                )}
-              >
-                {entry.matchup.name}
-              </p>
-              <p className="text-xs font-medium tabular-nums text-[#F5E6D3]/52 sm:text-sm">
-                Possession value {entry.matchup.possessionValue}/10
+    <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#F0ABCF]/14 bg-[#1E1724]/65 p-4 sm:p-6">
+      <div className="grid gap-5 sm:grid-cols-[8rem_minmax(0,1fr)_10rem] sm:items-stretch sm:gap-7">
+        <div className="flex items-center gap-3 sm:h-full sm:flex-col sm:items-start sm:border-r sm:border-[#F5E6D3]/10 sm:pr-6">
+            <div className={clsx("relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#352839]/80 ring-1 sm:h-28 sm:w-28", accent.detailRing)}>
+              <GuideImage src={entry.matchup.icon} alt={entry.matchup.name} loading="lazy" className={guideChampionIconImgClass} />
+            </div>
+            <div>
+              <p className={clsx("text-base font-bold sm:text-lg", accent.nameSelected)}>{entry.matchup.name}</p>
+              <p className="mt-0.5 text-[0.62rem] font-semibold uppercase leading-tight tracking-[0.08em] text-[#F5E6D3]/42">
+                {entry.matchup.gameplayStyle
+                  ? entry.matchup.gameplayStyle.split(" / ").map((part, index, parts) => (
+                      <span key={`${part}-${index}`}>
+                        {index > 0 ? <br /> : null}
+                        {part}
+                        {index === 0 && parts.length > 1 ? " /" : null}
+                      </span>
+                    ))
+                  : `${entry.tier.label} matchup`}
               </p>
             </div>
-
-            <div className="mt-2 hidden min-w-0 text-sm leading-[1.7] text-[#F5E6D3]/62 sm:block sm:text-base">
-              {explanationBody}
-            </div>
-          </div>
         </div>
 
-        <div className="min-w-0 w-full text-sm leading-[1.7] text-[#F5E6D3]/62 sm:hidden">
-          {explanationBody}
+        <div className="flex min-w-0 flex-col justify-center">
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-[#F0ABCF]/65">Matchup notes</p>
+          {detailText ? (
+            <div className="mt-2 min-w-0 text-[0.98rem] leading-7 text-[#F5E6D3]/76 sm:text-[1.05rem]">{explanationBody}</div>
+          ) : (
+            <p className="mt-2 text-sm italic leading-6 text-[#F5E6D3]/38">No matchup notes yet.</p>
+          )}
+
+          {entry.matchup.upgradeItem ? <MatchupUpgradeItem item={entry.matchup.upgradeItem} /> : null}
+
+          {entry.matchup.snapshot ? (
+            <div className="mt-5 flex w-full max-w-xl flex-col gap-1.5">
+                {([
+                  ["Invade Threat", entry.matchup.snapshot.invadePressure],
+                  ["Tempo Pressure", entry.matchup.snapshot.oneVOneThreat],
+                  ["1v1 Power", entry.matchup.snapshot.tempo],
+                ] as const).map(([label, value]) => {
+                  const tone = meterTone(value);
+                  const hint = meterHint(label, value);
+                  const hintId = `${entry.matchup.id}-${label}-hint`;
+                  return (
+                    <div key={label} className="group relative -mx-1.5 grid grid-cols-[7rem_minmax(0,12rem)_minmax(0,1fr)] items-center gap-x-4 rounded-md px-1.5 py-1.5 transition-colors hover:bg-[#F5E6D3]/10" aria-describedby={hintId}>
+                      <div className={clsx("text-[0.62rem] font-bold uppercase tracking-[0.13em]", tone.label)}>
+                        <span>{label}</span>
+                      </div>
+                      <div className="relative">
+                        {value >= 5 ? <p className="absolute right-0 bottom-full mb-0.5 text-[0.48rem] font-bold uppercase leading-none tracking-[0.12em] text-[#FF526C]">Danger</p> : null}
+                        <div className={clsx("flex h-[3px] items-stretch", tone.track)} aria-label={`${label}: ${value} out of 5`}>
+                          <div className={clsx("h-[3px] shrink-0 transition-[width] duration-300", tone.fill)} style={{ width: `${(value / 5) * 100}%` }} />
+                        </div>
+                      </div>
+                      <div className="relative self-stretch">
+                        <p
+                          id={hintId}
+                          role="tooltip"
+                          className="pointer-events-none absolute top-1/2 left-0 z-20 flex -translate-y-1/2 items-center whitespace-nowrap rounded-md border border-[#F0ABCF]/25 bg-[#2A1F2E] px-2 py-1 text-left text-[0.62rem] font-medium normal-case leading-none tracking-normal text-[#F5E6D3]/90 opacity-0 shadow-[0_8px_20px_rgba(30,23,36,0.45)] transition-opacity group-hover:opacity-100"
+                        >
+                          {hint}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : null}
+        </div>
+
+        <div
+          className={clsx(
+            "relative flex isolate overflow-hidden items-center justify-between rounded-xl border px-4 py-3 sm:max-h-40 sm:flex-col sm:items-start sm:justify-between sm:px-5 sm:py-4",
+            possession.card
+          )}
+        >
+          {isExceptionalPossession ? <span aria-hidden className="matchup-possession-shine pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12" /> : null}
+          <div>
+            <p className={clsx("text-[0.62rem] font-bold uppercase tracking-[0.15em]", possession.labelText)}>{possession.label}</p>
+          </div>
+          <p className={clsx("relative font-mono text-3xl font-bold tracking-tight sm:text-5xl", possession.score)}>
+            {entry.matchup.possessionValue}<span className="text-base text-[#F5E6D3]/35 sm:text-lg">/10</span>
+          </p>
         </div>
       </div>
     </div>
@@ -339,9 +497,7 @@ export default function JungleTierMatchupPanel({
   const clickableMatchups = useMemo(
     () =>
       data.tiers.flatMap((tier) =>
-        tier.matchups
-          .filter((matchup) => matchup.hasExplanation)
-          .map((matchup) => ({ tier, matchup }))
+        tier.matchups.map((matchup) => ({ tier, matchup }))
       ),
     [data.tiers]
   );
@@ -374,7 +530,7 @@ export default function JungleTierMatchupPanel({
   }, [clickableMatchups, selectedId]);
 
   const activeTierId = useMemo(() => {
-    if (!selectedEntry?.matchup.hasExplanation) return null;
+    if (!selectedEntry) return null;
 
     const visibleTier = visibleTiers.find((tier) => tier.id === selectedEntry.tier.id);
     if (!visibleTier) return null;
@@ -443,11 +599,10 @@ export default function JungleTierMatchupPanel({
 
                 <TierDetailSlot
                   open={
-                    activeTierId === tier.id &&
-                    Boolean(selectedEntry?.matchup.hasExplanation)
+                    activeTierId === tier.id && Boolean(selectedEntry)
                   }
                   entry={
-                    activeTierId === tier.id && selectedEntry?.matchup.hasExplanation
+                    activeTierId === tier.id && selectedEntry
                       ? selectedEntry
                       : null
                   }

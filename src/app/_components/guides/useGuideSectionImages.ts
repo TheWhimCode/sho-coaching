@@ -16,6 +16,7 @@ export function useGuideSectionImages(
   const sectionRef = useRef<HTMLElement>(null);
   const [shouldLoad, setShouldLoad] = useState(eager);
   const [imagesReady, setImagesReady] = useState(false);
+  const urlsKey = urls.join("\u0001");
 
   useEffect(() => {
     if (eager || shouldLoad) return;
@@ -50,7 +51,7 @@ export function useGuideSectionImages(
     return () => {
       cancelled = true;
     };
-  }, [shouldLoad, urls]);
+  }, [shouldLoad, urlsKey]);
 
   return { sectionRef, shouldLoad, imagesReady };
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
 import { ensureLiveDDragonPatch } from "@/lib/datadragon/patch";
-import { loadPickerBuilds } from "@/lib/guides/buildPicker/loadBuilds";
+import { loadPickerBoots, loadPickerBuilds } from "@/lib/guides/buildPicker/loadBuilds";
 import type { ChampionProfileRow } from "@/lib/guides/buildPicker/types";
 import { prisma } from "@/lib/prisma";
 import { VIEGO_ITEM_SECTION } from "../viegoItems";
@@ -28,9 +28,13 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function BuildPickerPage() {
-  const [builds, profiles] = await Promise.all([
+  const showPickerDebug = process.env.NODE_ENV === "development";
+  const [builds, bootItems, profiles] = await Promise.all([
     loadPickerBuilds(VIEGO_ITEM_SECTION),
-    prisma.championProfile.findMany({ orderBy: { name: "asc" } }),
+    loadPickerBoots(),
+    showPickerDebug
+      ? prisma.championProfile.findMany({ orderBy: { name: "asc" } })
+      : Promise.resolve([]),
     ensureLiveDDragonPatch(),
   ]);
 
@@ -49,6 +53,6 @@ export default async function BuildPickerPage() {
   });
 
   return (
-    <BuildPickerClient builds={builds} championRows={championRows} />
+    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={championRows} />
   );
 }

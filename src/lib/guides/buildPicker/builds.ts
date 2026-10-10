@@ -12,7 +12,13 @@ export type PickerBuildDef = {
 
 /** Serialized for the client with resolved item names and icons. */
 export type PickerBuild = Omit<PickerBuildDef, "itemIds"> & {
-  items: { id: number; name: string; icon: string }[];
+  items: PickerItem[];
+};
+
+export type PickerItem = {
+  id: number;
+  name: string;
+  icon: string;
 };
 
 const MAIN_BUILDS: PickerBuildDef[] = [

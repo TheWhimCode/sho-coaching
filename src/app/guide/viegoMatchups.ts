@@ -11,17 +11,17 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Lee Sin",
           explanation:
-            "A good Lee Sin is impossible to deal with, which is why I ban him every game. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out. If you DO kill him, you get a crazy powerful reset, but idk, I just can't get it done...\n\nAvoid early skirmishes and clear your camps on spawn to avoid getting invaded. When he hits level 6, don't fight him 1v1. Don't overextend to try and get a reset when he has W ready to escape. Play around your teammates' CC and don't expose yourself in skirmishes.",
+            "A good Lee Sin is impossible to deal with, which is why I ban him every game. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out.\n\nAvoid early skirmishes and clear your camps on spawn. When he hits level 6, don't overextend to try and get a reset when he has W ready to escape. Play around your teammates' CC and don't expose yourself in skirmishes.",
         },
         {
           champion: "Talon",
           explanation:
-            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead. He can just find you in your jungle, attack, and you explode.\nDon't ever waste tempo. He will instantly snatch up all your camps. So I always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\nBut his reset is pretty bad.\n\nThe matchup can become playable if your teammates don't have shields, and you can build Collector into Shieldbow plus Steelcaps. That way he can never quite 100-0 you. So you get a chance to fight back, and you become less interesting of a target for him.",
+            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead.\n\nI always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\n\nThe matchup can become playable if your teammates don't have shields, and you can build Collector into Shieldbow plus Steelcaps. That way he can never quite 100-0 you. So you get a chance to fight back, and you become less interesting of a target for him.",
         },
         {
           champion: "Kha'Zix",
           explanation:
-            "Once he hits level 6, he can invade you at any point. You need vision against Kha. If he facechecks you, he explodes, and resetting on him is insane in teamfights.\nBut the fact that you always die if he finds you first means that you have to constantly be on your toes.",
+            "Once he hits level 6, you need vision against Kha. If he facechecks you, he explodes.\nBut the fact that you always die if he finds you first means that you have to constantly be on your toes.",
         },
         {
           champion: "Rengar",
@@ -31,17 +31,12 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Kindred",
           explanation:
-            "They are very annoying in some games. Others they're fine. Depending on the draft, they can make teamfighting completely impossible for you, so you need to find picks or pray your team does some work.\nThey often invade early as well, which can disrupt your scaling a little. But I'm really most worried about their ult.",
-        },
-        {
-          champion: "Bel'Veth",
-          explanation:
-            "You just end up having way too much damage for her and her possession is very good. Don't get caught out by her W and don't forget about her E. She becomes super tanky and does a lot of missing health damage.\n\nBut she can get stunned during E, removing her high dmg (but not her dmg reduction). In early skirmishes I sometimes keep my W until we both get low, and when she's about to E, I fully charge W and stun her (often I just run away and let my team handle her).\n\nJust watch out for her level 1 Raptors cheese and drop camps if you need to. Don't play her game, just scale.",
+            "They are very annoying in some games. Others they're fine. Depending on the draft, they can make teamfighting completely impossible for you, so you need to find picks or pray your team does some work.\nBut I'm really most worried about their ult.",
         },
         {
           champion: "Ambessa",
           explanation:
-            "She does nothing early. You outscale her. She can't R you because you can R out of it, which is disorienting for the Ambessa player (her animation ends instantly and she dashes).\n\nWhen she ults your team, you can instantly charge W and burst her.\n\nIf you get ahead, you can oneshot her in one W. If not, don't fight her alone. But the reset is so good.",
+            "She does nothing early. You outscale her. She can't R you because you can R out of it, which is disorienting for the Ambessa player (her animation ends instantly and she dashes).\n\nWhen she ults your team, you can instantly charge W and burst her.\n\nIf you get ahead, you can oneshot her in one W. If not, don't fight her alone.",
         },
         {
           champion: "Briar",
@@ -66,7 +61,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Elise",
           explanation:
-            "She always oneshots you if you facecheck her and you can't W her properly cuz of her dumbass spiders GOD I HATE THEM and why can she JUMP ON PLANTS. The reset is so mediocre too. Bad Elise is kinda free tho.",
+            "She always oneshots you if you facecheck her and you can't W her properly cuz of her dumbass spiders GOD I HATE THEM and why can she JUMP ON PLANTS. Bad Elise is kinda free tho.",
         },
         {
           champion: "Xin Zhao",
@@ -76,17 +71,12 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Rammus",
           explanation:
-            "I don't face Rammus at all, but people told me he's really hard to beat. Just try to avoid him early and play around his W cooldown. I think it's easier than people say if you respect him, his reset is insane for you, but I can't speak from experience.",
+            "People really fear this matchup, but it isn't hard.\n\nWhenever I see Viegos play against Rammus, they completely disrespect him, try to engage him, get taunted and die, and then they complain and do it again.\n\nDon't fight him. His W makes him completely immortal; when it runs out, you can often burst him at three items. If he ever dies, you've got the follow-up kill pretty much guaranteed with the possession.\n\nHe will spam gank, which gives you cross-map opportunities. Just don't overextend, get caught out, or underestimate how tanky he becomes.",
         },
         {
           champion: "Kayn",
           explanation:
             "Blue Kayn is kinda like Qiyana, if he hits you first you die. But he's weaker early and won't abuse you as long as you don't get cheesed at Raptors.\n\nBe very careful when he has 3+ items, it's very easy for him to kill you. DD last item.",
-        },
-        {
-          champion: "Nasus",
-          explanation:
-            "Don't fight objectives vs this guy when he has R. He can be 0/5 and still beat you 1v1 and his W is extremely annoying for you, cuz it ruins your HOB combo and you can't really get away.\n\nNasus R is completely broken. You need to wait it out. Lategame you can surprise him with your burst, you outscale.\n\nYou can try to cheese invade him at the start. Raptors -> his Blue + Gromp.",
         },
         {
           champion: "Naafiri",
@@ -111,7 +101,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Hecarim",
           explanation:
-            "While he can build DD second, this matchup is a lot harder. He becomes too tanky in the midgame.\n\nHe relies heavily on having his Q stacks active. At Scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nDon't waste tempo against this guy. He cannot start taking your Raptors on spawn every time or you're cooked.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
+            "While he can build DD second, this matchup is a lot harder. He becomes too tanky in the midgame.\n\nHe relies heavily on having his Q stacks active. At Scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
         },
         {
           champion: "Jax",
@@ -144,7 +134,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Diana",
           explanation:
-            "Insane reset and Dianas don't really buy Zhonya's in their first 3 items anymore, which makes her a super easy target. Serpents, Hubris, and LDR are all insane against her.",
+            "Dianas don't really buy Zhonya's in their first 3 items anymore, which makes her a super easy target. Serpents, Hubris, and LDR are all insane against her.",
         },
         {
           champion: "Ekko",
@@ -154,7 +144,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Jarvan IV",
           explanation:
-            "Insane reset. He has to go in, and below GM every Jarvan disrespects you and randomly ints. The real GOAT Jarvan will play only to deny you resets, but y'all don't have to worry about that.",
+            "He has to go in, and below GM every Jarvan disrespects you and randomly ints. The real GOAT Jarvan will play only to deny you resets, but y'all don't have to worry about that.",
         },
         {
           champion: "Vi",
@@ -164,7 +154,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Ivern",
           explanation:
-            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nAnd his reset is actually the best enchanter reset because you can Q > E yourself before transforming out, guaranteeing your next R and giving you survivability.",
+            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nYou can Q > E yourself before transforming out, guaranteeing your next R and giving you survivability.",
         },
         {
           champion: "Master Yi",

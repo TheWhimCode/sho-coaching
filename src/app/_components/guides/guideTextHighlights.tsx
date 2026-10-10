@@ -48,21 +48,27 @@ const TRAILING_ABILITY_BEFORE_PERIOD_RE = /(?:\s*(?:->|>)\s*)*\b[QWER]\.$/;
 
 /** Drop a sentence-ending period when it immediately follows an inline icon term. */
 export function stripTrailingPeriodAfterInlineIcon(text: string): string {
-  if (!text.endsWith(".")) return text;
+  let result = text;
 
-  if (TRAILING_ABILITY_BEFORE_PERIOD_RE.test(text)) {
-    return text.slice(0, -1);
+  if (TRAILING_ABILITY_BEFORE_PERIOD_RE.test(result)) {
+    result = result.slice(0, -1);
   }
 
-  const withoutPeriod = text.slice(0, -1);
-  const matches = findGuideTermMatches(withoutPeriod);
-  const lastMatch = matches.at(-1);
-  if (lastMatch?.end === withoutPeriod.length) {
-    const entity = resolveEntity(lastMatch.text);
-    if (entity?.icon) return withoutPeriod;
+  const periodIndexes: number[] = [];
+  for (const match of findGuideTermMatches(result)) {
+    if (result[match.end] !== ".") continue;
+    if (resolveEntity(match.text)?.icon) periodIndexes.push(match.end);
   }
 
-  return text;
+  if (periodIndexes.length === 0) return result;
+
+  let out = "";
+  let cursor = 0;
+  for (const index of periodIndexes) {
+    out += result.slice(cursor, index);
+    cursor = index + 1;
+  }
+  return out + result.slice(cursor);
 }
 
 function splitGuideHighlightedText(text: string): string[] {
@@ -206,7 +212,7 @@ function renderColoredPart(
     const colored = displayText.slice(displayText.length - suffix.length);
 
     return (
-      <span key={index} className="inline align-baseline">
+      <span key={index} className="inline-flex items-center align-middle">
         {prefix}
         <span className="font-bold" style={{ color: entity.color, fontWeight: weight }}>
           {colored}
@@ -220,7 +226,7 @@ function renderColoredPart(
 
   if (!hasStyle && icon) {
     return (
-      <span key={index} className="inline align-baseline">
+      <span key={index} className="inline-flex items-center align-middle">
         {displayText}
         <GuideInlineIcon src={icon} compact={entity.icon?.kind === "stat"} />
       </span>
@@ -228,7 +234,7 @@ function renderColoredPart(
   }
 
   return (
-    <span key={index} className="inline align-baseline">
+    <span key={index} className="inline-flex items-center align-middle">
       <span
         className={hasStyle ? "font-bold" : undefined}
         style={
