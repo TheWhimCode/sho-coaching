@@ -44,19 +44,21 @@ const PLATFORMS_BY_REGIONAL: Record<Regional, readonly string[]> = {
 
 /**
  * Finds which platform shard hosts this Riot account's LoL summoner (summoner v4 by PUUID).
- * Used after Account-v1 resolve to know which host to query for league entries.
+ * Tries `regional` first, then the other routing regions — Account-v1 often
+ * succeeds on europe/americas even when the LoL account lives on KR/JP/SEA.
  */
 export async function findPlatformForPuuid(puuid: string, regional: Regional): Promise<string | null> {
-  const platforms = PLATFORMS_BY_REGIONAL[regional];
-  if (!platforms?.length) return null;
-  for (const platform of platforms) {
-    try {
-      await riotFetchJSON(
-        `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`,
-      );
-      return platform;
-    } catch {
-      continue;
+  const order = [regional, ...ACCOUNT_ROUTING_REGIONS.filter((entry) => entry !== regional)];
+  for (const cluster of order) {
+    for (const platform of PLATFORMS_BY_REGIONAL[cluster] ?? []) {
+      try {
+        await riotFetchJSON(
+          `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`
+        );
+        return platform;
+      } catch {
+        continue;
+      }
     }
   }
   return null;

@@ -124,6 +124,17 @@ html, body {
   }
 }
 
+@keyframes item-tip-in-above {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-item-tip-in {
   animation: item-tip-in 200ms ease-out both;
 }
@@ -132,9 +143,14 @@ html, body {
   animation: item-tip-in-below 200ms ease-out both;
 }
 
+.animate-item-tip-in-above {
+  animation: item-tip-in-above 200ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-item-tip-in,
-  .animate-item-tip-in-below {
+  .animate-item-tip-in-below,
+  .animate-item-tip-in-above {
     animation: none;
   }
 }

@@ -99,6 +99,11 @@ function TierIconButton({
         clickable && (selected ? accent.cardSelected : accent.cardIdle)
       )}
     >
+      {matchup.banBadge ? (
+        <span className="pointer-events-none absolute left-1/2 -top-px -translate-x-1/2 -translate-y-1/2 whitespace-nowrap bg-[#1E1724] px-1 text-[8px] font-semibold leading-none text-[#F0ABCF] sm:text-[9px]">
+          {matchup.banBadge}
+        </span>
+      ) : null}
       {matchup.isNew ? (
         <GuideNewBadge className="pointer-events-none absolute right-2 top-1 z-10 text-[6px] sm:text-[7px]" />
       ) : null}

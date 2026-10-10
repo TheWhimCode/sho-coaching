@@ -26,7 +26,8 @@ function serializeTierMatchup(
   possessionValue: number,
   explanation: string | undefined,
   featuredExplanations: Map<string, string>,
-  isNew?: boolean
+  isNew?: boolean,
+  banBadge?: SerializedJungleTierMatchup["banBadge"]
 ): SerializedJungleTierMatchup {
   const id = resolveChampionId(champion);
   const resolvedExplanation =
@@ -42,6 +43,7 @@ function serializeTierMatchup(
     explanation: resolvedExplanation,
     hasExplanation: resolvedExplanation !== null,
     isNew,
+    banBadge,
   };
 }
 
@@ -66,7 +68,8 @@ export function buildGuideJungleTierMatchupPageData(
           entry.possessionValue,
           entry.explanation,
           featuredExplanations,
-          entry.isNew
+          entry.isNew,
+          entry.banBadge
         )
       ),
     })),

@@ -158,6 +158,8 @@ function ItemTile({
   compact = false,
   flushEdge,
   compactSpacing = "normal",
+  focusable = false,
+  tooltips = true,
   onSelect,
 }: {
   item: SerializedGuideItem;
@@ -168,6 +170,8 @@ function ItemTile({
   /** Drop outer margin on one edge — for pre-build column flush alignment. */
   flushEdge?: "start" | "end";
   compactSpacing?: "normal" | "tight";
+  focusable?: boolean;
+  tooltips?: boolean;
   onSelect?: () => void;
 }) {
   const tileRef = useRef<HTMLDivElement>(null);
@@ -180,7 +184,7 @@ function ItemTile({
   } | null>(null);
   const [portalMounted, setPortalMounted] = useState(false);
   const interactive = Boolean(onSelect);
-  const hoverEnabled = !crossed;
+  const hoverEnabled = !crossed && tooltips;
   const showHover = hovered && hoverEnabled;
   const showTip = showHover || tipVisible;
 
@@ -265,7 +269,7 @@ function ItemTile({
       )}
     >
       <div
-        tabIndex={interactive ? 0 : undefined}
+        tabIndex={interactive || focusable ? 0 : undefined}
         role={interactive ? "button" : undefined}
         className={clsx(
           compact ? ITEM_TILE_COMPACT_CLASS : ITEM_TILE_CLASS,
@@ -2346,6 +2350,139 @@ function ItemBuildPath({
   );
 }
 
+const VARIATION_NOTES_WIDTH = 720;
+const VARIATION_NOTES_GAP = 8;
+const VARIATION_NOTES_EDGE_PAD = 12;
+
+type VariationNotesPosition = {
+  left: number;
+  top: number;
+  placement: "below" | "above";
+};
+
+function BuildVariationRow({ tabId, variant }: { tabId: string; variant: SerializedGuideItemVariant }) {
+  const guideTextIcons = useGuideTextIcons();
+  const viegoAbilityIcons = useGuideViegoAbilityIcons();
+  const [position, setPosition] = useState<VariationNotesPosition | null>(null);
+  const rowRef = useRef<HTMLLIElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<HTMLDivElement>(null);
+  const showNotes = () => {
+    const row = rowRef.current?.getBoundingClientRect();
+    if (!row) return;
+    // Line the notes up with the row's text column, not the panel's outer edge.
+    const anchor = anchorRef.current?.getBoundingClientRect() ?? row;
+    const width = Math.min(VARIATION_NOTES_WIDTH, window.innerWidth - VARIATION_NOTES_EDGE_PAD * 2);
+    setPosition({
+      left: Math.max(
+        VARIATION_NOTES_EDGE_PAD,
+        Math.min(anchor.left, window.innerWidth - width - VARIATION_NOTES_EDGE_PAD)
+      ),
+      top: row.bottom + VARIATION_NOTES_GAP,
+      placement: "below",
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!position || !rowRef.current || !notesRef.current) return;
+    const row = rowRef.current.getBoundingClientRect();
+    const height = notesRef.current.getBoundingClientRect().height;
+    const fitsBelow =
+      row.bottom + VARIATION_NOTES_GAP + height <= window.innerHeight - VARIATION_NOTES_EDGE_PAD;
+    const next: Pick<VariationNotesPosition, "top" | "placement"> = fitsBelow
+      ? { top: row.bottom + VARIATION_NOTES_GAP, placement: "below" }
+      : {
+          top: Math.max(VARIATION_NOTES_EDGE_PAD, row.top - VARIATION_NOTES_GAP - height),
+          placement: "above",
+        };
+    if (next.top !== position.top || next.placement !== position.placement) {
+      setPosition({ ...position, ...next });
+    }
+  }, [position]);
+
+  useEffect(() => {
+    if (!position) return;
+    const close = () => setPosition(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [position]);
+
+  return (
+        <li ref={rowRef} tabIndex={0} aria-label={variant.label}
+          aria-describedby={position ? `${tabId}-${variant.id}-notes` : undefined}
+          onMouseEnter={showNotes} onMouseLeave={() => setPosition(null)}
+          onFocus={showNotes} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPosition(null); }}
+          onKeyDown={(event) => { if (event.key === "Escape") { setPosition(null); event.stopPropagation(); } }}
+          className="min-w-0 px-5 py-4 outline-none transition-colors hover:bg-[#F0ABCF]/[0.07] focus-within:bg-[#F0ABCF]/[0.07] focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[#B8D8EA]/50 sm:px-10 lg:px-14">
+          <div className="grid min-w-0 items-center gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-8">
+            <div ref={anchorRef} className="min-w-0">
+              <h3 className="text-base font-semibold text-[#FAD4E8] [overflow-wrap:anywhere]">
+                <GuideLabelWithNew isNew={variant.isNew}>{variant.label}</GuideLabelWithNew>
+              </h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#F5E6D3]/65 [overflow-wrap:anywhere]">
+                {variant.summary ?? variant.description.split("\n")[0]}
+              </p>
+            </div>
+            <ol aria-label={`${variant.label} item order`} className="flex min-w-0 flex-wrap gap-x-1 gap-y-3">
+              {(variant.items ?? []).map((item, index) => (
+                <li key={`${index}-${item.id}`} className="flex items-center">
+                  <ItemTile item={item} tileKey={`${tabId}-${variant.id}-${index}-${item.id}`} compact compactSpacing="tight" tooltips={false} />
+                </li>
+              ))}
+            </ol>
+          </div>
+          {position ? createPortal(
+            <div ref={notesRef} id={`${tabId}-${variant.id}-notes`} role="tooltip"
+              style={{ left: position.left, top: position.top }}
+              className="pointer-events-none fixed z-[180] w-[720px] max-w-[calc(100vw-24px)]">
+            <div
+              className={clsx(
+                "max-h-[calc(100vh-24px)] overflow-hidden rounded-xl border border-[#F0ABCF]/25 bg-[#2A1F2E] p-6 shadow-[0_12px_40px_rgba(30,23,36,0.55)] ring-1 ring-[#B8D8EA]/10 sm:p-7",
+                position.placement === "below" ? "animate-item-tip-in-below" : "animate-item-tip-in-above"
+              )}
+            >
+            <p className="text-lg font-semibold tracking-wide text-[#FAD4E8]">{variant.header}</p>
+            <div className="mt-4 min-w-0 space-y-6">
+              <div className="min-w-0 space-y-3.5 text-base leading-[1.7] text-[#F5E6D3]/75 [overflow-wrap:anywhere]">
+                {variant.description.split("\n").map((paragraph, index) => (
+                  <p key={index}>
+                    {renderGuideHighlightedTextWithViegoAbilities(paragraph, guideTextIcons, viegoAbilityIcons)}
+                    {index === 0 && variant.descriptionLink ? (
+                      <> <a href={variant.descriptionLink.href} target="_blank" rel="noopener noreferrer" className="text-[#B8D8EA] underline">{variant.descriptionLink.label}</a></>
+                    ) : null}
+                  </p>
+                ))}
+              </div>
+              {variant.goodAgainst.length > 0 ? (
+                <div className="min-w-0">
+                  <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#B8D8EA]/80">Good against</p>
+                  <div className="flex flex-wrap gap-3">
+                    {variant.goodAgainst.map((champion) => (
+                      <ChampionIcon key={champion.id} champion={champion} side="enemy" size="md" />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            </div>
+            </div>, document.body
+          ) : null}
+        </li>
+  );
+}
+
+function BuildVariationList({ tab }: { tab: SerializedGuideItemTab }) {
+  return (
+    <ul className="w-full min-w-0 divide-y divide-[#F0ABCF]/15">
+      {tab.variants.map((variant) => <BuildVariationRow key={variant.id} tabId={tab.id} variant={variant} />)}
+    </ul>
+  );
+}
+
 function TabBuildContent({
   tab,
   variant,
@@ -2559,9 +2696,23 @@ export default function ItemBuildSection({
           </div>
         ) : null}
 
-        <div className={ITEM_PRIMARY_MAIN}>
+        <div
+          className={clsx(
+            ITEM_PRIMARY_MAIN,
+            // In list layout this panel is the last child, so its bottom border would
+            // double up with the outer panel border into a visibly thicker line.
+            activeTab.layout === "list" && "border-b-0"
+          )}
+        >
           <div className="relative z-10">
-          <div className="flex w-full">
+          <div
+            className={clsx(
+              "flex w-full",
+              // Lift the tab bar off the build rows below instead of a hard divider line.
+              activeTab.layout === "list" &&
+                "relative z-10 shadow-[0_10px_18px_-8px_rgba(0,0,0,0.6)]"
+            )}
+          >
             {data.tabs.map((tab, index) => {
               const active = tab.id === activeTabId;
               return (
@@ -2585,9 +2736,13 @@ export default function ItemBuildSection({
             })}
           </div>
 
+          {activeTab.layout === "list" ? (
+            <BuildVariationList key={activeTab.id} tab={activeTab} />
+          ) : (
           <div className={ITEM_PRIMARY_BODY}>
             <div className="grid min-w-0 w-full max-w-full">
               {data.tabs.map((tab) => {
+                if (tab.layout === "list") return null;
                 const isActive = tab.id === activeTabId;
                 const tabVariantId =
                   variantByTab[tab.id] ?? tab.defaultVariantId ?? tab.variants[0]?.id ?? "";
@@ -2618,9 +2773,11 @@ export default function ItemBuildSection({
               })}
             </div>
           </div>
+          )}
           </div>
         </div>
 
+        {activeTab.layout !== "list" ? (
         <div
           ref={buildDetailRef}
           className={clsx(
@@ -2631,6 +2788,7 @@ export default function ItemBuildSection({
         >
           <div className="grid min-w-0 w-full max-w-full">
             {data.tabs.map((tab) => {
+              if (tab.layout === "list") return null;
               const isActive = tab.id === activeTabId;
               const tabVariantId =
                 variantByTab[tab.id] ?? tab.defaultVariantId ?? tab.variants[0]?.id ?? "";
@@ -2662,6 +2820,7 @@ export default function ItemBuildSection({
             })}
           </div>
         </div>
+        ) : null}
       </div>
         </div>
       </div>

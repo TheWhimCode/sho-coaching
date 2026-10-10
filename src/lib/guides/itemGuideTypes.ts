@@ -69,6 +69,9 @@ export type GuideItemPreBuild = {
 
 export type GuideItemVariant = {
   id: string;
+  /** Ordered items for an independent build in a list tab. */
+  items?: GuideItemEntry[];
+  summary?: string;
   label: string;
   header: string;
   description: string;
@@ -89,6 +92,7 @@ export type GuideItemVariant = {
 
 export type GuideItemTab = {
   id: string;
+  layout?: "paths" | "list";
   label: string;
   subheading?: string;
   steps?: GuideItemBuildStep[];
@@ -171,6 +175,8 @@ export type SerializedGuideItemPreBuild = {
 
 export type SerializedGuideItemVariant = {
   id: string;
+  items?: SerializedGuideItem[];
+  summary?: string;
   label: string;
   header: string;
   description: string;
@@ -184,6 +190,7 @@ export type SerializedGuideItemVariant = {
 
 export type SerializedGuideItemTab = {
   id: string;
+  layout?: "paths" | "list";
   label: string;
   subheading?: string;
   steps: SerializedGuideItemStep[];

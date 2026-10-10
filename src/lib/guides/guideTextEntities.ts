@@ -20,6 +20,8 @@ export const GUIDE_MR_VIOLET = "#8B5CF6";
 export const GUIDE_AH_CYAN = "#22D3EE";
 export const GUIDE_TENACITY_AMBER = "#FB923C";
 export const GUIDE_SMITE_AMBER = "#E8960C";
+export const GUIDE_YUN_TAL_LIGHT_YELLOW = "#FDE68A";
+export const GUIDE_UMBRAL_LIGHT_GRAY = "#D1D5DB";
 
 export type GuideTextEntityIcon =
   | { kind: "item"; id: string }
@@ -116,6 +118,18 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     matchKey: "collector",
     color: GUIDE_COLLECTOR_BLUE,
     icon: { kind: "item", id: "6676" },
+  },
+  {
+    patterns: ["Yun Tal Wildarrows", "Yun Tal"],
+    matchKey: "yun-tal",
+    color: GUIDE_YUN_TAL_LIGHT_YELLOW,
+    icon: { kind: "item", id: "3032" },
+  },
+  {
+    patterns: ["Umbral Glaive", "Umbral"],
+    matchKey: "umbral-glaive",
+    color: GUIDE_UMBRAL_LIGHT_GRAY,
+    icon: { kind: "item", id: "3179" },
   },
   {
     patterns: ["Serrated Dirk", "Dirk"],

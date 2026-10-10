@@ -53,7 +53,7 @@ function serializeTeamComp(
   guideChampion?: string
 ): SerializedGuideItemTeamComp {
   const allyNames = [...teamComp.ally];
-  if (guideChampion) {
+  if (guideChampion && allyNames.length > 0) {
     const guideId = resolveChampionId(guideChampion);
     const hasGuide = allyNames.some((name) => resolveChampionId(name) === guideId);
     if (!hasGuide) {
@@ -100,6 +100,8 @@ function serializeVariant(
 ): SerializedGuideItemVariant | null {
   return {
     id: variant.id,
+    items: variant.items?.map(serializeItem).filter((x): x is SerializedGuideItem => x != null),
+    summary: variant.summary,
     label: variant.label,
     header: variant.header,
     description: variant.description,
@@ -179,6 +181,7 @@ export async function buildGuideItemPageData(
     preBuild: serializePreBuild(config.preBuild),
     tabs: config.tabs.map((tab) => ({
       id: tab.id,
+      layout: tab.layout,
       label: tab.label,
       subheading: tab.subheading,
       steps: tab.steps ? serializeSteps(tab.steps) : [],

@@ -1,0 +1,54 @@
+import type { Metadata } from "next";
+import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
+import { ensureLiveDDragonPatch } from "@/lib/datadragon/patch";
+import { loadPickerBuilds } from "@/lib/guides/buildPicker/loadBuilds";
+import type { ChampionProfileRow } from "@/lib/guides/buildPicker/types";
+import { prisma } from "@/lib/prisma";
+import { VIEGO_ITEM_SECTION } from "../viegoItems";
+import BuildPickerClient from "./BuildPickerClient";
+
+const title = "Viego Build Picker";
+const description =
+  "Enter your Riot ID while in game and get the right Viego build for both team compositions.";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    url: "/guide/build",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/guide/build",
+  },
+};
+
+export const dynamic = "force-dynamic";
+
+export default async function BuildPickerPage() {
+  const [builds, profiles] = await Promise.all([
+    loadPickerBuilds(VIEGO_ITEM_SECTION),
+    prisma.championProfile.findMany({ orderBy: { name: "asc" } }),
+    ensureLiveDDragonPatch(),
+  ]);
+
+  const championRows: ChampionProfileRow[] = profiles.map((row) => {
+    const championId = resolveChampionId(row.name);
+    return {
+      name: row.name,
+      championId,
+      icon: champSquareUrlById(championId),
+      durability: row.durability,
+      shields: row.shields,
+      damageType: row.damageType,
+      damageThreat: row.damageThreat,
+      cc: row.cc,
+    };
+  });
+
+  return (
+    <BuildPickerClient builds={builds} championRows={championRows} />
+  );
+}

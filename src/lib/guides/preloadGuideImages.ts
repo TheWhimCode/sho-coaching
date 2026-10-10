@@ -71,6 +71,7 @@ export function collectItemSectionImageUrls(data: GuideItemPageData): string[] {
     }
 
     for (const variant of tab.variants) {
+      for (const item of variant.items ?? []) addItem(urls, item);
       for (const champion of variant.teamComp.ally) {
         if (champion.icon) urls.add(champion.icon);
       }

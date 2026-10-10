@@ -38,6 +38,7 @@ export type GuideJungleTierTone = "nightmare" | "difficult" | "even" | "favorabl
 
 export type GuideJungleTierMatchupEntry = {
   champion: string;
+  banBadge?: "Minos Ban" | "Good Ban";
   possessionValue: number;
   explanation?: string;
   isNew?: boolean;
@@ -58,6 +59,7 @@ export type GuideJungleTierMatchupSectionConfig = {
 
 export type SerializedJungleTierMatchup = {
   id: string;
+  banBadge?: "Minos Ban" | "Good Ban";
   name: string;
   icon: string;
   possessionValue: number;

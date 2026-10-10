@@ -787,3 +787,60 @@ model AxomEvent {
   @@schema("axom")
   @@map("events")
 }
+
+// Per-champion traits used by the live-game build recommender.
+// `name` is the Data Dragon display name (e.g. "Kai'Sa", "Nunu & Willump").
+model ChampionProfile {
+  name         String               @id
+  durability   ChampionDurability
+  shields      ChampionShieldLevel
+  damageType   ChampionDamageType
+  damageThreat ChampionThreatLevel
+  cc           ChampionCcLevel
+  updatedAt    DateTime             @default(now()) @updatedAt
+
+  @@schema("public")
+}
+
+enum ChampionDurability {
+  Squishy
+  Bruiser
+  Tanky
+
+  @@schema("public")
+}
+
+enum ChampionShieldLevel {
+  None
+  Low
+  /// Low shield that only comes online later (items / late kit).
+  Late
+  High
+
+  @@schema("public")
+}
+
+enum ChampionDamageType {
+  AD
+  AP
+  Mixed
+
+  @@schema("public")
+}
+
+enum ChampionThreatLevel {
+  Low
+  Medium
+  High
+
+  @@schema("public")
+}
+
+enum ChampionCcLevel {
+  None
+  Low
+  Medium
+  High
+
+  @@schema("public")
+}

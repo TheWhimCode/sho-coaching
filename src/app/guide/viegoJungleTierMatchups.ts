@@ -9,8 +9,9 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       subtitle: "P-please don't hurt me >.<",
       tone: "nightmare",
       matchups: [
-        { champion: "Talon", possessionValue: 5 },
-        { champion: "Kha'Zix", possessionValue: 8 },
+        { champion: "Qiyana", possessionValue: 6, banBadge: "Minos Ban" },
+        { champion: "Talon", possessionValue: 5, banBadge: "Good Ban" },
+        { champion: "Kha'Zix", possessionValue: 8, banBadge: "Good Ban" },
         { champion: "Rengar", possessionValue: 6 },
       ],
     },
@@ -20,13 +21,12 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       subtitle: "It's winnable!!",
       tone: "difficult",
       matchups: [
-        { champion: "Qiyana", possessionValue: 6 },
-        { champion: "Hecarim", possessionValue: 7 },
+        { champion: "Hecarim", possessionValue: 7, banBadge: "Good Ban" },
         { champion: "Lee Sin", possessionValue: 9 },
         {
           champion: "Shyvana",
+          banBadge: "Good Ban",
           possessionValue: 5,
-          isNew: true,
           explanation:
             "Gets surprisingly tanky, be careful fighting her alone. Especially her guaranteed fear means you have to respect her in a fight. You outscale and generally you like playing against bruisers that engage your team. Farm and wait for her to misstep.",
         },
@@ -36,7 +36,7 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Kayn", possessionValue: 5 },
         { champion: "Rammus", possessionValue: 8 },
         { champion: "Shaco", possessionValue: 5 },
-        { champion: "Xin Zhao", possessionValue: 8, isNew: true },
+        { champion: "Xin Zhao", possessionValue: 8 },
       ],
     },
     {
@@ -48,14 +48,12 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         {
           champion: "Aatrox",
           possessionValue: 6,
-          isNew: true,
           explanation:
             "He won't bother you early and farms up and plays around his itemspikes & ult cooldown. Don't underestimate how much he can heal. Engage him only with your team until you're scaled and can oneshot him.\n\nHis dash has a 7-9 second cooldown at the start but goes to like 3 seconds in lategame.",
         },
         {
           champion: "Amumu",
           possessionValue: 6,
-          isNew: true,
           explanation:
             "You never want to get engaged by him. He's pretty tanky and his CC range is massive, even ulting away won't help you. But he is still an engager that you can burst down with your team once scaled.\n\nHe won't invade you, so scale up, respect teamfights, don't obsess over him. Either play through sidelane or wait until he engages someone else.\n\nAnd you don't really WANT to focus him, maybe just set up a flank and go on the backline when he engages.",
         },
@@ -90,7 +88,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         {
           champion: "Gwen",
           possessionValue: 6,
-          isNew: true,
           explanation:
             "It's super hard for Gwen to play into 3 item Viego. She's supposed to be a scaling pick like Yi or Ekko, but when she finally hits her 3 items you can kill her super easily with your team and oneshot her if she ever facechecks a fully charged W. You can R into her W or even dash into it with your W.\n\nBut respect her level 6 all in. You're not supposed to 1v1 her in midgame.",
         },
@@ -107,16 +104,8 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Skarner", possessionValue: 6 },
         { champion: "Trundle", possessionValue: 5 },
         {
-          champion: "Udyr",
-          possessionValue: 7,
-          isNew: true,
-          explanation:
-            "Similar to Nunu, he has a really hard time staying out of your full combo range. He will fullclear early, just scale against him. In midgame he will take fights and tank some damage from your team. Once he's lost like 30% of his health, you can just oneshot him from LDR. Even from full if you get ahead.\n\nCheck what build he's running. Also, know how to play after transforming. AP tank has less kill pressure but he gets more tanky. AD can oneshot you, but he blows up in midgame until he gets DD.\n\nYou can't use Phoenix, so if he's AP you're gonna empower W or E every time.",
-        },
-        {
           champion: "Volibear",
           possessionValue: 7,
-          isNew: true,
           explanation:
             "He's strong early, but he gets outscaled and never gets tanky enough to survive once you hit LDR. Don't become his target, respect the 1v1s. He will outgank you and secure early objectives.\n\nEvery fight he engages too early, you can kill him with your team, possess, kill the rest. And if you get ahead early you can basically kill him on repeat with LDR.\n\nWatch out for Randuin's.",
         },
@@ -143,6 +132,12 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         { champion: "Nunu", possessionValue: 7 },
         { champion: "Ekko", possessionValue: 8 },
         { champion: "Master Yi", possessionValue: 5 },
+        {
+          champion: "Udyr",
+          possessionValue: 7,
+          explanation:
+            "Similar to Nunu, he has a really hard time staying out of your full combo range. He will fullclear early, just scale against him. In midgame he will take fights and tank some damage from your team. Once he's lost like 30% of his health, you can just oneshot him from LDR. Even from full if you get ahead.\n\nCheck what build he's running. Also, know how to play after transforming. AP tank has less kill pressure but he gets more tanky. AD can oneshot you, but he blows up in midgame until he gets DD.\n\nYou can't use Phoenix, so if he's AP you're gonna empower W or E every time.",
+        },
       ],
     },
   ],

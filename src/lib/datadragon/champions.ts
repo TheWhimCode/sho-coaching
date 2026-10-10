@@ -54,6 +54,9 @@ const ALIAS: ChampionAliasMap = {
 
   leblanc: "Leblanc",
   "le blanc": "Leblanc",
+
+  "renata glasc": "Renata",
+  renata: "Renata",
 };
 
 function pascalize(name: string) {
@@ -113,4 +116,34 @@ export async function getAllChampions(
     title: c.title,
     icon: champSquareUrlById(c.id, currentPatch),
   }));
+}
+
+/* ----------------------- Numeric key → champion ------------------------ */
+
+type ChampionByKey = { id: string; name: string };
+let championKeyMap: Map<number, ChampionByKey> | null = null;
+let championKeyPatch = "";
+
+/**
+ * Riot game APIs (Spectator, Match) use numeric champion keys. Maps them to
+ * Data Dragon ids/names. Cached per patch.
+ */
+export async function getChampionsByKey(): Promise<Map<number, ChampionByKey>> {
+  await ensureLiveDDragonPatch();
+  if (championKeyMap && championKeyPatch === currentPatch) return championKeyMap;
+
+  const res = await fetch(
+    `https://ddragon.leagueoflegends.com/cdn/${currentPatch}/data/en_US/champion.json`,
+    { next: { revalidate: DDRAGON_FETCH_REVALIDATE_SECONDS } }
+  );
+  if (!res.ok) throw new Error("Failed to load champion list");
+  const data = await res.json();
+
+  const map = new Map<number, ChampionByKey>();
+  for (const c of Object.values(data.data) as { id: string; key: string; name: string }[]) {
+    map.set(Number(c.key), { id: c.id, name: c.name });
+  }
+  championKeyMap = map;
+  championKeyPatch = currentPatch;
+  return map;
 }
