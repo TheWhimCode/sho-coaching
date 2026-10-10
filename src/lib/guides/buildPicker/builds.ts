@@ -31,7 +31,7 @@ const MAIN_BUILDS: PickerBuildDef[] = [
   },
   {
     id: "main-hubris",
-    label: "Hubris",
+    label: "Another Bloodrush",
     summary: "Hubris, Collector, LDR, Infinity Edge, Cyclosword.",
     itemIds: [6697, 6676, 3036, 3031, 6699],
     source: "main",
@@ -42,7 +42,7 @@ const MAIN_BUILDS: PickerBuildDef[] = [
 const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
   {
     id: "sit-serpents-first",
-    label: "Serpent's Fang first",
+    label: "Shieldbreaker's Edge",
     summary: "Serpent's Fang, Collector, LDR, Infinity Edge, Cyclosword.",
     itemIds: [6695, 6676, 3036, 3031, 6699],
     source: "situational",
@@ -50,7 +50,7 @@ const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
   {
     // TODO: confirm item order with Mino; placeholder is Serpent's third.
     id: "sit-serpents-late",
-    label: "Delayed Serpent's Fang",
+    label: "Shieldbreaker's Reckoning",
     summary: "Collector, LDR, Serpent's Fang, Infinity Edge, Cyclosword.",
     itemIds: [6676, 3036, 6695, 3031, 6699],
     source: "situational",

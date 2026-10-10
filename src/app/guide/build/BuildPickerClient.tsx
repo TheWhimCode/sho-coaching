@@ -555,6 +555,7 @@ function BuildCard({
   boot,
   recommendedAlternative,
   trace,
+  playerChampionName,
 }: {
   build: PickerBuild | undefined;
   buildId: string;
@@ -563,6 +564,7 @@ function BuildCard({
   boot: { itemId: number; slot: 2 | 3 | 4 };
   recommendedAlternative?: { buildId: string; label: string };
   trace: BuildTraceStep[];
+  playerChampionName?: string;
 }) {
   const alternative = recommendedAlternative ?? BUILD_ALTERNATIVES[buildId];
   const alternativeBuild = alternative
@@ -590,6 +592,11 @@ function BuildCard({
       />
       <div className="relative flex flex-col items-center text-center">
         <p className={LABEL_CLASS}>Recommended build</p>
+        {playerChampionName && playerChampionName !== "Viego" ? (
+          <p className="mt-3 rounded-full border border-[#B8D8EA]/20 bg-[#B8D8EA]/[0.07] px-3 py-1.5 text-xs font-medium text-[#B8D8EA]/85" role="status">
+            You&apos;re playing {playerChampionName}. This is a Viego build suggestion.
+          </p>
+        ) : null}
         {build ? (
           <>
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#FAD4E8] sm:text-3xl lg:text-[2.1rem]">
@@ -668,7 +675,7 @@ function BuildSkeleton() {
       <div className="flex flex-col items-center text-center">
         <SkeletonLine className={LABEL_CLASS}>Recommended build</SkeletonLine>
         <SkeletonLine className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl lg:text-[2.1rem]">
-          Full scaling anti-tank
+          Titansbane
         </SkeletonLine>
         <SkeletonLine className="mt-1.5 text-sm sm:text-base">Maximum scaling DPS possible.</SkeletonLine>
         <div className="mt-7">
@@ -677,7 +684,7 @@ function BuildSkeleton() {
 
         <div className="mt-8 w-full border-t border-[#F5E6D3]/10 pt-7">
           <SkeletonLine className={LABEL_CLASS}>If you fall behind early</SkeletonLine>
-          <SkeletonLine className="mt-1.5 text-lg font-bold tracking-tight">Hubris skip anti-tank</SkeletonLine>
+          <SkeletonLine className="mt-1.5 text-lg font-bold tracking-tight">Inevitable Doom</SkeletonLine>
           <SkeletonLine className="mt-1 text-xs sm:text-sm">Midgame power, anti-tank.</SkeletonLine>
           <div className="mt-4">
             <SkeletonItemRow count={6} size="sm" />
@@ -814,6 +821,9 @@ export default function BuildPickerClient({
   const recommendedBuild = recommendation
     ? builds.find((build) => build.id === recommendation.buildId)
     : undefined;
+  const playerChampionName = result?.status === "in_game"
+    ? (result.playerSide === "blue" ? result.blue : result.red).find((participant) => participant.isSearchedPlayer)?.championName
+    : undefined;
 
   return (
     <div className="relative min-h-screen" style={{ color: GUIDE.text }}>
@@ -855,6 +865,7 @@ export default function BuildPickerClient({
                       boot={result.recommendation.boot}
                       recommendedAlternative={result.recommendation.alternative}
                       trace={result.recommendation.trace}
+                      playerChampionName={playerChampionName}
                     />
                   ) : null
                 }

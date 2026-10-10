@@ -205,7 +205,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         BASTIONBREAKER_VARIANT,
         {
           id: "hubris",
-          label: "Hubris",
+          label: "Another Bloodrush",
           header: "Max damage & scaling",
           description:
             "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.\nI build this 30% of games",
@@ -244,8 +244,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         },
         {
           id: "umbral-collector",
-          label: "Umbral pivot",
-          header: "Umbral pivot",
+          label: "Shadow Economy",
+          header: "Shadow Economy",
           summary: "Budget or mid-game option.",
           description:
             "When you start building for Hubris but you fall behind, you can pivot into Umbral Glaive for more mid-game power.\nOr if you know that you won't be getting a lot of kills because your teammates have low volatility lanes and everyone is playing safe, you can go Umbral to provide other value to your team and get to your other items more quickly.",
@@ -262,8 +262,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         },
         {
           id: "hubris-ldr",
-          label: "Full scaling anti-tank",
-          header: "Full scaling anti-tank",
+          label: "Titansbane",
+          header: "Titansbane",
           summary: "Maximum scaling DPS possible.",
           description:
             "Hubris is the best item in extended fights because it does the most damage when the first person dies.\nYun Tal fourth, because Collector loses a lot of value and we need a crit item to fill the slot. But be careful, sometimes you face compositions that cannot be killed realistically (Zilean, K'Sante, Kindred). You won't be able to activate your Hubris then.",
@@ -280,8 +280,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         },
         {
           id: "hubris-skip-anti-tank",
-          label: "Hubris skip anti-tank",
-          header: "Hubris skip anti-tank",
+          label: "Inevitable Doom",
+          header: "Inevitable Doom",
           summary: "Midgame power, anti-tank.",
           description:
             "If Hubris is too risky and you can't start B.F. Sword, this is what you need to run to be able to deal with tanky champions in the mid game. You sacrifice a lot of scaling running this, but sometimes it is necessary.",
@@ -316,8 +316,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         },
         {
           id: "sit-serpents",
-          label: "Anti-shield",
-          header: "Anti-shield",
+          label: "Shieldbreaker's Path",
+          header: "Shieldbreaker's Path",
           summary: "When you will always hit shields.",
           items: [
             { id: 6676, explanation: SITUATIONAL_COLLECTOR_EXPLANATION },
@@ -337,8 +337,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         },
         {
           id: "yun-tal-ldr",
-          label: "Max midgame DPS",
-          header: "Max midgame DPS",
+          label: "Forged Momentum",
+          header: "Forged Momentum",
           summary: "Against low-damage comps with BF start.",
           description:
             "Only run this build when you are confident that you will be able to DPS the enemy because they lack damage, and you have champions that will create enough space for you to auto-attack.\nWhen rushing Yun Tal, you need to get B.F. Sword on your first back. If you don't, switch into another build instead.\nYou can start Raptors into Krugs and clear them again on respawn. Combined with Triple Tonic, this gets you 1300 gold on your first back. Just make sure you can't get invaded on Raptors spawn if you plan this.",

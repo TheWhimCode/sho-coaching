@@ -34,31 +34,27 @@ export function regionalForServer(server: string): Regional {
   return region;
 }
 
-/** LoL platform hosts under each account routing region (for summoner/league by PUUID). */
-const PLATFORMS_BY_REGIONAL: Record<Regional, readonly string[]> = {
-  americas: ["na1", "br1", "la1", "la2", "oc1"],
-  europe: ["euw1", "eun1", "tr1", "ru"],
-  asia: ["kr", "jp1"],
-  sea: ["ph2", "sg2", "th2", "tw2", "vn2"],
-};
+/** Preferred order for automatic live-game lookups. Most visitors are on EUW/NA. */
+const PLATFORM_DISCOVERY_ORDER = [
+  "euw1", "na1", "eun1", "oc1",
+  "br1", "la1", "la2", "tr1", "ru",
+  "kr", "jp1",
+  "ph2", "sg2", "th2", "tw2", "vn2",
+] as const;
 
 /**
  * Finds which platform shard hosts this Riot account's LoL summoner (summoner v4 by PUUID).
- * Tries `regional` first, then the other routing regions — Account-v1 often
- * succeeds on europe/americas even when the LoL account lives on KR/JP/SEA.
+ * Uses the preferred platform order for fast EUW/NA discovery before trying all others.
  */
-export async function findPlatformForPuuid(puuid: string, regional: Regional): Promise<string | null> {
-  const order = [regional, ...ACCOUNT_ROUTING_REGIONS.filter((entry) => entry !== regional)];
-  for (const cluster of order) {
-    for (const platform of PLATFORMS_BY_REGIONAL[cluster] ?? []) {
-      try {
-        await riotFetchJSON(
-          `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`
-        );
-        return platform;
-      } catch {
-        continue;
-      }
+export async function findPlatformForPuuid(puuid: string, _regional: Regional): Promise<string | null> {
+  for (const platform of PLATFORM_DISCOVERY_ORDER) {
+    try {
+      await riotFetchJSON(
+        `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`
+      );
+      return platform;
+    } catch {
+      continue;
     }
   }
   return null;

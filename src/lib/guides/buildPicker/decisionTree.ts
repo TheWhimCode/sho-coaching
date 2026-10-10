@@ -392,7 +392,7 @@ const LOW_DAMAGE_DPS: DecisionNode = {
   kind: "choice",
   id: "low-damage-dps",
   title: "Enough room to DPS?",
-  rule: "4+ enemy champions with Low damage and 3+ allied champions with Low damage → Max midgame DPS. Otherwise continue to shield checks.",
+  rule: "4+ enemy champions with Low damage and 3+ allied champions with Low damage → Forged Momentum. Otherwise continue to shield checks.",
   pick: (ctx) => {
     const enemyLowDamage = countEnemies(ctx, "damageThreat", "Low");
     const allyLowDamage = countTeam(ctx.allies, "damageThreat", "Low");
@@ -412,7 +412,7 @@ const LOW_DAMAGE_DPS: DecisionNode = {
         id: "max-midgame-dps",
         buildId: "yun-tal-ldr",
         reason:
-          "Four or five low-damage enemies and at least three low-damage allies give you room to DPS. Go Max midgame DPS, provided you get B. F. Sword on your first reset.",
+          "Four or five low-damage enemies and at least three low-damage allies give you room to DPS. Go Forged Momentum, provided you get B. F. Sword on your first reset.",
       },
     },
     { id: "no", label: "Normal damage", next: SHIELD_DECISION_TREE },

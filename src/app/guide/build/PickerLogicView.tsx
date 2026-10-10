@@ -15,11 +15,11 @@ type RuleRow = {
 };
 
 const SHIELD_RULES: RuleRow[] = [
-  { id: "s1", when: "2+ High shields", buildId: "sit-serpents-first", buildLabel: "Serpent's Fang first" },
-  { id: "s2", when: "1 High and 2+ Low or Late", buildId: "sit-serpents-first", buildLabel: "Serpent's Fang first" },
-  { id: "s3", when: "4+ Low (early)", buildId: "sit-serpents-first", buildLabel: "Serpent's Fang first" },
-  { id: "s4", when: "4+ Low+Late, and more Late than Low", buildId: "sit-serpents-late", buildLabel: "Delayed Serpent's Fang" },
-  { id: "s5", when: "4+ Low+Late otherwise", buildId: "sit-serpents", buildLabel: "Serpent's Fang" },
+  { id: "s1", when: "2+ High shields", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
+  { id: "s2", when: "1 High and 2+ Low or Late", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
+  { id: "s3", when: "4+ Low (early)", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
+  { id: "s4", when: "4+ Low+Late, and more Late than Low", buildId: "sit-serpents-late", buildLabel: "Shieldbreaker's Reckoning" },
+  { id: "s5", when: "4+ Low+Late otherwise", buildId: "sit-serpents", buildLabel: "Shieldbreaker's Path" },
   { id: "s6", when: "Anything else", buildId: null, buildLabel: "→ Survivability?" },
 ];
 
@@ -36,8 +36,8 @@ const SURVIVABILITY_RULES: RuleRow[] = [
 const TANKY_RULES: RuleRow[] = [
   { id: "t1", when: "4+ Squishy and 0 Tanky", buildId: "bastionbreaker-cyclosword", buildLabel: "The twink crusher" },
   { id: "t2", when: "Exactly 2 Bruiser, or 4 Squishy + 1 Tanky", buildId: "main-bastionbreaker", buildLabel: "Bread & Butter Carnage" },
-  { id: "t3", when: "2+ Tanky, or 3+ Bruiser+Tanky combined", buildId: "hubris-ldr", buildLabel: "Hubris into LDR" },
-  { id: "t4", when: "Anything else", buildId: "main-hubris", buildLabel: "Hubris" },
+  { id: "t3", when: "2+ Tanky, or 3+ Bruiser+Tanky combined", buildId: "hubris-ldr", buildLabel: "Titansbane" },
+  { id: "t4", when: "Anything else", buildId: "main-hubris", buildLabel: "Another Bloodrush" },
 ];
 
 type Props = {
