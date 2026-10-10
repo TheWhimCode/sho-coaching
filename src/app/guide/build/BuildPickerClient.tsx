@@ -23,12 +23,17 @@ import BootsLogicView from "./BootsLogicView";
 import ChampionProfileTable from "./ChampionProfileTable";
 import PickerLogicView from "./PickerLogicView";
 
-/** Recommended build → useful pivot when its required first spike does not happen. */
+/** Recommended build → useful pivot when the reason you picked it stops being true. */
 const BUILD_ALTERNATIVES: Record<string, { buildId: string; label: string }> = {
   "hubris-ldr": { buildId: "hubris-skip-anti-tank", label: "If you fall behind early" },
   "main-hubris": { buildId: "umbral-collector", label: "If you fall behind early" },
   "main-bastionbreaker": { buildId: "umbral-collector", label: "If your gold lines up better" },
   "yun-tal-ldr": { buildId: "hubris-ldr", label: "If you miss B. F. Sword on first reset" },
+  "bastionbreaker-cyclosword": { buildId: "main-bastionbreaker", label: "If enemies end up stacking armor" },
+  "collector-shieldbow": { buildId: "umbral-collector", label: "If you fall too far behind" },
+  "sit-serpents-first": { buildId: "sit-serpents", label: "If you want anti-shield later" },
+  "sit-serpents": { buildId: "sit-serpents-late", label: "If you want anti-shield later" },
+  "sit-serpents-late": { buildId: "sit-serpents", label: "If you want anti-shield earlier" },
 };
 
 const STORAGE_RIOT_ID = "viego-build-picker-riot-id";
@@ -59,11 +64,11 @@ function nearbyBuildRoutes(trace: BuildTraceStep[]) {
   const shields = trace.find((step) => step.nodeId === "shields");
 
   if (tanky?.optionId === "hubris") {
-    routes.push({ buildId: "main-bastionbreaker", reason: "One more bruiser would have moved you into Bastionbreaker.", detail: tanky.detail });
+    routes.push({ buildId: "main-bastionbreaker", reason: "One more bruiser would have moved you into Bread & Butter Carnage.", detail: tanky.detail });
   } else if (tanky?.optionId === "two-bruisers") {
     routes.push({ buildId: "main-hubris", reason: "One fewer bruiser would have kept the standard Hubris route.", detail: tanky.detail });
   } else if (tanky?.optionId === "tanks") {
-    routes.push({ buildId: "main-bastionbreaker", reason: "One fewer frontline target would have kept this on Bastionbreaker.", detail: tanky.detail });
+    routes.push({ buildId: "main-bastionbreaker", reason: "One fewer frontline target would have kept this on Bread & Butter Carnage.", detail: tanky.detail });
   } else if (tanky?.optionId === "all-squishy") {
     routes.push({ buildId: "main-bastionbreaker", reason: "One more durable target would have ended the full-Lethality route.", detail: tanky.detail });
   }
@@ -256,16 +261,16 @@ function portraitRevealStep(side: "ally" | "enemy", index: number, count = PORTR
 
 const FLOAT_COLOR: Record<BuildFloatTag["tone"], string> = {
   shield: "#F3F1EE",
-  barrier: "#D4B8EA",
-  damage: "#6EC4B0",
+  barrier: "#C9A0E8",
+  damage: "#3EBEA4",
   tank: "#B7B4B1",
-  bruiser: "#C4895C",
-  squishy: "#9FCBF0",
-  survive: "#F09AB8",
-  ad: "#B85A45",
-  ap: "#B48AD4",
-  cc: "#E07090",
-  disengage: "#E2C06A",
+  bruiser: "#D67A38",
+  squishy: "#6EB6F2",
+  survive: "#F078A4",
+  ad: "#C84A32",
+  ap: "#A56EE0",
+  cc: "#E4587C",
+  disengage: "#E8B040",
 };
 
 function hashSeed(seed: string) {
@@ -281,9 +286,16 @@ function floatTagKey(tag: BuildFloatTag) {
   return `${tag.side}:${tag.championId}:${tag.word}`;
 }
 
-function floatJitter(seed: string) {
-  const hash = hashSeed(seed);
-  return { x: (hash % 117) - 58, y: ((hash >>> 11) % 89) - 44 };
+/** Disc around a point slightly above the portrait center. Rolled once per result. */
+const FLOAT_SPAWN_RADIUS_PX = 42;
+
+function rollAroundCenter() {
+  const angle = Math.random() * Math.PI * 2;
+  const distance = Math.sqrt(Math.random()) * FLOAT_SPAWN_RADIUS_PX;
+  return {
+    x: Math.round(Math.cos(angle) * distance),
+    y: Math.round(Math.sin(angle) * distance),
+  };
 }
 
 /** Random order, with a short gap so the tags don't pop in as one group. */
@@ -302,23 +314,28 @@ function floatAppearDelays(tags: BuildFloatTag[]) {
 }
 
 function PortraitFloats({ tags, appearDelays }: { tags: BuildFloatTag[]; appearDelays: Record<string, number> }) {
+  const [positions] = useState(() => {
+    const rolled: Record<string, { x: number; y: number }> = {};
+    for (const tag of tags) rolled[floatTagKey(tag)] = rollAroundCenter();
+    return rolled;
+  });
   if (tags.length === 0) return null;
   return (
     <div className="pointer-events-none absolute inset-0 z-20" aria-hidden>
       {tags.map((entry) => {
-        const jitter = floatJitter(floatTagKey(entry));
+        const spot = positions[floatTagKey(entry)] ?? { x: 0, y: 0 };
         return (
           <span
             key={floatTagKey(entry)}
             className="absolute left-1/2 top-[40%] whitespace-nowrap"
-            style={{ transform: `translate(calc(-50% + ${jitter.x}px), calc(-50% + ${jitter.y}px))` }}
+            style={{ transform: `translate(calc(-50% + ${spot.x}px), calc(-50% + ${spot.y}px))` }}
           >
             <span
-              className="build-float-tag inline-block text-[0.74rem] font-extrabold uppercase leading-none tracking-[0.06em]"
+              className="build-float-tag inline-block text-[0.86rem] font-extrabold uppercase leading-none tracking-[0.06em]"
               style={{
                 color: FLOAT_COLOR[entry.tone],
-                fontSize: "0.74rem",
-                textShadow: "0 1px 2px rgba(18,12,20,0.95), 0 0 10px rgba(18,12,20,0.75)",
+                fontSize: "0.86rem",
+                textShadow: "0 0 1px rgba(8,6,12,1), 0 0 5px rgba(8,6,12,0.95), 0 0 12px rgba(8,6,12,0.75)",
                 animationDelay: `${appearDelays[floatTagKey(entry)] ?? FLOAT_TAG_START_MS}ms`,
               }}
             >
@@ -488,6 +505,11 @@ function PhaseCaption({ phase }: { phase: LookupPhase }) {
 /* Recommended build                                                   */
 /* ------------------------------------------------------------------ */
 
+/** Item-order blurbs like "Collector, LDR, Infinity Edge" sit above the icons and repeat them. */
+function isItemListSummary(summary: string) {
+  return summary.split(",").length >= 4;
+}
+
 function ItemOrder({
   build,
   boot,
@@ -590,7 +612,7 @@ function BuildCard({
           <div className="mt-8 w-full border-t border-[#F5E6D3]/10 pt-7">
             <p className={LABEL_CLASS}>{alternative.label}</p>
             <p className="mt-1.5 text-lg font-bold tracking-tight text-[#F5E6D3]/85">{alternativeBuild.label}</p>
-            {alternativeBuild.summary ? (
+            {alternativeBuild.summary && !isItemListSummary(alternativeBuild.summary) ? (
               <p className="mt-1 text-xs text-[#F5E6D3]/50 sm:text-sm">{alternativeBuild.summary}</p>
             ) : null}
             <div className="mt-4">

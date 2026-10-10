@@ -24,7 +24,7 @@ export type PickerItem = {
 const MAIN_BUILDS: PickerBuildDef[] = [
   {
     id: "main-bastionbreaker",
-    label: "Bastionbreaker",
+    label: "Bread & Butter Carnage",
     summary: "Bastionbreaker, Collector, LDR, Infinity Edge, Cyclosword.",
     itemIds: [2520, 6676, 3036, 3031, 6699],
     source: "main",

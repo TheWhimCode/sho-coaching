@@ -153,6 +153,36 @@ function resetDenierCount(ctx: TreeContext) {
   return ctx.enemies.filter((champion) => champion.deniesResets).length;
 }
 
+const RESET_DENIER_ALTERNATIVE = "Better scaling if you think you can stack it despite their reliable disengage";
+
+/** Hubris stacks are unreliable into 2+ reset deniers, so those leaves swap to the safer build. */
+function applyResetDenial(
+  ctx: TreeContext,
+  buildId: string,
+  leafId: string,
+  reason: string
+): { buildId: string; leafId: string; reason: string; alternative?: TreeResult["alternative"] } {
+  const resetDeniers = resetDenierCount(ctx);
+  if (resetDeniers < 2) return { buildId, leafId, reason };
+  if (buildId === "main-hubris") {
+    return {
+      buildId: "umbral-collector",
+      leafId: "umbral-reset-denial",
+      reason: "Two or more reset deniers make Hubris stacks unreliable. Go Umbral into Collector for safer mid-game value.",
+      alternative: { buildId: "main-hubris", label: RESET_DENIER_ALTERNATIVE },
+    };
+  }
+  if (buildId === "hubris-ldr") {
+    return {
+      buildId: "hubris-skip-anti-tank",
+      leafId: "collector-ldr-reset-denial",
+      reason: "Two or more reset deniers make Hubris stacks unreliable. Go Collector into LDR instead.",
+      alternative: { buildId: "hubris-ldr", label: RESET_DENIER_ALTERNATIVE },
+    };
+  }
+  return { buildId, leafId, reason };
+}
+
 /* ------------------------------------------------------------------ */
 /* Tree                                                                */
 /* ------------------------------------------------------------------ */
@@ -197,7 +227,7 @@ const HOW_TANKY: DecisionNode = {
   kind: "choice",
   id: "tanky",
   title: "How tanky?",
-  rule: "4+ squishy and 0 tanks → Twin Crusher. 2 bruisers, or 4 squishy + a tank → Bastionbreaker. 2+ tanks or 3+ bruiser+tank → Hubris into LDR. Otherwise Hubris.",
+  rule: "4+ squishy and 0 tanks → Twin Crusher. 2 bruisers, or 4 squishy + a tank → Bread & Butter Carnage. 2+ tanks or 3+ bruiser+tank → Hubris into LDR. Otherwise Hubris.",
   pick: (ctx) => {
     const { squishy, bruiser, tanky } = durabilityCounts(ctx);
     const frontline = tanky >= 2 || bruiser + tanky >= 3;
@@ -227,7 +257,7 @@ const HOW_TANKY: DecisionNode = {
         id: "bastionbreaker",
         buildId: "main-bastionbreaker",
         reason:
-          "Two bruisers, not a tank line. Standard Bastionbreaker: strong first spike and you still one-shot the squishies.",
+          "Two bruisers, not a tank line. Bread & Butter Carnage: strong first spike and you still one-shot the squishies.",
       },
     },
     {
@@ -548,43 +578,20 @@ export function runDecisionTree(ctx: TreeContext, root: DecisionNode = VIEGO_DEC
     });
     node = option.next;
   }
-  const resetDeniers = resetDenierCount(ctx);
-  let buildId = node.buildId;
-  let leafId = node.id;
-  let reason = node.reason;
-  let alternative: TreeResult["alternative"];
+  const resolved = applyResetDenial(ctx, node.buildId, node.id, node.reason);
+  let buildId = resolved.buildId;
+  let leafId = resolved.leafId;
+  let reason = resolved.reason;
+  let alternative = resolved.alternative;
 
-  if (resetDeniers >= 2 && node.buildId === "main-hubris") {
-    buildId = "umbral-collector";
-    leafId = "umbral-reset-denial";
-    reason = "Two or more reset deniers make Hubris stacks unreliable. Go Umbral into Collector for safer mid-game value.";
-    alternative = {
-      buildId: "main-hubris",
-      label: "Better scaling if you think you can stack it despite their reliable disengage",
-    };
+  if (resolved.buildId !== node.buildId) {
     trace.push({
       nodeId: "reset-deniers",
       title: "Reset deniers?",
       optionId: "yes",
       optionLabel: "Two or more",
       ruleId: "r1",
-      detail: `${resetDeniers} enemy reset deniers`,
-    });
-  } else if (resetDeniers >= 2 && node.buildId === "hubris-ldr") {
-    buildId = "hubris-skip-anti-tank";
-    leafId = "collector-ldr-reset-denial";
-    reason = "Two or more reset deniers make Hubris stacks unreliable. Go Collector into LDR instead.";
-    alternative = {
-      buildId: "hubris-ldr",
-      label: "Better scaling if you think you can stack it despite their reliable disengage",
-    };
-    trace.push({
-      nodeId: "reset-deniers",
-      title: "Reset deniers?",
-      optionId: "yes",
-      optionLabel: "Two or more",
-      ruleId: "r1",
-      detail: `${resetDeniers} enemy reset deniers`,
+      detail: `${resetDenierCount(ctx)} enemy reset deniers`,
     });
   }
 

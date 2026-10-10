@@ -35,7 +35,7 @@ const SURVIVABILITY_RULES: RuleRow[] = [
 
 const TANKY_RULES: RuleRow[] = [
   { id: "t1", when: "4+ Squishy and 0 Tanky", buildId: "bastionbreaker-cyclosword", buildLabel: "The twink crusher" },
-  { id: "t2", when: "Exactly 2 Bruiser, or 4 Squishy + 1 Tanky", buildId: "main-bastionbreaker", buildLabel: "Bastionbreaker" },
+  { id: "t2", when: "Exactly 2 Bruiser, or 4 Squishy + 1 Tanky", buildId: "main-bastionbreaker", buildLabel: "Bread & Butter Carnage" },
   { id: "t3", when: "2+ Tanky, or 3+ Bruiser+Tanky combined", buildId: "hubris-ldr", buildLabel: "Hubris into LDR" },
   { id: "t4", when: "Anything else", buildId: "main-hubris", buildLabel: "Hubris" },
 ];

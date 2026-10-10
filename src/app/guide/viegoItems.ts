@@ -93,7 +93,7 @@ const HUBRIS_GOOD_AGAINST = ["Skarner", "Darius", "Nautilus", "Sylas", "Nunu", "
 
 const BASTIONBREAKER_VARIANT: GuideItemVariant = {
   id: "bastionbreaker",
-  label: "Bastionbreaker",
+  label: "Bread & Butter Carnage",
   header: "The twink crusher.",
   description:
     "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.\nI build this 50% of games",
