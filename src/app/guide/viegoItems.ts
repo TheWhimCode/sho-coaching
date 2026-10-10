@@ -208,7 +208,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           label: "Another Bloodrush",
           header: "Max damage & scaling",
           description:
-            "Hubris is the highest AD item in the game. It's not a snowball item, it scales. This is the build that allows you to oneshot Bruisers and Juggernauts in one combo.\nYou combine max AD and max Crit with double Lethality and %pen.\nI build this 30% of games",
+            "Hubris is the best scaling item for team fights because it does the most damage after the first target dies. It has the highest AD of any item, which scales extremely well with max AD, max crit, double Lethality, and percentage pen.\nThis is the build that allows you to one-shot bruisers and squishies alike.",
           activeChoiceIds: [6697, 6699, 6673, 6695],
           activePathIndex: 0,
           teamComp: {

@@ -125,11 +125,13 @@ function decidingTags(trace: BuildTraceStep[]) {
 }
 
 function BuildWhyPanel({
+  build,
   trace,
   builds,
   boot,
   bootSlot,
 }: {
+  build: PickerBuild | undefined;
   trace: BuildTraceStep[];
   builds: PickerBuild[];
   boot?: PickerItem;
@@ -151,6 +153,14 @@ function BuildWhyPanel({
           </span>
         ))}
       </div>
+
+      {build?.description ? (
+        <div className="mt-6 max-w-4xl text-sm leading-relaxed text-[#F5E6D3]/68 sm:text-[0.95rem]">
+          {build.description.split("\n").filter(Boolean).map((paragraph) => (
+            <p key={paragraph} className="mt-2 first:mt-0">{paragraph}</p>
+          ))}
+        </div>
+      ) : null}
 
       <div className="my-7 h-px w-full bg-gradient-to-r from-transparent via-[#F0ABCF]/30 to-transparent" />
       <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#F5E6D3]/48">Alternative builds</p>
@@ -331,11 +341,11 @@ function PortraitFloats({ tags, appearDelays }: { tags: BuildFloatTag[]; appearD
             style={{ transform: `translate(calc(-50% + ${spot.x}px), calc(-50% + ${spot.y}px))` }}
           >
             <span
-              className="build-float-tag inline-block text-[0.86rem] font-extrabold uppercase leading-none tracking-[0.06em]"
+              className="build-float-tag inline-block text-[0.9rem] font-extrabold uppercase leading-none tracking-[0.06em]"
               style={{
                 color: FLOAT_COLOR[entry.tone],
-                fontSize: "0.86rem",
-                textShadow: "0 0 1px rgba(8,6,12,1), 0 0 5px rgba(8,6,12,0.95), 0 0 12px rgba(8,6,12,0.75)",
+                fontSize: "0.9rem",
+                textShadow: "-1px -1px 0 rgba(8,6,12,0.98), 1px -1px 0 rgba(8,6,12,0.98), -1px 1px 0 rgba(8,6,12,0.98), 1px 1px 0 rgba(8,6,12,0.98), 0 0 7px rgba(8,6,12,1), 0 0 15px rgba(8,6,12,0.9)",
                 animationDelay: `${appearDelays[floatTagKey(entry)] ?? FLOAT_TAG_START_MS}ms`,
               }}
             >
@@ -638,7 +648,7 @@ function BuildCard({
         </button>
         <div className={clsx("-mx-6 grid w-[calc(100%+3rem)] transition-[grid-template-rows,opacity] duration-500 ease-out sm:-mx-8 sm:w-[calc(100%+4rem)] lg:-mx-10 lg:w-[calc(100%+5rem)]", whyOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
           <div className="min-h-0 overflow-hidden">
-            <BuildWhyPanel trace={trace} builds={builds} boot={selectedBoot} bootSlot={boot.slot} />
+            <BuildWhyPanel build={build} trace={trace} builds={builds} boot={selectedBoot} bootSlot={boot.slot} />
           </div>
         </div>
       </div>

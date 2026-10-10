@@ -5,6 +5,8 @@ export type PickerBuildDef = {
   id: string;
   label: string;
   summary: string;
+  /** Longer guide copy, shown in the picker breakdown when available. */
+  description?: string;
   itemIds: number[];
   /** Where the build comes from in the guide, for display only. */
   source: "main" | "situational";
@@ -32,7 +34,7 @@ const MAIN_BUILDS: PickerBuildDef[] = [
   {
     id: "main-hubris",
     label: "Another Bloodrush",
-    summary: "Hubris, Collector, LDR, Infinity Edge, Cyclosword.",
+    summary: "Mino's original hyper scaling build.",
     itemIds: [6697, 6676, 3036, 3031, 6699],
     source: "main",
   },
@@ -62,13 +64,19 @@ const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
  * every variant in the guide's Situational tab, and picker-only builds.
  */
 export function pickerBuildDefs(config: GuideItemSectionConfig): PickerBuildDef[] {
+  const main = config.tabs.find((tab) => tab.id === "main")?.variants ?? [];
   const situational = config.tabs.find((tab) => tab.id === "situational")?.variants ?? [];
+  const mainDescriptionById: Record<string, string | undefined> = {
+    "main-bastionbreaker": main.find((variant) => variant.id === "bastionbreaker")?.description,
+    "main-hubris": main.find((variant) => variant.id === "hubris")?.description,
+  };
   return [
-    ...MAIN_BUILDS,
+    ...MAIN_BUILDS.map((build) => ({ ...build, description: mainDescriptionById[build.id] })),
     ...situational.map<PickerBuildDef>((variant) => ({
       id: variant.id,
       label: variant.label,
       summary: variant.summary ?? "",
+      description: variant.description,
       itemIds: (variant.items ?? []).map((item) => item.id),
       source: "situational",
     })),
