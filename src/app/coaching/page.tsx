@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import type { Metadata } from "next";
 import CoachingPageClient from "./CoachingPageClient";
 import { COACHING_PRELOAD_IMAGES } from "./coachingPageAssets";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title,
   description,
   openGraph: {
+    images: [DEFAULT_SOCIAL_IMAGE],
     title,
     description,
     url: "/coaching",

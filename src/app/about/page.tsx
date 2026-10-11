@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import type { Metadata } from "next";
 import { ABOUT_MINO_PRELOAD_IMAGES } from "@/app/_components/linktree/aboutMinoPreload";
 import { ABOUT_HERO_VIDEO } from "@/lib/coaching/coachingClipVideos";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title,
   description,
   openGraph: {
+    images: [DEFAULT_SOCIAL_IMAGE],
     title,
     description,
     url: "/about",

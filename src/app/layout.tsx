@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -23,7 +24,12 @@ export const metadata: Metadata = {
     template: "%s · Mino",
   },
   description: "Some stuff about me :3",
+  twitter: {
+    card: "summary",
+    images: [DEFAULT_SOCIAL_IMAGE],
+  },
   openGraph: {
+    images: [DEFAULT_SOCIAL_IMAGE],
     siteName: "Mino",
     type: "website",
     locale: "en",

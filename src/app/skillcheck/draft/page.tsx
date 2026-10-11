@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 // app/skillcheck/draft/page.tsx
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   title: "Skillcheck — Draft",
   description,
   openGraph: {
+    images: [DEFAULT_SOCIAL_IMAGE],
     title: "Skillcheck — Draft",
     description,
     type: "website",

@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 // app/skillcheck/page.tsx
 import type { Metadata } from "next";
 import SkillcheckClient from "./SkillcheckClient";
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
   title: "Skillcheck",
   description: "Challenge and expand your League of Legends knowledge",
   openGraph: {
+    images: [DEFAULT_SOCIAL_IMAGE],
     title: "Skillcheck",
     description: "Challenge and expand your League of Legends knowledge",
     type: "website",

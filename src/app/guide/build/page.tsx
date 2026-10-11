@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import type { Metadata } from "next";
 import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
 import { ensureLiveDDragonPatch } from "@/lib/datadragon/patch";
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
   title,
   description,
   openGraph: {
+    images: [DEFAULT_SOCIAL_IMAGE],
     title,
     description,
     url: "/guide/build",

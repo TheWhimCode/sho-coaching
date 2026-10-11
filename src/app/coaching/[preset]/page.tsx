@@ -1,5 +1,6 @@
 import Client from "./Client";
 import { SITE_URL } from "@/lib/site";
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import { coachingSessionBanner } from "@/lib/coaching/coachingClipVideos";
 import { COACHING_SALES_ENABLED, RUSH_BUNDLE_ENABLED } from "@/lib/coaching/coachingSales";
 import { redirect } from "next/navigation";
@@ -55,7 +56,10 @@ export async function generateMetadata({
   const description =
     descriptions[preset] ?? "Book League of Legends coaching tailored to your goals.";
 
-  const ogImage = ogImages[preset] ?? `${SITE_URL}/default-og.png`;
+  const banner = ogImages[preset];
+  const socialImage = banner
+    ? { url: banner, width: 1200, height: 630 }
+    : DEFAULT_SOCIAL_IMAGE;
 
   return {
     title,
@@ -69,19 +73,13 @@ export async function generateMetadata({
       url: `${SITE_URL}/coaching/${preset}`,
       siteName: "Mino",
       type: "website",
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-        },
-      ],
+      images: [socialImage],
     },
     twitter: {
-      card: "summary_large_image",
+      card: banner ? "summary_large_image" : "summary",
       title,
       description,
-      images: [ogImage],
+      images: [socialImage],
     },
   };
 }

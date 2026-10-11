@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import type { Metadata } from "next";
 import { fetchRunesTrees } from "@/lib/datadragon/runes";
 import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
@@ -33,6 +34,13 @@ export const metadata: Metadata = {
     description,
     url: "/guide",
     type: "article",
+    images: [DEFAULT_SOCIAL_IMAGE],
+  },
+  twitter: {
+    card: "summary",
+    title,
+    description,
+    images: [DEFAULT_SOCIAL_IMAGE],
   },
   alternates: {
     canonical: "/guide",

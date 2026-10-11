@@ -1,3 +1,4 @@
+import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import type { Metadata } from "next";
 import CooldownsClient from "@/app/skillcheck/cooldowns/CooldownsClient";
 import { cooldownAbilities } from "@/app/skillcheck/cooldowns/components/cooldownAbilities";
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
   title: "Admin — Skillcheck Cooldowns",
   description,
   openGraph: {
+    images: [DEFAULT_SOCIAL_IMAGE],
     title: "Admin — Skillcheck Cooldowns",
     description,
     type: "website",
