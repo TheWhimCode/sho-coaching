@@ -1,5 +1,7 @@
 // src/lib/datadragon/championspells.ts
 
+import { currentPatch, ensureLiveDDragonPatch } from "./patch";
+
 export interface SpellData {
   id: string;
   name: string;
@@ -20,15 +22,12 @@ export interface ChampionSpells {
   spells: SpellData[];
 }
 
-const VERSION_URL = "https://ddragon.leagueoflegends.com/api/versions.json";
 const CHAMP_DETAIL_URL = (version: string, champ: string) =>
   `https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/champion/${champ}.json`;
 
 async function getLatestVersion(): Promise<string> {
-  const res = await fetch(VERSION_URL, { next: { revalidate: 60 * 60 } });
-  if (!res.ok) throw new Error("Failed to load DDragon versions");
-  const versions = await res.json();
-  return versions[0];
+  await ensureLiveDDragonPatch();
+  return currentPatch;
 }
 
 export async function fetchChampionSpellsById(
@@ -40,7 +39,6 @@ export async function fetchChampionSpellsById(
     // cache in Next.js data cache
     next: { revalidate: 60 * 60 * 24 },
   });
-console.log("Fetching champ:", championId);
 
   if (!res.ok) throw new Error(`Failed to load champ detail: ${championId}`);
 

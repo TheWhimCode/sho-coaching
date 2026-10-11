@@ -13,7 +13,7 @@ import GuideImage from "@/app/_components/guides/GuideImage";
 import { RunePageSkeleton } from "@/app/_components/guides/GuideSectionSkeletons";
 import { renderGuideHighlightedTextWithViegoAbilities } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
-import { collectRuneSectionImageUrls } from "@/lib/guides/preloadGuideImages";
+import { collectInitialRuneSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import type { GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 import type {
   GuideRunePageData,
@@ -317,7 +317,7 @@ export default function RunePageSection({
   const { build, primaryTree, secondaryTree, statShardRows } = activeTab;
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const [leftPanelHeight, setLeftPanelHeight] = useState<number | null>(null);
-  const runeImageUrls = useMemo(() => collectRuneSectionImageUrls(data), [data]);
+  const runeImageUrls = useMemo(() => collectInitialRuneSectionImageUrls(data), [data]);
   const { sectionRef, imagesReady } = useGuideSectionImages(runeImageUrls, { eager: true });
 
   const hailOfBladesExplanation = build.explanations[0];

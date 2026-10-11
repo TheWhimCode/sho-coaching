@@ -197,6 +197,12 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "2055" },
   },
   {
+    patterns: ["Stealth Ward"],
+    matchKey: "stealth-ward",
+    color: GUIDE_KRAKEN_GOLD,
+    icon: { kind: "item", id: "3340" },
+  },
+  {
     patterns: ["Oracle Lens", "Sweeper"],
     matchKey: "sweeper",
     color: GUIDE_SHIELDBOW_RED,

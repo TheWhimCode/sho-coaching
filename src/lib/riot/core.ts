@@ -42,12 +42,26 @@ const PLATFORM_DISCOVERY_ORDER = [
   "ph2", "sg2", "th2", "tw2", "vn2",
 ] as const;
 
+/** Current discovery order, with an optional server moved to the front. */
+export function platformDiscoveryOrder(preferredPlatform?: string): readonly string[] {
+  const preferred = preferredPlatform ? normalizePlatform(preferredPlatform).platform : "";
+  if (!preferred || !(PLATFORM_DISCOVERY_ORDER as readonly string[]).includes(preferred)) {
+    return PLATFORM_DISCOVERY_ORDER;
+  }
+  return [preferred, ...PLATFORM_DISCOVERY_ORDER.filter((platform) => platform !== preferred)];
+}
+
 /**
  * Finds which platform shard hosts this Riot account's LoL summoner (summoner v4 by PUUID).
  * Uses the preferred platform order for fast EUW/NA discovery before trying all others.
+ * A chosen server is tried first; the rest of the order still follows.
  */
-export async function findPlatformForPuuid(puuid: string, _regional: Regional): Promise<string | null> {
-  for (const platform of PLATFORM_DISCOVERY_ORDER) {
+export async function findPlatformForPuuid(
+  puuid: string,
+  _regional: Regional,
+  preferredPlatform?: string,
+): Promise<string | null> {
+  for (const platform of platformDiscoveryOrder(preferredPlatform)) {
     try {
       await riotFetchJSON(
         `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`
@@ -89,15 +103,20 @@ export type ResolvedRiotAccount = {
  * Single source of truth for “riot id → puuid”; used by /api/riot/resolve and rank-at-payment.
  *
  * @param options.region — if set, only that router is tried (same as resolve body `region`).
+ * @param options.preferredRegion — try this router first, then the usual order.
  */
 export async function resolveAccountByRiotTag(
   riotTag: string,
-  options?: { region?: Regional },
+  options?: { region?: Regional; preferredRegion?: Regional },
 ): Promise<ResolvedRiotAccount> {
   const tag = riotTag.trim();
   if (!tag) throw new Error("riotTag required");
 
-  const regionsToTry: readonly Regional[] = options?.region ? [options.region] : ACCOUNT_ROUTING_REGIONS;
+  const regionsToTry: readonly Regional[] = options?.region
+    ? [options.region]
+    : options?.preferredRegion
+      ? [options.preferredRegion, ...ACCOUNT_ROUTING_REGIONS.filter((region) => region !== options.preferredRegion)]
+      : ACCOUNT_ROUTING_REGIONS;
 
   let lastErr: unknown = null;
   for (const regional of regionsToTry) {

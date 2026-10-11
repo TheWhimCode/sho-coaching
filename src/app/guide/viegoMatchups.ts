@@ -11,22 +11,22 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Lee Sin",
           explanation:
-            "A good Lee Sin is impossible to deal with, which is why I ban him every game. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out.\n\nAvoid early skirmishes and clear your camps on spawn. When he hits level 6, don't overextend to try and get a reset when he has W ready to escape. Play around your teammates' CC and don't expose yourself in skirmishes.",
+            "A good Lee Sin is impossible to deal with. He can oneshot you in one combo and disengage you with R unless you time your R on it (which is super difficult).\nBut most importantly, you can't really kill him, especially after he gets DD third. He's just too mobile and always hops out.\n\nWarn your teammates about his early ganks and don't let him catch you, even in skirmishes. Play around your teammates' CC and don't overextend to try and get a reset.",
         },
         {
           champion: "Talon",
           explanation:
-            "Maybe your worst matchup. Once he hits level 6, he can oneshot you from full if he has Ignite or some lead.\n\nI always do my camps on spawn, buy a Control Ward, and pray he doesn't know how easily he can kill me. To be fair, often they don't, and if you hit a fully charged stun you can W > auto > Q > R > auto him and he dies.\n\nThe matchup can become playable if your teammates don't have shields, and you can build Collector into Shieldbow plus Steelcaps. That way he can never quite 100-0 you. So you get a chance to fight back, and you become less interesting of a target for him.",
+            "Once he hits level 6, he can one-shot you from full if he has Ignite or some lead.\n\nI always do my camps on spawn and buy a Control Ward to avoid his invades. If he facechecks into you, you can burst him.\n\nUse your W to dodge his second W, either through him or to the side. That way you deny his passive. He can't kill you without R.",
         },
         {
           champion: "Kha'Zix",
           explanation:
-            "Once he hits level 6, you need vision against Kha. If he facechecks you, he explodes.\nBut the fact that you always die if he finds you first means that you have to constantly be on your toes.",
+            "Whenever his ult is ready, you cannot beat him unless he facechecks into you. Buy a Control Ward to spot his invades preemptively.\n\nIn the midgame, play more with your team to avoid giving him an angle. If you're not isolated, he can't kill you. And if he gets CCed, he's screwed.",
         },
         {
           champion: "Rengar",
           explanation:
-            "He can always oneshot you with his ult. He won't invade you as much as other champions, but from midgame onwards you always gotta consider that he can just randomly press R and kill you. It can also be hard to kill him until your 3rd item, so early skirmishes are a coin flip. Watch out for his level 3 invade.\n\nThe matchup can become playable if your teammates don't have shields, and you can build Collector into Shieldbow plus Steelcaps. That way he can never quite 100-0 you. So you get a chance to fight back, and you become less interesting of a target for him.",
+            "If you're starting Blue, place a Stealth Ward at your Red entrance as you're doing Raptors to avoid his level 3 cheese. Otherwise, he won't invade as much.\n\nFrom midgame onwards, he can always just randomly press R, and if you're alone, he'll just kill you.\n\nIn skirmishes, if he doesn't use his passive on his Q or E, he can heal incredible amounts. So don't get baited and overextend.",
         },
         {
           champion: "Kindred",
@@ -76,7 +76,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Kayn",
           explanation:
-            "Blue Kayn is kinda like Qiyana, if he hits you first you die. But he's weaker early and won't abuse you as long as you don't get cheesed at Raptors.\n\nBe very careful when he has 3+ items, it's very easy for him to kill you. DD last item.",
+            "Shadow Assassin is kinda like Qiyana, if he hits you first you die. But he's weaker early and won't abuse you as long as you don't get cheesed at Raptors. He actually matches your scaling because he's so favored in the 1v1 and can always reach you.\n\nRhaast becomes extremely tanky in the mid game, but you can outscale him.",
         },
         {
           champion: "Naafiri",
@@ -96,12 +96,12 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Graves",
           explanation:
-            "Very hard for Kraken Viego, but from LDR you can oneshot him and they never expect it. But you can't contest his early Scuttle or Raptors invades, he gains way too much Armor.\n\nClear your camps on spawn, don't give him an angle and respect early drakes if your team doesn't have good setup/AP.",
+            "From LDR you can oneshot him and they never expect it. But you can't contest his early Scuttle or Raptors invades, he gains way too much Armor.\n\nClear your camps on spawn, don't give him an angle and respect early drakes if your team doesn't have good setup/AP.",
         },
         {
           champion: "Hecarim",
           explanation:
-            "While he can build DD second, this matchup is a lot harder. He becomes too tanky in the midgame.\n\nHe relies heavily on having his Q stacks active. At Scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nUnless he gets super fed from early kills, it's pretty easy to kill him and then run his team down after. Any CC by your team or a facecheck into your W and he dies.",
+            "While he can build DD second, this matchup is a lot harder. He becomes too tanky in the midgame.\n\nHe relies heavily on having his Q stacks active. At Scuttle and during ganks, he will run out of his jungle with his Q fully stacked from Raptors etc. Let it run out if possible, after that he does no damage.\n\nIf you mess up, you will never get away from him. So play skirmishes around your teammate's CC. If you get ahead, this matchup is free, but it's just very hard to do.",
         },
         {
           champion: "Jax",
@@ -111,7 +111,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Qiyana",
           explanation:
-            "She can instantly kill you with R. You have to always think about her once she's level 6. You can't facecheck. Be careful when fighting in the jungle as well, and she will E through you when you press R.\n\nWhat I do in this matchup is take some cocaine and then react to every ult by R'ing out myself. That way she never has R. You can not get stunned by her ult. Respect her! Since she's super squishy, you can also onetap her later with a fast combo unless she goes DD.\nBut if she does, she will usually play stupidly aggro and int. The 0-death, full damage Qiyanas are the scary ones.",
+            "If her R lands, you're dead. Buy a Control Ward on first back to spot her invades. Don't facecheck.\n\nYou can't hit her if she stealths, so only engage her when you know it's safe. She's a lot stronger when fighting in the jungle or river.\n\nIf you're fast, you can outplay her by always ulting backwards when she ults you. That way you're trading ult for ult and she's a lot less useful. Remember that she can E on you when you R her.",
         },
         {
           champion: "Zed",
@@ -154,7 +154,7 @@ export const VIEGO_MATCHUP_SECTION: GuideMatchupSectionConfig = {
         {
           champion: "Ivern",
           explanation:
-            "You're an amazing Serpent's Fang builder and you can always reach him. If he has no Flash, he always dies.\n\nYou can Q > E yourself before leaving the possession, guaranteeing your next R and giving you survivability.",
+            "You can always reach him with WR. If he has no Flash, he always dies because his only CC is a root, which doesn't stop you from one-shotting him.\n\nYou can Q > E yourself before leaving the possession, guaranteeing your next R and giving you survivability.",
         },
         {
           champion: "Master Yi",

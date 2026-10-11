@@ -288,6 +288,7 @@ function MatchupUpgradeItem({
         )}
       </div>
       <p className="min-w-0 truncate text-xs font-semibold text-[#F5E6D3]/82">{item.name}</p>
+      {item.purchaseOrder ? <span className="whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-[#F5E6D3]/48">{item.purchaseOrder}</span> : null}
       <span className="ml-auto whitespace-nowrap text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-[#F6D67A]/70">Higher value</span>
     </div>
   );
@@ -338,7 +339,7 @@ function MatchupDetailPanel({
             </div>
         </div>
 
-        <div className="flex min-w-0 flex-col justify-center">
+        <div className="flex min-w-0 flex-col justify-start">
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-[#F0ABCF]/65">Matchup notes</p>
           {detailText ? (
             <div className="mt-2 min-w-0 text-[0.98rem] leading-7 text-[#F5E6D3]/76 sm:text-[1.05rem]">{explanationBody}</div>
@@ -385,19 +386,32 @@ function MatchupDetailPanel({
           ) : null}
         </div>
 
-        <div
-          className={clsx(
-            "relative flex isolate overflow-hidden items-center justify-between rounded-xl border px-4 py-3 sm:max-h-40 sm:flex-col sm:items-start sm:justify-between sm:px-5 sm:py-4",
-            possession.card
-          )}
-        >
-          {isExceptionalPossession ? <span aria-hidden className="matchup-possession-shine pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12" /> : null}
-          <div>
-            <p className={clsx("text-[0.62rem] font-bold uppercase tracking-[0.15em]", possession.labelText)}>{possession.label}</p>
+        <div className="flex min-w-0 flex-col gap-3">
+          <div
+            className={clsx(
+              "relative flex isolate min-h-[5.25rem] overflow-hidden items-center justify-between rounded-xl border px-4 py-3 sm:min-h-[8.5rem] sm:flex-col sm:items-start sm:justify-between sm:px-5 sm:py-4",
+              possession.card
+            )}
+          >
+            {isExceptionalPossession ? <span aria-hidden className="matchup-possession-shine pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12" /> : null}
+            <div>
+              <p className={clsx("text-[0.62rem] font-bold uppercase tracking-[0.15em]", possession.labelText)}>{possession.label}</p>
+            </div>
+            <p className={clsx("relative font-mono text-3xl font-bold tracking-tight sm:text-5xl", possession.score)}>
+              {entry.matchup.possessionValue}<span className="text-base text-[#F5E6D3]/35 sm:text-lg">/10</span>
+            </p>
           </div>
-          <p className={clsx("relative font-mono text-3xl font-bold tracking-tight sm:text-5xl", possession.score)}>
-            {entry.matchup.possessionValue}<span className="text-base text-[#F5E6D3]/35 sm:text-lg">/10</span>
-          </p>
+
+          {entry.matchup.dangerHint ? (
+            <div className="relative flex min-h-[5.25rem] overflow-hidden rounded-xl border border-[#FF526C]/32 bg-[linear-gradient(145deg,rgba(255,82,108,0.14),rgba(50,25,38,0.28)_70%)] px-4 py-3 sm:min-h-[8.5rem] sm:flex-col sm:justify-between sm:px-5 sm:py-4">
+              <span aria-hidden className="absolute -right-1 -top-5 font-serif text-7xl font-bold leading-none text-[#FF526C]/[0.09] sm:text-8xl">!</span>
+              <p className="relative text-[0.62rem] font-bold uppercase tracking-[0.15em] text-[#FF9AAD]">Main danger</p>
+              <div className="relative mt-auto sm:mt-0">
+                <p className="text-sm font-bold leading-tight text-[#FFD4DB] sm:text-base">{entry.matchup.dangerHint.title}</p>
+                {entry.matchup.dangerHint.detail ? <p className="mt-0.5 text-xs font-medium text-[#FFD4DB]/62">{entry.matchup.dangerHint.detail}</p> : null}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -502,7 +516,9 @@ export default function JungleTierMatchupPanel({
     [data.tiers]
   );
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => data.tiers.find((tier) => tier.id === "nightmare")?.matchups[0]?.id ?? null
+  );
   const [query, setQuery] = useState("");
 
   const tierImageUrls = useMemo(() => collectJungleTierMatchupSectionImageUrls(data), [data]);

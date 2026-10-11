@@ -1,3 +1,4 @@
+import { possessionValueFor } from "@/app/guide/possessionValues";
 import {
   champSquareUrlById,
   resolveChampionId,
@@ -7,6 +8,7 @@ import type {
   GuideJungleTierMatchupPageData,
   GuideJungleTierMatchupSectionConfig,
   GuideMatchupSnapshot,
+  GuideMatchupDangerHint,
   GuideMatchupSectionConfig,
   GuideMatchupUpgradeItem,
   SerializedJungleTierMatchup,
@@ -25,6 +27,14 @@ function buildFeaturedExplanationMap(config: GuideMatchupSectionConfig) {
   return map;
 }
 
+function requirePossessionValue(champion: string) {
+  const value = possessionValueFor(champion);
+  if (value == null) {
+    throw new Error(`Missing possession value for ${champion}`);
+  }
+  return value;
+}
+
 function serializeUpgradeItem(
   item?: GuideMatchupUpgradeItem
 ): SerializedMatchupUpgradeItem | undefined {
@@ -34,6 +44,7 @@ function serializeUpgradeItem(
     id: item.id,
     name: item.title ?? row?.name ?? "Recommended item",
     icon: row ? itemIconUrlFromPath(row.iconPath) || undefined : undefined,
+    purchaseOrder: item.purchaseOrder,
   };
 }
 
@@ -46,7 +57,8 @@ function serializeTierMatchup(
   banBadge?: SerializedJungleTierMatchup["banBadge"],
   snapshot?: GuideMatchupSnapshot,
   gameplayStyle?: string,
-  upgradeItem?: GuideMatchupUpgradeItem
+  upgradeItem?: GuideMatchupUpgradeItem,
+  dangerHint?: GuideMatchupDangerHint
 ): SerializedJungleTierMatchup {
   const id = resolveChampionId(champion);
   const resolvedExplanation =
@@ -66,6 +78,7 @@ function serializeTierMatchup(
     snapshot,
     gameplayStyle,
     upgradeItem: serializeUpgradeItem(upgradeItem),
+    dangerHint,
   };
 }
 
@@ -87,14 +100,15 @@ export function buildGuideJungleTierMatchupPageData(
       matchups: tier.matchups.map((entry) =>
         serializeTierMatchup(
           entry.champion,
-          entry.possessionValue,
+          requirePossessionValue(entry.champion),
           entry.explanation,
           featuredExplanations,
           entry.isNew,
           entry.banBadge,
           entry.snapshot,
           entry.gameplayStyle,
-          entry.upgradeItem
+          entry.upgradeItem,
+          entry.dangerHint
         )
       ),
     })),

@@ -45,22 +45,31 @@ export type GuideMatchupSnapshot = {
 export type GuideMatchupUpgradeItem = {
   id: number;
   title?: string;
+  /** Short purchase-order cue shown beside the item name, e.g. "2nd". */
+  purchaseOrder?: string;
+};
+
+/** One matchup-specific danger worth surfacing beside the possession value. */
+export type GuideMatchupDangerHint = {
+  title: string;
+  detail?: string;
 };
 
 export type SerializedMatchupUpgradeItem = {
   id: number;
   name: string;
   icon?: string;
+  purchaseOrder?: string;
 };
 
 export type GuideJungleTierMatchupEntry = {
   champion: string;
   banBadge?: "Minos Ban" | "Good Ban";
-  possessionValue: number;
   explanation?: string;
   snapshot?: GuideMatchupSnapshot;
   gameplayStyle?: string;
   upgradeItem?: GuideMatchupUpgradeItem;
+  dangerHint?: GuideMatchupDangerHint;
   isNew?: boolean;
 };
 
@@ -88,6 +97,7 @@ export type SerializedJungleTierMatchup = {
   snapshot?: GuideMatchupSnapshot;
   gameplayStyle?: string;
   upgradeItem?: SerializedMatchupUpgradeItem;
+  dangerHint?: GuideMatchupDangerHint;
   isNew?: boolean;
 };
 

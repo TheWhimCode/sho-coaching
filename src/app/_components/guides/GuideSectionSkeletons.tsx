@@ -14,7 +14,11 @@ import type {
   SerializedGuideItemSharedPath,
   SerializedGuideItemStep,
 } from "@/lib/guides/itemGuideTypes";
-import type { GuideMatchupPageData, GuideJungleTierMatchupPageData } from "@/lib/guides/matchupGuideTypes";
+import type {
+  GuideMatchupPageData,
+  GuideJungleTierMatchupPageData,
+  SerializedJungleTierMatchup,
+} from "@/lib/guides/matchupGuideTypes";
 import type {
   GuideRunePageData,
   SerializedRuneTree,
@@ -796,9 +800,12 @@ export function ItemBuildSectionSkeleton({ data }: { data: GuideItemPageData }) 
 
   return (
     <div aria-hidden>
-      <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
-        <h2 className={clsx(guideSectionTitleClass, "text-[#F5E6D3]/20")}>{data.heading}</h2>
-        {data.headerIcon ? <SkeletonTile className="relative shrink-0" /> : null}
+      <div className={clsx("mb-6 flex flex-wrap items-center justify-between gap-4", guideSectionHeaderPadClass)}>
+        <div className="flex items-center gap-4 sm:gap-5">
+          <h2 className={clsx(guideSectionTitleClass, "text-[#F5E6D3]/20")}>{data.heading}</h2>
+          {data.headerIcon ? <SkeletonTile className="relative shrink-0" /> : null}
+        </div>
+        <div className="h-12 w-52 animate-pulse rounded-xl bg-[#352839]/70" />
       </div>
 
       <div className={ITEM_PANEL_OUTER}>
@@ -977,9 +984,12 @@ export function GameStagesSectionSkeleton({ data }: { data: GuideGameStagePageDa
 
   return (
     <div aria-hidden className="w-full min-w-0 max-w-full">
-      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
-        <h2 className={guideSectionTitleClass}>{data.heading}</h2>
-        {data.subtitle ? <p className={guideSectionSubClass}>{data.subtitle}</p> : null}
+      <div className={clsx("mb-6 flex flex-wrap items-end justify-between gap-4", guideSectionHeaderPadClass)}>
+        <div>
+          <h2 className={guideSectionTitleClass}>{data.heading}</h2>
+          {data.subtitle ? <p className={guideSectionSubClass}>{data.subtitle}</p> : null}
+        </div>
+        <div className="h-12 w-[13.5rem] animate-pulse rounded-xl bg-[#352839]/70" />
       </div>
 
       <div className={clsx(guideRuneOuterPanelClass, guideMobileFlushPanelClass, "overflow-hidden p-0 sm:p-0")}>
@@ -1367,11 +1377,74 @@ export function ConventionalBuildSectionSkeleton({
   );
 }
 
-function JungleTierIconSkeleton() {
+function JungleTierIconSkeleton({ selected = false }: { selected?: boolean }) {
   return (
-    <div className="flex min-w-0 flex-col items-center rounded-lg border border-[#F5E6D3]/8 bg-[#1E1724]/30 px-1 py-1.5 opacity-45 sm:py-2">
-      <SkeletonCircle className="size-8 sm:size-9" />
+    <div
+      className={clsx(
+        "flex min-w-0 flex-col items-center rounded-lg border px-1 py-1.5 sm:py-2",
+        selected
+          ? "border-[#F87171]/55 bg-[#F87171]/8 ring-1 ring-[#F87171]/25"
+          : "border-[#F5E6D3]/8 bg-[#1E1724]/30 opacity-45"
+      )}
+    >
+      <SkeletonCircle className={clsx("size-8 sm:size-9", selected && "bg-[#4D2833]")} />
       <div className="mt-1 h-3 w-10 animate-pulse rounded bg-[#352839]/70" aria-hidden />
+    </div>
+  );
+}
+
+function JungleTierDetailSkeleton({ matchup }: { matchup: SerializedJungleTierMatchup }) {
+  return (
+    <div className="w-full min-w-0 max-w-full rounded-2xl border border-[#F0ABCF]/14 bg-[#1E1724]/65 p-4 sm:p-6">
+      <div className="grid gap-5 sm:grid-cols-[8rem_minmax(0,1fr)_10rem] sm:items-stretch sm:gap-7">
+        <div className="flex items-center gap-3 sm:h-full sm:flex-col sm:items-start sm:border-r sm:border-[#F5E6D3]/10 sm:pr-6">
+          <div className="h-14 w-14 shrink-0 animate-pulse rounded-xl bg-[#352839]/90 ring-1 ring-[#F87171]/25 sm:h-28 sm:w-28" />
+          <div className="space-y-2">
+            <div className="h-5 w-20 animate-pulse rounded bg-[#352839]/75 sm:h-6 sm:w-24" />
+            <div className="h-2.5 w-16 animate-pulse rounded bg-[#352839]/55" />
+          </div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="h-2.5 w-24 animate-pulse rounded bg-[#F0ABCF]/18" />
+          <div className="relative mt-2 overflow-hidden">
+            <div className="invisible text-[0.98rem] leading-7 sm:text-[1.05rem]">
+              {(matchup.explanation ?? "Matchup notes").split("\n").map((paragraph, index) => (
+                <p key={index} className={index > 0 ? "mt-[0.5em]" : undefined}>
+                  {paragraph || "\u00a0"}
+                </p>
+              ))}
+            </div>
+            <div className="absolute inset-0">
+              <TextLineSkeletons body={matchup.explanation ?? "Matchup notes"} />
+            </div>
+          </div>
+          <div className="mt-5 flex w-full max-w-xl flex-col gap-3">
+            {["Invade Threat", "Tempo Pressure", "1v1 Power"].map((label, index) => (
+              <div key={label} className="grid grid-cols-[7rem_minmax(0,12rem)] items-center gap-x-4 py-1.5">
+                <div className="h-2.5 w-16 animate-pulse rounded bg-[#352839]/55" />
+                <div className="h-[3px] bg-[#F5E6D3]/10">
+                  <div
+                    className="h-full animate-pulse bg-[#73B3D2]/40"
+                    style={{ width: `${[76, 48, 62][index]}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="min-h-[5.25rem] animate-pulse rounded-xl border border-[#B8D8EA]/14 bg-[#18202A]/35 px-4 py-3 sm:min-h-[8.5rem] sm:px-5 sm:py-4">
+            <div className="h-2.5 w-24 rounded bg-[#B8D8EA]/15" />
+            <div className="mt-5 h-9 w-14 rounded bg-[#B8D8EA]/18 sm:mt-9" />
+          </div>
+          <div className="min-h-[5.25rem] animate-pulse rounded-xl border border-[#FF526C]/25 bg-[#FF526C]/[0.06] px-4 py-3 sm:min-h-[8.5rem] sm:px-5 sm:py-4">
+            <div className="h-2.5 w-20 rounded bg-[#FF9AAD]/18" />
+            <div className="mt-5 h-3 w-28 rounded bg-[#FF9AAD]/18 sm:mt-9" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1381,6 +1454,9 @@ export function JungleTierMatchupPanelSkeleton({
 }: {
   data: GuideJungleTierMatchupPageData;
 }) {
+  const nightmareTier = data.tiers.find((tier) => tier.id === "nightmare") ?? data.tiers[0];
+  const initiallyOpenMatchup = nightmareTier?.matchups[0];
+
   return (
     <div aria-hidden className="w-full min-w-0 max-w-full">
       <div
@@ -1395,21 +1471,26 @@ export function JungleTierMatchupPanelSkeleton({
 
       <div className={clsx("flex flex-col gap-3", guideSectionHeaderPadClass)}>
         {data.tiers.map((tier) => (
-          <div
-            key={tier.id}
-            className="rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/35 px-3 py-3 sm:px-4 sm:py-3.5"
-          >
-            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F5E6D3]/25 sm:text-sm">
-                {tier.label}
-              </h3>
-              <p className="text-[0.65rem] normal-case text-[#F5E6D3]/18 sm:text-xs">{tier.subtitle}</p>
+          <div key={tier.id} className="flex flex-col gap-3">
+            <div className="rounded-xl border border-[#F0ABCF]/12 bg-[#1E1724]/35 px-3 py-3 sm:px-4 sm:py-3.5">
+              <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-[#F5E6D3]/25 sm:text-sm">
+                  {tier.label}
+                </h3>
+                <p className="text-[0.65rem] normal-case text-[#F5E6D3]/18 sm:text-xs">{tier.subtitle}</p>
+              </div>
+              <div className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-1.5 md:grid-cols-8 lg:grid-cols-10">
+                {tier.matchups.map((matchup, index) => (
+                  <JungleTierIconSkeleton
+                    key={matchup.id}
+                    selected={tier.id === nightmareTier?.id && index === 0}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="mt-2.5 grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-1.5 md:grid-cols-8 lg:grid-cols-10">
-              {tier.matchups.map((matchup) => (
-                <JungleTierIconSkeleton key={matchup.id} />
-              ))}
-            </div>
+            {tier.id === nightmareTier?.id && initiallyOpenMatchup ? (
+              <JungleTierDetailSkeleton matchup={initiallyOpenMatchup} />
+            ) : null}
           </div>
         ))}
       </div>

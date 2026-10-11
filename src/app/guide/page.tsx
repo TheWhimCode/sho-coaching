@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { fetchRunesTrees } from "@/lib/datadragon/runes";
-import { champSquareUrlById } from "@/lib/datadragon/champions";
+import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
+import { prisma } from "@/lib/prisma";
 import { buildGuideRunePageData } from "@/lib/guides/buildGuideRunePageData";
 import { buildGuideItemPageData } from "@/lib/guides/buildGuideItemPageData";
 import { buildGuideJungleTierMatchupPageData } from "@/lib/guides/buildGuideJungleTierMatchupData";
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
 export const revalidate = 86400;
 
 export default async function ViegoGuidePage() {
-  const [runeData, itemData, guideTextIcons, viegoAbilityIcons, possessionsData, twitchStatus] =
+  const [runeData, itemData, guideTextIcons, viegoAbilityIcons, possessionsData, twitchStatus, profiles] =
     await Promise.all([
     fetchRunesTrees().then((trees) => buildGuideRunePageData(VIEGO_RUNE_SECTION, trees)),
     buildGuideItemPageData(VIEGO_ITEM_SECTION),
@@ -49,7 +50,12 @@ export default async function ViegoGuidePage() {
     buildGuideViegoAbilityIcons(),
     buildGuidePossessionPageData(VIEGO_POSSESSIONS_SECTION),
     getManualTwitchStreamStatus(),
+    prisma.championProfile.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
   ]);
+  const tierListChampions = profiles.map((profile) => {
+    const id = resolveChampionId(profile.name);
+    return { id, name: profile.name, icon: champSquareUrlById(id) };
+  });
   const jungleTierMatchupData = buildGuideJungleTierMatchupPageData(
     VIEGO_JUNGLE_TIER_MATCHUPS,
     VIEGO_MATCHUP_SECTION
@@ -71,6 +77,7 @@ export default async function ViegoGuidePage() {
         jungleTierMatchupData={jungleTierMatchupData}
         comboData={VIEGO_COMBO_SECTION}
         possessionsData={possessionsData}
+        tierListChampions={tierListChampions}
         gameStagesData={VIEGO_GAME_STAGES_SECTION}
         viegoAbilityIcons={viegoAbilityIcons}
         championIcon={championIcon}

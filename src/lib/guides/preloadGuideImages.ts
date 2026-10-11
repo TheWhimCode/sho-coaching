@@ -37,6 +37,34 @@ export function collectRuneSectionImageUrls(data: GuideRunePageData): string[] {
   return [...urls];
 }
 
+/** Only the initially visible rune tab. Keep the first render light. */
+export function collectInitialRuneSectionImageUrls(data: GuideRunePageData): string[] {
+  const urls = new Set<string>();
+  const tab = data.tabs.find((entry) => entry.id === data.defaultTabId) ?? data.tabs[0];
+
+  if (data.headerIcon) urls.add(data.headerIcon.icon);
+  if (!tab) return [...urls];
+
+  urls.add(tab.primaryTree.icon);
+  urls.add(tab.secondaryTree.icon);
+
+  for (const tree of [tab.primaryTree, tab.secondaryTree]) {
+    for (const row of tree.slots) {
+      for (const rune of row) urls.add(rune.icon);
+    }
+  }
+
+  for (const row of tab.statShardRows) {
+    for (const shard of row.shards) urls.add(shard.icon);
+  }
+
+  for (const icon of Object.values(tab.summonerSpellIcons)) {
+    if (icon) urls.add(icon);
+  }
+
+  return [...urls];
+}
+
 export function collectItemSectionImageUrls(data: GuideItemPageData): string[] {
   const urls = new Set<string>();
 
@@ -123,6 +151,25 @@ export function collectGameStagesSectionImageUrls(data: GuideGameStagePageData):
 }
 
 export function collectPossessionsSectionImageUrls(data: GuidePossessionPageData): string[] {
+  return [
+    ...collectPossessionFlowImageUrls(data),
+    ...collectPossessionBestToPossessImageUrls(data),
+  ];
+}
+
+/** Images in the first, immediately useful possession section. */
+export function collectPossessionFlowImageUrls(data: GuidePossessionPageData): string[] {
+  const urls = new Set<string>();
+
+  for (const example of data.howItWorksPassiveExamples ?? []) {
+    if (example.passiveIcon) urls.add(example.passiveIcon);
+  }
+
+  return [...urls];
+}
+
+/** Portraits and ability icons used by the possession-value tiers. */
+export function collectPossessionBestToPossessImageUrls(data: GuidePossessionPageData): string[] {
   const urls = new Set<string>();
 
   for (const tier of data.possessionTiers) {
@@ -132,10 +179,6 @@ export function collectPossessionsSectionImageUrls(data: GuidePossessionPageData
         if (icon) urls.add(icon);
       }
     }
-  }
-
-  for (const example of data.howItWorksPassiveExamples ?? []) {
-    if (example.passiveIcon) urls.add(example.passiveIcon);
   }
 
   return [...urls];
@@ -173,7 +216,7 @@ export function collectGuideCriticalPreloadUrls(
   runeData: GuideRunePageData,
   championIcon: string
 ): string[] {
-  return [...new Set([championIcon, ...collectRuneSectionImageUrls(runeData)])];
+  return [...new Set([championIcon, ...collectInitialRuneSectionImageUrls(runeData)])];
 }
 
 export function preloadGuideImages(urls: string[]): Promise<void> {

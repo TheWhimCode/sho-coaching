@@ -1,10 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Search } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   type FormEvent,
@@ -12,10 +13,12 @@ import {
 } from "react";
 import GuideImage from "@/app/_components/guides/GuideImage";
 import type { BuildFloatTag } from "@/lib/guides/buildPicker/decisionTree";
-import type {
-  ChampionProfileRow,
-  LiveGameLookup,
-  LiveGameParticipant,
+import {
+  BUILD_PICKER_PLATFORMS,
+  type BuildPickerPlatformId,
+  type ChampionProfileRow,
+  type LiveGameLookup,
+  type LiveGameParticipant,
 } from "@/lib/guides/buildPicker/types";
 import type { PickerBuild, PickerItem } from "@/lib/guides/buildPicker/builds";
 import { guideChampionIconImgClass, GUIDE } from "@/lib/guides/guideTheme";
@@ -37,6 +40,11 @@ const BUILD_ALTERNATIVES: Record<string, { buildId: string; label: string }> = {
 };
 
 const STORAGE_RIOT_ID = "viego-build-picker-riot-id";
+const STORAGE_PLATFORM = "viego-build-picker-platform";
+
+function isPlatformId(value: string | null): value is BuildPickerPlatformId {
+  return BUILD_PICKER_PLATFORMS.some((platform) => platform.id === value);
+}
 
 /** Riot IDs are 3–16 chars, tags 3–5 chars. */
 const RIOT_ID_RE = /^[^#]{3,16}#[^#]{3,5}$/;
@@ -187,22 +195,109 @@ function BuildWhyPanel({
 
 type LookupPhase = "idle" | "verifying" | "searching";
 
+function ServerPicker({
+  platform,
+  onChange,
+}: {
+  platform: BuildPickerPlatformId;
+  onChange: (platform: BuildPickerPlatformId) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const selected = BUILD_PICKER_PLATFORMS.find((entry) => entry.id === platform) ?? BUILD_PICKER_PLATFORMS[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative shrink-0">
+      <button
+        type="button"
+        aria-label={`Server, ${selected.label}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((current) => !current)}
+        className="inline-flex h-12 w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-semibold text-[#F5E6D3] transition hover:bg-white/[0.08] sm:w-auto sm:min-w-[8.75rem]"
+      >
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[#B8D8EA]/55">Server</span>
+          <span className="truncate">{selected.label}</span>
+        </span>
+        <ChevronDown className={clsx("h-4 w-4 shrink-0 text-[#F5E6D3]/55 transition", open && "rotate-180")} aria-hidden />
+      </button>
+      {open ? (
+        <div
+          id={listId}
+          role="listbox"
+          aria-label="Server"
+          className="absolute left-0 z-40 mt-2 grid max-h-72 w-full grid-cols-3 gap-1 overflow-y-auto rounded-2xl border border-white/10 bg-[#1A1520]/95 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:left-auto sm:right-0 sm:w-[16.5rem]"
+        >
+          {BUILD_PICKER_PLATFORMS.map((entry) => {
+            const active = entry.id === platform;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => {
+                  onChange(entry.id);
+                  setOpen(false);
+                }}
+                className={clsx(
+                  "inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold transition",
+                  entry.id === "auto" && "col-span-3 justify-between px-3",
+                  active
+                    ? "bg-[#F0ABCF] text-[#2A1F2E]"
+                    : "text-[#F5E6D3]/80 hover:bg-white/[0.06] hover:text-[#F5E6D3]"
+                )}
+              >
+                <span>{entry.label}</span>
+                {active ? <Check className="h-3.5 w-3.5" aria-hidden /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function LookupForm({
   riotId,
+  platform,
   busy,
   onRiotIdChange,
+  onPlatformChange,
   onSubmit,
 }: {
   riotId: string;
+  platform: BuildPickerPlatformId;
   busy: boolean;
   onRiotIdChange: (value: string) => void;
+  onPlatformChange: (platform: BuildPickerPlatformId) => void;
   onSubmit: () => void;
 }) {
   const valid = RIOT_ID_RE.test(riotId.trim());
 
   return (
     <form
-      className={clsx(GLASS_CLASS, "flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:gap-2 sm:p-2")}
+      className={clsx(GLASS_CLASS, "relative z-30 flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:gap-2 sm:p-2")}
       onSubmit={(event: FormEvent) => {
         event.preventDefault();
         onSubmit();
@@ -223,6 +318,7 @@ function LookupForm({
           className="h-12 w-full bg-transparent pl-11 pr-4 text-base text-[#F5EDE6] outline-none placeholder:text-[#F5E6D3]/35"
         />
       </div>
+      <ServerPicker platform={platform} onChange={onPlatformChange} />
       <button
         type="submit"
         disabled={!valid || busy}
@@ -754,19 +850,29 @@ export default function BuildPickerClient({
   championRows: ChampionProfileRow[];
 }) {
   const [riotId, setRiotId] = useState("");
+  const [platform, setPlatform] = useState<BuildPickerPlatformId>("auto");
   const [phase, setPhase] = useState<LookupPhase>("idle");
   const [result, setResult] = useState<LiveGameLookup | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const lastLookupRef = useRef<string>("");
 
-  const lookup = useCallback(async (rawId: string) => {
+  const selectPlatform = useCallback((next: BuildPickerPlatformId) => {
+    setPlatform(next);
+    try {
+      localStorage.setItem(STORAGE_PLATFORM, next);
+    } catch {
+      // storage unavailable; ignore
+    }
+  }, []);
+
+  const lookup = useCallback(async (rawId: string, platformId: BuildPickerPlatformId = "auto") => {
     const id = rawId.trim();
     if (!RIOT_ID_RE.test(id)) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    lastLookupRef.current = id;
+    lastLookupRef.current = `${platformId}:${id}`;
 
     setPhase("verifying");
     setResult(null);
@@ -774,12 +880,13 @@ export default function BuildPickerClient({
 
     try {
       localStorage.setItem(STORAGE_RIOT_ID, id);
+      localStorage.setItem(STORAGE_PLATFORM, platformId);
     } catch {
       // storage unavailable; ignore
     }
 
     try {
-      const params = new URLSearchParams({ riotId: id, platform: "auto" });
+      const params = new URLSearchParams({ riotId: id, platform: platformId });
       if (new URLSearchParams(window.location.search).get("mock") === "1") params.set("mock", "1");
       const response = await fetch(`/api/guide/live-game?${params.toString()}`, {
         signal: controller.signal,
@@ -802,15 +909,19 @@ export default function BuildPickerClient({
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get("id")?.trim() ?? "";
     let storedId = "";
+    let storedPlatform: BuildPickerPlatformId = "auto";
     try {
       storedId = localStorage.getItem(STORAGE_RIOT_ID) ?? "";
+      const savedPlatform = localStorage.getItem(STORAGE_PLATFORM);
+      if (isPlatformId(savedPlatform)) storedPlatform = savedPlatform;
     } catch {
       // storage unavailable; ignore
     }
+    setPlatform(storedPlatform);
 
     if (fromUrl) {
       setRiotId(fromUrl);
-      void lookup(fromUrl);
+      void lookup(fromUrl, storedPlatform);
     } else if (storedId) {
       setRiotId(storedId);
     }
@@ -819,10 +930,10 @@ export default function BuildPickerClient({
   useEffect(() => {
     const id = riotId.trim();
     if (!RIOT_ID_RE.test(id)) return;
-    if (lastLookupRef.current === id) return;
-    const timer = window.setTimeout(() => void lookup(id), AUTO_LOOKUP_DEBOUNCE_MS);
+    if (lastLookupRef.current === `${platform}:${id}`) return;
+    const timer = window.setTimeout(() => void lookup(id, platform), AUTO_LOOKUP_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [riotId, lookup]);
+  }, [riotId, platform, lookup]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -842,7 +953,14 @@ export default function BuildPickerClient({
           Build like Mino would.
         </h1>
 
-        <LookupForm riotId={riotId} busy={busy} onRiotIdChange={setRiotId} onSubmit={() => void lookup(riotId)} />
+        <LookupForm
+          riotId={riotId}
+          platform={platform}
+          busy={busy}
+          onRiotIdChange={setRiotId}
+          onPlatformChange={selectPlatform}
+          onSubmit={() => void lookup(riotId, platform)}
+        />
 
         <div className="mt-12 sm:mt-16">
           {busy ? (

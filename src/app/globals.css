@@ -527,8 +527,48 @@ html, body {
     animation: matchup-possession-shine 6s ease-in-out infinite;
   }
 
+  @keyframes possession-tier-list-skeleton-shine {
+    from { transform: translateX(-140%); }
+    to { transform: translateX(140%); }
+  }
+
+  .possession-tier-list-skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #4a384d;
+  }
+
+  .possession-tier-list-skeleton::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: linear-gradient(105deg, transparent 25%, rgba(245,230,211,0.22) 50%, transparent 75%);
+    animation: possession-tier-list-skeleton-shine 1.15s ease-in-out infinite;
+  }
+
+  @keyframes possession-tier-list-icon-reveal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .possession-tier-list-icon-reveal {
+    animation: possession-tier-list-icon-reveal 300ms ease-out both;
+  }
+
+  @keyframes possession-section-reveal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .possession-section-reveal {
+    animation: possession-section-reveal 260ms ease-out both;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .matchup-possession-shine { animation: none; opacity: 0.22; transform: translateX(130%) skewX(-12deg); }
+    .possession-tier-list-skeleton::after,
+    .possession-tier-list-icon-reveal,
+    .possession-section-reveal { animation: none; }
   }
 }
 /* =============================== */

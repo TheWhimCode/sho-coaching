@@ -212,7 +212,7 @@ function renderColoredPart(
     const colored = displayText.slice(displayText.length - suffix.length);
 
     return (
-      <span key={index} className="inline-flex items-center align-middle">
+      <span key={index} className="inline-flex items-center align-baseline">
         {prefix}
         <span className="font-bold" style={{ color: entity.color, fontWeight: weight }}>
           {colored}
@@ -226,7 +226,7 @@ function renderColoredPart(
 
   if (!hasStyle && icon) {
     return (
-      <span key={index} className="inline-flex items-center align-middle">
+      <span key={index} className="inline-flex items-center align-baseline">
         {displayText}
         <GuideInlineIcon src={icon} compact={entity.icon?.kind === "stat"} />
       </span>
@@ -234,7 +234,7 @@ function renderColoredPart(
   }
 
   return (
-    <span key={index} className="inline-flex items-center align-middle">
+    <span key={index} className="inline-flex items-center align-baseline">
       <span
         className={hasStyle ? "font-bold" : undefined}
         style={

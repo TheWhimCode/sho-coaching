@@ -91,8 +91,9 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
             "Just fly on their carry, kinda like Camille. Q something that's easy to hit -> auto the carry, so they can't dodge it. If you die, you become a blob... LOL",
         },
         {
-          champion: "Jarvan IV",
-          explanation: "E -> Q + tanky. Nice.",
+          champion: "Shen",
+          explanation:
+            "You get his passive shield, tankiness, and CC setup. Shen E is not easy to hit reliably and the range isn't great.\n\nDon't forget to use W after possessing.",
         },
       ],
     },
@@ -104,11 +105,6 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
           champion: "Kha'Zix",
           explanation:
             "If he's fed, you can instantly jump on another isolated squishy and oneshot. But often I end up playing with his evolved W and slow chasing the rest of the team.\n\nYou can use E to instantly reposition and play slow.",
-        },
-        {
-          champion: "Shen",
-          explanation:
-            "You get his passive shield, tankiness, and CC setup. Shen E is not easy to hit reliably and the range isn't great.\n\nDon't forget to use W after possessing.",
         },
         {
           champion: "Vi",
@@ -130,19 +126,23 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
             "Big engage range, shield on W, reliable CC. E to chase, Q first if you can, otherwise W -> R once your W connects.\n\nYou always start mounted.",
         },
         {
-          champion: "Zed",
-          explanation:
-            "Can often instantly get on another carry. Especially if he's fed, there's a lot of damage.\n\nW -> Q -> E. Ideally they have to use mobility or Flash before you R.",
-        },
-        {
           champion: "Ekko",
           explanation:
             "Instantly E -> Q next target with Duskblade. Then use movement speed to reposition/chase.\n\nCan Q during E dash to cancel animation. Can also W during E instead to get the shield faster or chase someone out of range.",
         },
         {
-          champion: "Lucian",
+          champion: "Graves",
           explanation:
-            "No CC, but instant reposition + burst in midgame. Only good if you can play Lucian though.\n\nAuto -> E + W -> Auto -> Q -> Auto -> E.\n\nDon't cancel autos, use spells after the first auto. The second one can't be cancelled.",
+            "He just does way too much damage and even gets Shieldbow later for some survivability.",
+        },
+        {
+          champion: "Braum",
+          explanation:
+            "Immediately W on a teammate and E, proc your passive, and then turn into Viego if it's safe. You keep the shield and the passive stays on.",
+        },
+        {
+          champion: "Jarvan IV",
+          explanation: "E -> Q + tanky. Nice.",
         },
       ],
     },
@@ -161,14 +161,19 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
             "You get the egg which can be funny, but the rest of her kit is not as useful and kinda hard to use. Often, enemies just run.\n\nQ -> W to make it easy to hit, then R on that stun.",
         },
         {
-          champion: "Aurora",
-          explanation:
-            "Her mobility and burst can sometimes be useful. Usually not though.",
-        },
-        {
           champion: "Zilean",
           explanation:
             "He has the most insane E -> W -> E gapcloser. Can also E slow -> double Q -> R sometimes.\n\nBut he's super squishy, so it's situational.",
+        },
+        {
+          champion: "Lucian",
+          explanation:
+            "No CC, but instant reposition + burst in midgame. Only good if you can play Lucian though.\n\nAuto -> E + W -> Auto -> Q -> Auto -> E.\n\nDon't cancel autos, use spells after the first auto. The second one can't be cancelled.",
+        },
+        {
+          champion: "Quinn",
+          explanation:
+            "Champ does nothing without R -> flank or a numbers advantage.\n\nYou can cancel her E backward dash with your R at least.",
         },
         {
           champion: "Bard",
@@ -179,11 +184,6 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
           champion: "Ezreal",
           explanation:
             "Situationally great. High damage and mobility, but he's hard to play.\n\nYou can W -> R and the Ezreal W damage will apply.",
-        },
-        {
-          champion: "Garen",
-          explanation:
-            "Gapcloser, tanky, and you can R during silence. But his gapcloser is usually too bad without Stridebreaker to actually reach without Flash.",
         },
         {
           champion: "Mordekaiser",
@@ -233,13 +233,13 @@ export const VIEGO_POSSESSIONS_SECTION: GuidePossessionSectionConfig = {
           explanation: "Can't switch forms and both are useless.",
         },
         {
-          champion: "Quinn",
-          explanation:
-            "Champ does nothing without R -> flank or a numbers advantage.\n\nYou can cancel her E backward dash with your R at least.",
-        },
-        {
           champion: "Gnar",
           explanation: "Possessing mini Gnar sounds really useful 😭",
+        },
+        {
+          champion: "Karthus",
+          explanation:
+            "If you possess him, he gets a free Q. So you usually either take a ton of unnecessary damage or straight up die.",
         },
       ],
     },

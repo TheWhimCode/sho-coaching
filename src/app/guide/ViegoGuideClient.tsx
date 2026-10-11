@@ -25,6 +25,7 @@ import type { GuideRunePageData } from "@/lib/guides/runeGuideTypes";
 import type { GuideItemPageData } from "@/lib/guides/itemGuideTypes";
 import type { GuideJungleTierMatchupPageData } from "@/lib/guides/matchupGuideTypes";
 import type { GuideComboPageData, GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
+import type { PossessionTierListChampion } from "@/app/_components/guides/possessions/PossessionTierListOverlay";
 import type { GuidePossessionPageData } from "@/lib/guides/possessionGuideTypes";
 import type { GuideGameStagePageData } from "@/lib/guides/gameStageGuideTypes";
 import type { GuideConventionalBuildPageData } from "@/lib/guides/conventionalBuildGuideTypes";
@@ -120,6 +121,7 @@ export default function ViegoGuideClient({
   jungleTierMatchupData,
   comboData,
   possessionsData,
+  tierListChampions,
   gameStagesData,
   viegoAbilityIcons,
   championIcon,
@@ -132,6 +134,7 @@ export default function ViegoGuideClient({
   jungleTierMatchupData: GuideJungleTierMatchupPageData;
   comboData: GuideComboPageData;
   possessionsData: GuidePossessionPageData;
+  tierListChampions: PossessionTierListChampion[];
   gameStagesData: GuideGameStagePageData;
   viegoAbilityIcons: GuideViegoAbilityIcons;
   championIcon: string;
@@ -263,6 +266,7 @@ export default function ViegoGuideClient({
               data={possessionsData}
               guideTextIcons={guideTextIcons}
               viegoAbilityIcons={viegoAbilityIcons}
+              tierListChampions={tierListChampions}
             />
           </div>
         ) : null}

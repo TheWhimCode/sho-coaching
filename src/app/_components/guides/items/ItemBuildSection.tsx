@@ -23,6 +23,7 @@ import { collectItemSectionImageUrls } from "@/lib/guides/preloadGuideImages";
 import type { GuideViegoAbilityIcons } from "@/lib/guides/comboGuideTypes";
 import { guideChampionIconImgClass, guideSectionHeaderPadClass, guideSectionTitleClass } from "@/lib/guides/guideTheme";
 import { scrollRevealElementBottom } from "@/lib/overlayScrollViewport";
+import { MINO_PROFILE_IMAGE } from "@/lib/coaching/coachingClipVideos";
 
 const FIRST_ITEM_BUILD_SWAP_KEY = "viego-guide-first-item-build-swap";
 
@@ -2669,24 +2670,44 @@ export default function ItemBuildSection({
           aria-hidden={!(shouldLoad && imagesReady)}
           aria-busy={shouldLoad && !imagesReady}
         >
-      <div className={clsx("mb-6 flex items-center gap-4 sm:gap-5", guideSectionHeaderPadClass)}>
-        <h2 className={guideSectionTitleClass}>
-          {data.heading}
-        </h2>
-        {data.headerIcon ? (
-          <div className="relative shrink-0">
-            <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg sm:h-16 sm:w-16">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <GuideImage
-                src={data.headerIcon.icon}
-                alt={data.headerIcon.name}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-              <GuideCrossOverlay />
+      <div className={clsx("mb-6 flex flex-wrap items-center justify-between gap-4", guideSectionHeaderPadClass)}>
+        <div className="flex items-center gap-4 sm:gap-5">
+          <h2 className={guideSectionTitleClass}>
+            {data.heading}
+          </h2>
+          {data.headerIcon ? (
+            <div className="relative shrink-0">
+              <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg sm:h-16 sm:w-16">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <GuideImage
+                  src={data.headerIcon.icon}
+                  alt={data.headerIcon.name}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+                <GuideCrossOverlay />
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
+
+        <a
+          href="/guide/build"
+          target="_blank"
+          rel="noreferrer"
+          className="group relative inline-flex min-h-12 shrink-0 items-center gap-3 overflow-hidden rounded-xl bg-gradient-to-r from-[#D85FAE] via-[#A778D8] to-[#65BFE6] px-4 py-2.5 text-left text-[#170F1B] shadow-[0_6px_18px_rgba(185,103,186,0.3)] transition duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_8px_22px_rgba(185,103,186,0.4)] focus:outline-none"
+        >
+          <span className="absolute inset-y-0 right-0 w-2/5 bg-[linear-gradient(115deg,transparent_5%,rgba(255,255,255,0.34)_50%,transparent_95%)] opacity-55 transition duration-500 group-hover:translate-x-5" />
+          <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#1A1520]/20 shadow-inner">
+            <GuideImage src={MINO_PROFILE_IMAGE} alt="Mino" loading="lazy" className="h-full w-full object-cover" />
+          </span>
+          <span className="relative leading-tight">
+            <span className="block text-sm font-extrabold tracking-tight">Live build picker</span>
+            <span className="mt-0.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[#170F1B]/65">
+              For your current game
+            </span>
+          </span>
+        </a>
       </div>
 
       <div className={ITEM_PANEL_OUTER} style={panelStyle}>

@@ -1,6 +1,7 @@
 "use client";
 
 import clsx from "clsx";
+import { Sparkles } from "lucide-react";
 import {
   useEffect,
   useLayoutEffect,
@@ -15,6 +16,9 @@ import { PossessionsSectionSkeleton } from "@/app/_components/guides/GuideSectio
 import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import { useGuideSectionImages } from "@/app/_components/guides/useGuideSectionImages";
 import { PossessionPassiveExamples } from "@/app/_components/guides/possessions/PossessionPassiveExamples";
+import PossessionTierListOverlay, {
+  type PossessionTierListChampion,
+} from "@/app/_components/guides/possessions/PossessionTierListOverlay";
 import { renderPossessionExplanationText } from "@/app/_components/guides/possessions/renderPossessionExplanationText";
 import {
   guideChampionIconImgClass,
@@ -30,7 +34,10 @@ import type {
   SerializedPossessionChampion,
   SerializedPossessionTier,
 } from "@/lib/guides/possessionGuideTypes";
-import { collectPossessionsSectionImageUrls } from "@/lib/guides/preloadGuideImages";
+import {
+  collectPossessionBestToPossessImageUrls,
+  collectPossessionFlowImageUrls,
+} from "@/lib/guides/preloadGuideImages";
 
 const POSSESSION_SECTION_HEADING_CLASS =
   "text-xl font-bold tracking-tight text-[#B8D8EA] sm:text-2xl";
@@ -421,6 +428,67 @@ function BestToPossessSection({
   );
 }
 
+function BestToPossessSkeleton({ data }: { data: GuidePossessionPageData }) {
+  return (
+    <div aria-hidden className="px-6 py-8 sm:px-10 sm:py-10">
+      <div className="max-w-3xl">
+        <div className="h-7 w-52 animate-pulse rounded bg-[#352839]/70 sm:h-8" />
+        <div className="mt-4 h-4 w-full max-w-2xl animate-pulse rounded bg-[#352839]/45" />
+        <div className={clsx("mt-6 space-y-3.5", POSSESSION_LIST_INDENT_CLASS)}>
+          {data.factors.map((factor) => (
+            <div key={factor.id} className={POSSESSION_LIST_FACTOR_ROW_CLASS}>
+              <span className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-[#352839]/70 sm:h-9 sm:w-9" />
+              <span className="h-3 w-4/5 animate-pulse rounded bg-[#352839]/45" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mx-auto mt-7 flex w-full max-w-xl flex-col items-start gap-4 sm:mt-8">
+        {data.possessionTiers.map((tier) => (
+          <div key={tier.id} className="flex w-full items-center gap-4">
+            <span className="h-3 w-[4.5rem] animate-pulse rounded bg-[#352839]/45" />
+            <div className="flex flex-wrap gap-2">
+              {tier.champions.map((champion) => (
+                <span key={champion.id} className="h-11 w-11 animate-pulse rounded-lg bg-[#352839]/80" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DeferredBestToPossessSection({
+  data,
+  guideTextIcons,
+  viegoAbilityIcons,
+}: {
+  data: GuidePossessionPageData;
+  guideTextIcons: Record<string, string>;
+  viegoAbilityIcons: GuideViegoAbilityIcons;
+}) {
+  const imageUrls = useMemo(() => collectPossessionBestToPossessImageUrls(data), [data]);
+  const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(imageUrls);
+  const showContent = shouldLoad && imagesReady;
+
+  return (
+    <section ref={sectionRef} aria-busy={shouldLoad && !imagesReady}>
+      {showContent ? (
+        <div className="possession-section-reveal">
+          <BestToPossessSection
+            data={data}
+            guideTextIcons={guideTextIcons}
+            viegoAbilityIcons={viegoAbilityIcons}
+          />
+        </div>
+      ) : (
+        <BestToPossessSkeleton data={data} />
+      )}
+    </section>
+  );
+}
+
 function WhenNotToPossessSection({
   data,
   guideTextIcons,
@@ -470,12 +538,15 @@ export default function PossessionsSection({
   data,
   guideTextIcons = {},
   viegoAbilityIcons,
+  tierListChampions,
 }: {
   data: GuidePossessionPageData;
   guideTextIcons?: Record<string, string>;
   viegoAbilityIcons: GuideViegoAbilityIcons;
+  tierListChampions: PossessionTierListChampion[];
 }) {
-  const imageUrls = useMemo(() => collectPossessionsSectionImageUrls(data), [data]);
+  const [tierListOpen, setTierListOpen] = useState(false);
+  const imageUrls = useMemo(() => collectPossessionFlowImageUrls(data), [data]);
   const { sectionRef, shouldLoad, imagesReady } = useGuideSectionImages(imageUrls);
   const showContent = shouldLoad && imagesReady;
 
@@ -509,9 +580,27 @@ export default function PossessionsSection({
             )}
             aria-hidden={!showContent}
           >
-      <div className={clsx("mb-6", guideSectionHeaderPadClass)}>
-        <h2 className={guideSectionTitleClass}>{data.heading}</h2>
-        {data.subtitle ? <p className={guideSectionSubClass}>{data.subtitle}</p> : null}
+      <div className={clsx("mb-6 flex flex-wrap items-end justify-between gap-4", guideSectionHeaderPadClass)}>
+        <div>
+          <h2 className={guideSectionTitleClass}>{data.heading}</h2>
+          {data.subtitle ? <p className={guideSectionSubClass}>{data.subtitle}</p> : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => setTierListOpen(true)}
+          className="group relative inline-flex min-h-12 shrink-0 items-center gap-3 overflow-hidden rounded-xl bg-gradient-to-r from-[#D85FAE] via-[#A778D8] to-[#65BFE6] px-4 py-2.5 text-left text-[#170F1B] shadow-[0_6px_18px_rgba(185,103,186,0.3)] transition duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_8px_22px_rgba(185,103,186,0.4)] focus:outline-none"
+        >
+          <span className="absolute inset-y-0 right-0 w-2/5 bg-[linear-gradient(115deg,transparent_5%,rgba(255,255,255,0.34)_50%,transparent_95%)] opacity-55 transition duration-500 group-hover:translate-x-5" />
+          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1A1520]/20 shadow-inner">
+            <Sparkles className="h-4 w-4" strokeWidth={2.5} />
+          </span>
+          <span className="relative leading-tight">
+            <span className="block text-sm font-extrabold tracking-tight">Possession tier list</span>
+            <span className="mt-0.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[#170F1B]/65">
+              Every champion ranked
+            </span>
+          </span>
+        </button>
       </div>
 
       <div
@@ -522,7 +611,7 @@ export default function PossessionsSection({
         )}
       >
         <PossessionFlow data={data} guideTextIcons={guideTextIcons} />
-        <BestToPossessSection
+        <DeferredBestToPossessSection
           data={data}
           guideTextIcons={guideTextIcons}
           viegoAbilityIcons={viegoAbilityIcons}
@@ -532,6 +621,11 @@ export default function PossessionsSection({
           </div>
         </div>
       )}
+      <PossessionTierListOverlay
+        open={tierListOpen}
+        champions={tierListChampions}
+        onClose={() => setTierListOpen(false)}
+      />
     </section>
   );
 }

@@ -141,13 +141,17 @@ async function sampleGame(riotId: string, platform: string): Promise<LiveGameLoo
 /* ------------------------------------------------------------------ */
 
 async function liveGame(riotId: string, platformInput: string): Promise<LiveGameLookup> {
-  // 1. Riot ID → PUUID. With a chosen server we only try its routing region.
+  // 1. Riot ID → PUUID. A chosen server tries its routing region first, then the rest.
   const chosen = platformInput !== "auto" ? normalizePlatform(platformInput) : null;
-  const region: Regional | undefined = chosen?.region;
+  const preferredRegion: Regional | undefined = chosen?.region;
+  const preferredPlatform = preferredRegion ? chosen?.platform : undefined;
 
   let account;
   try {
-    account = await resolveAccountByRiotTag(riotId, region ? { region } : undefined);
+    account = await resolveAccountByRiotTag(
+      riotId,
+      preferredRegion ? { preferredRegion } : undefined,
+    );
   } catch (error) {
     if (error instanceof Error && /Riot API 404|not_found/.test(error.message)) {
       return { status: "not_found", riotId };
@@ -156,8 +160,8 @@ async function liveGame(riotId: string, platformInput: string): Promise<LiveGame
   }
 
   // 2. Which platform shard hosts this player's LoL account.
-  const platform =
-    chosen?.platform || (await findPlatformForPuuid(account.puuid, account.regional));
+  //    Auto keeps the usual order. A chosen server is moved to the front.
+  const platform = await findPlatformForPuuid(account.puuid, account.regional, preferredPlatform);
   if (!platform) return { status: "not_found", riotId };
 
   // 3. Active game.

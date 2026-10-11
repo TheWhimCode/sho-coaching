@@ -7,21 +7,23 @@ import type {
 } from "@prisma/client";
 import type { BuildFloatTag, TreeTraceStep } from "./decisionTree";
 
-/** Riot platform shards the picker lets users choose from. */
+/** Riot platform shards the picker lets users choose from. Auto keeps the discovery order. */
 export const BUILD_PICKER_PLATFORMS = [
   { id: "auto", label: "Auto" },
   { id: "euw1", label: "EUW" },
-  { id: "eun1", label: "EUNE" },
   { id: "na1", label: "NA" },
-  { id: "kr", label: "KR" },
+  { id: "eun1", label: "EUNE" },
+  { id: "oc1", label: "OCE" },
   { id: "br1", label: "BR" },
   { id: "la1", label: "LAN" },
   { id: "la2", label: "LAS" },
-  { id: "oc1", label: "OCE" },
   { id: "tr1", label: "TR" },
   { id: "ru", label: "RU" },
+  { id: "kr", label: "KR" },
   { id: "jp1", label: "JP" },
-  { id: "sg2", label: "SEA" },
+  { id: "ph2", label: "PH" },
+  { id: "sg2", label: "SG" },
+  { id: "th2", label: "TH" },
   { id: "tw2", label: "TW" },
   { id: "vn2", label: "VN" },
 ] as const;
