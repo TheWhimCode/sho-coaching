@@ -64,6 +64,8 @@ export type BuildRecommendation = {
   boot: { itemId: number; slot: 2 | 3 | 4 };
   /** Optional higher-risk pivot shown beneath the recommendation. */
   alternative?: { buildId: string; label: string };
+  /** Nearby durability and (when close) anti-shield routes, shown in the breakdown. */
+  alternates: { buildId: string; reason: string }[];
   /** Every decision the tree evaluated, in order. */
   trace: TreeTraceStep[];
   /** Champions whose traits selected the build, for the portrait popups. */

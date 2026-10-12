@@ -14,16 +14,13 @@ const BOOT_RULES: {
   itemId: number;
   slot: 2 | 3 | 4;
 }[] = [
-  {
-    id: "b1",
-    when: "Survivability build, 4+ enemy AP, and 3+ enemy High CC",
-    itemId: 3111,
-    slot: 2,
-  },
-  { id: "b2", when: "4+ enemy AD", itemId: 3047, slot: 2 },
-  { id: "b3", when: "Survivability build", itemId: 3047, slot: 3 },
-  { id: "b4", when: "4+ enemy Squishy", itemId: 3009, slot: 4 },
-  { id: "b5", when: "Anything else", itemId: 3008, slot: 4 },
+  { id: "b1", when: "3+ enemy AD and enemy magic below 3", itemId: 3047, slot: 2 },
+  { id: "b2", when: "3+ enemy AD and enemy magic below 5", itemId: 3047, slot: 3 },
+  { id: "b3", when: "3+ enemy AD and enemy magic below 7", itemId: 3047, slot: 4 },
+  { id: "b4", when: "Enemy damage below 12 and Mercs 10+", itemId: 3111, slot: 3 },
+  { id: "b5", when: "Enemy damage below 14 and Mercs 10+", itemId: 3111, slot: 4 },
+  { id: "b6", when: "Enemy durability 9 or below", itemId: 3009, slot: 4 },
+  { id: "b7", when: "Anything else", itemId: 3008, slot: 4 },
 ];
 
 const BOOT_TITLES: Record<number, string> = {
@@ -38,6 +35,13 @@ const SLOT_LABEL: Record<2 | 3 | 4, string> = {
   3: "3rd",
   4: "4th",
 };
+
+function bootSlotNote(itemId: number) {
+  const slots = [...new Set(BOOT_RULES.filter((row) => row.itemId === itemId).map((row) => SLOT_LABEL[row.slot]))];
+  if (slots.length === 1) return `${slots[0]} item`;
+  if (slots.length === 2) return `${slots[0]} or ${slots[1]} item`;
+  return `${slots.slice(0, -1).join(", ")}, or ${slots[slots.length - 1]} item`;
+}
 
 type Props = {
   bootItems: PickerItem[];
@@ -57,6 +61,7 @@ export default function BootsLogicView({ bootItems, trace, activeBoot }: Props) 
             <h3 className="text-lg font-bold tracking-tight text-[#F5E6D3]">Which boots?</h3>
             <p className="mt-1 text-xs leading-relaxed text-[#F5E6D3]/50">
               First matching line wins, after the build is chosen. The number is where the boots sit in the item order.
+              Magic damage is AP and Mixed. Mercs is the summed enemy Mercs score.
             </p>
           </div>
           {step ? (
@@ -112,9 +117,7 @@ export default function BootsLogicView({ bootItems, trace, activeBoot }: Props) 
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className={clsx("text-sm font-semibold", active ? "text-[#CFE6F3]" : "text-[#F5E6D3]")}>{name}</p>
-                  <p className="mt-0.5 text-xs text-[#F5E6D3]/45">
-                    {id === 3047 ? "2nd, or 3rd on the survivability build" : id === 3111 ? "2nd item" : "4th item"}
-                  </p>
+                  <p className="mt-0.5 text-xs text-[#F5E6D3]/45">{bootSlotNote(id)}</p>
                 </div>
               </li>
             );

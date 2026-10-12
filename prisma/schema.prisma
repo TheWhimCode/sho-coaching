@@ -792,9 +792,8 @@ model AxomEvent {
 // `name` is the Data Dragon display name (e.g. "Kai'Sa", "Nunu & Willump").
 model ChampionProfile {
   name         String               @id
-  durability   ChampionDurability
   shields      ChampionShieldLevel
-  /// Planned scoring model: 1–5. Null means not rated yet.
+  /// Live picker durability: 1–5. Null means not rated yet.
   durabilityScore Int?
   /// Planned scoring model: 0–5, where 0 means no shields.
   shieldScore     Int?
@@ -813,14 +812,6 @@ model ChampionProfile {
   deniesResets Boolean              @default(false)
   cc           ChampionCcLevel
   updatedAt    DateTime             @default(now()) @updatedAt
-
-  @@schema("public")
-}
-
-enum ChampionDurability {
-  Squishy
-  Bruiser
-  Tanky
 
   @@schema("public")
 }

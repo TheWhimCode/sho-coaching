@@ -27,7 +27,7 @@ const MAIN_BUILDS: PickerBuildDef[] = [
   {
     id: "main-bastionbreaker",
     label: "Bread & Butter Carnage",
-    summary: "Bastionbreaker, Collector, LDR, Infinity Edge, Cyclosword.",
+    summary: "Insane mid-game spike, scaling, and economy buildup.",
     itemIds: [2520, 6676, 3036, 3031, 6699],
     source: "main",
   },
@@ -45,7 +45,7 @@ const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
   {
     id: "sit-serpents-first",
     label: "Shieldbreaker's Edge",
-    summary: "Serpent's Fang, Collector, LDR, Infinity Edge, Cyclosword.",
+    summary: "When you will always hit shields.",
     itemIds: [6695, 6676, 3036, 3031, 6699],
     source: "situational",
   },

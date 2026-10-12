@@ -4,6 +4,8 @@ import { SCORING_THRESHOLDS, type ScoringThresholds } from "./thresholds";
 export const SHADOW_ECONOMY_CHAMPIONS = new Set(["Shaco", "Evelynn", "Rengar"]);
 export const STEELCAPS_ITEM_ID = 3047;
 export const UMBRAL_ITEM_ID = 3179;
+export const HUBRIS_ITEM_ID = 6697;
+export const RESET_DENIER_MIN = 2;
 
 export type CompositionFactChampion = {
   championId: string;
@@ -12,9 +14,11 @@ export type CompositionFactChampion = {
 };
 
 export type CompositionFact = {
-  id: "steelcaps" | "umbral";
+  id: "steelcaps" | "umbral" | "hubris-cc" | "reset-denial";
   itemId: number;
   label: string;
+  /** Include is a reason to take or expect the item; exclude is why it is skipped. */
+  tone: "include" | "exclude";
   champions: CompositionFactChampion[];
 };
 
@@ -24,7 +28,9 @@ export type FactChampion = {
   championIcon: string;
   damageType?: ChampionDamageType | null;
   damageScore?: number | null;
+  ccScore?: number | null;
   canBuildSteelcaps?: boolean | null;
+  deniesResets?: boolean | null;
 };
 
 export function isPhysicalDamage(champion: Pick<FactChampion, "damageType">) {
@@ -66,6 +72,7 @@ export function compositionFacts(
       id: "steelcaps",
       itemId: STEELCAPS_ITEM_ID,
       label: "Enemies can build",
+      tone: "include",
       champions: portraits(steelTargets),
     });
   }
@@ -74,7 +81,28 @@ export function compositionFacts(
       id: "umbral",
       itemId: UMBRAL_ITEM_ID,
       label: "Strong Against",
+      tone: "include",
       champions: portraits(umbralTargets),
+    });
+  }
+  const alliedCc = allies.reduce((sum, champion) => sum + (champion.ccScore ?? 0), 0);
+  if (alliedCc < settings.hubrisCcMin && allies.length > 0) {
+    facts.push({
+      id: "hubris-cc",
+      itemId: HUBRIS_ITEM_ID,
+      label: "Not enough setup",
+      tone: "exclude",
+      champions: portraits(allies),
+    });
+  }
+  const resetDeniers = enemies.filter((champion) => champion.deniesResets === true);
+  if (resetDeniers.length >= RESET_DENIER_MIN) {
+    facts.push({
+      id: "reset-denial",
+      itemId: HUBRIS_ITEM_ID,
+      label: "Reliable disengage",
+      tone: "exclude",
+      champions: portraits(resetDeniers),
     });
   }
   return facts;

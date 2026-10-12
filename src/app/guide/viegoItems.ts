@@ -246,7 +246,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           id: "umbral-collector",
           label: "Shadow Economy",
           header: "Shadow Economy",
-          summary: "Budget or mid-game option.",
+          summary: "Budget, counter, or midgame option.",
           description:
             "When you start building for Hubris but you fall behind, you can pivot into Umbral Glaive for more mid-game power.\nOr if you know that you won't be getting a lot of kills because your teammates have low volatility lanes and everyone is playing safe, you can go Umbral to provide other value to your team and get to your other items more quickly.",
           items: [
@@ -318,7 +318,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           id: "sit-serpents",
           label: "Shieldbreaker's Path",
           header: "Shieldbreaker's Path",
-          summary: "When you will always hit shields.",
+          summary: "Tons of shields, but not at the start.",
           items: [
             { id: 6676, explanation: SITUATIONAL_COLLECTOR_EXPLANATION },
             { id: 6695, title: "Serpent's Fang", explanation: SERPENTS_EXPLANATION },

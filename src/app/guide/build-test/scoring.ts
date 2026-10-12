@@ -66,32 +66,10 @@ export function scoreTeams(allies: TestChampion[], enemies: TestChampion[], sett
   const steelApplies = physical >= settings.physicalMin && magicDamage < settings.magicDamageMax;
   const adjustment = steelApplies ? eligible * settings.steelcapsBonus : 0;
   const adjusted = durability + adjustment;
-  const shadowTargets = shadowEconomyTargets(enemies);
-  let buildId: string;
-  let reason: string;
-  if (shadowTargets.length > 0 && durability < settings.titansMin) {
-    buildId = "umbral-collector";
-    reason = `${shadowTargets.join(", ")} on the enemy team. Shadow Economy is the primary build because base durability ${durability} is below the Titansbane threshold ${settings.titansMin}.`;
-  } else if (early + late >= settings.shield) {
-    buildId = early >= settings.earlyShield ? "sit-serpents-first" : "sit-serpents-late";
-    reason = `Shield total ${shields} reaches ${settings.shield}: ${early} early, ${late} late (Barrier and Guardian included).`;
-  } else if (durability >= settings.titansMin) {
-    buildId = "hubris-ldr";
-    reason = `Base durability ${durability} reaches Titansbane threshold ${settings.titansMin}. Steelcaps does not contribute to this threshold.`;
-  } else if (adjusted <= settings.lethalityMax) {
-    buildId = "bastionbreaker-cyclosword";
-    reason = `Adjusted durability ${adjusted} is at or below full-lethality maximum ${settings.lethalityMax}.`;
-  } else if (adjusted <= settings.bastionMax) {
-    buildId = "main-bastionbreaker";
-    reason = `Adjusted durability ${adjusted} is at or below Bastionbreaker maximum ${settings.bastionMax}.`;
-  } else {
-    buildId = "main-hubris";
-    reason = `Adjusted durability ${adjusted} exceeds ${settings.bastionMax}, but base durability ${durability} is below Titansbane threshold ${settings.titansMin}.`;
-  }
-  // Reuse only reset-denial and boot handling, bypassing the old category tree.
-  const recommendation = runDecisionTree({ allies, enemies }, { kind: "build", id: "score-preview", buildId, reason });
+  const recommendation = runDecisionTree({ allies, enemies, settings });
   return {
-    durability, early, late, physical, magicDamage, eligible, steelApplies, adjustment, adjusted, reason,
+    durability, early, late, physical, magicDamage, eligible, steelApplies, adjustment, adjusted,
+    reason: recommendation.reason,
     recommendation: {
       ...recommendation,
       missingProfiles: [],

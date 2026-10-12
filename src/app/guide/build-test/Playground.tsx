@@ -12,6 +12,8 @@ const CONTROLS: { key: keyof Settings; label: string; max: number; step?: number
   { key: "lethalityMax", label: "Full lethality: maximum durability", max: 25, step: 0.5 },
   { key: "bastionMax", label: "Bastionbreaker: maximum durability", max: 30, step: 0.5 },
   { key: "titansMin", label: "Titansbane: minimum base durability", max: 25 },
+  { key: "forgedMomentumMax", label: "Forged Momentum: both teams below this damage", max: 25 },
+  { key: "hubrisCcMin", label: "Hubris: allied CC must reach this", max: 25 },
   { key: "physicalMin", label: "Allied physical champions to consider Steelcaps", max: 5 },
   { key: "magicDamageMax", label: "Magic damage below this enables Steelcaps", max: 25 },
   { key: "steelcapsBonus", label: "Extra durability per Steelcaps enemy", max: 5, step: 0.5 },
@@ -30,7 +32,7 @@ function TeamScores({ label, team, steelApplies = false, steelBonus = 1 }: { lab
         return <tr key={c.name} style={{ borderBottom: "1px solid #493b4b" }}>
         <th scope="row" title={c.name} className="truncate px-3 py-2 font-medium">{c.name}</th>
         <td className="whitespace-nowrap px-3 py-2">{c.durabilityScore}{steel > 0 && <span className="ml-1 text-[10px] text-[#B8D8EA]" title={`Steelcaps: +${steelBonus} durability`} aria-label={`plus ${steelBonus} Steelcaps durability`}>+{steelBonus} Steel</span>}</td>
-        <td className="whitespace-nowrap px-3 py-2">{c.shieldScore}{barrierShieldScore(c) > 0 && <span className="ml-1 text-[10px] text-[#B8D8EA]" title="Barrier: +2 early shield points" aria-label="plus Barrier, 2 early shield points">+ Bar</span>}{extraShieldScore(c) > barrierShieldScore(c) && <span className="ml-1 text-[10px] text-[#B8D8EA]" title="Guardian: +1 early shield point" aria-label="plus Guardian, 1 early shield point">+ Gua</span>}</td>
+        <td className="whitespace-nowrap px-3 py-2">{c.shieldScore}{barrierShieldScore(c) > 0 && <span className="ml-1 text-[10px] text-[#B8D8EA]" title="Barrier: +1 early shield point" aria-label="plus Barrier, 1 early shield point">+ Bar</span>}{extraShieldScore(c) > barrierShieldScore(c) && <span className="ml-1 text-[10px] text-[#B8D8EA]" title="Guardian: +1 early shield point" aria-label="plus Guardian, 1 early shield point">+ Gua</span>}</td>
         <td className="px-3 py-2 text-xs opacity-65">{c.shieldTiming === "Late" ? "Late" : ""}</td>
         <td className="px-3 py-2 text-xs opacity-65">{c.damageType}</td>
         <td className="px-3 py-2">{c.damageScore}</td>
@@ -106,7 +108,7 @@ export default function Playground({ allies, enemies, builds, bootItems }: {
         <summary className="cursor-pointer text-[#B8D8EA]/75">Scoring details</summary>
         <p className="mt-2 text-sm text-[#B8D8EA]">{score.reason}</p>
         {score.recommendation.alternative && <p className="mt-2 text-sm text-[#E8C676]">{score.recommendation.reason}</p>}
-      <p className="text-xs opacity-65">Shaco, Evelynn, or Rengar recommend Shadow Economy unless base durability reaches the Titansbane threshold. Otherwise shield threshold first, then durability. Enough shields without the early threshold pick Reckoning. Shieldbreaker’s Path is only an alternative. Three or more allied physical champions with allied magic damage below 6 add +1 Steel durability to every Steelcaps-eligible enemy. Steelcaps points never trigger Titansbane. Existing reset-denial and boots rules apply; low-damage and survivability overrides are excluded from this temporary scoring test. Role pools are approximate; support and split-push adjustments are not applied.</p>
+      <p className="text-xs opacity-65">Same rules as the live picker. Shaco, Evelynn, or Rengar recommend Shadow Economy unless base durability reaches Titansbane. If both teams’ damage is below 12, Forged Momentum is next. Otherwise shield threshold first, then durability. Enough shields without the early threshold pick Reckoning. Shieldbreaker’s Path is only an alternative. Three or more allied physical champions with allied magic damage below 6 add +1 Steel durability to every Steelcaps-eligible enemy. Steelcaps points never trigger Titansbane. If allied CC is below 8, Hubris builds flip to their alternative as the primary pick. Role pools are approximate.</p>
       </details>
     </section>
   </>;

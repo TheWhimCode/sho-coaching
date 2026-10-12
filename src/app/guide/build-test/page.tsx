@@ -41,11 +41,11 @@ export default async function BuildTestPage() {
     const championId = resolveChampionId(name);
     const spellIds = [4, role === 1 ? 11 : role === 0 ? 12 : role === 3 ? 21 : 14];
     return {
-      name, championId, durability: row.durability, shields: row.shields,
+      name, championId, shields: row.shields,
       durabilityScore: row.durabilityScore, shieldScore: row.shieldScore,
       shieldTiming: row.shieldTiming, canBuildSteelcaps: row.canBuildSteelcaps,
       damageType: row.damageType, damageThreat: row.damageThreat, damageScore: row.damageScore,
-      cc: row.cc, ccScore: row.ccScore,
+      cc: row.cc, ccScore: row.ccScore, mercuryTreadsScore: row.mercuryTreadsScore,
       deniesResets: row.deniesResets, spellIds,
       championName: name, championIcon: champSquareUrlById(championId),
       isSearchedPlayer: ally && role === 1,

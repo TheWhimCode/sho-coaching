@@ -24,29 +24,37 @@ const SHADOW_ECONOMY_RULES: RuleRow[] = [
   { id: "u2", when: "Anything else", buildId: null, buildLabel: "Otherwise continue" },
 ];
 
-const SHIELD_RULES: RuleRow[] = [
-  { id: "s1", when: "2+ High shields", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
-  { id: "s2", when: "1 High and 2+ Low or Late", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
-  { id: "s3", when: "4+ Low (early)", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
-  { id: "s4", when: "4+ Low+Late", buildId: "sit-serpents-late", buildLabel: "Shieldbreaker's Reckoning" },
-  { id: "s6", when: "Anything else", buildId: null, buildLabel: "→ Survivability?" },
+const LOW_DAMAGE_RULES: RuleRow[] = [
+  {
+    id: "d1",
+    when: "Enemy damage below 12 and allied damage below 12",
+    buildId: "yun-tal-ldr",
+    buildLabel: "Forged Momentum",
+  },
+  { id: "d2", when: "Anything else", buildId: null, buildLabel: "Otherwise continue" },
 ];
 
-const SURVIVABILITY_RULES: RuleRow[] = [
-  {
-    id: "v1",
-    when: "Enemy jungle Talon or Rengar, your team has ≤2 small shields and 0 High, enemy has 3+ AD",
-    buildId: "collector-shieldbow",
-    buildLabel: "Survivability (Collector into Shieldbow)",
-  },
-  { id: "v2", when: "Anything else", buildId: null, buildLabel: "→ How tanky?" },
+const SHIELD_RULES: RuleRow[] = [
+  { id: "s1", when: "Shield total 7+ and early 7+", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
+  { id: "s4", when: "Shield total 7+", buildId: "sit-serpents-late", buildLabel: "Shieldbreaker's Reckoning" },
+  { id: "s6", when: "Anything else", buildId: null, buildLabel: "→ How tanky?" },
 ];
 
 const TANKY_RULES: RuleRow[] = [
-  { id: "t1", when: "4+ Squishy and 0 Tanky", buildId: "bastionbreaker-cyclosword", buildLabel: "The twink crusher" },
-  { id: "t2", when: "Exactly 2 Bruiser, or 4 Squishy + 1 Tanky", buildId: "main-bastionbreaker", buildLabel: "Bread & Butter Carnage" },
-  { id: "t3", when: "2+ Tanky, or 3+ Bruiser+Tanky combined", buildId: "hubris-ldr", buildLabel: "Titansbane" },
+  { id: "t3", when: "Base durability 15+", buildId: "hubris-ldr", buildLabel: "Titansbane" },
+  { id: "t1", when: "Adjusted durability 7 or below", buildId: "bastionbreaker-cyclosword", buildLabel: "The twink crusher" },
+  { id: "t2", when: "Adjusted durability 12 or below", buildId: "main-bastionbreaker", buildLabel: "Bread & Butter Carnage" },
   { id: "t4", when: "Anything else", buildId: "main-hubris", buildLabel: "Another Bloodrush" },
+];
+
+const HUBRIS_CC_RULES: RuleRow[] = [
+  {
+    id: "c1",
+    when: "Allied CC below 8",
+    buildId: null,
+    buildLabel: "Use the Hubris alternative as primary",
+  },
+  { id: "c2", when: "Anything else", buildId: null, buildLabel: "Keep Hubris" },
 ];
 
 type Props = {
@@ -57,9 +65,10 @@ type Props = {
 
 export default function PickerLogicView({ builds, trace, activeBuildId }: Props) {
   const shadowStep = trace?.find((step) => step.nodeId === "shadow-economy");
+  const lowDamageStep = trace?.find((step) => step.nodeId === "low-damage-dps");
   const shieldStep = trace?.find((step) => step.nodeId === "shields");
-  const survivabilityStep = trace?.find((step) => step.nodeId === "survivability");
   const tankyStep = trace?.find((step) => step.nodeId === "tanky");
+  const hubrisCcStep = trace?.find((step) => step.nodeId === "allied-cc");
   const evaluated = Boolean(trace?.length);
 
   return (
@@ -74,8 +83,17 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
           builds={builds}
         />
         <CheckBlock
-          title="2. How much shield?"
-          note="First matching line wins. Low, Late, Barrier, and Guardian each count as a small shield. Barrier and Guardian count as early. Guardian adds one, not two. Shieldbreaker's Path is only an alternative, never the primary pick."
+          title="2. Enough room to DPS?"
+          note="Still evaluated after an earlier pick so the breakdown can show that route. Enemy damage and allied damage must both sit below 12."
+          rows={LOW_DAMAGE_RULES}
+          step={lowDamageStep}
+          evaluated={evaluated}
+          skipped={evaluated && !lowDamageStep}
+          builds={builds}
+        />
+        <CheckBlock
+          title="3. How much shield?"
+          note="Still evaluated after an earlier pick. Shield total uses each champion's shield score, plus Barrier and Guardian as early points. Late-tagged scores stay late. Shieldbreaker's Path is only an alternative, never the primary pick."
           rows={SHIELD_RULES}
           step={shieldStep}
           evaluated={evaluated}
@@ -83,21 +101,21 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
           builds={builds}
         />
         <CheckBlock
-          title="3. Survivability?"
-          note="Only runs if shields did not pick a Serpent's build. Jungle is whoever has Smite."
-          rows={SURVIVABILITY_RULES}
-          step={survivabilityStep}
-          evaluated={evaluated}
-          skipped={evaluated && !survivabilityStep}
-          builds={builds}
-        />
-        <CheckBlock
           title="4. How tanky?"
-          note="Only runs if shields and survivability did not pick a build. If your team has 3+ AD, the enemy is counted as one extra Bruiser (one Squishy converted). Viego counts."
+          note="Still evaluated after an earlier pick. Adjusted durability adds Steelcaps points when you have 3+ physical allies and allied magic damage below 6. Steelcaps never counts toward Titansbane."
           rows={TANKY_RULES}
           step={tankyStep}
           evaluated={evaluated}
           skipped={evaluated && !tankyStep}
+          builds={builds}
+        />
+        <CheckBlock
+          title="5. Hubris setup?"
+          note="Runs when a Hubris build was picked, including later hypothetical durability checks. Allied CC below 8 makes Titansbane into Inevitable Doom, and Another Bloodrush into Shadow Economy. Hubris stays as the alternative."
+          rows={HUBRIS_CC_RULES}
+          step={hubrisCcStep}
+          evaluated={evaluated}
+          skipped={evaluated && !hubrisCcStep}
           builds={builds}
         />
       </div>
@@ -158,11 +176,17 @@ function CheckBlock({
   skipped?: boolean;
   builds: PickerBuild[];
 }) {
+  const hypothetical = Boolean(step?.hypothetical);
+
   return (
     <section
       className={clsx(
         "rounded-2xl border px-5 py-5",
-        skipped ? "border-[#F5E6D3]/8 bg-white/[0.02] opacity-45" : "border-[#F5E6D3]/12 bg-white/[0.03]"
+        skipped
+          ? "border-[#F5E6D3]/8 bg-white/[0.02] opacity-45"
+          : hypothetical
+            ? "border-[#B8D8EA]/12 bg-white/[0.025]"
+            : "border-[#F5E6D3]/12 bg-white/[0.03]"
       )}
     >
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
@@ -170,9 +194,13 @@ function CheckBlock({
           <h3 className="text-lg font-bold tracking-tight text-[#F5E6D3]">{title}</h3>
           <p className="mt-1 text-xs leading-relaxed text-[#F5E6D3]/50">{note}</p>
         </div>
-        {step ? (
+        {step && !hypothetical ? (
           <p className="rounded-full bg-[#F0ABCF]/15 px-3 py-1 text-xs font-medium text-[#FAD4E8] ring-1 ring-[#F0ABCF]/30">
             {step.detail}
+          </p>
+        ) : step && hypothetical ? (
+          <p className="rounded-full bg-[#B8D8EA]/10 px-3 py-1 text-xs font-medium text-[#B8D8EA]/80 ring-1 ring-[#B8D8EA]/25">
+            Would pick: {step.optionLabel}
           </p>
         ) : skipped ? (
           <p className="text-xs text-[#F5E6D3]/40">Skipped</p>
@@ -187,14 +215,16 @@ function CheckBlock({
         </thead>
         <tbody>
           {rows.map((row) => {
-            const hit = step?.ruleId === row.id;
+            const hit = Boolean(step && !hypothetical && step.ruleId === row.id);
+            const would = Boolean(hypothetical && step?.ruleId === row.id);
             const build = row.buildId ? builds.find((entry) => entry.id === row.buildId) : undefined;
             return (
               <tr
                 key={row.id}
                 className={clsx(
                   "border-t border-[#F5E6D3]/10",
-                  hit && "bg-[#F0ABCF]/[0.1]"
+                  hit && "bg-[#F0ABCF]/[0.1]",
+                  would && "bg-[#B8D8EA]/[0.06]"
                 )}
               >
                 <td className={clsx("py-2.5 pr-4", hit ? "text-[#FAD4E8]" : "text-[#F5E6D3]/80")}>{row.when}</td>

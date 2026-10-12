@@ -70,41 +70,6 @@ const GLASS_CLASS =
 const LABEL_CLASS =
   "text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#B8D8EA]/70";
 
-type BuildTraceStep = {
-  nodeId: string;
-  optionId: string;
-  detail: string;
-};
-
-function nearbyBuildRoutes(trace: BuildTraceStep[]) {
-  const routes: { buildId: string; reason: string; detail: string }[] = [];
-  const tanky = trace.find((step) => step.nodeId === "tanky");
-  const shields = trace.find((step) => step.nodeId === "shields");
-
-  if (tanky?.optionId === "hubris") {
-    routes.push({ buildId: "main-bastionbreaker", reason: "One more bruiser would have moved you into Bread & Butter Carnage.", detail: tanky.detail });
-  } else if (tanky?.optionId === "two-bruisers") {
-    routes.push({ buildId: "main-hubris", reason: "One fewer bruiser would have kept the standard Hubris route.", detail: tanky.detail });
-  } else if (tanky?.optionId === "tanks") {
-    routes.push({ buildId: "main-bastionbreaker", reason: "One fewer frontline target would have kept this on Bread & Butter Carnage.", detail: tanky.detail });
-  } else if (tanky?.optionId === "all-squishy") {
-    routes.push({ buildId: "main-bastionbreaker", reason: "One more durable target would have ended the full-Lethality route.", detail: tanky.detail });
-  }
-
-  if (shields?.optionId === "none") {
-    const early = Number(/(\d+) early small/.exec(shields.detail)?.[1] ?? 0);
-    const late = Number(/(\d+) late small/.exec(shields.detail)?.[1] ?? 0);
-    const needed = Math.max(1, 5 - early - late);
-    routes.push({
-      buildId: "sit-serpents-late",
-      reason: needed === 1 ? "One more smaller shield source would have made Serpent's Fang worth it." : `${needed} more smaller shield sources would make Serpent's Fang worth it.`,
-      detail: shields.detail,
-    });
-  }
-
-  return routes;
-}
-
 const COMPOSITION_BARS: { key: keyof EnemyComposition; label: string }[] = [
   { key: "durability", label: "Durability" },
   { key: "damage", label: "Damage" },
@@ -247,17 +212,37 @@ function CompositionFacts({
     <ul className="mt-5 space-y-2.5">
       {facts.map((fact) => {
         const item = pickerItem(fact.itemId, builds, bootItems);
+        const excluded = fact.tone === "exclude";
         return (
           <li key={fact.id} className="flex items-center gap-3">
             <div
-              className="h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/35 sm:h-9 sm:w-9"
-              title={item?.name}
+              className={clsx(
+                "relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#352839] sm:h-9 sm:w-9",
+                excluded ? "ring-1 ring-[#E07070]/55" : "ring-1 ring-[#F0ABCF]/35"
+              )}
+              title={excluded ? `${item?.name ?? "Item"} skipped` : item?.name}
             >
               {item ? (
-                <GuideImage src={item.icon} alt={item.name} fade={false} className="h-full w-full object-cover" />
+                <GuideImage
+                  src={item.icon}
+                  alt={item.name}
+                  fade={false}
+                  className={clsx("h-full w-full object-cover", excluded && "opacity-40 saturate-50")}
+                />
+              ) : null}
+              {excluded ? (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-[-10%] top-1/2 h-[2px] w-[120%] -translate-y-1/2 -rotate-45 bg-[#E07070]"
+                />
               ) : null}
             </div>
-            <p className="min-w-0 flex-1 text-left text-xs font-medium text-[#F5E6D3]/70 sm:text-sm">
+            <p
+              className={clsx(
+                "min-w-0 flex-1 text-left text-xs font-medium sm:text-sm",
+                excluded ? "text-[#E8A0A0]/80" : "text-[#F5E6D3]/70"
+              )}
+            >
               {fact.label}
             </p>
             <div className="flex shrink-0 items-center gap-1.5">
@@ -285,27 +270,27 @@ function CompositionFacts({
 
 function BuildWhyPanel({
   build,
-  trace,
   builds,
   boot,
   bootSlot,
   bootItems,
   composition,
   facts,
+  alternates,
 }: {
   build: PickerBuild | undefined;
-  trace: BuildTraceStep[];
   builds: PickerBuild[];
   boot?: PickerItem;
   bootSlot: 2 | 3 | 4;
   bootItems: PickerItem[];
   composition?: EnemyComposition;
   facts?: CompositionFact[];
+  alternates?: { buildId: string; reason: string }[];
 }) {
-  const routes = nearbyBuildRoutes(trace).flatMap((route) => {
-    const build = builds.find((entry) => entry.id === route.buildId);
-    return build ? [{ ...route, build }] : [];
-  }).slice(0, 3);
+  const routes = (alternates ?? []).flatMap((route) => {
+    const altBuild = builds.find((entry) => entry.id === route.buildId);
+    return altBuild ? [{ ...route, build: altBuild }] : [];
+  });
 
   return (
     <div className="mt-7 border-t border-[#B8D8EA]/18 bg-[#120F19]/95 px-6 pb-4 pt-7 text-left sm:px-10 sm:pb-6 sm:pt-9">
@@ -321,25 +306,30 @@ function BuildWhyPanel({
         </div>
       ) : null}
 
-      <div className="my-7 h-px w-full bg-gradient-to-r from-transparent via-[#F0ABCF]/30 to-transparent" />
-      <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#F5E6D3]/48">Alternative builds</p>
       {routes.length ? (
-        <div className="mt-3 divide-y divide-[#F5E6D3]/10">
-          {routes.map((route) => (
-            <div key={route.build.id} className="grid gap-6 py-7 opacity-50 grayscale transition duration-300 hover:opacity-80 hover:grayscale-0 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:items-center sm:gap-8">
-              <div>
-                <p className="text-base font-bold tracking-tight text-[#F5E6D3]">{route.build.label}</p>
-                <p className="mt-3 text-xs font-medium leading-relaxed text-[#FFB3C1]">{route.reason}</p>
+        <>
+          <div className="my-7 h-px w-full bg-gradient-to-r from-transparent via-[#F0ABCF]/30 to-transparent" />
+          <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#F5E6D3]/48">
+            {routes.length === 1 ? "Alternative build" : "Alternative builds"}
+          </p>
+          <div className="mt-3 divide-y divide-[#F5E6D3]/10">
+            {routes.map((route) => (
+              <div
+                key={route.build.id}
+                className="grid gap-6 py-7 opacity-50 grayscale transition duration-300 hover:opacity-80 hover:grayscale-0 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:items-center sm:gap-8"
+              >
+                <div>
+                  <p className="text-base font-bold tracking-tight text-[#F5E6D3]">{route.build.label}</p>
+                  <p className="mt-3 text-xs font-medium leading-relaxed text-[#FFB3C1]">{route.reason}</p>
+                </div>
+                <div className="min-w-0">
+                  <ItemOrder build={route.build} boot={boot} bootSlot={bootSlot} size="sm" noWrap />
+                </div>
               </div>
-              <div className="min-w-0">
-                <ItemOrder build={route.build} boot={boot} bootSlot={bootSlot} size="sm" noWrap />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-4 text-sm text-[#F5E6D3]/45">No nearby route was ruled out in this game.</p>
-      )}
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -1007,7 +997,7 @@ function BuildCard({
   bootItems,
   boot,
   recommendedAlternative,
-  trace,
+  alternates,
   player,
   source,
   composition,
@@ -1019,7 +1009,7 @@ function BuildCard({
   bootItems: PickerItem[];
   boot: { itemId: number; slot: 2 | 3 | 4 };
   recommendedAlternative?: { buildId: string; label: string };
-  trace: BuildTraceStep[];
+  alternates?: { buildId: string; reason: string }[];
   player?: LiveGameParticipant;
   source?: "live" | "match";
   composition?: EnemyComposition;
@@ -1075,18 +1065,34 @@ function BuildCard({
           </h2>
         )}
 
-        {alternativeBuild && alternative ? (
-          <div className="mt-8 w-full border-t border-[#F5E6D3]/10 pt-7">
-            <p className={LABEL_CLASS}>{alternative.label}</p>
-            <p className="mt-1.5 text-lg font-bold tracking-tight text-[#F5E6D3]/85">{alternativeBuild.label}</p>
-            {alternativeBuild.summary && !isItemListSummary(alternativeBuild.summary) ? (
-              <p className="mt-1 text-xs text-[#F5E6D3]/50 sm:text-sm">{alternativeBuild.summary}</p>
-            ) : null}
-            <div className="mt-4">
-              <ItemOrder build={alternativeBuild} boot={selectedBoot} bootSlot={boot.slot} size="sm" />
-            </div>
-          </div>
-        ) : null}
+        <div className="mt-8 w-full border-t border-[#F5E6D3]/10 pt-7">
+          {alternativeBuild && alternative ? (
+            <>
+              <p className={LABEL_CLASS}>{alternative.label}</p>
+              <p className="mt-1.5 text-lg font-bold tracking-tight text-[#F5E6D3]/85">{alternativeBuild.label}</p>
+              {alternativeBuild.summary && !isItemListSummary(alternativeBuild.summary) ? (
+                <p className="mt-1 text-xs text-[#F5E6D3]/50 sm:text-sm">{alternativeBuild.summary}</p>
+              ) : null}
+              <div className="mt-4">
+                <ItemOrder build={alternativeBuild} boot={selectedBoot} bootSlot={boot.slot} size="sm" />
+              </div>
+            </>
+          ) : (
+            <>
+              <p className={LABEL_CLASS}>Alternative build</p>
+              <p className="mt-1.5 text-lg font-bold tracking-tight text-[#F5E6D3]/85">No alternative is good here</p>
+              <p className="mt-1 text-xs text-[#F5E6D3]/50 sm:text-sm">Stay on this build.</p>
+              <div className="mt-4 flex justify-center gap-x-3 sm:gap-x-5" aria-hidden>
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="flex flex-col items-center gap-1.5">
+                    <span className="invisible text-[10px] font-medium tabular-nums">1</span>
+                    <div className="h-11 w-11 rounded-xl sm:h-12 sm:w-12" />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         <button
           type="button"
@@ -1098,7 +1104,7 @@ function BuildCard({
         </button>
         <div className={clsx("-mx-6 grid w-[calc(100%+3rem)] transition-[grid-template-rows,opacity] duration-500 ease-out sm:-mx-8 sm:w-[calc(100%+4rem)] lg:-mx-10 lg:w-[calc(100%+5rem)]", whyOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
           <div className="min-h-0 overflow-hidden">
-            <BuildWhyPanel build={build} trace={trace} builds={builds} boot={selectedBoot} bootSlot={boot.slot} bootItems={bootItems} composition={composition} facts={facts} />
+            <BuildWhyPanel build={build} builds={builds} boot={selectedBoot} bootSlot={boot.slot} bootItems={bootItems} composition={composition} facts={facts} alternates={alternates} />
           </div>
         </div>
       </div>
@@ -1408,7 +1414,7 @@ export default function BuildPickerClient({
                       bootItems={bootItems}
                       boot={result.recommendation.boot}
                       recommendedAlternative={result.recommendation.alternative}
-                      trace={result.recommendation.trace}
+                      alternates={result.recommendation.alternates}
                       player={player}
                       source={result.source}
                       composition={result.recommendation.composition}
@@ -1509,7 +1515,7 @@ export default function BuildPickerClient({
                     Champion traits
                   </h2>
                   <p className="mt-1 text-sm text-[#F5E6D3]/55">
-                    Your saved durability, shield scores, and Steelcaps eligibility. These ratings are not used for recommendations until the new thresholds are set.
+                    Durability, shield, damage, CC, and Steelcaps ratings used by the live picker.
                   </p>
                 </div>
                 <p className="text-xs text-[#F5E6D3]/45">{championRows.length} champions</p>

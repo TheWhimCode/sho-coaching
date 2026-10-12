@@ -60,12 +60,13 @@ async function recommend(
     damageScore: number | null;
     ccScore: number | null;
     shieldScore: number | null;
+    shieldTiming: string | null;
+    mercuryTreadsScore: number | null;
     canBuildSteelcaps: boolean | null;
   }>();
   for (const row of profiles) {
     byChampionId.set(resolveChampionId(row.name), {
       name: row.name,
-      durability: row.durability,
       shields: row.shields,
       damageType: row.damageType,
       damageThreat: row.damageThreat,
@@ -75,6 +76,8 @@ async function recommend(
       damageScore: row.damageScore,
       ccScore: row.ccScore,
       shieldScore: row.shieldScore,
+      shieldTiming: row.shieldTiming,
+      mercuryTreadsScore: row.mercuryTreadsScore,
       canBuildSteelcaps: row.canBuildSteelcaps,
     });
   }
@@ -106,7 +109,9 @@ async function recommend(
       championIcon: participant.championIcon,
       damageType: row?.damageType,
       damageScore: row?.damageScore ?? participant.damageScore,
+      ccScore: row?.ccScore,
       canBuildSteelcaps: row?.canBuildSteelcaps,
+      deniesResets: row?.deniesResets,
     };
   };
   return {

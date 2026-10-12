@@ -1,4 +1,4 @@
-/** Playground scoring thresholds. Not used by the live recommender yet. */
+/** Scoring thresholds. Live picker and playground share these. */
 
 export type ScoringThresholds = {
   shield: number;
@@ -6,6 +6,8 @@ export type ScoringThresholds = {
   lethalityMax: number;
   bastionMax: number;
   titansMin: number;
+  forgedMomentumMax: number;
+  hubrisCcMin: number;
   physicalMin: number;
   magicDamageMax: number;
   steelcapsBonus: number;
@@ -17,6 +19,8 @@ export const SCORING_THRESHOLDS: ScoringThresholds = {
   lethalityMax: 7,
   bastionMax: 12,
   titansMin: 15,
+  forgedMomentumMax: 12,
+  hubrisCcMin: 8,
   physicalMin: 3,
   magicDamageMax: 6,
   steelcapsBonus: 1,
@@ -29,6 +33,18 @@ export type CompositionBarScale = {
   high: number;
   max: number;
 };
+
+/** Live boot picker. First matching combat boot wins, then Swifties vs Gluttonous. */
+export const BOOT_THRESHOLDS = {
+  swiftiesDurabilityMax: 9,
+  steelcapsAdMin: 3,
+  steelcapsMagicSecond: 3,
+  steelcapsMagicThird: 5,
+  steelcapsMagicFourth: 7,
+  mercsScoreMin: 10,
+  mercsDamageThird: 12,
+  mercsDamageFourth: 14,
+} as const;
 
 const TEAM_SCORE_SCALE: CompositionBarScale = { low: 6, medium: 12, high: 18, max: 25 };
 
