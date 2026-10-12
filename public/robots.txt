@@ -1,5 +1,6 @@
 User-agent: *
 Disallow: /admin
 Disallow: /api/
+Disallow: /guide/build-test
 
 Sitemap: https://its-mino.com/sitemap.xml

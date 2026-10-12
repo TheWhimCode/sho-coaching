@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowRight, Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Search } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -12,7 +12,13 @@ import {
   type ReactNode,
 } from "react";
 import GuideImage from "@/app/_components/guides/GuideImage";
-import type { BuildFloatTag } from "@/lib/guides/buildPicker/decisionTree";
+import type { CompositionFact } from "@/lib/guides/buildPicker/compositionFacts";
+import type { BuildFloatTag, EnemyComposition } from "@/lib/guides/buildPicker/decisionTree";
+import {
+  COMPOSITION_BAR_SCALES,
+  type CompositionBarScale,
+} from "@/lib/guides/buildPicker/thresholds";
+import { buildPickerPlayerTip } from "@/lib/guides/buildPicker/playerTip";
 import {
   BUILD_PICKER_PLATFORMS,
   type BuildPickerPlatformId,
@@ -22,6 +28,7 @@ import {
 } from "@/lib/guides/buildPicker/types";
 import type { PickerBuild, PickerItem } from "@/lib/guides/buildPicker/builds";
 import { guideChampionIconImgClass, GUIDE } from "@/lib/guides/guideTheme";
+import { composeMatchId } from "@/lib/riot/matchId";
 import BootsLogicView from "./BootsLogicView";
 import ChampionProfileTable from "./ChampionProfileTable";
 import PickerLogicView from "./PickerLogicView";
@@ -35,12 +42,15 @@ const BUILD_ALTERNATIVES: Record<string, { buildId: string; label: string }> = {
   "bastionbreaker-cyclosword": { buildId: "main-bastionbreaker", label: "If enemies end up stacking armor" },
   "collector-shieldbow": { buildId: "umbral-collector", label: "If you fall too far behind" },
   "sit-serpents-first": { buildId: "sit-serpents", label: "If you want anti-shield later" },
-  "sit-serpents": { buildId: "sit-serpents-late", label: "If you want anti-shield later" },
   "sit-serpents-late": { buildId: "sit-serpents", label: "If you want anti-shield earlier" },
 };
 
 const STORAGE_RIOT_ID = "viego-build-picker-riot-id";
 const STORAGE_PLATFORM = "viego-build-picker-platform";
+const STORAGE_MODE = "viego-build-picker-mode";
+const STORAGE_MATCH_ID = "viego-build-picker-match-id";
+
+type LookupMode = "live" | "match";
 
 function isPlatformId(value: string | null): value is BuildPickerPlatformId {
   return BUILD_PICKER_PLATFORMS.some((platform) => platform.id === value);
@@ -86,7 +96,7 @@ function nearbyBuildRoutes(trace: BuildTraceStep[]) {
     const late = Number(/(\d+) late small/.exec(shields.detail)?.[1] ?? 0);
     const needed = Math.max(1, 5 - early - late);
     routes.push({
-      buildId: "sit-serpents",
+      buildId: "sit-serpents-late",
       reason: needed === 1 ? "One more smaller shield source would have made Serpent's Fang worth it." : `${needed} more smaller shield sources would make Serpent's Fang worth it.`,
       detail: shields.detail,
     });
@@ -95,41 +105,182 @@ function nearbyBuildRoutes(trace: BuildTraceStep[]) {
   return routes;
 }
 
-function decidingTags(trace: BuildTraceStep[]) {
-  const tags: string[] = [];
-  const tanky = trace.find((step) => step.nodeId === "tanky");
-  const lowDamage = trace.find((step) => step.nodeId === "low-damage-dps" && step.optionId === "yes");
-  const shields = trace.find((step) => step.nodeId === "shields" && step.optionId !== "none");
-  const survivability = trace.find((step) => step.nodeId === "survivability" && step.optionId === "yes");
-  const resetDeniers = trace.find((step) => step.nodeId === "reset-deniers");
+const COMPOSITION_BARS: { key: keyof EnemyComposition; label: string }[] = [
+  { key: "durability", label: "Durability" },
+  { key: "damage", label: "Damage" },
+  { key: "cc", label: "CC" },
+  { key: "shields", label: "Shield" },
+];
 
-  if (tanky) {
-    const [, displayedSquishy = "0", displayedBruiser = "0", tank = "0"] = /(\d+) squishy, (\d+) bruiser, (\d+) tanky/.exec(tanky.detail) ?? [];
-    const olderAdjustedTrace = /ally \d+ AD → \+1 bruiser/.test(tanky.detail);
-    const squishy = String(Number(displayedSquishy) + (olderAdjustedTrace ? 1 : 0));
-    const bruiser = String(Math.max(0, Number(displayedBruiser) - (olderAdjustedTrace ? 1 : 0)));
-    if (Number(squishy) > 0) tags.push(`${squishy} squish${squishy === "1" ? "y" : "ies"}`);
-    if (Number(bruiser) > 0) tags.push(`${bruiser} bruiser${bruiser === "1" ? "" : "s"}`);
-    if (Number(tank) > 0) tags.push(`${tank} tank${tank === "1" ? "" : "s"}`);
-    if (olderAdjustedTrace || tanky.detail.includes("3+ AD allies")) tags.push("3+ AD allies");
+/** Shared visual anchors. High sits below the top so a bar can be High without filling the chart. */
+const COMPOSITION_TICKS = {
+  high: 0.75,
+  medium: 0.5,
+  low: 0.25,
+} as const;
+
+const METER_TONE = {
+  blue: {
+    label: "text-[#73B3D2]",
+    fill: "bg-[#73B3D2] shadow-[0_0_8px_2px_rgba(115,179,210,0.38),0_0_14px_4px_rgba(115,179,210,0.2)]",
+  },
+  orange: {
+    label: "text-[#C4895C]",
+    fill: "bg-[#C4895C] shadow-[0_0_8px_2px_rgba(196,137,92,0.28),0_0_14px_4px_rgba(196,137,92,0.14)]",
+  },
+  red: {
+    label: "text-[#FF526C]",
+    fill: "bg-[#FF526C] shadow-[0_0_8px_2px_rgba(255,82,108,0.34),0_0_14px_4px_rgba(255,82,108,0.18)]",
+  },
+} as const;
+
+function meterTone(value: number, scale: CompositionBarScale) {
+  if (value >= scale.high) return METER_TONE.red;
+  if (value >= scale.medium) return METER_TONE.orange;
+  return METER_TONE.blue;
+}
+
+function lerp(value: number, start: number, end: number, from: number, to: number) {
+  if (end === start) return to;
+  return from + ((value - start) / (end - start)) * (to - from);
+}
+
+function barHeight(value: number, scale: CompositionBarScale) {
+  if (value <= 0) return 0;
+  const v = Math.min(value, scale.max);
+  if (v <= scale.low) return lerp(v, 0, scale.low, 0, COMPOSITION_TICKS.low);
+  if (v <= scale.medium) {
+    return lerp(v, scale.low, scale.medium, COMPOSITION_TICKS.low, COMPOSITION_TICKS.medium);
   }
-
-  if (lowDamage) {
-    const [, enemies = "0", allies = "0"] = /(\d+) enemy Low damage, (\d+) ally Low damage/.exec(lowDamage.detail) ?? [];
-    tags.push(`${enemies} low-damage enemies`, `${allies} low-damage allies`);
+  if (v <= scale.high) {
+    return lerp(v, scale.medium, scale.high, COMPOSITION_TICKS.medium, COMPOSITION_TICKS.high);
   }
+  return lerp(v, scale.high, scale.max, COMPOSITION_TICKS.high, 1);
+}
 
-  if (shields) tags.push("Enough shields");
+function CompositionChart({ composition }: { composition: EnemyComposition }) {
+  const ticks = [
+    { height: COMPOSITION_TICKS.high, label: "High", tone: METER_TONE.red.label },
+    { height: COMPOSITION_TICKS.medium, label: "Medium", tone: METER_TONE.orange.label },
+    { height: COMPOSITION_TICKS.low, label: "Low", tone: METER_TONE.blue.label },
+  ] as const;
 
-  if (survivability) {
-    const [, enemyAd = "0", enemyAp = "0", highCc = "0"] = /, (\d+) enemy AD, (\d+) enemy AP, (\d+) enemy High CC/.exec(survivability.detail) ?? [];
-    if (Number(enemyAd) >= 3) tags.push(`${enemyAd} enemy AD`);
-    if (Number(enemyAp) >= 4) tags.push(`${enemyAp} enemy AP`);
-    if (Number(highCc) >= 3) tags.push(`${highCc} High CC`);
-  }
+  return (
+    <div className="mt-5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 sm:gap-x-4">
+      <div className="relative h-40 w-[4.25rem] sm:h-48 sm:w-[4.75rem]">
+        {ticks.map((tick) => (
+          <span
+            key={tick.label}
+            className={clsx(
+              "absolute right-0 -translate-y-1/2 text-[0.58rem] font-bold uppercase tracking-[0.15em]",
+              tick.tone
+            )}
+            style={{ top: `${(1 - tick.height) * 100}%` }}
+          >
+            {tick.label}
+          </span>
+        ))}
+      </div>
+      <div className="relative h-40 sm:h-48">
+        {ticks.map((tick) => (
+          <div
+            key={tick.label}
+            aria-hidden
+            className="pointer-events-none absolute left-0 right-0 border-t border-[#F5E6D3]/10"
+            style={{ top: `${(1 - tick.height) * 100}%` }}
+          />
+        ))}
+        <div className="flex h-full items-end gap-2 sm:gap-3">
+          {COMPOSITION_BARS.map((bar) => {
+            const value = composition[bar.key];
+            const scale = COMPOSITION_BAR_SCALES[bar.key];
+            const height = barHeight(value, scale);
+            const tone = meterTone(value, scale);
+            return (
+              <div
+                key={bar.key}
+                className="flex h-full min-w-0 flex-1 items-end justify-center"
+                aria-label={`${bar.label}: ${value}`}
+              >
+                {height > 0 ? (
+                  <div
+                    className={clsx("w-5 transition-[height] duration-300 sm:w-6", tone.fill)}
+                    style={{ height: `${height * 100}%` }}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div />
+      <div className="flex gap-2 sm:gap-3">
+        {COMPOSITION_BARS.map((bar) => (
+          <span
+            key={bar.key}
+            className="min-w-0 flex-1 text-center text-[0.52rem] font-bold uppercase leading-tight tracking-[0.12em] text-[#F5E6D3]/55 sm:text-[0.58rem]"
+          >
+            {bar.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-  if (resetDeniers) tags.push(resetDeniers.detail);
-  return tags.slice(0, 6);
+function pickerItem(itemId: number, builds: PickerBuild[], bootItems: PickerItem[]) {
+  return bootItems.find((item) => item.id === itemId)
+    ?? builds.flatMap((build) => build.items).find((item) => item.id === itemId);
+}
+
+function CompositionFacts({
+  facts,
+  builds,
+  bootItems,
+}: {
+  facts: CompositionFact[];
+  builds: PickerBuild[];
+  bootItems: PickerItem[];
+}) {
+  if (facts.length === 0) return null;
+  return (
+    <ul className="mt-5 space-y-2.5">
+      {facts.map((fact) => {
+        const item = pickerItem(fact.itemId, builds, bootItems);
+        return (
+          <li key={fact.id} className="flex items-center gap-3">
+            <div
+              className="h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/35 sm:h-9 sm:w-9"
+              title={item?.name}
+            >
+              {item ? (
+                <GuideImage src={item.icon} alt={item.name} fade={false} className="h-full w-full object-cover" />
+              ) : null}
+            </div>
+            <p className="min-w-0 flex-1 text-left text-xs font-medium text-[#F5E6D3]/70 sm:text-sm">
+              {fact.label}
+            </p>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {fact.champions.map((champion) => (
+                <div
+                  key={champion.championId}
+                  className="h-8 w-8 overflow-hidden rounded-lg bg-[#352839] ring-1 ring-[#F0ABCF]/25 sm:h-9 sm:w-9"
+                  title={champion.championName}
+                >
+                  <GuideImage
+                    src={champion.championIcon}
+                    alt={champion.championName}
+                    fade={false}
+                    className={guideChampionIconImgClass}
+                  />
+                </div>
+              ))}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 function BuildWhyPanel({
@@ -138,29 +289,29 @@ function BuildWhyPanel({
   builds,
   boot,
   bootSlot,
+  bootItems,
+  composition,
+  facts,
 }: {
   build: PickerBuild | undefined;
   trace: BuildTraceStep[];
   builds: PickerBuild[];
   boot?: PickerItem;
   bootSlot: 2 | 3 | 4;
+  bootItems: PickerItem[];
+  composition?: EnemyComposition;
+  facts?: CompositionFact[];
 }) {
   const routes = nearbyBuildRoutes(trace).flatMap((route) => {
     const build = builds.find((entry) => entry.id === route.buildId);
     return build ? [{ ...route, build }] : [];
   }).slice(0, 3);
-  const tags = decidingTags(trace);
 
   return (
     <div className="mt-7 border-t border-[#B8D8EA]/18 bg-[#120F19]/95 px-6 pb-4 pt-7 text-left sm:px-10 sm:pb-6 sm:pt-9">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="mr-2 text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#B8D8EA]/68">How the build was picked</p>
-        {tags.map((tag) => (
-          <span key={tag} className="rounded-full border border-[#F0ABCF]/22 bg-[#F0ABCF]/[0.07] px-2.5 py-1 text-[0.62rem] font-semibold text-[#F5E6D3]/72">
-            {tag}
-          </span>
-        ))}
-      </div>
+      <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#B8D8EA]/68">How the build was picked</p>
+      {composition ? <CompositionChart composition={composition} /> : null}
+      {facts?.length ? <CompositionFacts facts={facts} builds={builds} bootItems={bootItems} /> : null}
 
       {build?.description ? (
         <div className="mt-6 max-w-4xl text-sm leading-relaxed text-[#F5E6D3]/68 sm:text-[0.95rem]">
@@ -278,22 +429,166 @@ function ServerPicker({
   );
 }
 
+function SplitSubmit({
+  disabled,
+  busy,
+  label,
+  otherModeLabel,
+  onSwitchMode,
+}: {
+  disabled: boolean;
+  busy: boolean;
+  label: string;
+  otherModeLabel: string;
+  onSwitchMode: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<number | null>(null);
+
+  const cancelClose = () => {
+    if (closeTimer.current != null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = window.setTimeout(() => setOpen(false), 120);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  useEffect(() => () => cancelClose(), []);
+
+  return (
+    <div ref={rootRef} className="relative shrink-0">
+      <div
+        className={clsx(
+          "inline-flex h-12 items-stretch rounded-2xl text-sm font-semibold transition",
+          "bg-[#F0ABCF] text-[#2A1F2E]",
+          !(disabled || busy) && "hover:bg-[#FAD4E8]",
+          (disabled || busy) && "bg-[#F0ABCF]/25 text-[#F5E6D3]/45",
+          busy && "cursor-not-allowed"
+        )}
+      >
+        <div
+          className="group relative"
+          onMouseEnter={() => {
+            cancelClose();
+            setOpen(true);
+          }}
+          onMouseLeave={() => {
+            if (rootRef.current?.contains(document.activeElement)) return;
+            scheduleClose();
+          }}
+        >
+          <button
+            type="button"
+            aria-label={otherModeLabel}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            disabled={busy}
+            onClick={() => {
+              cancelClose();
+              setOpen(true);
+            }}
+            className={clsx("inline-flex h-12 items-center pl-4 pr-1.5", busy && "cursor-not-allowed")}
+          >
+            <ChevronRight
+              className={clsx(
+                "h-4 w-4 transition-transform duration-200 group-hover:rotate-90",
+                open && "rotate-90"
+              )}
+              aria-hidden
+            />
+          </button>
+          {open ? (
+            <div className="absolute left-0 top-full z-40 pt-2">
+              <div
+                role="menu"
+                className="min-w-[13.5rem] rounded-2xl border border-white/10 bg-[#1A1520]/95 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onSwitchMode();
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#F5E6D3]/85 transition hover:bg-white/[0.06] hover:text-[#F5E6D3]"
+                >
+                  {otherModeLabel}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+        <button
+          type="submit"
+          disabled={disabled || busy}
+          className={clsx(
+            "inline-flex h-12 items-center pl-0.5 pr-5",
+            (disabled || busy) && "cursor-not-allowed"
+          )}
+        >
+          {label}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function LookupForm({
+  mode,
   riotId,
+  matchId,
   platform,
   busy,
+  onModeChange,
   onRiotIdChange,
+  onMatchIdChange,
   onPlatformChange,
   onSubmit,
 }: {
+  mode: LookupMode;
   riotId: string;
+  matchId: string;
   platform: BuildPickerPlatformId;
   busy: boolean;
+  onModeChange: (mode: LookupMode) => void;
   onRiotIdChange: (value: string) => void;
+  onMatchIdChange: (value: string) => void;
   onPlatformChange: (platform: BuildPickerPlatformId) => void;
   onSubmit: () => void;
 }) {
-  const valid = RIOT_ID_RE.test(riotId.trim());
+  const live = mode === "live";
+  const valid = live ? RIOT_ID_RE.test(riotId.trim()) : Boolean(composeMatchId(matchId, platform));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const skipFocusOnMount = useRef(true);
+
+  useEffect(() => {
+    if (skipFocusOnMount.current) {
+      skipFocusOnMount.current = false;
+      return;
+    }
+    inputRef.current?.focus();
+  }, [mode]);
 
   return (
     <form
@@ -305,32 +600,46 @@ function LookupForm({
     >
       <div className="relative flex min-w-0 flex-1 items-center">
         <Search className="pointer-events-none absolute left-4 h-4 w-4 text-[#F5E6D3]/35" aria-hidden />
-        <input
-          id="build-picker-riot-id"
-          aria-label="Riot ID"
-          value={riotId}
-          onChange={(event) => onRiotIdChange(event.target.value)}
-          placeholder="Riot#TAG"
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          inputMode="text"
-          className="h-12 w-full bg-transparent pl-11 pr-4 text-base text-[#F5EDE6] outline-none placeholder:text-[#F5E6D3]/35"
-        />
+        {live ? (
+          <input
+            key="live"
+            ref={inputRef}
+            id="build-picker-riot-id"
+            aria-label="Riot ID"
+            value={riotId}
+            onChange={(event) => onRiotIdChange(event.target.value)}
+            placeholder="Riot#TAG"
+            autoComplete="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            inputMode="text"
+            className="h-12 w-full bg-transparent pl-11 pr-4 text-base text-[#F5EDE6] outline-none placeholder:text-[#F5E6D3]/35"
+          />
+        ) : (
+          <input
+            key="match"
+            ref={inputRef}
+            id="build-picker-match-id"
+            aria-label="Match ID"
+            value={matchId}
+            onChange={(event) => onMatchIdChange(event.target.value)}
+            placeholder={platform === "auto" ? "EUW1_1234567890" : "1234567890"}
+            autoComplete="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            inputMode="text"
+            className="h-12 w-full bg-transparent pl-11 pr-4 text-base text-[#F5EDE6] outline-none placeholder:text-[#F5E6D3]/35"
+          />
+        )}
       </div>
       <ServerPicker platform={platform} onChange={onPlatformChange} />
-      <button
-        type="submit"
-        disabled={!valid || busy}
-        className={clsx(
-          "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold transition",
-          "bg-[#F0ABCF] text-[#2A1F2E] hover:bg-[#FAD4E8]",
-          "disabled:cursor-not-allowed disabled:bg-[#F0ABCF]/25 disabled:text-[#F5E6D3]/45"
-        )}
-      >
-        Find my game
-        <ArrowRight className="h-4 w-4" aria-hidden />
-      </button>
+      <SplitSubmit
+        disabled={!valid}
+        busy={busy}
+        label={live ? "Find my game" : "Check this game"}
+        otherModeLabel={live ? "Check previous game" : "Find live game"}
+        onSwitchMode={() => onModeChange(live ? "match" : "live")}
+      />
     </form>
   );
 }
@@ -366,17 +675,17 @@ function portraitRevealStep(side: "ally" | "enemy", index: number, count = PORTR
 }
 
 const FLOAT_COLOR: Record<BuildFloatTag["tone"], string> = {
-  shield: "#F3F1EE",
-  barrier: "#C9A0E8",
-  damage: "#3EBEA4",
-  tank: "#B7B4B1",
-  bruiser: "#D67A38",
-  squishy: "#6EB6F2",
-  survive: "#F078A4",
-  ad: "#C84A32",
-  ap: "#A56EE0",
-  cc: "#E4587C",
-  disengage: "#E8B040",
+  shield: "#F8F7F5",
+  barrier: "#D6B6F0",
+  damage: "#55D0B6",
+  tank: "#CBC9C6",
+  bruiser: "#E8924C",
+  squishy: "#8AC4F7",
+  survive: "#F590B4",
+  ad: "#E05A42",
+  ap: "#B888E8",
+  cc: "#F07090",
+  disengage: "#F0C050",
 };
 
 function hashSeed(seed: string) {
@@ -392,12 +701,16 @@ function floatTagKey(tag: BuildFloatTag) {
   return `${tag.side}:${tag.championId}:${tag.word}`;
 }
 
-/** Disc around a point slightly above the portrait center. Rolled once per result. */
+/** Disc around a point slightly above the portrait center. Seeded so SSR and the client land on the same pixel. */
 const FLOAT_SPAWN_RADIUS_PX = 42;
 
-function rollAroundCenter() {
-  const angle = Math.random() * Math.PI * 2;
-  const distance = Math.sqrt(Math.random()) * FLOAT_SPAWN_RADIUS_PX;
+function unitFromSeed(seed: string) {
+  return hashSeed(seed) / 4_294_967_296;
+}
+
+function rollAroundCenter(seed: string) {
+  const angle = unitFromSeed(`${seed}:angle`) * Math.PI * 2;
+  const distance = Math.sqrt(unitFromSeed(`${seed}:radius`)) * FLOAT_SPAWN_RADIUS_PX;
   return {
     x: Math.round(Math.cos(angle) * distance),
     y: Math.round(Math.sin(angle) * distance),
@@ -420,16 +733,11 @@ function floatAppearDelays(tags: BuildFloatTag[]) {
 }
 
 function PortraitFloats({ tags, appearDelays }: { tags: BuildFloatTag[]; appearDelays: Record<string, number> }) {
-  const [positions] = useState(() => {
-    const rolled: Record<string, { x: number; y: number }> = {};
-    for (const tag of tags) rolled[floatTagKey(tag)] = rollAroundCenter();
-    return rolled;
-  });
   if (tags.length === 0) return null;
   return (
     <div className="pointer-events-none absolute inset-0 z-20" aria-hidden>
       {tags.map((entry) => {
-        const spot = positions[floatTagKey(entry)] ?? { x: 0, y: 0 };
+        const spot = rollAroundCenter(floatTagKey(entry));
         return (
           <span
             key={floatTagKey(entry)}
@@ -437,10 +745,10 @@ function PortraitFloats({ tags, appearDelays }: { tags: BuildFloatTag[]; appearD
             style={{ transform: `translate(calc(-50% + ${spot.x}px), calc(-50% + ${spot.y}px))` }}
           >
             <span
-              className="build-float-tag inline-block text-[0.9rem] font-extrabold uppercase leading-none tracking-[0.06em]"
+              className="build-float-tag inline-block text-[16px] font-extrabold uppercase leading-none tracking-[0.06em]"
               style={{
                 color: FLOAT_COLOR[entry.tone],
-                fontSize: "0.9rem",
+                fontSize: "16px",
                 textShadow: "-1px -1px 0 rgba(8,6,12,0.98), 1px -1px 0 rgba(8,6,12,0.98), -1px 1px 0 rgba(8,6,12,0.98), 1px 1px 0 rgba(8,6,12,0.98), 0 0 7px rgba(8,6,12,1), 0 0 15px rgba(8,6,12,0.9)",
                 animationDelay: `${appearDelays[floatTagKey(entry)] ?? FLOAT_TAG_START_MS}ms`,
               }}
@@ -454,18 +762,44 @@ function PortraitFloats({ tags, appearDelays }: { tags: BuildFloatTag[]; appearD
   );
 }
 
+function PortraitScores({
+  side,
+  durability,
+  damage,
+}: {
+  side: "ally" | "enemy";
+  durability?: number | null;
+  damage?: number | null;
+}) {
+  if (durability == null && damage == null) return null;
+  return (
+    <div
+      className={clsx(
+        "pointer-events-none absolute top-1/2 hidden -translate-y-1/2 flex-col items-center gap-0.5 text-[11px] font-semibold leading-none tabular-nums lg:flex",
+        side === "enemy" ? "left-full ml-2" : "right-full mr-2"
+      )}
+      aria-hidden
+    >
+      <span className="text-[#B8D8EA]" style={{ textShadow: "0 1px 2px rgba(8,6,12,0.9)" }}>{durability ?? "—"}</span>
+      <span className="text-[#C84A32]" style={{ textShadow: "0 1px 2px rgba(8,6,12,0.9)" }}>{damage ?? "—"}</span>
+    </div>
+  );
+}
+
 function TeamColumn({
   title,
   side,
   participants,
   floatTags = [],
   appearDelays = {},
+  showScores = false,
 }: {
   title: string;
   side: "ally" | "enemy";
   participants: LiveGameParticipant[];
   floatTags?: BuildFloatTag[];
   appearDelays?: Record<string, number>;
+  showScores?: boolean;
 }) {
   const accent = side === "ally" ? GUIDE.lightBlue : GUIDE.pink;
   const enemy = side === "enemy";
@@ -510,6 +844,13 @@ function TeamColumn({
                 tags={floatTags.filter((entry) => entry.championId === participant.championId)}
                 appearDelays={appearDelays}
               />
+              {showScores ? (
+                <PortraitScores
+                  side={side}
+                  durability={participant.durabilityScore}
+                  damage={participant.damageScore}
+                />
+              ) : null}
             </div>
             <div className="flex shrink-0 flex-col gap-1">
               {participant.spells.map((spellEntry) => (
@@ -595,14 +936,20 @@ function Stage({
   );
 }
 
-function PhaseCaption({ phase }: { phase: LookupPhase }) {
+function PhaseCaption({ phase, mode }: { phase: LookupPhase; mode: LookupMode }) {
+  const label =
+    mode === "match"
+      ? "Looking up that game…"
+      : phase === "verifying"
+        ? "Verifying Riot ID…"
+        : "Looking for your game…";
   return (
     <p className="flex items-center gap-2 text-xs text-[#F5E6D3]/60" role="status">
       <span className="relative flex h-2 w-2">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F0ABCF]/60" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-[#F0ABCF]" />
       </span>
-      {phase === "verifying" ? "Verifying Riot ID…" : "Looking for your game…"}
+      {label}
     </p>
   );
 }
@@ -661,7 +1008,10 @@ function BuildCard({
   boot,
   recommendedAlternative,
   trace,
-  playerChampionName,
+  player,
+  source,
+  composition,
+  facts,
 }: {
   build: PickerBuild | undefined;
   buildId: string;
@@ -670,8 +1020,12 @@ function BuildCard({
   boot: { itemId: number; slot: 2 | 3 | 4 };
   recommendedAlternative?: { buildId: string; label: string };
   trace: BuildTraceStep[];
-  playerChampionName?: string;
+  player?: LiveGameParticipant;
+  source?: "live" | "match";
+  composition?: EnemyComposition;
+  facts?: CompositionFact[];
 }) {
+  const playerTip = buildPickerPlayerTip(player);
   const alternative = recommendedAlternative ?? BUILD_ALTERNATIVES[buildId];
   const alternativeBuild = alternative
     ? builds.find((entry) => entry.id === alternative.buildId)
@@ -697,10 +1051,10 @@ function BuildCard({
         className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#FAD4E8]/60 to-transparent"
       />
       <div className="relative flex flex-col items-center text-center">
-        <p className={LABEL_CLASS}>Recommended build</p>
-        {playerChampionName && playerChampionName !== "Viego" ? (
+        <p className={LABEL_CLASS}>{source === "match" ? "What I would have built" : "Recommended build"}</p>
+        {playerTip ? (
           <p className="mt-3 rounded-full border border-[#B8D8EA]/20 bg-[#B8D8EA]/[0.07] px-3 py-1.5 text-xs font-medium text-[#B8D8EA]/85" role="status">
-            You&apos;re playing {playerChampionName}. This is a Viego build suggestion.
+            {playerTip}
           </p>
         ) : null}
         {build ? (
@@ -744,7 +1098,7 @@ function BuildCard({
         </button>
         <div className={clsx("-mx-6 grid w-[calc(100%+3rem)] transition-[grid-template-rows,opacity] duration-500 ease-out sm:-mx-8 sm:w-[calc(100%+4rem)] lg:-mx-10 lg:w-[calc(100%+5rem)]", whyOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
           <div className="min-h-0 overflow-hidden">
-            <BuildWhyPanel build={build} trace={trace} builds={builds} boot={selectedBoot} bootSlot={boot.slot} />
+            <BuildWhyPanel build={build} trace={trace} builds={builds} boot={selectedBoot} bootSlot={boot.slot} bootItems={bootItems} composition={composition} facts={facts} />
           </div>
         </div>
       </div>
@@ -844,15 +1198,20 @@ export default function BuildPickerClient({
   builds,
   bootItems,
   championRows,
+  preview,
 }: {
   builds: PickerBuild[];
   bootItems: PickerItem[];
   championRows: ChampionProfileRow[];
+  preview?: LiveGameLookup;
 }) {
+  const [mode, setMode] = useState<LookupMode>("live");
   const [riotId, setRiotId] = useState("");
+  const [matchId, setMatchId] = useState("");
   const [platform, setPlatform] = useState<BuildPickerPlatformId>("auto");
   const [phase, setPhase] = useState<LookupPhase>("idle");
-  const [result, setResult] = useState<LiveGameLookup | null>(null);
+  const [lookupResult, setResult] = useState<LiveGameLookup | null>(null);
+  const result = preview ?? lookupResult;
   const abortRef = useRef<AbortController | null>(null);
   const lastLookupRef = useRef<string>("");
 
@@ -865,28 +1224,56 @@ export default function BuildPickerClient({
     }
   }, []);
 
-  const lookup = useCallback(async (rawId: string, platformId: BuildPickerPlatformId = "auto") => {
+  const selectMode = useCallback((next: LookupMode) => {
+    setMode(next);
+    setResult(null);
+    abortRef.current?.abort();
+    setPhase("idle");
+    lastLookupRef.current = "";
+    try {
+      localStorage.setItem(STORAGE_MODE, next);
+    } catch {
+      // storage unavailable; ignore
+    }
+  }, []);
+
+  const lookup = useCallback(async (
+    nextMode: LookupMode,
+    rawId: string,
+    platformId: BuildPickerPlatformId = "auto"
+  ) => {
     const id = rawId.trim();
-    if (!RIOT_ID_RE.test(id)) return;
+    const resolvedMatchId = nextMode === "match" ? composeMatchId(id, platformId) : null;
+    if (nextMode === "live" && !RIOT_ID_RE.test(id)) return;
+    if (nextMode === "match" && !resolvedMatchId) return;
 
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    lastLookupRef.current = `${platformId}:${id}`;
+    lastLookupRef.current = `${nextMode}:${platformId}:${resolvedMatchId ?? id}`;
 
     setPhase("verifying");
     setResult(null);
     const phaseTimer = window.setTimeout(() => setPhase("searching"), 650);
 
     try {
-      localStorage.setItem(STORAGE_RIOT_ID, id);
+      localStorage.setItem(STORAGE_MODE, nextMode);
       localStorage.setItem(STORAGE_PLATFORM, platformId);
+      if (nextMode === "live") localStorage.setItem(STORAGE_RIOT_ID, id);
+      else localStorage.setItem(STORAGE_MATCH_ID, id);
     } catch {
       // storage unavailable; ignore
     }
 
     try {
-      const params = new URLSearchParams({ riotId: id, platform: platformId });
+      const params = new URLSearchParams();
+      if (nextMode === "match") {
+        params.set("matchId", resolvedMatchId ?? id);
+        params.set("platform", platformId);
+      } else {
+        params.set("riotId", id);
+        params.set("platform", platformId);
+      }
       if (new URLSearchParams(window.location.search).get("mock") === "1") params.set("mock", "1");
       const response = await fetch(`/api/guide/live-game?${params.toString()}`, {
         signal: controller.signal,
@@ -907,11 +1294,18 @@ export default function BuildPickerClient({
   }, []);
 
   useEffect(() => {
-    const fromUrl = new URLSearchParams(window.location.search).get("id")?.trim() ?? "";
+    if (preview) return;
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("id")?.trim() ?? "";
+    const matchFromUrl = params.get("match")?.trim() ?? "";
     let storedId = "";
+    let storedMatchId = "";
+    let storedMode: LookupMode = "live";
     let storedPlatform: BuildPickerPlatformId = "auto";
     try {
       storedId = localStorage.getItem(STORAGE_RIOT_ID) ?? "";
+      storedMatchId = localStorage.getItem(STORAGE_MATCH_ID) ?? "";
+      if (localStorage.getItem(STORAGE_MODE) === "match") storedMode = "match";
       const savedPlatform = localStorage.getItem(STORAGE_PLATFORM);
       if (isPlatformId(savedPlatform)) storedPlatform = savedPlatform;
     } catch {
@@ -919,21 +1313,35 @@ export default function BuildPickerClient({
     }
     setPlatform(storedPlatform);
 
-    if (fromUrl) {
+    if (matchFromUrl) {
+      const prefix = /^([A-Za-z0-9]+)_\d+$/.exec(matchFromUrl.trim())?.[1]?.toLowerCase();
+      const fromPrefix = prefix && isPlatformId(prefix) && prefix !== "auto" ? prefix : null;
+      const platformToUse = fromPrefix ?? storedPlatform;
+      setMode("match");
+      setMatchId(matchFromUrl);
+      setPlatform(platformToUse);
+      if (storedId) setRiotId(storedId);
+      void lookup("match", matchFromUrl, platformToUse);
+    } else if (fromUrl) {
+      setMode("live");
       setRiotId(fromUrl);
-      void lookup(fromUrl, storedPlatform);
-    } else if (storedId) {
-      setRiotId(storedId);
+      if (storedMatchId) setMatchId(storedMatchId);
+      void lookup("live", fromUrl, storedPlatform);
+    } else {
+      setMode(storedMode);
+      if (storedId) setRiotId(storedId);
+      if (storedMatchId) setMatchId(storedMatchId);
     }
-  }, [lookup]);
+  }, [lookup, preview]);
 
   useEffect(() => {
+    if (preview || mode !== "live") return;
     const id = riotId.trim();
     if (!RIOT_ID_RE.test(id)) return;
-    if (lastLookupRef.current === `${platform}:${id}`) return;
-    const timer = window.setTimeout(() => void lookup(id, platform), AUTO_LOOKUP_DEBOUNCE_MS);
+    if (lastLookupRef.current === `live:${platform}:${id}`) return;
+    const timer = window.setTimeout(() => void lookup("live", id, platform), AUTO_LOOKUP_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [riotId, platform, lookup]);
+  }, [riotId, platform, lookup, preview, mode]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -942,37 +1350,44 @@ export default function BuildPickerClient({
   const recommendedBuild = recommendation
     ? builds.find((build) => build.id === recommendation.buildId)
     : undefined;
-  const playerChampionName = result?.status === "in_game"
-    ? (result.playerSide === "blue" ? result.blue : result.red).find((participant) => participant.isSearchedPlayer)?.championName
+  const player = result?.status === "in_game"
+    ? (result.playerSide === "blue" ? result.blue : result.red).find((participant) => participant.isSearchedPlayer)
     : undefined;
 
   return (
-    <div className="relative min-h-screen" style={{ color: GUIDE.text }}>
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-5 pb-24 pt-16 sm:px-8 sm:pt-[4.8rem] lg:pt-[5.6rem]">
+    <div className={clsx("relative", !preview && "min-h-screen")} style={{ color: GUIDE.text }}>
+      <div className={clsx("relative z-10 mx-auto w-full max-w-5xl px-5 sm:px-8", preview ? "pb-6 pt-8" : "pb-24 pt-16 sm:pt-[4.8rem] lg:pt-[5.6rem]")}>
+        {!preview && <><p className="mb-3 text-center text-xs text-[#B8D8EA]/70">
+          This feature is still being tested.
+        </p>
         <h1 className="mb-8 text-center text-3xl font-bold tracking-tight text-[#F5E6D3] sm:mb-10 sm:text-4xl lg:text-5xl">
           Build like Mino would.
-        </h1>
+        </h1></>}
 
-        <LookupForm
+        {!preview && <LookupForm
+          mode={mode}
           riotId={riotId}
+          matchId={matchId}
           platform={platform}
           busy={busy}
+          onModeChange={selectMode}
           onRiotIdChange={setRiotId}
+          onMatchIdChange={setMatchId}
           onPlatformChange={selectPlatform}
-          onSubmit={() => void lookup(riotId, platform)}
-        />
+          onSubmit={() => void lookup(mode, mode === "live" ? riotId : matchId, platform)}
+        />}
 
-        <div className="mt-12 sm:mt-16">
+        <div className={preview ? "" : "mt-12 sm:mt-16"}>
           {busy ? (
             <Stage
               busy
-              caption={<PhaseCaption phase={phase} />}
+              caption={<PhaseCaption phase={phase} mode={mode} />}
               left={<TeamColumnSkeleton side="ally" />}
               center={<BuildSkeleton />}
               right={<TeamColumnSkeleton side="enemy" />}
             />
           ) : result?.status === "in_game" ? (
-            <div key={`${result.riotId}-${result.gameStartedAt ?? 0}`}>
+            <div key={`${result.source ?? "live"}-${result.matchId ?? result.riotId}-${result.gameStartedAt ?? 0}`}>
               <Stage
                 left={
                   <TeamColumn
@@ -981,6 +1396,7 @@ export default function BuildPickerClient({
                     participants={result.playerSide === "blue" ? result.blue : result.red}
                     floatTags={result.recommendation?.floatTags.filter((entry) => entry.side === "ally")}
                     appearDelays={floatAppearDelays(result.recommendation?.floatTags ?? [])}
+                    showScores={Boolean(preview)}
                   />
                 }
                 center={
@@ -993,7 +1409,10 @@ export default function BuildPickerClient({
                       boot={result.recommendation.boot}
                       recommendedAlternative={result.recommendation.alternative}
                       trace={result.recommendation.trace}
-                      playerChampionName={playerChampionName}
+                      player={player}
+                      source={result.source}
+                      composition={result.recommendation.composition}
+                      facts={result.recommendation.facts}
                     />
                   ) : null
                 }
@@ -1004,6 +1423,7 @@ export default function BuildPickerClient({
                     participants={result.playerSide === "blue" ? result.red : result.blue}
                     floatTags={result.recommendation?.floatTags.filter((entry) => entry.side === "enemy")}
                     appearDelays={floatAppearDelays(result.recommendation?.floatTags ?? [])}
+                    showScores={Boolean(preview)}
                   />
                 }
               />
@@ -1019,12 +1439,23 @@ export default function BuildPickerClient({
               body={`Couldn't find ${result.riotId}. Check the spelling and the tag after the #.`}
               tone="error"
             />
+          ) : result?.status === "match_not_found" ? (
+            <MessagePanel
+              title="Match not found"
+              body={`Couldn't find ${result.matchId}. Copy the full ID from your League match history, like EUW1_1234567890.`}
+              tone="error"
+            />
+          ) : result?.status === "no_viego" ? (
+            <MessagePanel
+              title="No Viego in that game"
+              body={`${result.matchId} didn't have a Viego. This picker is for jungle Viego lobbies.`}
+            />
           ) : result?.status === "error" ? (
             <MessagePanel title="Something went wrong" body={result.message} tone="error" />
           ) : null}
         </div>
 
-        {process.env.NODE_ENV === "development" ? (
+        {process.env.NODE_ENV === "development" && !preview ? (
           <>
             <section className="mt-24 sm:mt-32">
               <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
@@ -1039,7 +1470,7 @@ export default function BuildPickerClient({
                       : "First matching line in each check wins. For you, not for viewers."}
                   </p>
                 </div>
-                <p className="text-xs text-[#F5E6D3]/45">{builds.length} builds</p>
+                <p className="text-xs text-[#F5E6D3]/45">{builds.filter((build) => build.id !== "sit-serpents").length} builds</p>
               </div>
               <PickerLogicView
                 builds={builds}
@@ -1078,7 +1509,7 @@ export default function BuildPickerClient({
                     Champion traits
                   </h2>
                   <p className="mt-1 text-sm text-[#F5E6D3]/55">
-                    The per-champion stats the picker uses to choose a build.
+                    Your saved durability, shield scores, and Steelcaps eligibility. These ratings are not used for recommendations until the new thresholds are set.
                   </p>
                 </div>
                 <p className="text-xs text-[#F5E6D3]/45">{championRows.length} champions</p>

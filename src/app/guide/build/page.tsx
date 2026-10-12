@@ -46,11 +46,16 @@ export default async function BuildPickerPage() {
       name: row.name,
       championId,
       icon: champSquareUrlById(championId),
-      durability: row.durability,
-      shields: row.shields,
+      durabilityScore: row.durabilityScore,
+      canBuildSteelcaps: row.canBuildSteelcaps,
+      mercuryTreadsScore: row.mercuryTreadsScore,
+      shieldScore: row.shieldScore,
+      shieldTiming: row.shieldTiming,
       damageType: row.damageType,
       damageThreat: row.damageThreat,
+      damageScore: row.damageScore,
       cc: row.cc,
+      ccScore: row.ccScore,
     };
   });
 

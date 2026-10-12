@@ -7,22 +7,21 @@ import GuideImage from "@/app/_components/guides/GuideImage";
 import type { ChampionProfileRow } from "@/lib/guides/buildPicker/types";
 import { guideChampionIconImgClass } from "@/lib/guides/guideTheme";
 
-type TraitKey = "durability" | "shields" | "damageType" | "damageThreat" | "cc";
+type TraitKey = "durabilityScore" | "canBuildSteelcaps" | "mercuryTreadsScore" | "shieldScore" | "shieldTiming" | "damageType" | "damageScore" | "ccScore";
 
 const TRAIT_COLUMNS: { key: TraitKey; label: string; options: string[] }[] = [
-  { key: "durability", label: "Durability", options: ["Squishy", "Bruiser", "Tanky"] },
-  { key: "shields", label: "Shields", options: ["None", "Low", "Late", "High"] },
+  { key: "durabilityScore", label: "Durability", options: ["1", "2", "3", "4", "5", "Unrated"] },
+  { key: "canBuildSteelcaps", label: "Steelcaps", options: ["Yes", "No", "Unrated"] },
+  { key: "mercuryTreadsScore", label: "Mercs", options: ["1", "2", "3", "Unrated"] },
+  { key: "shieldScore", label: "Shield score", options: ["0", "1", "2", "3", "4", "5"] },
+  { key: "shieldTiming", label: "Shield timing", options: ["Late"] },
   { key: "damageType", label: "Type", options: ["AD", "AP", "Mixed"] },
-  { key: "damageThreat", label: "Damage", options: ["Low", "Medium", "High"] },
-  { key: "cc", label: "CC", options: ["None", "Low", "Medium", "High"] },
+  { key: "damageScore", label: "Damage", options: ["1", "2", "3", "4", "5", "Unrated"] },
+  { key: "ccScore", label: "CC", options: ["1", "2", "3", "4", "5", "Unrated"] },
 ];
 
 /** Pill colors per value — muted for "None/Low", warm for mid, cool/pink for high. */
 const PILL_STYLES: Record<string, string> = {
-  // durability
-  Squishy: "bg-[#F0ABCF]/15 text-[#FAD4E8] ring-[#F0ABCF]/30",
-  Bruiser: "bg-[#E8C676]/15 text-[#F3DCA0] ring-[#E8C676]/30",
-  Tanky: "bg-[#B8D8EA]/15 text-[#CFE6F3] ring-[#B8D8EA]/30",
   // damage type
   AD: "bg-[#F97316]/15 text-[#FDBA74] ring-[#F97316]/30",
   AP: "bg-[#A855F7]/15 text-[#D8B4FE] ring-[#A855F7]/30",
@@ -30,10 +29,23 @@ const PILL_STYLES: Record<string, string> = {
   // levels
   None: "bg-[#F5E6D3]/[0.06] text-[#F5E6D3]/45 ring-[#F5E6D3]/10",
   Low: "bg-[#F5E6D3]/[0.08] text-[#F5E6D3]/70 ring-[#F5E6D3]/15",
+  "1": "bg-[#F5E6D3]/[0.08] text-[#F5E6D3]/70 ring-[#F5E6D3]/15",
+  "2": "bg-[#E8C676]/10 text-[#E8D4A4]/80 ring-[#E8C676]/20",
   Late: "bg-[#B8D8EA]/12 text-[#CFE6F3]/85 ring-[#B8D8EA]/25",
   Medium: "bg-[#E8C676]/15 text-[#F3DCA0] ring-[#E8C676]/30",
+  "3": "bg-[#E8C676]/15 text-[#F3DCA0] ring-[#E8C676]/30",
+  "4": "bg-[#F0ABCF]/12 text-[#F0C4DC] ring-[#F0ABCF]/25",
   High: "bg-[#F0ABCF]/18 text-[#FAD4E8] ring-[#F0ABCF]/35",
+  "5": "bg-[#F0ABCF]/18 text-[#FAD4E8] ring-[#F0ABCF]/35",
 };
+
+function traitValue(row: ChampionProfileRow, key: TraitKey): string {
+  const value = row[key];
+  if (key === "shieldTiming") return String(value ?? "");
+  if (value === null) return "Unrated";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return String(value);
+}
 
 function TraitPill({ value }: { value: string }) {
   return (
@@ -61,7 +73,7 @@ export default function ChampionProfileTable({ rows }: { rows: ChampionProfileRo
       if (q && !row.name.toLowerCase().includes(q)) return false;
       for (const column of TRAIT_COLUMNS) {
         const wanted = filters[column.key];
-        if (wanted && row[column.key] !== wanted) return false;
+        if (wanted && traitValue(row, column.key) !== wanted) return false;
       }
       return true;
     });
@@ -149,7 +161,9 @@ export default function ChampionProfileTable({ rows }: { rows: ChampionProfileRo
                 </th>
                 {TRAIT_COLUMNS.map((column) => (
                   <td key={column.key} className="px-3 py-2 text-center">
-                    <TraitPill value={row[column.key]} />
+                    {column.key === "shieldTiming" && !row.shieldTiming
+                      ? null
+                      : <TraitPill value={traitValue(row, column.key)} />}
                   </td>
                 ))}
               </tr>

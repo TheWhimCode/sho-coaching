@@ -1,11 +1,10 @@
 import type {
   ChampionCcLevel,
   ChampionDamageType,
-  ChampionDurability,
-  ChampionShieldLevel,
   ChampionThreatLevel,
 } from "@prisma/client";
-import type { BuildFloatTag, TreeTraceStep } from "./decisionTree";
+import type { CompositionFact } from "./compositionFacts";
+import type { BuildFloatTag, EnemyComposition, TreeTraceStep } from "./decisionTree";
 
 /** Riot platform shards the picker lets users choose from. Auto keeps the discovery order. */
 export const BUILD_PICKER_PLATFORMS = [
@@ -43,9 +42,14 @@ export type LiveGameParticipant = {
   championId: string;
   championIcon: string;
   spells: LiveGameSpell[];
+  /** Spectator perk ids; the keystone is included when present. */
+  perkIds?: number[];
   /** True for the player whose Riot ID was searched. */
   isSearchedPlayer: boolean;
   riotId?: string;
+  /** Optional portrait overlays; omitted when the profile has not been rated. */
+  durabilityScore?: number | null;
+  damageScore?: number | null;
 };
 
 export type LiveGameTeamSide = "blue" | "red";
@@ -64,6 +68,10 @@ export type BuildRecommendation = {
   trace: TreeTraceStep[];
   /** Champions whose traits selected the build, for the portrait popups. */
   floatTags: BuildFloatTag[];
+  /** Enemy-team counts for the breakdown chart. */
+  composition: EnemyComposition;
+  /** Item/champion facts that applied to this lobby, shown under the chart. */
+  facts: CompositionFact[];
   /** Enemy champions without a `ChampionProfile` row; they were ignored. */
   missingProfiles: string[];
 };
@@ -73,6 +81,9 @@ export type LiveGameLookup =
       status: "in_game";
       /** Set while the API returns sample data instead of a real Riot lookup. */
       mock?: boolean;
+      /** Live spectator lookup vs a finished match from match history. */
+      source?: "live" | "match";
+      matchId?: string;
       riotId: string;
       platform: string;
       queue: string;
@@ -85,16 +96,23 @@ export type LiveGameLookup =
     }
   | { status: "not_in_game"; riotId: string }
   | { status: "not_found"; riotId: string }
+  | { status: "match_not_found"; matchId: string }
+  | { status: "no_viego"; matchId: string }
   | { status: "error"; message: string };
 
 /** Serialized `ChampionProfile` row for the admin-ish table at the bottom of the page. */
 export type ChampionProfileRow = {
+  shieldScore: number | null;
+  shieldTiming: string | null;
   name: string;
   championId: string;
   icon: string;
-  durability: ChampionDurability;
-  shields: ChampionShieldLevel;
+  durabilityScore: number | null;
+  canBuildSteelcaps: boolean | null;
+  mercuryTreadsScore: number | null;
   damageType: ChampionDamageType;
   damageThreat: ChampionThreatLevel;
+  damageScore: number | null;
   cc: ChampionCcLevel;
+  ccScore: number | null;
 };

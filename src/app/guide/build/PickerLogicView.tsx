@@ -14,12 +14,21 @@ type RuleRow = {
   buildLabel: string;
 };
 
+const SHADOW_ECONOMY_RULES: RuleRow[] = [
+  {
+    id: "u1",
+    when: "Enemy Shaco, Evelynn, or Rengar, and durability below Titansbane",
+    buildId: "umbral-collector",
+    buildLabel: "Shadow Economy",
+  },
+  { id: "u2", when: "Anything else", buildId: null, buildLabel: "Otherwise continue" },
+];
+
 const SHIELD_RULES: RuleRow[] = [
   { id: "s1", when: "2+ High shields", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
   { id: "s2", when: "1 High and 2+ Low or Late", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
   { id: "s3", when: "4+ Low (early)", buildId: "sit-serpents-first", buildLabel: "Shieldbreaker's Edge" },
-  { id: "s4", when: "4+ Low+Late, and more Late than Low", buildId: "sit-serpents-late", buildLabel: "Shieldbreaker's Reckoning" },
-  { id: "s5", when: "4+ Low+Late otherwise", buildId: "sit-serpents", buildLabel: "Shieldbreaker's Path" },
+  { id: "s4", when: "4+ Low+Late", buildId: "sit-serpents-late", buildLabel: "Shieldbreaker's Reckoning" },
   { id: "s6", when: "Anything else", buildId: null, buildLabel: "→ Survivability?" },
 ];
 
@@ -47,6 +56,7 @@ type Props = {
 };
 
 export default function PickerLogicView({ builds, trace, activeBuildId }: Props) {
+  const shadowStep = trace?.find((step) => step.nodeId === "shadow-economy");
   const shieldStep = trace?.find((step) => step.nodeId === "shields");
   const survivabilityStep = trace?.find((step) => step.nodeId === "survivability");
   const tankyStep = trace?.find((step) => step.nodeId === "tanky");
@@ -56,15 +66,24 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
       <div className="space-y-6">
         <CheckBlock
-          title="1. How much shield?"
-          note="First matching line wins. Low, Late, and Barrier each count as a small shield. Barrier counts as early."
-          rows={SHIELD_RULES}
-          step={shieldStep}
+          title="1. Shadow Economy?"
+          note="First matching line wins. Shaco, Evelynn, or Rengar recommend Umbral Glaive unless enemy durability already reaches Titansbane."
+          rows={SHADOW_ECONOMY_RULES}
+          step={shadowStep}
           evaluated={evaluated}
           builds={builds}
         />
         <CheckBlock
-          title="2. Survivability?"
+          title="2. How much shield?"
+          note="First matching line wins. Low, Late, Barrier, and Guardian each count as a small shield. Barrier and Guardian count as early. Guardian adds one, not two. Shieldbreaker's Path is only an alternative, never the primary pick."
+          rows={SHIELD_RULES}
+          step={shieldStep}
+          evaluated={evaluated}
+          skipped={evaluated && !shieldStep}
+          builds={builds}
+        />
+        <CheckBlock
+          title="3. Survivability?"
           note="Only runs if shields did not pick a Serpent's build. Jungle is whoever has Smite."
           rows={SURVIVABILITY_RULES}
           step={survivabilityStep}
@@ -73,7 +92,7 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
           builds={builds}
         />
         <CheckBlock
-          title="3. How tanky?"
+          title="4. How tanky?"
           note="Only runs if shields and survivability did not pick a build. If your team has 3+ AD, the enemy is counted as one extra Bruiser (one Squishy converted). Viego counts."
           rows={TANKY_RULES}
           step={tankyStep}
@@ -86,7 +105,7 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
       <div>
         <p className={LABEL_CLASS}>All builds</p>
         <ul className="mt-3 divide-y divide-[#F5E6D3]/10 rounded-2xl border border-[#F5E6D3]/12 bg-white/[0.03]">
-          {builds.map((build) => {
+          {builds.filter((build) => build.id !== "sit-serpents").map((build) => {
             const active = activeBuildId === build.id;
             return (
               <li

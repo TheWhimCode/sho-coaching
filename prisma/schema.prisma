@@ -794,8 +794,22 @@ model ChampionProfile {
   name         String               @id
   durability   ChampionDurability
   shields      ChampionShieldLevel
+  /// Planned scoring model: 1–5. Null means not rated yet.
+  durabilityScore Int?
+  /// Planned scoring model: 0–5, where 0 means no shields.
+  shieldScore     Int?
+  /// Null means early; "Late" is the only explicit timing override.
+  shieldTiming    String?
+  /// Null means not reviewed; false explicitly means unsuitable.
+  canBuildSteelcaps Boolean?
+  /// Mercury Treads value: 1 zero, 2 okay, 3 amazing. Null means not rated yet.
+  mercuryTreadsScore Int?
+  /// Planned scoring model: 1–5. Null means not rated yet.
+  ccScore         Int?
   damageType   ChampionDamageType
   damageThreat ChampionThreatLevel
+  /// Planned scoring model: 1–5. Converted from Low=1, Medium=3, High=5.
+  damageScore     Int?
   deniesResets Boolean              @default(false)
   cc           ChampionCcLevel
   updatedAt    DateTime             @default(now()) @updatedAt

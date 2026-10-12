@@ -7,6 +7,11 @@ export type ActiveGameParticipant = {
   championId: number;
   spell1Id: number;
   spell2Id: number;
+  perks?: {
+    perkIds: number[];
+    perkStyle: number;
+    perkSubStyle: number;
+  };
   riotId?: string;
   summonerId?: string;
 };
