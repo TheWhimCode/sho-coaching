@@ -43,6 +43,9 @@ export type TreeContext = {
 
 const BARRIER = 21;
 const GUARDIAN = 8465;
+const DARK_HARVEST = 8128;
+const FIRST_STRIKE = 8369;
+const KAYN_FORM_DURABILITY = 2;
 
 /** Numeric shield bonuses counted in the composition chart and playground table. */
 export const BARRIER_SHIELD_SCORE = 1;
@@ -327,10 +330,30 @@ function applyLowAlliedCc(
 /* Tree                                                                */
 /* ------------------------------------------------------------------ */
 
+function isKayn(champion: Pick<TreeParticipant, "name" | "championId">) {
+  return champion.name === "Kayn" || champion.championId === "Kayn";
+}
+
+/** Rhaast-shaped Kayn: a real keystone that is not Dark Harvest or First Strike. Missing runes stay at 1. */
+function kaynFormDurability(champion: TreeParticipant) {
+  if (!isKayn(champion)) return 0;
+  const perks = champion.perkIds ?? [];
+  if (perks.length === 0) return 0;
+  if (perks.includes(DARK_HARVEST) || perks.includes(FIRST_STRIKE)) return 0;
+  return KAYN_FORM_DURABILITY;
+}
+
+function durabilityOf(champion: TreeParticipant) {
+  return (champion.durabilityScore ?? 0) + kaynFormDurability(champion);
+}
+
 function scoreSum(
   team: TreeParticipant[],
   key: "durabilityScore" | "damageScore" | "ccScore" | "shieldScore"
 ) {
+  if (key === "durabilityScore") {
+    return team.reduce((total, champion) => total + durabilityOf(champion), 0);
+  }
   return team.reduce((total, champion) => total + (champion[key] ?? 0), 0);
 }
 
