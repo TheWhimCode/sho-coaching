@@ -12,12 +12,13 @@ import { FaXTwitter } from "react-icons/fa6";
 import { useNavChrome } from "@/app/_components/navChrome";
 import { usePathname } from "next/navigation";
 
-type NavItem = { label: string; href: string; external?: boolean };
+type NavItem = { label: string; href: string; external?: boolean; badge?: string };
 
 const NAV: NavItem[] = [
   { label: "Mino", href: "/about" },
   { label: "Coaching", href: "/coaching" },
   { label: "Guide", href: "/guide" },
+  { label: "Build", href: "/guide/build", badge: "NEW" },
 ];
 
 export default function NavBar({
@@ -168,7 +169,14 @@ export default function NavBar({
                       rel="noopener noreferrer"
                       className="text-base md:text-lg text-white/80 hover:text-orange-400 transition"
                     >
-                      {it.label}
+                      <span className="inline-flex items-center gap-1.5">
+                        {it.label}
+                        {it.badge ? (
+                          <span className="rounded-full bg-[#F0ABCF]/20 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#FAD4E8]">
+                            {it.badge}
+                          </span>
+                        ) : null}
+                      </span>
                     </a>
                   ) : (
                     <Link
@@ -177,7 +185,14 @@ export default function NavBar({
                       prefetch={false}
                       className="text-base md:text-lg text-white/80 hover:text-orange-400 transition"
                     >
-                      {it.label}
+                      <span className="inline-flex items-center gap-1.5">
+                        {it.label}
+                        {it.badge ? (
+                          <span className="rounded-full bg-[#F0ABCF]/20 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#FAD4E8]">
+                            {it.badge}
+                          </span>
+                        ) : null}
+                      </span>
                     </Link>
                   )
                 )}

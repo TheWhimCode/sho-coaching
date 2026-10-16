@@ -378,7 +378,7 @@ function ServerPicker({
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div ref={rootRef} className="relative w-full shrink-0 sm:w-auto">
       <button
         type="button"
         aria-label={`Server, ${selected.label}`}
@@ -437,14 +437,12 @@ function SplitSubmit({
   busy,
   label,
   otherModeLabel,
-  highlightArrow,
   onSwitchMode,
 }: {
   disabled: boolean;
   busy: boolean;
   label: string;
   otherModeLabel: string;
-  highlightArrow?: boolean;
   onSwitchMode: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -482,10 +480,10 @@ function SplitSubmit({
   useEffect(() => () => cancelClose(), []);
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div ref={rootRef} className="relative w-full shrink-0 sm:w-auto">
       <div
         className={clsx(
-          "inline-flex h-12 items-stretch rounded-2xl text-sm font-semibold transition",
+          "relative flex h-12 w-full items-stretch rounded-2xl text-sm font-semibold transition sm:inline-flex sm:w-auto",
           "bg-[#F0ABCF] text-[#2A1F2E]",
           !(disabled || busy) && "hover:bg-[#FAD4E8]",
           (disabled || busy) && "bg-[#F0ABCF]/25 text-[#F5E6D3]/45",
@@ -515,21 +513,13 @@ function SplitSubmit({
             }}
             className={clsx(
               "relative inline-flex h-12 items-center pl-4 pr-1.5",
-              busy && "cursor-not-allowed",
-              highlightArrow && "rounded-l-2xl bg-[#2A1F2E]/20"
+              busy && "cursor-not-allowed"
             )}
           >
-            {highlightArrow ? (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-[1.35rem] top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-[#2A1F2E]/35"
-              />
-            ) : null}
             <ChevronRight
               className={clsx(
                 "relative h-4 w-4 transition-transform duration-200 group-hover:rotate-90",
-                (open || highlightArrow) && "rotate-90",
-                highlightArrow && "h-5 w-5"
+                open && "rotate-90"
               )}
               aria-hidden
             />
@@ -559,7 +549,7 @@ function SplitSubmit({
           type="submit"
           disabled={disabled || busy}
           className={clsx(
-            "inline-flex h-12 items-center pl-0.5 pr-5",
+            "inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap px-1 sm:w-auto sm:flex-none sm:justify-start sm:pl-0.5 sm:pr-5",
             (disabled || busy) && "cursor-not-allowed"
           )}
         >
@@ -610,6 +600,7 @@ function LookupForm({
   }, [mode]);
 
   return (
+    <>
     <form
       className={clsx(GLASS_CLASS, "relative z-30 flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:gap-2 sm:p-2")}
       onSubmit={(event: FormEvent) => {
@@ -648,7 +639,7 @@ function LookupForm({
             aria-label="Match ID"
             value={matchId}
             onChange={(event) => onMatchIdChange(event.target.value)}
-            placeholder="1234567890"
+            placeholder="7094182635 — Game IDs are in match histories"
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
@@ -657,16 +648,22 @@ function LookupForm({
           />
         )}
       </div>
-      <ServerPicker platform={live ? platform : matchPlatform} onChange={onPlatformChange} allowAuto={live} />
-      <SplitSubmit
-        disabled={!valid}
-        busy={busy}
-        highlightArrow={cuePreviousGame && live}
-        label={live ? "Find my game" : "Check this game"}
-        otherModeLabel={live ? "Check previous game" : "Find live game"}
-        onSwitchMode={() => onModeChange(live ? "match" : "live")}
-      />
+      <div className="grid w-full grid-cols-2 gap-2 sm:contents">
+        <div className="sm:contents">
+          <ServerPicker platform={live ? platform : matchPlatform} onChange={onPlatformChange} allowAuto={live} />
+        </div>
+        <div className="sm:contents">
+          <SplitSubmit
+            disabled={!valid}
+            busy={busy}
+            label={live ? "Find my game" : "Check this game"}
+            otherModeLabel={live ? "Check previous game" : "Find live game"}
+            onSwitchMode={() => onModeChange(live ? "match" : "live")}
+          />
+        </div>
+      </div>
     </form>
+    </>
   );
 }
 

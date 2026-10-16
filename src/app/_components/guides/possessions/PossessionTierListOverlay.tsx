@@ -189,25 +189,25 @@ export default function PossessionTierListOverlay({
                 <div
                   key={tier.id}
                   className={clsx(
-                    "grid grid-cols-[10rem_minmax(0,1fr)]",
+                    "flex flex-col sm:grid sm:grid-cols-[10rem_minmax(0,1fr)]",
                     index > 0 && "border-t border-[#F5E6D3]/10",
                     tone.row
                   )}
                 >
-                  <div className="relative z-10 flex min-w-0 flex-col justify-center px-3 py-3 sm:px-4">
+                  <div className="relative z-10 flex min-w-0 flex-col justify-center px-3 py-2.5 sm:px-4 sm:py-3">
                     <div className="flex items-center gap-2">
                       <span className={clsx("flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold", tone.chip)}>
                         {index + 1}
                       </span>
-                      <div className="min-w-0 leading-tight">
+                      <div className="flex min-w-0 items-baseline gap-2 leading-tight sm:block">
                         <span className={clsx("block text-sm font-semibold", tone.label)}>{tier.label}</span>
-                        <span className="mt-0.5 block whitespace-nowrap text-[0.65rem] font-medium text-[#F5E6D3]/45">
+                        <span className="block whitespace-nowrap text-[0.65rem] font-medium text-[#F5E6D3]/45 sm:mt-0.5">
                           {tier.subtitle}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <div className="relative z-0 grid min-w-0 grid-cols-[repeat(auto-fill,2.8125rem)] items-center gap-1 px-3 py-2.5 sm:px-4">
+                  <div className="relative z-0 grid min-w-0 grid-cols-[repeat(auto-fill,2.8125rem)] items-center gap-1 border-t border-[#F5E6D3]/10 px-3 py-2.5 sm:border-t-0 sm:px-4">
                     {tier.champions.length ? (
                       tier.champions.map((champion) => {
                         const revealDelayMs = Math.round(

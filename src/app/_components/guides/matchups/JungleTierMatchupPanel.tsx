@@ -386,10 +386,10 @@ function MatchupDetailPanel({
           ) : null}
         </div>
 
-        <div className="flex min-w-0 flex-col gap-3">
+        <div className="grid min-w-0 grid-cols-2 gap-3 sm:flex sm:flex-col">
           <div
             className={clsx(
-              "relative flex isolate min-h-[5.25rem] overflow-hidden items-center justify-between rounded-xl border px-4 py-3 sm:min-h-[8.5rem] sm:flex-col sm:items-start sm:justify-between sm:px-5 sm:py-4",
+              "relative flex isolate min-h-[6.5rem] flex-col items-start justify-between overflow-hidden rounded-xl border px-3 py-3 sm:min-h-[8.5rem] sm:px-5 sm:py-4",
               possession.card
             )}
           >
@@ -403,7 +403,7 @@ function MatchupDetailPanel({
           </div>
 
           {entry.matchup.dangerHint ? (
-            <div className="relative flex min-h-[5.25rem] overflow-hidden rounded-xl border border-[#FF526C]/32 bg-[linear-gradient(145deg,rgba(255,82,108,0.14),rgba(50,25,38,0.28)_70%)] px-4 py-3 sm:min-h-[8.5rem] sm:flex-col sm:justify-between sm:px-5 sm:py-4">
+            <div className="relative flex min-h-[6.5rem] flex-col justify-between overflow-hidden rounded-xl border border-[#FF526C]/32 bg-[linear-gradient(145deg,rgba(255,82,108,0.14),rgba(50,25,38,0.28)_70%)] px-3 py-3 sm:min-h-[8.5rem] sm:px-5 sm:py-4">
               <span aria-hidden className="absolute -right-1 -top-5 font-serif text-7xl font-bold leading-none text-[#FF526C]/[0.09] sm:text-8xl">!</span>
               <p className="relative text-[0.62rem] font-bold uppercase tracking-[0.15em] text-[#FF9AAD]">Main danger</p>
               <div className="relative mt-auto sm:mt-0">

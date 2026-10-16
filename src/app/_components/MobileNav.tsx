@@ -9,12 +9,13 @@ import { FaXTwitter } from "react-icons/fa6";
 
 const EXIT_DURATION = 0.35;
 
-type NavItem = { label: string; href: string; external?: boolean };
+type NavItem = { label: string; href: string; external?: boolean; badge?: string };
 
 const NAV: NavItem[] = [
   { label: "Mino", href: "/about" },
   { label: "Coaching", href: "/coaching" },
   { label: "Guide", href: "/guide" },
+  { label: "Build", href: "/guide/build", badge: "NEW" },
 ];
 
 export default function MobileNav() {
@@ -88,7 +89,14 @@ export default function MobileNav() {
                     className="block py-3 text-xl font-semibold text-white/90 hover:text-orange-400 transition"
                     onClick={() => setOpen(false)}
                   >
-                    {it.label}
+                    <span className="inline-flex items-center gap-2">
+                      {it.label}
+                      {it.badge ? (
+                        <span className="rounded-full bg-[#F0ABCF]/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#FAD4E8]">
+                          {it.badge}
+                        </span>
+                      ) : null}
+                    </span>
                   </a>
                 ) : (
                   <Link
@@ -97,7 +105,14 @@ export default function MobileNav() {
                     className="block py-3 text-xl font-semibold text-white/90 hover:text-orange-400 transition"
                     onClick={() => setOpen(false)}
                   >
-                    {it.label}
+                    <span className="inline-flex items-center gap-2">
+                      {it.label}
+                      {it.badge ? (
+                        <span className="rounded-full bg-[#F0ABCF]/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#FAD4E8]">
+                          {it.badge}
+                        </span>
+                      ) : null}
+                    </span>
                   </Link>
                 )}
               </motion.div>
