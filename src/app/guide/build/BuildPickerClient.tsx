@@ -39,6 +39,7 @@ import ChampionProfileTable from "./ChampionProfileTable";
 import PickerLogicView from "./PickerLogicView";
 import DonationPrompt from "./DonationPrompt";
 import { recordBuildLookup, DONATION_LOOKUP_EVENT } from "@/lib/guides/buildPicker/donationPrompt";
+import { createRandomGame, type RandomGameCatalog } from "@/lib/guides/buildPicker/randomGame";
 
 const PickerTextIconsContext = createContext<Record<string, string>>({});
 
@@ -1320,12 +1321,14 @@ export default function BuildPickerClient({
   championRows,
   preview,
   guideTextIcons = {},
+  randomGameCatalog,
 }: {
   builds: PickerBuild[];
   bootItems: PickerItem[];
   championRows: ChampionProfileRow[];
   preview?: LiveGameLookup;
   guideTextIcons?: Record<string, string>;
+  randomGameCatalog?: RandomGameCatalog;
 }) {
   const [mode, setMode] = useState<LookupMode>("live");
   const [riotId, setRiotId] = useState("");
@@ -1334,6 +1337,8 @@ export default function BuildPickerClient({
   const [phase, setPhase] = useState<LookupPhase>("idle");
   const [lookupResult, setResult] = useState<LiveGameLookup | null>(null);
   const [possessionsPinned, setPossessionsPinned] = useState(false);
+  const [randomGameCoolingDown, setRandomGameCoolingDown] = useState(false);
+  const randomGameCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const result = preview ?? lookupResult;
   const abortRef = useRef<AbortController | null>(null);
   const lastLookupRef = useRef<string>("");
@@ -1474,6 +1479,9 @@ export default function BuildPickerClient({
   }, [riotId, platform, lookup, preview, mode]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(() => () => {
+    if (randomGameCooldownRef.current !== null) clearTimeout(randomGameCooldownRef.current);
+  }, []);
 
   const busy = phase !== "idle";
   const recommendation = result?.status === "in_game" ? result.recommendation : null;
@@ -1508,6 +1516,35 @@ export default function BuildPickerClient({
           onPlatformChange={selectPlatform}
           onSubmit={() => void lookup(mode, mode === "live" ? riotId : matchId, platform)}
         />}
+
+        {!preview && (
+          <div className="mt-4 flex flex-col items-center gap-2 text-center">
+            <button
+              type="button"
+              disabled={busy || randomGameCoolingDown}
+              onClick={() => {
+                if (randomGameCooldownRef.current !== null) return;
+                setRandomGameCoolingDown(true);
+                randomGameCooldownRef.current = setTimeout(() => {
+                  randomGameCooldownRef.current = null;
+                  setRandomGameCoolingDown(false);
+                }, 400);
+                abortRef.current?.abort();
+                setPhase("idle");
+                setPossessionsPinned(false);
+                try {
+                  if (!randomGameCatalog) throw new Error("Random game data is unavailable. Please reload the page.");
+                  setResult(createRandomGame(randomGameCatalog));
+                } catch (error) {
+                  setResult({ status: "error", message: error instanceof Error ? error.message : "Could not create a random game." });
+                }
+              }}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#F0ABCF]/50 bg-[#F0ABCF]/10 px-5 py-2.5 text-sm font-semibold text-[#FAD4E8] transition hover:bg-[#F0ABCF]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F0ABCF] disabled:cursor-wait disabled:opacity-50"
+            >
+              Try a random game
+            </button>
+          </div>
+        )}
 
         <div className={preview ? "" : "mt-12 sm:mt-16"}>
           {busy ? (
@@ -1582,9 +1619,9 @@ export default function BuildPickerClient({
                 <button
                   type="button"
                   onClick={() => selectMode("match")}
-                  className="mt-4 text-sm font-semibold text-[#FAD4E8] underline decoration-[#F0ABCF]/60 underline-offset-4 transition hover:text-[#F0ABCF]"
+                  className="mt-5 inline-flex min-h-12 items-center justify-center rounded-xl border border-[#F0ABCF]/60 bg-[#F0ABCF] px-6 py-3 text-sm font-bold text-[#211520] shadow-lg transition hover:bg-[#FAD4E8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F0ABCF]"
                 >
-                  Check a previous game
+                  Check a previous game with a match ID
                 </button>
               }
             />

@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { VIEGO_ITEM_SECTION } from "../viegoItems";
 import BuildPickerClient from "./BuildPickerClient";
 import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
+import { ensureSummonerSpellsAssets, summonerSpellIconById, summonerSpellKeyById } from "@/lib/datadragon/summonerspells";
+import type { RandomGameCatalog } from "@/lib/guides/buildPicker/randomGame";
 
 const title = "Viego Build Picker";
 const description =
@@ -31,15 +33,13 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function BuildPickerPage() {
-  const showPickerDebug = process.env.NODE_ENV === "development";
   const guideTextIcons = await buildGuideTextIcons();
   const [builds, bootItems, profiles] = await Promise.all([
     loadPickerBuilds(VIEGO_ITEM_SECTION),
     loadPickerBoots(),
-    showPickerDebug
-      ? prisma.championProfile.findMany({ orderBy: { name: "asc" } })
-      : Promise.resolve([]),
+    prisma.championProfile.findMany({ orderBy: { name: "asc" } }),
     ensureLiveDDragonPatch(),
+    ensureSummonerSpellsAssets(),
   ]);
 
   const championRows: ChampionProfileRow[] = profiles.map((row) => {
@@ -61,7 +61,20 @@ export default async function BuildPickerPage() {
     };
   });
 
+  const randomGameCatalog: RandomGameCatalog = {
+    champions: profiles.filter((row) => row.durabilityScore !== null && row.damageScore !== null && row.shieldScore !== null).map((row) => ({
+      name: row.name, championId: resolveChampionId(row.name),
+      championIcon: champSquareUrlById(resolveChampionId(row.name)),
+      shields: row.shields, damageType: row.damageType, damageThreat: row.damageThreat,
+      deniesResets: row.deniesResets, cc: row.cc,
+      durabilityScore: row.durabilityScore, damageScore: row.damageScore, ccScore: row.ccScore,
+      shieldScore: row.shieldScore, shieldTiming: row.shieldTiming,
+      mercuryTreadsScore: row.mercuryTreadsScore, canBuildSteelcaps: row.canBuildSteelcaps,
+    })),
+    spells: [4, 7, 11, 12, 21].map((id) => ({ id, key: summonerSpellKeyById(id) ?? String(id), icon: summonerSpellIconById(id) ?? "" })),
+  };
+
   return (
-    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={championRows} guideTextIcons={guideTextIcons} />
+    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={championRows} guideTextIcons={guideTextIcons} randomGameCatalog={randomGameCatalog} />
   );
 }
