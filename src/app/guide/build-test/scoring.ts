@@ -2,6 +2,7 @@ import {
   compositionFacts,
   isMagicDamage,
   isPhysicalDamage,
+  magicDamageScore,
   SHADOW_ECONOMY_CHAMPIONS,
 } from "@/lib/guides/buildPicker/compositionFacts";
 import {
@@ -61,7 +62,7 @@ export function scoreTeams(allies: TestChampion[], enemies: TestChampion[], sett
   const shields = teamShieldScore(enemies);
   const early = shields - late;
   const physical = allies.filter(isPhysicalDamage).length;
-  const magicDamage = allies.filter(isMagicDamage).reduce((sum, c) => sum + c.damageScore, 0);
+  const magicDamage = allies.reduce((sum, c) => sum + magicDamageScore(c), 0);
   const eligible = enemies.filter(c => c.canBuildSteelcaps === true).length;
   const steelApplies = physical >= settings.physicalMin && magicDamage < settings.magicDamageMax;
   const adjustment = steelApplies ? eligible * settings.steelcapsBonus : 0;

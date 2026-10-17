@@ -5,7 +5,8 @@ import type {
   ChampionThreatLevel,
 } from "@prisma/client";
 import {
-  isMagicDamage,
+  magicDamageScore,
+  physicalDamageScore,
   isPhysicalDamage,
   RESET_DENIER_MIN,
   SHADOW_ECONOMY_CHAMPIONS,
@@ -186,9 +187,7 @@ function lateShieldScore(team: TreeParticipant[]) {
 function steelcapsAdjustment(ctx: TreeContext) {
   const settings = treeSettings(ctx);
   const physical = ctx.allies.filter(isPhysicalDamage).length;
-  const magicDamage = ctx.allies
-    .filter(isMagicDamage)
-    .reduce((sum, champion) => sum + (champion.damageScore ?? 0), 0);
+  const magicDamage = ctx.allies.reduce((sum, champion) => sum + magicDamageScore(champion), 0);
   const steelApplies = physical >= settings.physicalMin && magicDamage < settings.magicDamageMax;
   const eligible = ctx.enemies.filter((champion) => champion.canBuildSteelcaps === true).length;
   const adjustment = steelApplies ? eligible * settings.steelcapsBonus : 0;
@@ -216,9 +215,29 @@ function shadowEconomyTargets(team: TreeParticipant[]) {
 }
 
 function enemyMagicDamage(ctx: TreeContext) {
-  return ctx.enemies
-    .filter(isMagicDamage)
-    .reduce((sum, champion) => sum + (champion.damageScore ?? 0), 0);
+  return ctx.enemies.reduce((sum, champion) => sum + magicDamageScore(champion), 0);
+}
+
+function shouldBuildSurvivability(ctx: TreeContext) {
+  return countEnemies(ctx, "damageType", "AD") >= 3 && enemyMagicDamage(ctx) <= 4;
+}
+
+function shouldBuildAssassinSurvivability(ctx: TreeContext) {
+  return countEnemies(ctx, "damageType", "AD") >= 3
+    && ctx.enemies.some((champion) => champion.damageType === "AD" && champion.spellIds.includes(11)
+      && (champion.championId === "Rengar" || champion.championId === "Talon"
+        || champion.name === "Rengar" || champion.name === "Talon"))
+    && teamShieldScore(ctx.allies) <= 4;
+}
+
+function enemyPhysicalDamage(ctx: TreeContext) {
+  return ctx.enemies.reduce((sum, champion) => sum + physicalDamageScore(champion), 0);
+}
+
+function shouldBuildMagicSurvivability(ctx: TreeContext) {
+  return countEnemies(ctx, "damageType", "AP") >= 3
+    && enemyPhysicalDamage(ctx) <= 4
+    && enemyMercsScore(ctx) >= 9;
 }
 
 function enemyMercsScore(ctx: TreeContext) {
@@ -236,6 +255,24 @@ function recommendedBoots(ctx: TreeContext): {
   const magic = enemyMagicDamage(ctx);
   const mercs = enemyMercsScore(ctx);
   const detail = `durability ${durability}, ${enemyAd} enemy AD, magic ${magic}, damage ${damage}, mercs ${mercs}`;
+
+  if (shouldBuildAssassinSurvivability(ctx)) {
+    return {
+      boot: { itemId: 3047, slot: 3 },
+      ruleId: "b9",
+      detail: `${detail}, enemy AD Rengar or Talon with Smite, allied shields ${teamShieldScore(ctx.allies)}`,
+    };
+  }
+  if (shouldBuildSurvivability(ctx)) {
+    return { boot: { itemId: 3047, slot: 2 }, ruleId: "b0", detail };
+  }
+  if (shouldBuildMagicSurvivability(ctx)) {
+    return {
+      boot: { itemId: 3111, slot: 2 },
+      ruleId: "b8",
+      detail: `${detail}, ${countEnemies(ctx, "damageType", "AP")} enemy AP, physical ${enemyPhysicalDamage(ctx)}`,
+    };
+  }
 
   if (enemyAd >= BOOT_THRESHOLDS.steelcapsAdMin) {
     if (magic < BOOT_THRESHOLDS.steelcapsMagicSecond) {
@@ -544,7 +581,56 @@ const SHADOW_ECONOMY: DecisionNode = {
   ],
 };
 
-export const VIEGO_DECISION_TREE: DecisionNode = SHADOW_ECONOMY;
+export const VIEGO_DECISION_TREE: DecisionNode = {
+  kind: "choice",
+  id: "survivability",
+  title: "Damage concentrated in one type?",
+  rule: "Survivability maxxing: first check 3+ AD including AD Rengar or Talon with Smite and allied shields 4 or below for Steelcaps third, before Umbral. Otherwise 3+ AD and magic damage 4 or below for Steelcaps second; 3+ AP, physical damage 4 or below, and Mercs value 9+ for Mercury Treads second.",
+  pick: (ctx) => {
+    const enemyAd = countEnemies(ctx, "damageType", "AD");
+    const qualifies = shouldBuildSurvivability(ctx);
+    const magicQualifies = shouldBuildMagicSurvivability(ctx);
+    const assassinQualifies = shouldBuildAssassinSurvivability(ctx);
+    return {
+      optionId: assassinQualifies ? "assassin" : qualifies ? "yes" : magicQualifies ? "magic" : "no",
+      ruleId: assassinQualifies ? "v4" : qualifies ? "v1" : magicQualifies ? "v3" : "v2",
+      detail: `${enemyAd} AD enemies, magic damage ${enemyMagicDamage(ctx)}, ${countEnemies(ctx, "damageType", "AP")} AP enemies, physical damage ${enemyPhysicalDamage(ctx)}, Mercs value ${enemyMercsScore(ctx)}, allied shields ${teamShieldScore(ctx.allies)}`,
+    };
+  },
+  options: [
+    {
+      id: "assassin",
+      label: "3+ AD including Rengar or Talon with Smite, allied shields 4 or below",
+      next: {
+        kind: "build",
+        id: "assassin-survivability",
+        buildId: "collector-shieldbow-ga",
+        reason: "At least three enemies are AD, including Rengar or Talon with Smite, and allied shields are 4 or below. This takes priority over Umbral: Collector, Shieldbow, then Plated Steelcaps third.",
+      },
+    },
+    {
+      id: "yes",
+      label: "3+ AD and magic damage 4 or below",
+      next: {
+        kind: "build",
+        id: "survivability",
+        buildId: "collector-shieldbow-ga",
+        reason: "At least three enemies are AD and enemy magic damage is 4 or below. Go Survivability maxxing — AD with Plated Steelcaps second, Guardian Angel after LDR, and Infinity Edge last.",
+      },
+    },
+    {
+      id: "magic",
+      label: "3+ AP, physical damage 4 or below, Mercs value 9+",
+      next: {
+        kind: "build",
+        id: "magic-survivability",
+        buildId: "collector-shieldbow",
+        reason: "At least three enemies are AP, enemy physical damage is 4 or below, and Mercury Treads value is at least 9. Go Survivability maxxing with Mercury Treads second.",
+      },
+    },
+    { id: "no", label: "Otherwise continue", next: SHADOW_ECONOMY },
+  ],
+};
 
 /* ------------------------------------------------------------------ */
 /* Portrait float tags                                                 */
@@ -640,7 +726,7 @@ function shadowEconomyFloatTags(enemies: TreeParticipant[]) {
 
 function tankFloatTags(ctx: TreeContext, ruleId: string): BuildFloatTag[] {
   if (ruleId === "t1") return squishyDecisionFloatTags(ctx.enemies);
-  if (ruleId === "t3") return antiTankDecisionFloatTags(ctx.enemies);
+  if (ruleId === "t3" || ruleId === "t4") return antiTankDecisionFloatTags(ctx.enemies);
   return [];
 }
 
@@ -651,7 +737,7 @@ function scorePreviewFloatTags(ctx: TreeContext, buildId: string): BuildFloatTag
   }
   if (buildId === "yun-tal-ldr") return lowDamageFloatTags(ctx);
   if (buildId === "bastionbreaker-cyclosword") return squishyDecisionFloatTags(ctx.enemies);
-  if (buildId === "hubris-ldr") return antiTankDecisionFloatTags(ctx.enemies);
+  if (buildId === "hubris-ldr" || buildId === "main-hubris") return antiTankDecisionFloatTags(ctx.enemies);
   return [];
 }
 
@@ -673,7 +759,15 @@ function buildFloatTags(
     );
   let tags: BuildFloatTag[] = [];
 
-  if (decisive?.nodeId === "shadow-economy" && decisive.ruleId === "u1") {
+  if (decisive?.nodeId === "survivability" && (decisive.ruleId === "v1" || decisive.ruleId === "v4")) {
+    tags = ctx.enemies
+      .filter((champion) => champion.damageType === "AD")
+      .map((champion) => floatTag(champion, "enemy", "AD", "ad"));
+  } else if (decisive?.nodeId === "survivability" && decisive.ruleId === "v3") {
+    tags = ctx.enemies
+      .filter((champion) => champion.damageType === "AP")
+      .map((champion) => floatTag(champion, "enemy", "AP", "ap"));
+  } else if (decisive?.nodeId === "shadow-economy" && decisive.ruleId === "u1") {
     tags = shadowEconomyFloatTags(ctx.enemies);
   } else if (decisive?.nodeId === "shields" && decisive.ruleId !== "s6") {
     tags = shieldFloatTags(ctx.enemies);
@@ -939,9 +1033,27 @@ export function runDecisionTree(ctx: TreeContext, root: DecisionNode = VIEGO_DEC
     alternative: resolved.alternative,
     alternates: pickAlternateRoutes(ctx, resolved.buildId, resolved.leafId, node.id),
     trace,
-    floatTags: buildFloatTags(ctx, trace, resolved.leafId, node.id, node.buildId),
+    floatTags: dedupeFloatTags([
+      ...buildFloatTags(ctx, trace, resolved.leafId, node.id, node.buildId),
+      ...bootFloatTags(ctx, boots.boot.itemId),
+    ]),
     composition: enemyComposition(ctx),
   };
+}
+
+function bootFloatTags(ctx: TreeContext, itemId: number): BuildFloatTag[] {
+  if (itemId === 3047) {
+    return ctx.enemies
+      .filter((champion) => champion.damageType === "AD")
+      .map((champion) => floatTag(champion, "enemy", "AD", "ad"));
+  }
+  if (itemId === 3111) {
+    return ctx.enemies
+      .filter((champion) => (champion.mercuryTreadsScore ?? 0) > 0)
+      .map((champion) => floatTag(champion, "enemy", "CC", "cc"));
+  }
+  if (itemId === 3009) return squishyDecisionFloatTags(ctx.enemies);
+  return [];
 }
 
 export function serializeTree(node: DecisionNode = VIEGO_DECISION_TREE): SerializedTreeNode {

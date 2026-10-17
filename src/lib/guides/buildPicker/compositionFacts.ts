@@ -41,6 +41,17 @@ export function isMagicDamage(champion: Pick<FactChampion, "damageType">) {
   return champion.damageType === "AP" || champion.damageType === "Mixed";
 }
 
+/** Split mixed damage evenly; retain fractional scores without rounding. */
+export function physicalDamageScore(champion: Pick<FactChampion, "damageType" | "damageScore">) {
+  const score = champion.damageScore ?? 0;
+  return champion.damageType === "Mixed" ? score / 2 : champion.damageType === "AD" ? score : 0;
+}
+
+export function magicDamageScore(champion: Pick<FactChampion, "damageType" | "damageScore">) {
+  const score = champion.damageScore ?? 0;
+  return champion.damageType === "Mixed" ? score / 2 : champion.damageType === "AP" ? score : 0;
+}
+
 function portraits(champions: FactChampion[]): CompositionFactChampion[] {
   return champions.map((champion) => ({
     championId: champion.championId,
@@ -56,9 +67,7 @@ export function compositionFacts(
   settings: ScoringThresholds = SCORING_THRESHOLDS
 ): CompositionFact[] {
   const physical = allies.filter(isPhysicalDamage).length;
-  const magicDamage = allies
-    .filter(isMagicDamage)
-    .reduce((sum, champion) => sum + (champion.damageScore ?? 0), 0);
+  const magicDamage = allies.reduce((sum, champion) => sum + magicDamageScore(champion), 0);
   const steelApplies = physical >= settings.physicalMin && magicDamage < settings.magicDamageMax;
   const steelTargets = enemies.filter((champion) => champion.canBuildSteelcaps === true);
   const umbralTargets = enemies.filter(

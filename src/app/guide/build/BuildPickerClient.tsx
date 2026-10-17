@@ -1,9 +1,13 @@
 "use client";
 
 import clsx from "clsx";
-import { Check, ChevronDown, ChevronRight, Search } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, Eye, Search } from "lucide-react";
+import Link from "next/link";
+import { possessionValueFor } from "../possessionValues";
 import {
   useCallback,
+  createContext,
+  useContext,
   useEffect,
   useId,
   useRef,
@@ -12,6 +16,8 @@ import {
   type ReactNode,
 } from "react";
 import GuideImage from "@/app/_components/guides/GuideImage";
+import DividerWithLogo from "@/app/_components/small/Divider-logo";
+import { renderGuideHighlightedText } from "@/app/_components/guides/guideTextHighlights";
 import type { CompositionFact } from "@/lib/guides/buildPicker/compositionFacts";
 import type { BuildFloatTag, EnemyComposition } from "@/lib/guides/buildPicker/decisionTree";
 import {
@@ -33,6 +39,8 @@ import BootsLogicView from "./BootsLogicView";
 import ChampionProfileTable from "./ChampionProfileTable";
 import PickerLogicView from "./PickerLogicView";
 
+const PickerTextIconsContext = createContext<Record<string, string>>({});
+
 /** Recommended build → useful pivot when the reason you picked it stops being true. */
 const BUILD_ALTERNATIVES: Record<string, { buildId: string; label: string }> = {
   "hubris-ldr": { buildId: "hubris-skip-anti-tank", label: "If you fall behind early" },
@@ -41,6 +49,7 @@ const BUILD_ALTERNATIVES: Record<string, { buildId: string; label: string }> = {
   "yun-tal-ldr": { buildId: "hubris-ldr", label: "If you miss B. F. Sword on first reset" },
   "bastionbreaker-cyclosword": { buildId: "main-bastionbreaker", label: "If enemies end up stacking armor" },
   "collector-shieldbow": { buildId: "umbral-collector", label: "If you fall too far behind" },
+  "collector-shieldbow-ga": { buildId: "umbral-collector", label: "If you fall too far behind" },
   "sit-serpents-first": { buildId: "sit-serpents", label: "If you want anti-shield later" },
   "sit-serpents-late": { buildId: "sit-serpents", label: "If you want anti-shield earlier" },
 };
@@ -298,6 +307,7 @@ function BuildWhyPanel({
     const altBuild = builds.find((entry) => entry.id === route.buildId);
     return altBuild ? [{ ...route, build: altBuild }] : [];
   });
+  const guideTextIcons = useContext(PickerTextIconsContext);
 
   return (
     <div className="mt-7 border-t border-[#B8D8EA]/18 bg-[#120F19]/95 px-0 pb-4 pt-7 text-left sm:px-10 sm:pb-6 sm:pt-9">
@@ -306,11 +316,18 @@ function BuildWhyPanel({
       {facts?.length ? <CompositionFacts facts={facts} builds={builds} bootItems={bootItems} /> : null}
 
       {build?.description ? (
-        <div className="mt-6 max-w-4xl text-sm leading-relaxed text-[#F5E6D3]/68 max-sm:px-5 sm:text-[0.95rem]">
-          {build.description.split("\n").filter(Boolean).map((paragraph) => (
-            <p key={paragraph} className="mt-2 first:mt-0">{paragraph}</p>
-          ))}
-        </div>
+        <>
+          <div className="my-7 h-px w-full bg-gradient-to-r from-transparent via-[#F0ABCF]/30 to-transparent" />
+          <div className="mb-4 flex w-full flex-wrap items-center justify-start gap-x-4 gap-y-2 max-sm:px-5">
+            <h3 className="text-base font-bold tracking-tight text-[#FAD4E8]/85">{build.label}</h3>
+            <ItemOrder build={build} boot={boot} bootSlot={bootSlot} size="xs" showNumbers={false} />
+          </div>
+          <div className="max-w-4xl text-sm leading-relaxed text-[#F5E6D3]/68 max-sm:px-5 sm:text-[0.95rem]">
+            {build.description.split("\n").filter(Boolean).map((paragraph) => (
+              <p key={paragraph} className="mt-2 first:mt-0">{renderGuideHighlightedText(paragraph, guideTextIcons)}</p>
+            ))}
+          </div>
+        </>
       ) : null}
 
       {routes.length ? (
@@ -759,13 +776,15 @@ function PortraitFloats({ tags, appearDelays }: { tags: BuildFloatTag[]; appearD
   if (tags.length === 0) return null;
   return (
     <div className="pointer-events-none absolute inset-0 z-20" aria-hidden>
-      {tags.map((entry) => {
+      {tags.map((entry, index) => {
         const spot = rollAroundCenter(floatTagKey(entry));
+        // Keep multi-tag labels compact; use a shorter drift to preserve separation.
+        const y = tags.length > 1 ? (index - (tags.length - 1) / 2) * 26 : spot.y;
         return (
           <span
             key={floatTagKey(entry)}
             className="absolute left-1/2 top-[40%] whitespace-nowrap"
-            style={{ transform: `translate(calc(-50% + ${spot.x}px), calc(-50% + ${spot.y}px))` }}
+            style={{ transform: `translate(calc(-50% + ${spot.x}px), calc(-50% + ${y}px))` }}
           >
             <span
               className="build-float-tag inline-block text-[16px] font-extrabold uppercase leading-none tracking-[0.06em]"
@@ -774,6 +793,7 @@ function PortraitFloats({ tags, appearDelays }: { tags: BuildFloatTag[]; appearD
                 fontSize: "16px",
                 textShadow: "-1px -1px 0 rgba(8,6,12,0.98), 1px -1px 0 rgba(8,6,12,0.98), -1px 1px 0 rgba(8,6,12,0.98), 1px 1px 0 rgba(8,6,12,0.98), 0 0 7px rgba(8,6,12,1), 0 0 15px rgba(8,6,12,0.9)",
                 animationDelay: `${appearDelays[floatTagKey(entry)] ?? FLOAT_TAG_START_MS}ms`,
+                ...(tags.length > 1 ? { "--build-float-rise": "-8px" } : {}),
               }}
             >
               {entry.word}
@@ -809,6 +829,37 @@ function PortraitScores({
   );
 }
 
+function PossessionReveal({ champion }: { champion: string }) {
+  const value = possessionValueFor(champion);
+  if (value == null) return null;
+  const tone = value === 10
+    ? { border: "#E8C56B", score: "#FFE8A0", glow: "0 0 20px rgba(232,197,107,0.42)" }
+    : value >= 8
+      ? { border: "#E78BC0", score: "#FFD0E6", glow: "0 0 18px rgba(240,171,207,0.38)" }
+      : value >= 6
+        ? { border: "#73B3D2", score: "#B8E4F7", glow: "0 0 12px rgba(115,179,210,0.16)" }
+        : value >= 4
+          ? { border: "#71838E", score: "#91A2AD", glow: "none" }
+          : { border: "#756B65", score: "#92847A", glow: "none" };
+  return (
+    <div className="possession-reveal pointer-events-none absolute -inset-[5px] z-10">
+      {[56, 64, 72].map((size, index) => {
+        const edge = size + 9;
+        const corner = edge - 16;
+        return (
+          <svg key={size} className={clsx("absolute inset-0 h-full w-full overflow-visible", index === 0 ? "sm:hidden" : index === 1 ? "hidden sm:block lg:hidden" : "hidden lg:block")} viewBox={`0 0 ${size + 10} ${size + 10}`} fill="none" aria-hidden style={{ color: tone.border }}>
+            <path className="possession-border" pathLength={1} d={`M 1 ${corner} L 1 17 A 16 16 0 0 1 17 1 L ${corner} 1 A 16 16 0 0 1 ${edge} 17`} stroke="currentColor" strokeWidth="2" />
+            <path className="possession-border" pathLength={1} d={`M 1 ${corner} A 16 16 0 0 0 17 ${edge} L ${corner} ${edge} A 16 16 0 0 0 ${edge} ${corner} L ${edge} 17`} stroke="currentColor" strokeWidth="2" />
+          </svg>
+        );
+      })}
+      <span className="possession-score absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#120F19]/90 px-1.5 py-0.5 text-xs font-extrabold tabular-nums" style={{ color: tone.score, textShadow: tone.glow }} aria-label={`${champion} possession: ${value} out of 10`}>
+        {value}<span className="text-[9px] opacity-65">/10</span>
+      </span>
+    </div>
+  );
+}
+
 function TeamColumn({
   title,
   side,
@@ -828,7 +879,7 @@ function TeamColumn({
   const enemy = side === "enemy";
   return (
     <div className={clsx("flex flex-col", enemy ? "items-end" : "items-start")}>
-      <p className={LABEL_CLASS} style={{ color: accent }}>
+      <p className={clsx(LABEL_CLASS, "flex w-14 justify-center whitespace-nowrap text-center sm:w-16 lg:w-[4.5rem]")} style={{ color: accent }}>
         {title}
       </p>
       <ul className="mt-4 flex flex-col gap-3 sm:gap-3.5">
@@ -867,6 +918,7 @@ function TeamColumn({
                 tags={floatTags.filter((entry) => entry.championId === participant.championId)}
                 appearDelays={appearDelays}
               />
+              {enemy ? <PossessionReveal champion={participant.championId} /> : null}
               {showScores ? (
                 <PortraitScores
                   side={side}
@@ -909,7 +961,7 @@ function TeamColumnSkeleton({ side }: { side: "ally" | "enemy" }) {
   const enemy = side === "enemy";
   return (
     <div className={clsx("flex flex-col", enemy ? "items-end" : "items-start")} aria-hidden>
-      <p className={clsx(LABEL_CLASS, "relative")}>
+      <p className={clsx(LABEL_CLASS, "relative flex w-14 justify-center whitespace-nowrap text-center sm:w-16 lg:w-[4.5rem]")}>
         <span className="text-transparent">{enemy ? "Enemy team" : "Your team"}</span>
         <span className="absolute inset-x-0 top-1/2 h-[0.55em] -translate-y-1/2 animate-pulse rounded-full bg-[#F5E6D3]/[0.12]" />
       </p>
@@ -992,30 +1044,34 @@ function ItemOrder({
   bootSlot,
   size = "md",
   noWrap = false,
+  showNumbers = true,
 }: {
   build: PickerBuild;
   boot?: PickerItem;
   bootSlot?: 2 | 3 | 4;
-  size?: "md" | "sm";
+  size?: "md" | "sm" | "xs";
   noWrap?: boolean;
+  showNumbers?: boolean;
 }) {
-  const tile = size === "sm" ? "h-[min(2.75rem,12vw)] w-[min(2.75rem,12vw)] sm:h-12 sm:w-12" : "h-[min(4rem,13vw)] w-[min(4rem,13vw)] sm:h-[4.5rem] sm:w-[4.5rem]";
+  const tile = size === "xs" ? "h-[min(1.375rem,6vw)] w-[min(1.375rem,6vw)] sm:h-6 sm:w-6" : size === "sm" ? "h-[min(2.75rem,12vw)] w-[min(2.75rem,12vw)] sm:h-12 sm:w-12" : "h-[min(4rem,13vw)] w-[min(4rem,13vw)] sm:h-[4.5rem] sm:w-[4.5rem]";
   const items = [...build.items];
   if (boot && bootSlot) items.splice(bootSlot - 1, 0, boot);
   return (
-    <ol aria-label={`${build.label} item order`} className={clsx("flex flex-nowrap justify-center gap-x-2 gap-y-4 sm:gap-x-5", !noWrap && "sm:flex-wrap")}>
+    <ol aria-label={`${build.label} item order`} className={clsx("flex flex-nowrap gap-y-4", size === "xs" ? "justify-start gap-x-1 sm:gap-x-2.5" : "justify-center gap-x-2 sm:gap-x-5", !noWrap && "sm:flex-wrap")}>
       {items.map((item, index) => (
         <li key={`${index}-${item.id}`} className="flex flex-col items-center gap-1.5">
-          <span className="text-[10px] font-medium tabular-nums text-[#B8D8EA]/65">{index + 1}</span>
+          {showNumbers ? <span className="text-[10px] font-medium tabular-nums text-[#B8D8EA]/65">{index + 1}</span> : null}
           <div
             className={clsx(
-              "overflow-hidden rounded-xl bg-[#352839] ring-1 ring-[#F0ABCF]/40",
+              "overflow-hidden",
+              size === "xs" ? "relative rounded-md bg-[#352839]" : "rounded-xl bg-[#352839] ring-1 ring-[#F0ABCF]/40",
               size === "md" && "shadow-[0_0_22px_rgba(240,171,207,0.22),0_10px_30px_rgba(0,0,0,0.45)]",
               tile
             )}
             title={item.name}
           >
-            <GuideImage src={item.icon} alt={item.name} className="h-full w-full object-cover" />
+            <GuideImage src={item.icon} alt={item.name} className={clsx("h-full w-full object-cover", size === "xs" && "opacity-[0.65] sepia-[0.65] saturate-50")} />
+            {size === "xs" ? <span aria-hidden className="pointer-events-none absolute inset-0 bg-[#9C7058]/25 mix-blend-color" /> : null}
           </div>
         </li>
       ))}
@@ -1055,6 +1111,7 @@ function BuildCard({
     : undefined;
   const selectedBoot = bootItems.find((item) => item.id === boot.itemId);
   const [whyOpen, setWhyOpen] = useState(false);
+  const [possessionsPinned, setPossessionsPinned] = useState(false);
 
   return (
     <section
@@ -1074,6 +1131,15 @@ function BuildCard({
         className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#FAD4E8]/60 to-transparent"
       />
       <div className="relative flex flex-col items-center text-center">
+        <button
+          type="button"
+          aria-pressed={possessionsPinned}
+          onClick={() => setPossessionsPinned((pinned) => !pinned)}
+          className="possession-toggle absolute right-2 top-0 z-10 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2 text-[11px] font-semibold text-[#F5E6D3] transition hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F0ABCF] aria-pressed:bg-white/[0.08] sm:right-0"
+        >
+          <Eye aria-hidden className="h-4 w-4" />
+          <span className="sr-only sm:not-sr-only">Possessions</span>
+        </button>
         <p className={LABEL_CLASS}>{source === "match" ? "What I would have built" : "Recommended build"}</p>
         {playerTip ? (
           <p className="mt-3 rounded-full border border-[#B8D8EA]/20 bg-[#B8D8EA]/[0.07] px-3 py-1.5 text-xs font-medium text-[#B8D8EA]/85" role="status">
@@ -1098,7 +1164,8 @@ function BuildCard({
           </h2>
         )}
 
-        <div className="mt-8 w-full border-t border-[#F5E6D3]/10 pt-7">
+        <div className="w-full">
+          <DividerWithLogo className="mb-7 mt-8" color="rgba(240,171,207,0.30)" />
           {alternativeBuild && alternative ? (
             <>
               <p className={LABEL_CLASS}>{alternative.label}</p>
@@ -1244,11 +1311,13 @@ export default function BuildPickerClient({
   bootItems,
   championRows,
   preview,
+  guideTextIcons = {},
 }: {
   builds: PickerBuild[];
   bootItems: PickerItem[];
   championRows: ChampionProfileRow[];
   preview?: LiveGameLookup;
+  guideTextIcons?: Record<string, string>;
 }) {
   const [mode, setMode] = useState<LookupMode>("live");
   const [riotId, setRiotId] = useState("");
@@ -1398,14 +1467,24 @@ export default function BuildPickerClient({
     : undefined;
 
   return (
-    <div className={clsx("relative", !preview && "min-h-screen")} style={{ color: GUIDE.text }}>
+    <PickerTextIconsContext.Provider value={guideTextIcons}>
+    <div className={clsx("possession-scope relative", !preview && "min-h-screen")} style={{ color: GUIDE.text }}>
       <div className={clsx("relative z-10 mx-auto w-full max-w-5xl px-5 sm:px-8", preview ? "pb-6 pt-8" : "pb-24 pt-16 sm:pt-[4.8rem] lg:pt-[5.6rem]")}>
-        {!preview && <><p className="mb-3 text-center text-xs text-[#B8D8EA]/70">
-          This feature is still being tested.
-        </p>
-        <h1 className="mb-8 text-center text-3xl font-bold tracking-tight text-[#F5E6D3] sm:mb-10 sm:text-4xl lg:text-5xl">
-          Build like Mino would.
-        </h1></>}
+        {!preview && (
+          <div className="relative mb-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:mb-10 sm:gap-6">
+          <Link
+            href="/guide"
+            className="inline-flex w-fit items-center gap-2.5 rounded-sm text-base font-bold italic tracking-wide text-[#F0ABCF] transition-colors hover:text-[#FAD4E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0ABCF]/60 focus-visible:ring-offset-4 focus-visible:ring-offset-[#120F19] sm:text-xl xl:absolute xl:-left-36 xl:top-1/2 xl:-translate-y-1/2"
+            style={{ fontFamily: '"Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif' }}
+          >
+            <ArrowLeft aria-hidden className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+            Return to guide
+          </Link>
+          <h1 className="col-start-2 max-w-[50vw] text-center text-2xl font-bold tracking-tight text-[#F5E6D3] sm:max-w-none sm:text-4xl lg:text-5xl">
+            Build like Mino would.
+          </h1>
+          </div>
+        )}
 
         {!preview && <LookupForm
           mode={mode}
@@ -1574,5 +1653,6 @@ export default function BuildPickerClient({
         ) : null}
       </div>
     </div>
+    </PickerTextIconsContext.Provider>
   );
 }

@@ -64,6 +64,7 @@ type Props = {
 };
 
 export default function PickerLogicView({ builds, trace, activeBuildId }: Props) {
+  const survivabilityStep = trace?.find((step) => step.nodeId === "survivability");
   const shadowStep = trace?.find((step) => step.nodeId === "shadow-economy");
   const lowDamageStep = trace?.find((step) => step.nodeId === "low-damage-dps");
   const shieldStep = trace?.find((step) => step.nodeId === "shields");
@@ -74,6 +75,19 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-10">
       <div className="space-y-6">
+        <CheckBlock
+          title="Survivability maxxing?"
+          note="Checked before Shadow Economy. Rengar/Talon must have Smite; this rule puts Steelcaps after Shieldbow. Other survivability rules put boots after Collector."
+          rows={[
+            { id: "v4", when: "3+ AD including AD Rengar or Talon with Smite, allied shields 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
+            { id: "v1", when: "3+ AD enemies and magic damage 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
+            { id: "v3", when: "3+ AP enemies, physical damage 4 or below, and Mercs value 9+", buildId: "collector-shieldbow", buildLabel: "Survivability maxxing" },
+            { id: "v2", when: "Anything else", buildId: null, buildLabel: "Otherwise continue" },
+          ]}
+          step={survivabilityStep}
+          evaluated={evaluated}
+          builds={builds}
+        />
         <CheckBlock
           title="1. Shadow Economy?"
           note="First matching line wins. Shaco, Evelynn, or Rengar recommend Umbral Glaive unless enemy durability already reaches Titansbane."

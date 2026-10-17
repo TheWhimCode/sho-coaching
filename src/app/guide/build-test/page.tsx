@@ -7,6 +7,7 @@ import { ensureSummonerSpellsAssets, summonerSpellIconById, summonerSpellKeyById
 import { loadPickerBoots, loadPickerBuilds } from "@/lib/guides/buildPicker/loadBuilds";
 import { VIEGO_ITEM_SECTION } from "../viegoItems";
 import Playground from "./Playground";
+import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Temporary build scoring test", robots: { index: false, follow: false } };
@@ -23,8 +24,9 @@ const POOLS = [
 export default async function BuildTestPage() {
   if (process.env.NODE_ENV !== "development") notFound();
   await Promise.all([ensureLiveDDragonPatch(), ensureSummonerSpellsAssets()]);
-  const [profiles, builds, bootItems] = await Promise.all([
+  const [profiles, builds, bootItems, guideTextIcons] = await Promise.all([
     prisma.championProfile.findMany(), loadPickerBuilds(VIEGO_ITEM_SECTION), loadPickerBoots(),
+    buildGuideTextIcons(),
   ]);
   const byName = new Map(profiles.map(row => [row.name, row]));
   const used = new Set(["Viego"]);
@@ -54,5 +56,5 @@ export default async function BuildTestPage() {
   });
   const allies = makeTeam(true);
   const enemies = makeTeam(false);
-  return <Playground allies={allies} enemies={enemies} builds={builds} bootItems={bootItems} />;
+  return <Playground allies={allies} enemies={enemies} builds={builds} bootItems={bootItems} guideTextIcons={guideTextIcons} />;
 }

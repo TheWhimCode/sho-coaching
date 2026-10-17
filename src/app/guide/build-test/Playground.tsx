@@ -53,8 +53,9 @@ function TeamScores({ label, team, steelApplies = false, steelBonus = 1 }: { lab
   </div>;
 }
 
-export default function Playground({ allies, enemies, builds, bootItems }: {
+export default function Playground({ allies, enemies, builds, bootItems, guideTextIcons }: {
   allies: TestChampion[]; enemies: TestChampion[]; builds: PickerBuild[]; bootItems: PickerItem[];
+  guideTextIcons: Record<string, string>;
 }) {
   const [settings, setSettings] = useState(DEFAULTS);
   useEffect(() => {
@@ -89,7 +90,7 @@ export default function Playground({ allies, enemies, builds, bootItems }: {
         <button className="rounded-lg border border-[#F0ABCF]/30 px-4 py-2 text-[#F0ABCF]" onClick={() => window.location.reload()}>New composition</button>
       </div>
     </section>
-    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={[]} preview={result} />
+    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={[]} preview={result} guideTextIcons={guideTextIcons} />
     <section aria-label="Composition scores and settings" className="mx-auto max-w-5xl space-y-3 px-4 pb-16 text-[#F5EDE6] sm:px-8">
       <div className="overflow-x-auto"><div className="grid min-w-[980px] grid-cols-2 gap-3">
         <TeamScores label="Allies" team={allies} />

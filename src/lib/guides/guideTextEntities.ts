@@ -4,6 +4,7 @@ export const GUIDE_SHIELDBOW_RED = "#FF2222";
 export const GUIDE_KRAKEN_GOLD = "#F5B800";
 export const GUIDE_GA_BEIGE = "#F5E6D3";
 export const GUIDE_STEELCAPS_BROWN = "#A67C4E";
+export const GUIDE_MERCURY_TREADS_BLUE = "#6F94B8";
 export const GUIDE_NOON_LIGHT_BROWN = "#D4B896";
 export const GUIDE_HUBRIS_BROWN = "#C86B10";
 export const GUIDE_SERPENTS_GRAY = "#C5DDD0";
@@ -214,8 +215,9 @@ export const GUIDE_TEXT_ENTITIES: GuideTextEntity[] = [
     icon: { kind: "item", id: "3140" },
   },
   {
-    patterns: ["Mercury's Treads", "Mercs"],
+    patterns: ["Mercury's Treads", "Mercury Treads", "Mercs"],
     matchKey: "mercury-treads",
+    color: GUIDE_MERCURY_TREADS_BLUE,
     icon: { kind: "item", id: "3111" },
   },
   {

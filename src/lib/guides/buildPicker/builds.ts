@@ -53,7 +53,8 @@ const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
     // TODO: confirm item order with Mino; placeholder is Serpent's third.
     id: "sit-serpents-late",
     label: "Shieldbreaker's Reckoning",
-    summary: "Collector, LDR, Serpent's Fang, Infinity Edge, Cyclosword.",
+    summary: "Against delayed shields.",
+    description: "This build is great when the enemies will build a lot of items that give them shields in the mid and late game. Shieldbow, Steraks, Seraphs, and Locket specifically.\nSerpent's Fang is not worth it at the start, but it gains a lot of value later.",
     itemIds: [6676, 3036, 6695, 3031, 6699],
     source: "situational",
   },

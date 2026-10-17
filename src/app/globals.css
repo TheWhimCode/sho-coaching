@@ -160,12 +160,54 @@ html, body {
   }
   100% {
     opacity: 0;
-    transform: translateY(-18px);
+    transform: translateY(var(--build-float-rise, -18px));
   }
 }
 
 .build-float-tag {
   animation: build-float-tag 1.07s linear both;
+}
+
+.possession-reveal {
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.possession-border {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 550ms ease;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.possession-score {
+  opacity: 0;
+}
+
+.possession-scope:has(.possession-toggle:hover, .possession-toggle:focus-visible, .possession-toggle[aria-pressed="true"]) .possession-reveal {
+  opacity: 1;
+}
+
+.possession-scope:has(.possession-toggle:hover, .possession-toggle:focus-visible, .possession-toggle[aria-pressed="true"]) .possession-border {
+  stroke-dashoffset: 0;
+}
+
+@keyframes possession-score-reveal {
+  0%, 25%, 45% { opacity: 0; }
+  15%, 35% { opacity: 0.55; }
+  65%, 100% { opacity: 1; }
+}
+
+.possession-scope:has(.possession-toggle:hover, .possession-toggle:focus-visible, .possession-toggle[aria-pressed="true"]) .possession-score {
+  animation: possession-score-reveal 400ms ease 250ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .possession-reveal, .possession-border { transition: none; }
+  .possession-scope:has(.possession-toggle:hover, .possession-toggle:focus-visible, .possession-toggle[aria-pressed="true"]) .possession-score {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 @keyframes build-portrait-in {

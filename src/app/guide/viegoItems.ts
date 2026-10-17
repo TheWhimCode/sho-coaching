@@ -7,6 +7,9 @@ import type {
 const SITUATIONAL_COLLECTOR_EXPLANATION =
   "Best first item when you plan to adjust your build.";
 
+const SURVIVABILITY_DESCRIPTION =
+  "This build is great when Plated Steelcaps or Mercury Treads value is peaking, because we combine Shieldbow's shield with the resistances.\nFull AD or AP compositions lack mixed damage, so even a champion like Viego can benefit from some defense.";
+
 const MAIN_COLLECTOR_EXPLANATION =
   "Always best second. Double Lethality -> %pen. Insane item on Viego.";
 
@@ -94,9 +97,9 @@ const HUBRIS_GOOD_AGAINST = ["Skarner", "Darius", "Nautilus", "Sylas", "Nunu", "
 const BASTIONBREAKER_VARIANT: GuideItemVariant = {
   id: "bastionbreaker",
   label: "Bread & Butter Carnage",
-  header: "The twink crusher.",
+  header: "Bread & Butter Carnage",
   description:
-    "This item hits HARD against low Armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.\nI build this 50% of games",
+    "This build hits hard against low armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.",
   activeChoiceIds: [2520, 6699, 6673, 6695],
   activePathIndex: 0,
   teamComp: {
@@ -206,7 +209,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         {
           id: "hubris",
           label: "Another Bloodrush",
-          header: "Max damage & scaling",
+          header: "Another Bloodrush",
           description:
             "Hubris is the best scaling item for team fights because it does the most damage after the first target dies. It has the highest AD of any item, which scales extremely well with max AD, max crit, double Lethality, and percentage pen.\nThis is the build that allows you to one-shot bruisers and squishies alike.",
           activeChoiceIds: [6697, 6699, 6673, 6695],
@@ -300,15 +303,31 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           id: "collector-shieldbow",
           label: "Survivability maxxing",
           header: "Survivability maxxing",
-          summary: "Only when you're really desperate.",
-          description:
-            "Only run this when the enemy team has unavoidable burst, won't build anti-shield, and building Steelcaps or Mercs second has incredibly high value.\nI usually build this only against Talon or Rengar when my team has no shields and they have three AD champions.",
+          summary: "Niche, high defense build.",
+          description: SURVIVABILITY_DESCRIPTION,
           items: [
             { id: 6676, explanation: "Start with The Collector." },
             { id: 6673, explanation: "Build second, after The Collector." },
             { id: 3036, explanation: "Build third, after Immortal Shieldbow." },
             { id: 3031, explanation: "Build fourth, after Lord Dominik's Regards." },
             { id: 6699, explanation: "Finish with Voltaic Cyclosword." },
+          ],
+          activeChoiceIds: [],
+          teamComp: { ally: [], enemy: [] },
+          goodAgainst: ["Talon", "Rengar"],
+        },
+        {
+          id: "collector-shieldbow-ga",
+          label: "Survivability maxxing — AD",
+          header: "Survivability maxxing — AD",
+          summary: "Niche, high defense build.",
+          description: SURVIVABILITY_DESCRIPTION,
+          items: [
+            { id: 6676, explanation: "Start with The Collector." },
+            { id: 6673, explanation: "Build after Collector; prioritize before Steelcaps against jungle Rengar or Talon when allied shields are 4 or below." },
+            { id: 3036, explanation: "Build after Immortal Shieldbow." },
+            { id: 3026, explanation: "Build after Lord Dominik's Regards for armor and a revive." },
+            { id: 3031, explanation: "Finish with Infinity Edge." },
           ],
           activeChoiceIds: [],
           teamComp: { ally: [], enemy: [] },

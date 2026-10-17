@@ -7,6 +7,7 @@ import type { ChampionProfileRow } from "@/lib/guides/buildPicker/types";
 import { prisma } from "@/lib/prisma";
 import { VIEGO_ITEM_SECTION } from "../viegoItems";
 import BuildPickerClient from "./BuildPickerClient";
+import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 
 const title = "Viego Build Picker";
 const description =
@@ -31,6 +32,7 @@ export const dynamic = "force-dynamic";
 
 export default async function BuildPickerPage() {
   const showPickerDebug = process.env.NODE_ENV === "development";
+  const guideTextIcons = await buildGuideTextIcons();
   const [builds, bootItems, profiles] = await Promise.all([
     loadPickerBuilds(VIEGO_ITEM_SECTION),
     loadPickerBoots(),
@@ -60,6 +62,6 @@ export default async function BuildPickerPage() {
   });
 
   return (
-    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={championRows} />
+    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={championRows} guideTextIcons={guideTextIcons} />
   );
 }

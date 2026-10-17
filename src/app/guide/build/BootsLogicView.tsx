@@ -14,6 +14,9 @@ const BOOT_RULES: {
   itemId: number;
   slot: 2 | 3 | 4;
 }[] = [
+  { id: "b9", when: "3+ AD including AD Rengar or Talon with Smite, allied shields 4 or below", itemId: 3047, slot: 3 },
+  { id: "b0", when: "3+ AD enemies and magic damage 4 or below", itemId: 3047, slot: 2 },
+  { id: "b8", when: "3+ AP enemies, physical damage 4 or below, and Mercs value 9+", itemId: 3111, slot: 2 },
   { id: "b1", when: "3+ enemy AD and enemy magic below 3", itemId: 3047, slot: 2 },
   { id: "b2", when: "3+ enemy AD and enemy magic below 5", itemId: 3047, slot: 3 },
   { id: "b3", when: "3+ enemy AD and enemy magic below 7", itemId: 3047, slot: 4 },
