@@ -218,8 +218,18 @@ function enemyMagicDamage(ctx: TreeContext) {
   return ctx.enemies.reduce((sum, champion) => sum + magicDamageScore(champion), 0);
 }
 
+const SHIELDBOW_COUNTER_CHAMPIONS = new Set(["Khazix", "Kha'Zix", "Talon", "Kayn", "Rengar", "Shaco", "Qiyana"]);
+const ASSASSIN_SURVIVABILITY_SHIELD_MAX = 4;
+
+function shieldbowBlockedByAlliedShields(ctx: TreeContext) {
+  return teamShieldScore(ctx.allies) > ASSASSIN_SURVIVABILITY_SHIELD_MAX
+    && ctx.enemies.some((champion) => SHIELDBOW_COUNTER_CHAMPIONS.has(champion.championId)
+      || SHIELDBOW_COUNTER_CHAMPIONS.has(champion.name));
+}
+
 function shouldBuildSurvivability(ctx: TreeContext) {
-  return countEnemies(ctx, "damageType", "AD") >= 3 && enemyMagicDamage(ctx) <= 4;
+  return !shieldbowBlockedByAlliedShields(ctx)
+    && countEnemies(ctx, "damageType", "AD") >= 3 && enemyMagicDamage(ctx) <= 4;
 }
 
 function shouldBuildAssassinSurvivability(ctx: TreeContext) {
@@ -227,7 +237,7 @@ function shouldBuildAssassinSurvivability(ctx: TreeContext) {
     && ctx.enemies.some((champion) => champion.damageType === "AD" && champion.spellIds.includes(11)
       && (champion.championId === "Rengar" || champion.championId === "Talon"
         || champion.name === "Rengar" || champion.name === "Talon"))
-    && teamShieldScore(ctx.allies) <= 4;
+    && teamShieldScore(ctx.allies) <= ASSASSIN_SURVIVABILITY_SHIELD_MAX;
 }
 
 function enemyPhysicalDamage(ctx: TreeContext) {
@@ -235,7 +245,8 @@ function enemyPhysicalDamage(ctx: TreeContext) {
 }
 
 function shouldBuildMagicSurvivability(ctx: TreeContext) {
-  return countEnemies(ctx, "damageType", "AP") >= 3
+  return !shieldbowBlockedByAlliedShields(ctx)
+    && countEnemies(ctx, "damageType", "AP") >= 3
     && enemyPhysicalDamage(ctx) <= 4
     && enemyMercsScore(ctx) >= 9;
 }
@@ -585,7 +596,7 @@ export const VIEGO_DECISION_TREE: DecisionNode = {
   kind: "choice",
   id: "survivability",
   title: "Damage concentrated in one type?",
-  rule: "Survivability maxxing: first check 3+ AD including AD Rengar or Talon with Smite and allied shields 4 or below for Steelcaps third, before Umbral. Otherwise 3+ AD and magic damage 4 or below for Steelcaps second; 3+ AP, physical damage 4 or below, and Mercs value 9+ for Mercury Treads second.",
+  rule: "Skip Survivability maxxing when allied shields exceed 4 and the enemy has Kha'Zix, Talon, Kayn, Rengar, Shaco, or Qiyana. Otherwise first check 3+ AD including AD Rengar or Talon with Smite and allied shields 4 or below for Steelcaps third, before Umbral. Otherwise 3+ AD and magic damage 4 or below for Steelcaps second; 3+ AP, physical damage 4 or below, and Mercs value 9+ for Mercury Treads second.",
   pick: (ctx) => {
     const enemyAd = countEnemies(ctx, "damageType", "AD");
     const qualifies = shouldBuildSurvivability(ctx);
@@ -594,7 +605,7 @@ export const VIEGO_DECISION_TREE: DecisionNode = {
     return {
       optionId: assassinQualifies ? "assassin" : qualifies ? "yes" : magicQualifies ? "magic" : "no",
       ruleId: assassinQualifies ? "v4" : qualifies ? "v1" : magicQualifies ? "v3" : "v2",
-      detail: `${enemyAd} AD enemies, magic damage ${enemyMagicDamage(ctx)}, ${countEnemies(ctx, "damageType", "AP")} AP enemies, physical damage ${enemyPhysicalDamage(ctx)}, Mercs value ${enemyMercsScore(ctx)}, allied shields ${teamShieldScore(ctx.allies)}`,
+      detail: `${enemyAd} AD enemies, magic damage ${enemyMagicDamage(ctx)}, ${countEnemies(ctx, "damageType", "AP")} AP enemies, physical damage ${enemyPhysicalDamage(ctx)}, Mercs value ${enemyMercsScore(ctx)}, allied shields ${teamShieldScore(ctx.allies)}${shieldbowBlockedByAlliedShields(ctx) ? "; Survivability maxxing blocked by allied shields and enemy assassin" : ""}`,
     };
   },
   options: [

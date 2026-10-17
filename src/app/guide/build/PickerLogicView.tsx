@@ -77,7 +77,7 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
       <div className="space-y-6">
         <CheckBlock
           title="Survivability maxxing?"
-          note="Checked before Shadow Economy. Rengar/Talon must have Smite; this rule puts Steelcaps after Shieldbow. Other survivability rules put boots after Collector."
+          note="Skip all Survivability maxxing builds at 5+ allied shields against Kha'Zix, Talon, Kayn, Rengar, Shaco, or Qiyana (any role). Otherwise checked before Shadow Economy. Rengar/Talon must have Smite for Steelcaps after Shieldbow. Other survivability rules put boots after Collector."
           rows={[
             { id: "v4", when: "3+ AD including AD Rengar or Talon with Smite, allied shields 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
             { id: "v1", when: "3+ AD enemies and magic damage 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
