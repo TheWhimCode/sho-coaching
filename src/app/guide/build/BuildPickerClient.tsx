@@ -1,8 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, Eye, Search } from "lucide-react";
-import Link from "next/link";
+import { Check, ChevronDown, ChevronRight, Eye, Search } from "lucide-react";
 import { possessionValueFor } from "../possessionValues";
 import {
   useCallback,
@@ -38,6 +37,8 @@ import { composeMatchId } from "@/lib/riot/matchId";
 import BootsLogicView from "./BootsLogicView";
 import ChampionProfileTable from "./ChampionProfileTable";
 import PickerLogicView from "./PickerLogicView";
+import DonationPrompt from "./DonationPrompt";
+import { recordBuildLookup, DONATION_LOOKUP_EVENT } from "@/lib/guides/buildPicker/donationPrompt";
 
 const PickerTextIconsContext = createContext<Record<string, string>>({});
 
@@ -566,7 +567,7 @@ function SplitSubmit({
           type="submit"
           disabled={disabled || busy}
           className={clsx(
-            "inline-flex h-12 flex-1 items-center justify-center whitespace-nowrap px-1 sm:w-auto sm:flex-none sm:justify-start sm:pl-0.5 sm:pr-5",
+            "inline-flex h-12 flex-1 items-center justify-start whitespace-nowrap px-1 text-left sm:w-auto sm:flex-none sm:pl-0.5 sm:pr-5",
             (disabled || busy) && "cursor-not-allowed"
           )}
         >
@@ -992,15 +993,19 @@ function Stage({
   right,
   caption,
   busy,
+  mobileControls,
 }: {
   left: ReactNode;
   center: ReactNode;
   right: ReactNode;
   caption?: ReactNode;
   busy?: boolean;
+  mobileControls?: ReactNode;
 }) {
   return (
     <section className="relative lg:-mx-12 xl:-mx-20" aria-busy={busy || undefined}>
+      {/* Mobile: label (15px), margin (16px), two 68px rows, half a 56px portrait. */}
+      {mobileControls ? <div className="absolute left-1/2 top-[195px] z-30 -translate-x-1/2 -translate-y-1/2 sm:hidden">{mobileControls}</div> : null}
       {caption ? <div className="pointer-events-none absolute bottom-full left-0 right-0 mb-3 flex justify-center">{caption}</div> : null}
       <div className="grid grid-cols-2 items-start gap-x-6 gap-y-8 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-8 lg:gap-x-14">
         <div className="order-1 sm:pt-10">{left}</div>
@@ -1091,6 +1096,8 @@ function BuildCard({
   source,
   composition,
   facts,
+  possessionsPinned,
+  onTogglePossessions,
 }: {
   build: PickerBuild | undefined;
   buildId: string;
@@ -1103,6 +1110,8 @@ function BuildCard({
   source?: "live" | "match";
   composition?: EnemyComposition;
   facts?: CompositionFact[];
+  possessionsPinned: boolean;
+  onTogglePossessions: () => void;
 }) {
   const playerTip = buildPickerPlayerTip(player);
   const alternative = recommendedAlternative ?? BUILD_ALTERNATIVES[buildId];
@@ -1111,7 +1120,6 @@ function BuildCard({
     : undefined;
   const selectedBoot = bootItems.find((item) => item.id === boot.itemId);
   const [whyOpen, setWhyOpen] = useState(false);
-  const [possessionsPinned, setPossessionsPinned] = useState(false);
 
   return (
     <section
@@ -1134,8 +1142,8 @@ function BuildCard({
         <button
           type="button"
           aria-pressed={possessionsPinned}
-          onClick={() => setPossessionsPinned((pinned) => !pinned)}
-          className="possession-toggle absolute right-2 top-0 z-10 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2 text-[11px] font-semibold text-[#F5E6D3] transition hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F0ABCF] aria-pressed:bg-white/[0.08] sm:right-0"
+          onClick={onTogglePossessions}
+          className="possession-toggle absolute right-0 top-0 z-10 hidden items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2 text-[11px] font-semibold text-[#F5E6D3] transition hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F0ABCF] aria-pressed:bg-white/[0.08] sm:inline-flex"
         >
           <Eye aria-hidden className="h-4 w-4" />
           <span className="sr-only sm:not-sr-only">Possessions</span>
@@ -1325,6 +1333,7 @@ export default function BuildPickerClient({
   const [platform, setPlatform] = useState<BuildPickerPlatformId>("auto");
   const [phase, setPhase] = useState<LookupPhase>("idle");
   const [lookupResult, setResult] = useState<LiveGameLookup | null>(null);
+  const [possessionsPinned, setPossessionsPinned] = useState(false);
   const result = preview ?? lookupResult;
   const abortRef = useRef<AbortController | null>(null);
   const lastLookupRef = useRef<string>("");
@@ -1368,6 +1377,7 @@ export default function BuildPickerClient({
     lastLookupRef.current = `${nextMode}:${queryPlatform}:${resolvedMatchId ?? id}`;
 
     setPhase("verifying");
+    setPossessionsPinned(false);
     setResult(null);
     const phaseTimer = window.setTimeout(() => setPhase("searching"), 650);
 
@@ -1398,6 +1408,14 @@ export default function BuildPickerClient({
       const body = (await response.json()) as LiveGameLookup;
       if (controller.signal.aborted) return;
       setResult(body);
+      if (response.ok && body.status === "in_game" && body.recommendation && !body.mock) {
+        try {
+          recordBuildLookup(localStorage);
+          window.dispatchEvent(new Event(DONATION_LOOKUP_EVENT));
+        } catch {
+          // Local persistence must never interfere with displaying a build.
+        }
+      }
     } catch (error) {
       if (controller.signal.aborted) return;
       setResult({
@@ -1469,21 +1487,12 @@ export default function BuildPickerClient({
   return (
     <PickerTextIconsContext.Provider value={guideTextIcons}>
     <div className={clsx("possession-scope relative", !preview && "min-h-screen")} style={{ color: GUIDE.text }}>
+      {!preview ? <DonationPrompt /> : null}
       <div className={clsx("relative z-10 mx-auto w-full max-w-5xl px-5 sm:px-8", preview ? "pb-6 pt-8" : "pb-24 pt-16 sm:pt-[4.8rem] lg:pt-[5.6rem]")}>
         {!preview && (
-          <div className="relative mb-8 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:mb-10 sm:gap-6">
-          <Link
-            href="/guide"
-            className="inline-flex w-fit items-center gap-2.5 rounded-sm text-base font-bold italic tracking-wide text-[#F0ABCF] transition-colors hover:text-[#FAD4E8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F0ABCF]/60 focus-visible:ring-offset-4 focus-visible:ring-offset-[#120F19] sm:text-xl xl:absolute xl:-left-36 xl:top-1/2 xl:-translate-y-1/2"
-            style={{ fontFamily: '"Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif' }}
-          >
-            <ArrowLeft aria-hidden className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-            Return to guide
-          </Link>
-          <h1 className="col-start-2 max-w-[50vw] text-center text-2xl font-bold tracking-tight text-[#F5E6D3] sm:max-w-none sm:text-4xl lg:text-5xl">
+          <h1 className="mb-8 text-center text-2xl font-bold tracking-tight text-[#F5E6D3] sm:mb-10 sm:text-4xl lg:text-5xl">
             Build like Mino would.
           </h1>
-          </div>
         )}
 
         {!preview && <LookupForm
@@ -1512,6 +1521,17 @@ export default function BuildPickerClient({
           ) : result?.status === "in_game" ? (
             <div key={`${result.source ?? "live"}-${result.matchId ?? result.riotId}-${result.gameStartedAt ?? 0}`}>
               <Stage
+                mobileControls={result.recommendation ? (
+                  <button
+                    type="button"
+                    aria-pressed={possessionsPinned}
+                    onClick={() => setPossessionsPinned((pinned) => !pinned)}
+                    className="possession-toggle inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#B8D8EA]/40 bg-[#111624]/95 px-4 py-2.5 text-xs font-semibold text-[#F5E6D3] transition hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#F0ABCF] aria-pressed:bg-white/[0.08]"
+                  >
+                    <Eye aria-hidden className="h-3.5 w-3.5" />
+                    Possessions
+                  </button>
+                ) : null}
                 left={
                   <TeamColumn
                     title="Your team"
@@ -1525,6 +1545,8 @@ export default function BuildPickerClient({
                 center={
                   result.recommendation ? (
                     <BuildCard
+                      possessionsPinned={possessionsPinned}
+                      onTogglePossessions={() => setPossessionsPinned((pinned) => !pinned)}
                       build={recommendedBuild}
                       buildId={result.recommendation.buildId}
                       builds={builds}

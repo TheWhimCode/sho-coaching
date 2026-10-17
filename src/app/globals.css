@@ -164,6 +164,54 @@ html, body {
   }
 }
 
+@keyframes donation-panel-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes donation-content-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Match the coaching calendar shell's distance, scale, timing, and easing. */
+.donation-prompt {
+  border-radius: 16px;
+}
+
+.donation-prompt[open] {
+  animation: donation-panel-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes donation-sheet-enter {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (max-width: 639px) {
+  .donation-prompt {
+    border-radius: 0;
+  }
+
+  .donation-prompt[open] {
+    animation: donation-sheet-enter 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+.donation-prompt[open] .donation-enter {
+  animation: donation-content-enter 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.donation-prompt[open] .donation-enter-title { animation-delay: 60ms; }
+.donation-prompt[open] .donation-enter-copy { animation-delay: 110ms; }
+.donation-prompt[open] .donation-enter-button { animation-delay: 160ms; }
+.donation-prompt[open] .donation-enter-footer { animation-delay: 210ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .donation-prompt[open], .donation-prompt[open] .donation-enter {
+    animation: none;
+  }
+}
+
 .build-float-tag {
   animation: build-float-tag 1.07s linear both;
 }
@@ -196,6 +244,24 @@ html, body {
   0%, 25%, 45% { opacity: 0; }
   15%, 35% { opacity: 0.55; }
   65%, 100% { opacity: 1; }
+}
+
+/* Touch hover can remain active after tapping: only the pinned state controls mobile. */
+@media (max-width: 639px) {
+  .possession-scope:not(:has(.possession-toggle[aria-pressed="true"])) .possession-reveal {
+    opacity: 0;
+    transition: none;
+  }
+
+  .possession-scope:not(:has(.possession-toggle[aria-pressed="true"])) .possession-border {
+    stroke-dashoffset: 1;
+    transition: none;
+  }
+
+  .possession-scope:not(:has(.possession-toggle[aria-pressed="true"])) .possession-score {
+    animation: none !important;
+    opacity: 0;
+  }
 }
 
 .possession-scope:has(.possession-toggle:hover, .possession-toggle:focus-visible, .possession-toggle[aria-pressed="true"]) .possession-score {

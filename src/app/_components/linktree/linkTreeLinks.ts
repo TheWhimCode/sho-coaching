@@ -1,6 +1,6 @@
 import type { ComponentType, CSSProperties } from "react";
 import { FaDiscord, FaInstagram, FaTwitch, FaXTwitter } from "react-icons/fa6";
-import { BookOpen, Crown, GraduationCap } from "lucide-react";
+import { BookOpen, Crown, GraduationCap, Swords } from "lucide-react";
 
 export type LinkTreeIconProps = {
   className?: string;
@@ -30,9 +30,23 @@ export type LinkTreeLink = {
   hidden?: boolean;
   /** Small "New" badge next to the title */
   isNew?: boolean;
+  featured?: boolean;
 };
 
 export const LINK_TREE_LINKS: LinkTreeLink[] = [
+  {
+    id: "build-recommender",
+    featured: true,
+    label: "Viego Build Recommender",
+    description: "Build like Mino would.",
+    href: "/guide/build",
+    external: false,
+    Icon: Swords,
+    accent: "#8BAEFF",
+    glow: "rgba(92, 139, 255, 0.48)",
+    iconGradient: "linear-gradient(145deg, #142959 0%, #315DC0 55%, #739DFF 100%)",
+    iconColor: "#EDF4FF",
+  },
   {
     id: "twitch",
     label: "Twitch",

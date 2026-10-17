@@ -2702,9 +2702,9 @@ export default function ItemBuildSection({
             <GuideImage src={MINO_PROFILE_IMAGE} alt="Mino" loading="lazy" className="h-full w-full object-cover" />
           </span>
           <span className="relative leading-tight">
-            <span className="block text-sm font-extrabold tracking-tight">Live build picker</span>
+            <span className="block text-sm font-extrabold tracking-tight">Build Recommender</span>
             <span className="mt-0.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[#170F1B]/65">
-              For your current game
+              Itemize like Mino would.
             </span>
           </span>
         </a>

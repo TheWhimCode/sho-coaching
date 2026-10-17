@@ -115,6 +115,11 @@ export default function LinkTreeButton({ link, index }: Props) {
   const shellStyle = {
     ["--link-accent" as string]: link.accent,
     ["--link-glow" as string]: link.glow,
+    ...(link.featured ? {
+      borderColor: "rgba(116,150,255,0.45)",
+      background: "linear-gradient(115deg, rgba(45,74,164,0.32), rgba(14,24,49,0.85) 65%, rgba(38,62,132,0.35))",
+      boxShadow: "inset 0 1px 0 rgba(183,206,255,0.12), 0 0 24px rgba(76,119,240,0.17), 0 12px 35px -18px rgba(103,148,255,0.40)",
+    } : {}),
   } as React.CSSProperties;
 
   return (
