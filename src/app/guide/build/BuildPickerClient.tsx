@@ -216,7 +216,7 @@ function CompositionFacts({
 }) {
   if (facts.length === 0) return null;
   return (
-    <ul className="mt-5 space-y-2.5">
+    <ul className="mt-5 space-y-2.5 max-sm:px-5">
       {facts.map((fact) => {
         const item = pickerItem(fact.itemId, builds, bootItems);
         const excluded = fact.tone === "exclude";
@@ -300,13 +300,13 @@ function BuildWhyPanel({
   });
 
   return (
-    <div className="mt-7 border-t border-[#B8D8EA]/18 bg-[#120F19]/95 px-6 pb-4 pt-7 text-left sm:px-10 sm:pb-6 sm:pt-9">
-      <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#B8D8EA]/68">How the build was picked</p>
+    <div className="mt-7 border-t border-[#B8D8EA]/18 bg-[#120F19]/95 px-0 pb-4 pt-7 text-left sm:px-10 sm:pb-6 sm:pt-9">
+      <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#B8D8EA]/68 max-sm:px-5">How the build was picked</p>
       {composition ? <CompositionChart composition={composition} /> : null}
       {facts?.length ? <CompositionFacts facts={facts} builds={builds} bootItems={bootItems} /> : null}
 
       {build?.description ? (
-        <div className="mt-6 max-w-4xl text-sm leading-relaxed text-[#F5E6D3]/68 sm:text-[0.95rem]">
+        <div className="mt-6 max-w-4xl text-sm leading-relaxed text-[#F5E6D3]/68 max-sm:px-5 sm:text-[0.95rem]">
           {build.description.split("\n").filter(Boolean).map((paragraph) => (
             <p key={paragraph} className="mt-2 first:mt-0">{paragraph}</p>
           ))}
@@ -316,7 +316,7 @@ function BuildWhyPanel({
       {routes.length ? (
         <>
           <div className="my-7 h-px w-full bg-gradient-to-r from-transparent via-[#F0ABCF]/30 to-transparent" />
-          <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#F5E6D3]/48">
+          <p className="text-[0.58rem] font-bold uppercase tracking-[0.15em] text-[#F5E6D3]/48 max-sm:px-5">
             {routes.length === 1 ? "Alternative build" : "Alternative builds"}
           </p>
           <div className="mt-3 divide-y divide-[#F5E6D3]/10">
@@ -325,7 +325,7 @@ function BuildWhyPanel({
                 key={route.build.id}
                 className="grid gap-6 py-7 opacity-50 grayscale transition duration-300 hover:opacity-80 hover:grayscale-0 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:items-center sm:gap-8"
               >
-                <div>
+                <div className="max-sm:px-5">
                   <p className="text-base font-bold tracking-tight text-[#F5E6D3]">{route.build.label}</p>
                   <p className="mt-3 text-xs font-medium leading-relaxed text-[#FFB3C1]">{route.reason}</p>
                 </div>
@@ -952,7 +952,7 @@ function Stage({
       {caption ? <div className="pointer-events-none absolute bottom-full left-0 right-0 mb-3 flex justify-center">{caption}</div> : null}
       <div className="grid grid-cols-2 items-start gap-x-6 gap-y-8 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-8 lg:gap-x-14">
         <div className="order-1 sm:pt-10">{left}</div>
-        <div className="order-3 col-span-2 sm:order-2 sm:col-span-1">{center}</div>
+        <div className="order-3 col-span-2 -mx-5 sm:order-2 sm:col-span-1 sm:mx-0">{center}</div>
         <div className="order-2 sm:order-3 sm:pt-10">{right}</div>
       </div>
     </section>
@@ -999,11 +999,11 @@ function ItemOrder({
   size?: "md" | "sm";
   noWrap?: boolean;
 }) {
-  const tile = size === "sm" ? "h-11 w-11 sm:h-12 sm:w-12" : "h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]";
+  const tile = size === "sm" ? "h-[min(2.75rem,12vw)] w-[min(2.75rem,12vw)] sm:h-12 sm:w-12" : "h-[min(4rem,13vw)] w-[min(4rem,13vw)] sm:h-[4.5rem] sm:w-[4.5rem]";
   const items = [...build.items];
   if (boot && bootSlot) items.splice(bootSlot - 1, 0, boot);
   return (
-    <ol aria-label={`${build.label} item order`} className={clsx("flex justify-center gap-x-3 gap-y-4 sm:gap-x-5", noWrap ? "flex-nowrap" : "flex-wrap")}>
+    <ol aria-label={`${build.label} item order`} className={clsx("flex flex-nowrap justify-center gap-x-2 gap-y-4 sm:gap-x-5", !noWrap && "sm:flex-wrap")}>
       {items.map((item, index) => (
         <li key={`${index}-${item.id}`} className="flex flex-col items-center gap-1.5">
           <span className="text-[10px] font-medium tabular-nums text-[#B8D8EA]/65">{index + 1}</span>
@@ -1058,7 +1058,7 @@ function BuildCard({
 
   return (
     <section
-      className={clsx(GLASS_CLASS, "relative overflow-hidden p-6 sm:p-8 lg:p-10")}
+      className={clsx(GLASS_CLASS, "relative overflow-hidden px-0 py-6 max-sm:rounded-none max-sm:border-x-0 sm:p-8 lg:p-10")}
       style={whyOpen ? { paddingBottom: 0 } : undefined}
     >
       <div
@@ -1088,7 +1088,7 @@ function BuildCard({
             {build.summary ? (
               <p className="mt-1.5 text-sm text-[#F5E6D3]/60 sm:text-base">{build.summary}</p>
             ) : null}
-            <div className="mt-7">
+            <div className="mt-7 w-full sm:w-auto">
               <ItemOrder build={build} boot={selectedBoot} bootSlot={boot.slot} />
             </div>
           </>
@@ -1135,7 +1135,7 @@ function BuildCard({
         >
           {whyOpen ? "Hide breakdown" : "Want to know why?"}
         </button>
-        <div className={clsx("-mx-6 grid w-[calc(100%+3rem)] transition-[grid-template-rows,opacity] duration-500 ease-out sm:-mx-8 sm:w-[calc(100%+4rem)] lg:-mx-10 lg:w-[calc(100%+5rem)]", whyOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+        <div className={clsx("grid w-full transition-[grid-template-rows,opacity] duration-500 ease-out sm:-mx-8 sm:w-[calc(100%+4rem)] lg:-mx-10 lg:w-[calc(100%+5rem)]", whyOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
           <div className="min-h-0 overflow-hidden">
             <BuildWhyPanel build={build} builds={builds} boot={selectedBoot} bootSlot={boot.slot} bootItems={bootItems} composition={composition} facts={facts} alternates={alternates} />
           </div>
@@ -1155,9 +1155,9 @@ function SkeletonLine({ className, children }: { className?: string; children: s
 }
 
 function SkeletonItemRow({ count, size }: { count: number; size: "md" | "sm" }) {
-  const tile = size === "sm" ? "h-11 w-11 sm:h-12 sm:w-12" : "h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]";
+  const tile = size === "sm" ? "h-[min(2.75rem,12vw)] w-[min(2.75rem,12vw)] sm:h-12 sm:w-12" : "h-[min(4rem,13vw)] w-[min(4rem,13vw)] sm:h-[4.5rem] sm:w-[4.5rem]";
   return (
-    <div className="flex flex-wrap justify-center gap-x-3 gap-y-4 sm:gap-x-5">
+    <div className="flex flex-nowrap justify-center gap-x-2 gap-y-4 sm:flex-wrap sm:gap-x-5">
       {Array.from({ length: count }).map((_, index) => (
         <div key={index} className="flex flex-col items-center gap-1.5">
           <span className="invisible text-[10px] font-medium tabular-nums">{index + 1}</span>
@@ -1170,7 +1170,7 @@ function SkeletonItemRow({ count, size }: { count: number; size: "md" | "sm" }) 
 
 function BuildSkeleton() {
   return (
-    <section className={clsx(GLASS_CLASS, "relative overflow-hidden p-6 sm:p-8 lg:p-10")} aria-hidden>
+    <section className={clsx(GLASS_CLASS, "relative overflow-hidden px-0 py-6 max-sm:rounded-none max-sm:border-x-0 sm:p-8 lg:p-10")} aria-hidden>
       <div className="flex flex-col items-center text-center">
         <SkeletonLine className={LABEL_CLASS}>Recommended build</SkeletonLine>
         <SkeletonLine className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl lg:text-[2.1rem]">
