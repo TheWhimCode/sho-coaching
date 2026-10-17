@@ -1,4 +1,4 @@
-import { riotFetchJSON } from "@/lib/riot/fetch";
+import { RiotApiError, riotFetchJSON } from "@/lib/riot/fetch";
 
 export type Regional = "americas" | "europe" | "asia" | "sea";
 
@@ -67,7 +67,8 @@ export async function findPlatformForPuuid(
         `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`
       );
       return platform;
-    } catch {
+    } catch (error) {
+      if (!(error instanceof RiotApiError) || error.status !== 404) throw error;
       continue;
     }
   }
@@ -129,6 +130,7 @@ export async function resolveAccountByRiotTag(
         tagLine: acct.tagLine,
       };
     } catch (e) {
+      if (!(e instanceof RiotApiError) || e.status !== 404) throw e;
       lastErr = e;
       continue;
     }

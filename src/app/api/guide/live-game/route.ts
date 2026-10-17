@@ -34,6 +34,7 @@ import {
   perkIdsFromMatch,
 } from "@/lib/riot/match";
 import { activeGameByPuuid, NotInGameError, queueName } from "@/lib/riot/spectator";
+import { riotLookupErrorMessage } from "@/lib/riot/fetch";
 
 export const dynamic = "force-dynamic";
 
@@ -381,7 +382,7 @@ export async function GET(req: NextRequest) {
       console.error("[live-game]", error);
       const body: LiveGameLookup = {
         status: "error",
-        message: error instanceof Error ? error.message : "Riot lookup failed.",
+        message: riotLookupErrorMessage(error),
       };
       return NextResponse.json(body, { status: 502 });
     }
@@ -401,7 +402,7 @@ export async function GET(req: NextRequest) {
     console.error("[live-game]", error);
     const body: LiveGameLookup = {
       status: "error",
-      message: error instanceof Error ? error.message : "Riot lookup failed.",
+      message: riotLookupErrorMessage(error),
     };
     return NextResponse.json(body, { status: 502 });
   }

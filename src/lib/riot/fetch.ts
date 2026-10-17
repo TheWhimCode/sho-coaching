@@ -1,7 +1,28 @@
 import { bucketKeyFor, limiterGroup } from "./limiter";
 
-const RIOT_API_KEY = process.env.RIOT_API_KEY ?? "";
 const DEFAULT_TIMEOUT_MS = 12_000;
+
+export class RiotApiError extends Error {
+  readonly status: number;
+  readonly endpoint: string;
+
+  constructor(status: number, url: string, detail: string) {
+    // Keep credentials and player identifiers out of error logs.
+    const endpoint = new URL(url);
+    const path = endpoint.pathname.split("/").slice(0, 5).join("/");
+    super(`Riot API ${status}: ${detail}`);
+    this.name = "RiotApiError";
+    this.status = status;
+    this.endpoint = `${endpoint.host}${path}`;
+  }
+}
+
+export function riotLookupErrorMessage(error: unknown): string {
+  if (error instanceof RiotApiError && (error.status === 401 || error.status === 403)) {
+    return "Riot refused access to game data. Please try again later. If this keeps happening, the site owner needs to check Riot API access.";
+  }
+  return error instanceof Error ? error.message : "Riot lookup failed.";
+}
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
@@ -15,6 +36,7 @@ function parseRetryAfter(res: Response): number {
 }
 
 function riotHeaders() {
+  const RIOT_API_KEY = process.env.RIOT_API_KEY?.trim();
   if (!RIOT_API_KEY) throw new Error("Missing RIOT_API_KEY");
   return { "X-Riot-Token": RIOT_API_KEY };
 }
@@ -45,14 +67,9 @@ export async function riotFetchJSON<T>(
         if (attempt < 3) return riotFetchJSON<T>(url, init, attempt + 1);
       }
 
-      if (res.status === 403) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`Riot API 403 (key?): ${body || "Forbidden"}`);
-      }
-
       if (!res.ok) {
         const errTxt = await res.text().catch(() => "");
-        throw new Error(`Riot API ${res.status}: ${errTxt || res.statusText}`);
+        throw new RiotApiError(res.status, url, errTxt || res.statusText);
       }
 
       return (await res.json()) as T;
