@@ -17,6 +17,8 @@ export type ActiveGameParticipant = {
 };
 
 export type ActiveGame = {
+  mapId: number;
+  gameMode: string;
   gameId: number;
   gameQueueConfigId: number;
   gameStartTime: number;

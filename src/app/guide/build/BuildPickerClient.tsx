@@ -40,6 +40,7 @@ import PickerLogicView from "./PickerLogicView";
 import DonationPrompt from "./DonationPrompt";
 import { recordBuildLookup, DONATION_LOOKUP_EVENT } from "@/lib/guides/buildPicker/donationPrompt";
 import { createRandomGame, type RandomGameCatalog } from "@/lib/guides/buildPicker/randomGame";
+import { matchInputPlatform } from "@/lib/guides/buildPicker/lookupInput";
 
 const PickerTextIconsContext = createContext<Record<string, string>>({});
 
@@ -1282,18 +1283,22 @@ function MessagePanel({
   tone = "neutral",
   action,
   id,
+  outlined = false,
+  tinted = false,
 }: {
   title: string;
   body: string;
   tone?: "neutral" | "error";
   action?: ReactNode;
   id?: string;
+  outlined?: boolean;
+  tinted?: boolean;
 }) {
   return (
     <section
       id={id}
       className={clsx(
-        PANEL_CLASS,
+        tinted ? "rounded-2xl border border-[#B8D8EA]/35 bg-[#B8D8EA]/10" : outlined ? "rounded-2xl border border-[#F5E6D3]/15 bg-transparent" : PANEL_CLASS,
         "p-5 sm:p-6",
         tone === "error" && "border-[#FF8FA3]/30 ring-[#FF8FA3]/15"
       )}
@@ -1511,8 +1516,26 @@ export default function BuildPickerClient({
           busy={busy}
           cuePreviousGame={mode === "live" && result?.status === "not_in_game"}
           onModeChange={selectMode}
-          onRiotIdChange={setRiotId}
-          onMatchIdChange={setMatchId}
+          onRiotIdChange={(value) => {
+            const detectedPlatform = matchInputPlatform(value);
+            if (detectedPlatform) {
+              setMatchId(value);
+              selectPlatform(detectedPlatform === "selected" ? matchLookupPlatform(platform) : detectedPlatform);
+              selectMode("match");
+            } else {
+              setRiotId(value);
+            }
+          }}
+          onMatchIdChange={(value) => {
+            if (RIOT_ID_RE.test(value.trim())) {
+              setRiotId(value);
+              selectMode("live");
+            } else {
+              const detectedPlatform = matchInputPlatform(value);
+              if (detectedPlatform && detectedPlatform !== "selected") selectPlatform(detectedPlatform);
+              setMatchId(value);
+            }
+          }}
           onPlatformChange={selectPlatform}
           onSubmit={() => void lookup(mode, mode === "live" ? riotId : matchId, platform)}
         />}
@@ -1613,18 +1636,21 @@ export default function BuildPickerClient({
           ) : result?.status === "not_in_game" ? (
             <MessagePanel
               id="build-picker-not-in-game"
+              tinted
               title="You're currently not in-game"
               body="Do you want to check a previous game?"
               action={
                 <button
                   type="button"
                   onClick={() => selectMode("match")}
-                  className="mt-5 inline-flex min-h-12 items-center justify-center rounded-xl border border-[#F0ABCF]/60 bg-[#F0ABCF] px-6 py-3 text-sm font-bold text-[#211520] shadow-lg transition hover:bg-[#FAD4E8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F0ABCF]"
+                  className="mt-5 inline-flex min-h-12 items-center justify-center rounded-xl border border-[#B8D8EA]/35 bg-[#B8D8EA]/10 px-6 py-3 text-sm font-semibold text-[#F5E6D3] transition hover:border-[#B8D8EA]/60 hover:bg-[#B8D8EA]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#B8D8EA]"
                 >
-                  Check a previous game with a match ID
+                  Check your match history
                 </button>
               }
             />
+          ) : result?.status === "unsupported_mode" ? (
+            <MessagePanel title="Game mode not supported" body={result.message} outlined />
           ) : result?.status === "not_found" ? (
             <MessagePanel
               title="Riot ID not found"

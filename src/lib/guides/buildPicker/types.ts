@@ -97,6 +97,7 @@ export type LiveGameLookup =
       recommendation: BuildRecommendation | null;
     }
   | { status: "not_in_game"; riotId: string }
+  | { status: "unsupported_mode"; message: string }
   | { status: "not_found"; riotId: string }
   | { status: "match_not_found"; matchId: string }
   | { status: "no_viego"; matchId: string }

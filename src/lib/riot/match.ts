@@ -23,6 +23,8 @@ export type MatchParticipant = {
 export type MatchDto = {
   metadata: { matchId: string };
   info: {
+    mapId?: number;
+    gameMode?: string;
     gameCreation?: number;
     gameStartTimestamp?: number;
     queueId?: number;

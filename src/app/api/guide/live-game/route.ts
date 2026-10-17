@@ -35,6 +35,7 @@ import {
 } from "@/lib/riot/match";
 import { activeGameByPuuid, NotInGameError, queueName } from "@/lib/riot/spectator";
 import { riotLookupErrorMessage } from "@/lib/riot/fetch";
+import { isSupportedPickerGame, UNSUPPORTED_GAME_MESSAGE } from "@/lib/guides/buildPicker/supportedGame";
 
 export const dynamic = "force-dynamic";
 
@@ -239,6 +240,10 @@ async function liveGame(riotId: string, platformInput: string): Promise<LiveGame
     throw error;
   }
 
+  if (!isSupportedPickerGame({ ...game, queueId: game.gameQueueConfigId })) {
+    return { status: "unsupported_mode", message: UNSUPPORTED_GAME_MESSAGE };
+  }
+
   // 4. Map participants to Data Dragon champions and summoner spells.
   const championsByKey = await getChampionsByKey();
   const toParticipant = (p: (typeof game.participants)[number]): LiveGameParticipant => {
@@ -296,6 +301,10 @@ async function matchGame(rawMatchId: string): Promise<LiveGameLookup> {
   } catch (error) {
     if (error instanceof MatchNotFoundError) return { status: "match_not_found", matchId: parsed.matchId };
     throw error;
+  }
+
+  if (!isSupportedPickerGame(match.info)) {
+    return { status: "unsupported_mode", message: UNSUPPORTED_GAME_MESSAGE };
   }
 
   const participants = match.info.participants ?? [];
