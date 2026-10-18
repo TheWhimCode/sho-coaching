@@ -4,6 +4,7 @@ import type {
   ChampionThreatLevel,
 } from "@prisma/client";
 import type { CompositionFact } from "./compositionFacts";
+import type { PickerBuild } from "./builds";
 import type { BuildFloatTag, EnemyComposition, TreeTraceStep } from "./decisionTree";
 
 /** Riot platform shards the picker lets users choose from. Auto keeps the discovery order. */
@@ -55,6 +56,8 @@ export type LiveGameParticipant = {
 export type LiveGameTeamSide = "blue" | "red";
 
 export type BuildRecommendation = {
+  /** Catalog from the same deployment as the decision tree, for already-open pages. */
+  builds?: PickerBuild[];
   /** Matches a `PickerBuild.id` (see `builds.ts`). */
   buildId: string;
   /** Id of the leaf node the tree ended on. */

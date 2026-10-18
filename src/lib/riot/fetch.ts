@@ -5,6 +5,14 @@ import { AsyncLocalStorage } from "node:async_hooks";
 const DEFAULT_TIMEOUT_MS = 12_000;
 const lookupDeadline = new AsyncLocalStorage<number>();
 
+export class RiotRequestLimitError extends RequestLimitError {
+  constructor(retryAfter: number) {
+    super(retryAfter);
+    this.name = "RiotRequestLimitError";
+    this.message = `Game lookups are busy for this region. Please try again in ${retryAfter} seconds.`;
+  }
+}
+
 export function withRiotLookupDeadline<T>(task: () => Promise<T>): Promise<T> {
   return lookupDeadline.run(Date.now() + 20_000, task);
 }
@@ -67,8 +75,13 @@ export async function riotFetchJSON<T>(
   if (remainingTime(deadline) <= 0) throw new Error("Riot lookup timed out");
   return limiter.schedule({ expiration: Math.min(DEFAULT_TIMEOUT_MS * 2, deadline - Date.now()) }, async () => {
     if (remainingTime(deadline) <= 0) throw new Error("Riot lookup timed out");
-    await enforceRequestLimit("riot-outbound:two-minutes", 90, 120_000);
-    await enforceRequestLimit("riot-outbound:second", 18, 1000);
+    try {
+      await enforceRequestLimit(`riot-outbound:${key}:two-minutes`, 90, 120_000);
+      await enforceRequestLimit(`riot-outbound:${key}:second`, 18, 1000);
+    } catch (error) {
+      if (error instanceof RequestLimitError) throw new RiotRequestLimitError(error.retryAfter);
+      throw error;
+    }
     const timeout = remainingTime(deadline);
     if (timeout <= 0) throw new Error("Riot lookup timed out");
     const ac = new AbortController();
@@ -84,7 +97,7 @@ export async function riotFetchJSON<T>(
 
       if (res.status === 429) {
         // Do not recursively re-enter a limiter while holding one of its slots.
-        throw new RequestLimitError(parseRetryAfter(res));
+        throw new RiotRequestLimitError(parseRetryAfter(res));
       }
 
       if (!res.ok) {

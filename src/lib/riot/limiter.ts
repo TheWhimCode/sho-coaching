@@ -3,10 +3,10 @@ import Bottleneck from "bottleneck";
 const TWO_MIN = 120_000;
 
 /**
- * Riot development keys are limited per **application** (e.g. 20/s + 100/2min),
- * not per regional host. Use one logical bucket so EUW + NA + … share one budget.
+ * Riot application limits apply per routing region. Keep every endpoint on a
+ * host in one bucket, while allowing other regions their own allowance.
+ * https://developer.riotgames.com/docs/portal#web-apis_rate-limiting
  */
-export const RIOT_APP_GLOBAL_BUCKET = "riot-app-key";
 
 export const limiterGroup = new Bottleneck.Group({
   /* datastore: "redis",
@@ -26,7 +26,7 @@ limiterGroup.on("created", async (limiter: Bottleneck) => {
   });
 });
 
-/** Route all Riot HTTP calls through one limiter (host-agnostic). */
-export function bucketKeyFor(_url: string, _method = "GET") {
-  return RIOT_APP_GLOBAL_BUCKET;
+/** Application quotas span methods and endpoints on the same routing host. */
+export function bucketKeyFor(url: string, _method = "GET") {
+  return `riot-app:${new URL(url).hostname.toLowerCase()}`;
 }

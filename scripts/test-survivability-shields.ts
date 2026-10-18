@@ -1,5 +1,20 @@
 import assert from "node:assert/strict";
-import { runDecisionTree, type TreeParticipant } from "../src/lib/guides/buildPicker/decisionTree";
+import { runDecisionTree, VIEGO_DECISION_TREE, type DecisionNode, type TreeParticipant } from "../src/lib/guides/buildPicker/decisionTree";
+import { pickerBuildDefs } from "../src/lib/guides/buildPicker/builds";
+import { VIEGO_ITEM_SECTION } from "../src/app/guide/viegoItems";
+
+const catalog = new Map(pickerBuildDefs(VIEGO_ITEM_SECTION).map(build => [build.id, build]));
+function checkCatalog(node: DecisionNode) {
+  if (node.kind === "choice") {
+    node.options.forEach(option => checkCatalog(option.next));
+    return;
+  }
+  const build = catalog.get(node.buildId);
+  assert.ok(build, `Decision tree build ${node.buildId} must exist in the display catalog`);
+  assert.equal(build.itemIds.length, 5, `${node.buildId} must have a complete item order`);
+}
+checkCatalog(VIEGO_DECISION_TREE);
+assert.deepEqual(catalog.get("collector-shieldbow-ga")?.itemIds, [6676, 6673, 3036, 3026, 3031]);
 
 function champion(name: string, overrides: Partial<TreeParticipant> = {}): TreeParticipant {
   return {

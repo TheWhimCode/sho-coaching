@@ -1323,7 +1323,7 @@ function MessagePanel({
 /* ------------------------------------------------------------------ */
 
 export default function BuildPickerClient({
-  builds,
+  builds: initialBuilds,
   bootItems,
   championRows,
   preview,
@@ -1349,6 +1349,9 @@ export default function BuildPickerClient({
   const [randomGameCoolingDown, setRandomGameCoolingDown] = useState(false);
   const randomGameCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const result = preview ?? lookupResult;
+  const builds = result?.status === "in_game"
+    ? result.recommendation?.builds ?? initialBuilds
+    : initialBuilds;
   const abortRef = useRef<AbortController | null>(null);
   const lastLookupRef = useRef<string>("");
 

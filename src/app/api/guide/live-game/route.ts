@@ -11,6 +11,8 @@ import {
   summonerSpellKeyById,
 } from "@/lib/datadragon/summonerspells";
 import { compositionFacts } from "@/lib/guides/buildPicker/compositionFacts";
+import { loadPickerBuilds } from "@/lib/guides/buildPicker/loadBuilds";
+import { VIEGO_ITEM_SECTION } from "@/app/guide/viegoItems";
 import { runDecisionTree, type ChampionTraits, type TreeParticipant } from "@/lib/guides/buildPicker/decisionTree";
 import type {
   BuildRecommendation,
@@ -121,6 +123,7 @@ async function recommend(
   };
   return {
     ...result,
+    builds: await loadPickerBuilds(VIEGO_ITEM_SECTION),
     missingProfiles,
     facts: compositionFacts(allies.map(factChamp), enemies.map(factChamp)),
   };
