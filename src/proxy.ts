@@ -1,6 +1,8 @@
 // src/proxy.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { ADMIN_COOKIE, verifyAdminSession } from "@/lib/admin/session";
+import { enforceRequestLimit, RequestLimitError, visitorBucket } from "@/lib/security/requestLimit";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -17,11 +19,25 @@ function withNoIndex(response: NextResponse) {
   return response;
 }
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isAdmin = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
+
+  if (pathname.startsWith("/api/riot/")) {
+    try {
+      await enforceRequestLimit("public-riot:global", 600, 60_000);
+      await enforceRequestLimit(`public-riot:ip:${visitorBucket(req.headers)}`, 20, 60_000);
+      return NextResponse.next();
+    } catch (error) {
+      const limited = error instanceof RequestLimitError;
+      return NextResponse.json({ error: limited ? "rate_limited" : "temporarily_unavailable" }, {
+        status: limited ? 429 : 503,
+        headers: { "Cache-Control": "no-store", ...(limited ? { "Retry-After": String(error.retryAfter) } : {}) },
+      });
+    }
+  }
 
   // if not admin stuff → skip proxy
   if (!(isAdmin || isAdminApi)) return NextResponse.next();
@@ -35,14 +51,21 @@ export function proxy(req: NextRequest) {
     }
   }
 
+  if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    const origin = req.headers.get("origin");
+    if (origin && origin !== req.nextUrl.origin) {
+      return withNoIndex(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
+    }
+  }
+
   if (
-    pathname.startsWith("/admin/login") ||
-    pathname.startsWith("/api/admin/auth")
+    pathname === "/admin/login" ||
+    pathname === "/api/admin/auth/login" || pathname === "/api/admin/auth/logout"
   ) {
     return withNoIndex(NextResponse.next());
   }
 
-  if (pathname.startsWith("/api/admin/slots/cron")) {
+  if (pathname === "/api/admin/slots/cron") {
     const auth = req.headers.get("authorization") || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     const enc = new TextEncoder();
@@ -51,7 +74,7 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const authed = req.cookies.get("admin_auth")?.value === "1";
+  const authed = verifyAdminSession(req.cookies.get(ADMIN_COOKIE)?.value);
   if (authed) return withNoIndex(NextResponse.next());
 
   if (pathname.startsWith("/api")) {
@@ -65,5 +88,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/api/riot/:path*"],
 };

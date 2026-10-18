@@ -4,7 +4,7 @@ import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champion
 import { ensureLiveDDragonPatch } from "@/lib/datadragon/patch";
 import { loadPickerBoots, loadPickerBuilds } from "@/lib/guides/buildPicker/loadBuilds";
 import type { ChampionProfileRow } from "@/lib/guides/buildPicker/types";
-import { prisma } from "@/lib/prisma";
+import { pickerProfiles } from "@/lib/guides/buildPicker/profiles.server";
 import { VIEGO_ITEM_SECTION } from "../viegoItems";
 import BuildPickerClient from "./BuildPickerClient";
 import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function BuildPickerPage() {
   const guideTextIcons = await buildGuideTextIcons();
   const [builds, bootItems, profiles] = await Promise.all([
     loadPickerBuilds(VIEGO_ITEM_SECTION),
     loadPickerBoots(),
-    prisma.championProfile.findMany({ orderBy: { name: "asc" } }),
+    pickerProfiles(),
     ensureLiveDDragonPatch(),
     ensureSummonerSpellsAssets(),
   ]);

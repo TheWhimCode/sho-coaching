@@ -13,6 +13,7 @@ export const limiterGroup = new Bottleneck.Group({
   clientOptions: { connectionString: process.env.REDIS_URL! }, */
   minTime: 50, // ~20 req/s
   maxConcurrent: 3,
+  highWater: 12,
   /* @ts-ignore */ strategy: Bottleneck.strategy.OVERFLOW,
   rejectOnDrop: true,
 });

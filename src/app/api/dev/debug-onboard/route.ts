@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { accountByRiotTag, parseRiotTag, probeSummonerEverywhere } from '@/lib/riot';
 
 export async function POST(req: NextRequest) {
+  if (process.env.NODE_ENV !== 'development') return NextResponse.json({ error: 'Not found' }, { status: 404 });
   try {
     const body = await req.json().catch(() => ({}));
     const riotTag = String(body?.riotTag || '').trim();

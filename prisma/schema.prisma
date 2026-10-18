@@ -790,6 +790,14 @@ model AxomEvent {
 
 // Per-champion traits used by the live-game build recommender.
 // `name` is the Data Dragon display name (e.g. "Kai'Sa", "Nunu & Willump").
+model RequestLimit {
+  key       String   @id
+  count     Int
+  expiresAt DateTime @db.Timestamptz(3)
+
+  @@schema("public")
+}
+
 model ChampionProfile {
   name         String               @id
   shields      ChampionShieldLevel

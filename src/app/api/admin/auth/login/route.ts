@@ -1,24 +1,26 @@
-import { NextResponse } from 'next/server';
-import { rateLimit } from '@/lib/rateLimit';
+import { NextResponse } from "next/server";
+import { ADMIN_COOKIE, ADMIN_SESSION_SECONDS, createAdminSession, validAdminPassword } from "@/lib/admin/session";
+import { enforceRequestLimit, RequestLimitError, visitorBucket } from "@/lib/security/requestLimit";
+import { readLimitedText } from "@/lib/security/requestBody";
 
 export async function POST(req: Request) {
-  // derive IP (fallback to unknown)
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!rateLimit(`admin:login:${ip}`, 10, 60_000)) {
-    return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
+  try {
+    await enforceRequestLimit("admin-login:global", 100, 60_000);
+    await enforceRequestLimit(`admin-login:ip:${visitorBucket(req.headers)}`, 10, 60_000);
+    const body = await readLimitedText(req, 2048);
+    let password: unknown;
+    try { password = JSON.parse(body)?.password; } catch { /* Invalid JSON is rejected below. */ }
+    if (!validAdminPassword(password)) return NextResponse.json({ ok: false }, { status: 401 });
+    const res = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+    res.cookies.set(ADMIN_COOKIE, createAdminSession(), {
+      path: "/", httpOnly: true, secure: process.env.NODE_ENV === "production",
+      sameSite: "strict", maxAge: ADMIN_SESSION_SECONDS,
+    });
+    return res;
+  } catch (error) {
+    if (error instanceof RangeError) return NextResponse.json({ ok: false }, { status: 413 });
+    if (error instanceof RequestLimitError) return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429, headers: { "Retry-After": String(error.retryAfter), "Cache-Control": "no-store" } });
+    console.error("[admin-login] request guard unavailable");
+    return NextResponse.json({ ok: false, error: "Login temporarily unavailable" }, { status: 503 });
   }
-
-  const { password } = await req.json().catch(() => ({}));
-  if (!password) return NextResponse.json({ ok: false }, { status: 400 });
-
-  if (password !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ ok: false }, { status: 401 });
-  }
-
-  const res = NextResponse.json({ ok: true });
-  res.headers.append(
-    'Set-Cookie',
-    `admin_auth=1; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${60 * 60 * 24 * 14}` // 2 weeks
-  );
-  return res;
 }

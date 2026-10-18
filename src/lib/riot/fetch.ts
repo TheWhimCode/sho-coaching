@@ -1,6 +1,17 @@
 import { bucketKeyFor, limiterGroup } from "./limiter";
+import { enforceRequestLimit, RequestLimitError } from "@/lib/security/requestLimit";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 const DEFAULT_TIMEOUT_MS = 12_000;
+const lookupDeadline = new AsyncLocalStorage<number>();
+
+export function withRiotLookupDeadline<T>(task: () => Promise<T>): Promise<T> {
+  return lookupDeadline.run(Date.now() + 20_000, task);
+}
+
+function remainingTime(deadline: number) {
+  return Math.min(DEFAULT_TIMEOUT_MS, deadline - Date.now());
+}
 
 export class RiotApiError extends Error {
   readonly status: number;
@@ -24,15 +35,13 @@ export function riotLookupErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Riot lookup failed.";
 }
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-
 function parseRetryAfter(res: Response): number {
   const ra =
     res.headers.get("Retry-After") ??
     res.headers.get("retry-after") ??
     res.headers.get("x-rate-limit-reset");
   const n = Number(ra);
-  return Number.isFinite(n) && n > 0 ? Math.min(n, 10) : 1;
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.ceil(n), 300) : 10;
 }
 
 function riotHeaders() {
@@ -43,28 +52,39 @@ function riotHeaders() {
 
 export async function riotFetchJSON<T>(
   url: string,
-  init: RequestInit = {},
-  attempt = 0
+  init: RequestInit = {}
 ): Promise<T> {
+  const target = new URL(url);
+  if (target.protocol !== "https:" || target.port || target.username || target.password
+    || !/^(euw1|eun1|na1|oc1|br1|la1|la2|tr1|ru|kr|jp1|ph2|sg2|th2|tw2|vn2|europe|americas|asia|sea)\.api\.riotgames\.com$/.test(target.hostname)) {
+    throw new Error("Unsupported Riot API host");
+  }
   const method = (init.method || "GET").toUpperCase();
   const key = bucketKeyFor(url, method);
   const limiter = limiterGroup.key(key);
+  const deadline = lookupDeadline.getStore() ?? Infinity;
 
-  return limiter.schedule({ expiration: DEFAULT_TIMEOUT_MS * 2 }, async () => {
+  if (remainingTime(deadline) <= 0) throw new Error("Riot lookup timed out");
+  return limiter.schedule({ expiration: Math.min(DEFAULT_TIMEOUT_MS * 2, deadline - Date.now()) }, async () => {
+    if (remainingTime(deadline) <= 0) throw new Error("Riot lookup timed out");
+    await enforceRequestLimit("riot-outbound:two-minutes", 90, 120_000);
+    await enforceRequestLimit("riot-outbound:second", 18, 1000);
+    const timeout = remainingTime(deadline);
+    if (timeout <= 0) throw new Error("Riot lookup timed out");
     const ac = new AbortController();
-    const to = setTimeout(() => ac.abort(), DEFAULT_TIMEOUT_MS);
+    const to = setTimeout(() => ac.abort(), timeout);
     try {
       const res = await fetch(url, {
         ...init,
         signal: ac.signal,
         headers: { ...riotHeaders(), ...(init.headers || {}) },
         cache: "no-store",
+        redirect: "error",
       });
 
       if (res.status === 429) {
-        const wait = parseRetryAfter(res);
-        await sleep((wait + Math.random()) * 1000);
-        if (attempt < 3) return riotFetchJSON<T>(url, init, attempt + 1);
+        // Do not recursively re-enter a limiter while holding one of its slots.
+        throw new RequestLimitError(parseRetryAfter(res));
       }
 
       if (!res.ok) {

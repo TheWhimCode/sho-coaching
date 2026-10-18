@@ -19,7 +19,11 @@ import type {
   LiveGameSpell,
   LiveGameTeamSide,
 } from "@/lib/guides/buildPicker/types";
-import { prisma } from "@/lib/prisma";
+import { pickerProfiles } from "@/lib/guides/buildPicker/profiles.server";
+import { unstable_cache } from "next/cache";
+import { enforceRequestLimit, RequestLimitError, visitorBucket } from "@/lib/security/requestLimit";
+import { SingleFlight } from "@/lib/security/singleFlight";
+import { withRiotLookupDeadline } from "@/lib/riot/fetch";
 import {
   findPlatformForPuuid,
   normalizePlatform,
@@ -34,7 +38,6 @@ import {
   perkIdsFromMatch,
 } from "@/lib/riot/match";
 import { activeGameByPuuid, NotInGameError, queueName } from "@/lib/riot/spectator";
-import { riotLookupErrorMessage } from "@/lib/riot/fetch";
 import { isSupportedPickerGame, UNSUPPORTED_GAME_MESSAGE } from "@/lib/guides/buildPicker/supportedGame";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +59,7 @@ async function recommend(
   allies: LiveGameParticipant[],
   enemies: LiveGameParticipant[]
 ): Promise<BuildRecommendation> {
-  const profiles = await prisma.championProfile.findMany();
+  const profiles = await pickerProfiles();
   const byChampionId = new Map<string, ChampionTraits & {
     durabilityScore: number | null;
     damageScore: number | null;
@@ -146,9 +149,7 @@ const SAMPLE_RED: { champion: string; spells: [number, number] }[] = [
 ];
 
 async function withProfileScores(blue: LiveGameParticipant[], red: LiveGameParticipant[]) {
-  const profiles = await prisma.championProfile.findMany({
-    select: { name: true, durabilityScore: true, damageScore: true },
-  });
+  const profiles = await pickerProfiles();
   const byChampionId = new Map(
     profiles.map((row) => [resolveChampionId(row.name), row] as const)
   );
@@ -361,15 +362,46 @@ async function matchGame(rawMatchId: string): Promise<LiveGameLookup> {
 /* Handler                                                             */
 /* ------------------------------------------------------------------ */
 
+const lookupFlights = new SingleFlight();
+const cachedLiveGame = unstable_cache((riotId: string, platform: string) => withRiotLookupDeadline(() => liveGame(riotId, platform)), ["picker-live-secured-v1"], { revalidate: 15 });
+const cachedMatchGame = unstable_cache((matchId: string) => withRiotLookupDeadline(() => matchGame(matchId)), ["picker-match-secured-v1"], { revalidate: 300 });
+
+function lookupError(error: unknown) {
+  const limited = error instanceof RequestLimitError;
+  if (!limited) console.error("[live-game]", error);
+  return NextResponse.json({ status: "error", message: limited ? error.message : "Game lookup is temporarily unavailable. Please try again shortly." } satisfies LiveGameLookup, {
+    status: limited ? 429 : 503,
+    headers: { "Cache-Control": "no-store", ...(limited ? { "Retry-After": String(error.retryAfter) } : {}) },
+  });
+}
+
 export async function GET(req: NextRequest) {
+  // Reject malformed/oversized inputs before contacting the database or Riot.
+  if (req.nextUrl.search.length > 512) return NextResponse.json({ status: "error", message: "Lookup input is too long." }, { status: 400 });
+  try {
+    await enforceRequestLimit("picker:global", 600, 60_000);
+    await enforceRequestLimit(`picker:ip:${visitorBucket(req.headers)}`, 20, 60_000);
+    return await handleLookup(req);
+  } catch (error) { return lookupError(error); }
+}
+
+async function handleLookup(req: NextRequest) {
   const matchId = (req.nextUrl.searchParams.get("matchId") ?? "").trim();
   const riotId = (req.nextUrl.searchParams.get("riotId") ?? "").trim();
-  const platform = (req.nextUrl.searchParams.get("platform") ?? "auto").trim();
-  const mock = req.nextUrl.searchParams.get("mock") === "1";
+  const platformInput = (req.nextUrl.searchParams.get("platform") ?? "auto").trim().toLowerCase();
+  const normalized = normalizePlatform(platformInput);
+  if (platformInput !== "auto" && !normalized.region) {
+    return NextResponse.json({ status: "error", message: "Choose a supported server." }, { status: 400 });
+  }
+  const platform = platformInput === "auto" ? "auto" : normalized.platform;
+  const mock = process.env.NODE_ENV === "development" && req.nextUrl.searchParams.get("mock") === "1";
+  if (process.env.NODE_ENV !== "development" && req.nextUrl.searchParams.has("mock")) {
+    return NextResponse.json({ status: "error", message: "Use the random game button to try the picker." }, { status: 400 });
+  }
 
   if (matchId) {
     const parsed = parseMatchId(matchId, platform);
-    if (!parsed) {
+    if (!parsed?.platform) {
       const body: LiveGameLookup = {
         status: "error",
         message: "Enter the match number and pick a server, or paste a full id like EUW1_1234567890.",
@@ -385,19 +417,14 @@ export async function GET(req: NextRequest) {
             source: "match",
             matchId: parsed.matchId,
           })
-        : await matchGame(parsed.matchId);
-      return NextResponse.json(body);
+        : await lookupFlights.run(`match:${parsed.matchId}`, () => cachedMatchGame(parsed.matchId));
+      return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
-      console.error("[live-game]", error);
-      const body: LiveGameLookup = {
-        status: "error",
-        message: riotLookupErrorMessage(error),
-      };
-      return NextResponse.json(body, { status: 502 });
+      return lookupError(error);
     }
   }
 
-  if (!riotId.includes("#")) {
+  if (!/^[^#]{3,16}#[^#]{3,5}$/.test(riotId)) {
     const body: LiveGameLookup = { status: "error", message: 'Enter your Riot ID as "Name#TAG".' };
     return NextResponse.json(body, { status: 400 });
   }
@@ -405,14 +432,9 @@ export async function GET(req: NextRequest) {
   await Promise.all([ensureLiveDDragonPatch(), ensureSummonerSpellsAssets()]);
 
   try {
-    const body = mock ? await sampleGame(riotId, platform) : await liveGame(riotId, platform);
-    return NextResponse.json(body);
+    const body = mock ? await sampleGame(riotId, platform) : await lookupFlights.run(`live:${platform}:${riotId.toLowerCase()}`, () => cachedLiveGame(riotId, platform));
+    return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    console.error("[live-game]", error);
-    const body: LiveGameLookup = {
-      status: "error",
-      message: riotLookupErrorMessage(error),
-    };
-    return NextResponse.json(body, { status: 502 });
+    return lookupError(error);
   }
 }

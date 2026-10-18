@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { ADMIN_COOKIE } from '@/lib/admin/session';
 export async function POST() {
   const res = NextResponse.json({ ok: true });
-  res.headers.append('Set-Cookie', `admin_auth=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+  res.cookies.set(ADMIN_COOKIE, '', { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', maxAge: 0 });
   return res;
 }
