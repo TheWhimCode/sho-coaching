@@ -41,6 +41,8 @@ import DonationPrompt from "./DonationPrompt";
 import { recordBuildLookup, DONATION_LOOKUP_EVENT } from "@/lib/guides/buildPicker/donationPrompt";
 import { createRandomGame, type RandomGameCatalog } from "@/lib/guides/buildPicker/randomGame";
 import { matchInputPlatform } from "@/lib/guides/buildPicker/lookupInput";
+import type { TwitchStreamStatus } from "@/lib/twitch/types";
+import BuildPickerHeader from "./BuildPickerHeader";
 
 const PickerTextIconsContext = createContext<Record<string, string>>({});
 
@@ -1327,6 +1329,7 @@ export default function BuildPickerClient({
   preview,
   guideTextIcons = {},
   randomGameCatalog,
+  twitchStatus = { isLive: false },
 }: {
   builds: PickerBuild[];
   bootItems: PickerItem[];
@@ -1334,6 +1337,7 @@ export default function BuildPickerClient({
   preview?: LiveGameLookup;
   guideTextIcons?: Record<string, string>;
   randomGameCatalog?: RandomGameCatalog;
+  twitchStatus?: TwitchStreamStatus;
 }) {
   const [mode, setMode] = useState<LookupMode>("live");
   const [riotId, setRiotId] = useState("");
@@ -1503,9 +1507,7 @@ export default function BuildPickerClient({
       {!preview ? <DonationPrompt /> : null}
       <div className={clsx("relative z-10 mx-auto w-full max-w-5xl px-5 sm:px-8", preview ? "pb-6 pt-8" : "pb-24 pt-16 sm:pt-[4.8rem] lg:pt-[5.6rem]")}>
         {!preview && (
-          <h1 className="mb-8 text-center text-2xl font-bold tracking-tight text-[#F5E6D3] sm:mb-10 sm:text-4xl lg:text-5xl">
-            Build like Mino would.
-          </h1>
+          <BuildPickerHeader status={twitchStatus} />
         )}
 
         {!preview && <LookupForm

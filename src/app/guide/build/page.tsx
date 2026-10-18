@@ -10,6 +10,7 @@ import BuildPickerClient from "./BuildPickerClient";
 import { buildGuideTextIcons } from "@/lib/guides/buildGuideTextIcons";
 import { ensureSummonerSpellsAssets, summonerSpellIconById, summonerSpellKeyById } from "@/lib/datadragon/summonerspells";
 import type { RandomGameCatalog } from "@/lib/guides/buildPicker/randomGame";
+import { getManualTwitchStreamStatus } from "@/lib/twitch/getManualTwitchStreamStatus";
 
 const title = "Viego Build Picker";
 const description =
@@ -34,10 +35,11 @@ export const revalidate = 60;
 
 export default async function BuildPickerPage() {
   const guideTextIcons = await buildGuideTextIcons();
-  const [builds, bootItems, profiles] = await Promise.all([
+  const [builds, bootItems, profiles, twitchStatus] = await Promise.all([
     loadPickerBuilds(VIEGO_ITEM_SECTION),
     loadPickerBoots(),
     pickerProfiles(),
+    getManualTwitchStreamStatus(),
     ensureLiveDDragonPatch(),
     ensureSummonerSpellsAssets(),
   ]);
@@ -75,6 +77,6 @@ export default async function BuildPickerPage() {
   };
 
   return (
-    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={championRows} guideTextIcons={guideTextIcons} randomGameCatalog={randomGameCatalog} />
+    <BuildPickerClient builds={builds} bootItems={bootItems} championRows={championRows} guideTextIcons={guideTextIcons} randomGameCatalog={randomGameCatalog} twitchStatus={twitchStatus} />
   );
 }
