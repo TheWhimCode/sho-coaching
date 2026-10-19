@@ -366,7 +366,9 @@ async function matchGame(rawMatchId: string): Promise<LiveGameLookup> {
 /* ------------------------------------------------------------------ */
 
 const lookupFlights = new SingleFlight();
-const cachedLiveGame = unstable_cache((riotId: string, platform: string) => withRiotLookupDeadline(() => liveGame(riotId, platform)), ["picker-live-secured-v1"], { revalidate: 15 });
+// A live lookup must await current data. Time-revalidated Next caches may serve
+// the previous game once while refreshing it in the background.
+const freshLiveGame = (riotId: string, platform: string) => withRiotLookupDeadline(() => liveGame(riotId, platform));
 const cachedMatchGame = unstable_cache((matchId: string) => withRiotLookupDeadline(() => matchGame(matchId)), ["picker-match-secured-v1"], { revalidate: 300 });
 
 function lookupError(error: unknown) {
@@ -435,7 +437,7 @@ async function handleLookup(req: NextRequest) {
   await Promise.all([ensureLiveDDragonPatch(), ensureSummonerSpellsAssets()]);
 
   try {
-    const body = mock ? await sampleGame(riotId, platform) : await lookupFlights.run(`live:${platform}:${riotId.toLowerCase()}`, () => cachedLiveGame(riotId, platform));
+    const body = mock ? await sampleGame(riotId, platform) : await lookupFlights.run(`live:${platform}:${riotId.toLowerCase()}`, () => freshLiveGame(riotId, platform));
     return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return lookupError(error);

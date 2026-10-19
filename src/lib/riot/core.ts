@@ -9,16 +9,17 @@ const ALIAS_TO_PLATFORM: Record<string, string> = {
   lan: "la1", la1: "la1", las: "la2", la2: "la2",
   br: "br1", br1: "br1", tr: "tr1", tr1: "tr1",
   ru: "ru", kr: "kr", jp: "jp1", jp1: "jp1",
-  ph: "ph2", ph2: "ph2", sg: "sg2", sg2: "sg2",
-  th: "th2", th2: "th2", tw: "tw2", tw2: "tw2",
+  ph: "sg2", ph2: "sg2", sg: "sg2", sg2: "sg2",
+  th: "sg2", th2: "sg2", tw: "tw2", tw2: "tw2",
   vn: "vn2", vn2: "vn2",
+  me: "me1", me1: "me1",
 };
 
 const PLATFORM_TO_REGION: Record<string, Regional> = {
-  na1: "americas", br1: "americas", la1: "americas", la2: "americas", oc1: "americas",
-  euw1: "europe", eun1: "europe", tr1: "europe", ru: "europe",
+  na1: "americas", br1: "americas", la1: "americas", la2: "americas",
+  euw1: "europe", eun1: "europe", tr1: "europe", ru: "europe", me1: "europe",
   kr: "asia", jp1: "asia",
-  ph2: "sea", sg2: "sea", th2: "sea", tw2: "sea", vn2: "sea",
+  oc1: "sea", sg2: "sea", tw2: "sea", vn2: "sea",
 };
 
 export function normalizePlatform(input: string) {
@@ -39,7 +40,7 @@ const PLATFORM_DISCOVERY_ORDER = [
   "euw1", "na1", "eun1", "oc1",
   "br1", "la1", "la2", "tr1", "ru",
   "kr", "jp1",
-  "ph2", "sg2", "th2", "tw2", "vn2",
+  "sg2", "tw2", "vn2", "me1",
 ] as const;
 
 /** Current discovery order, with an optional server moved to the front. */
@@ -84,13 +85,15 @@ export function parseRiotTag(tag: string) {
 /* ---- High-level calls (PUUID-first) ---- */
 export async function resolveAccount(regional: Regional, riotTag: string) {
   const { gameName, tagLine } = parseRiotTag(riotTag);
+  const accountRegion = regional === "sea" ? "asia" : regional;
   return riotFetchJSON<{ puuid: string; gameName: string; tagLine: string }>(
-    `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`
+    `https://${accountRegion}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`
   );
 }
 
 /** Regional routers to try for Account-v1 `by-riot-id` (same order as POST /api/riot/resolve). */
-export const ACCOUNT_ROUTING_REGIONS: readonly Regional[] = ["europe", "americas", "asia", "sea"];
+export const ACCOUNT_ROUTING_REGIONS: readonly Regional[] = ["europe", "americas", "asia"];
+export const MATCH_ROUTING_REGIONS: readonly Regional[] = [...ACCOUNT_ROUTING_REGIONS, "sea"];
 
 export type ResolvedRiotAccount = {
   puuid: string;
@@ -113,10 +116,13 @@ export async function resolveAccountByRiotTag(
   const tag = riotTag.trim();
   if (!tag) throw new Error("riotTag required");
 
+  // Account-v1 is global and supports three routers; SEA is only a match router.
+  const regionHint = options?.region ?? options?.preferredRegion;
+  const accountRegion = regionHint === "sea" ? "asia" : regionHint;
   const regionsToTry: readonly Regional[] = options?.region
-    ? [options.region]
-    : options?.preferredRegion
-      ? [options.preferredRegion, ...ACCOUNT_ROUTING_REGIONS.filter((region) => region !== options.preferredRegion)]
+    ? [accountRegion!]
+    : accountRegion
+      ? [accountRegion, ...ACCOUNT_ROUTING_REGIONS.filter((region) => region !== accountRegion)]
       : ACCOUNT_ROUTING_REGIONS;
 
   let lastErr: unknown = null;

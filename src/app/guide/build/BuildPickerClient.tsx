@@ -1421,6 +1421,7 @@ export default function BuildPickerClient({
       if (new URLSearchParams(window.location.search).get("mock") === "1") params.set("mock", "1");
       const response = await fetch(`/api/guide/live-game?${params.toString()}`, {
         signal: controller.signal,
+        cache: "no-store",
       });
       const body = (await response.json()) as LiveGameLookup;
       if (controller.signal.aborted) return;
@@ -1455,7 +1456,8 @@ export default function BuildPickerClient({
     try {
       storedId = localStorage.getItem(STORAGE_RIOT_ID) ?? "";
       localStorage.removeItem(STORAGE_MATCH_ID);
-      const savedPlatform = localStorage.getItem(STORAGE_PLATFORM);
+      const rawSavedPlatform = localStorage.getItem(STORAGE_PLATFORM);
+      const savedPlatform = rawSavedPlatform === "ph2" || rawSavedPlatform === "th2" ? "sg2" : rawSavedPlatform;
       if (isPlatformId(savedPlatform)) storedPlatform = savedPlatform;
     } catch {
       // storage unavailable; ignore

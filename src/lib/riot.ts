@@ -1,18 +1,13 @@
 // src/lib/riot.ts
 
 import { riotFetchJSON } from "@/lib/riot/fetch";
+import { normalizePlatform, resolveAccountByRiotTag } from "@/lib/riot/core";
 
 type Regional = "americas" | "europe" | "asia" | "sea";
 
 /** Map a platform server (euw1, na1, kr, …) to its regional cluster */
 export function regionalForServer(server: string): Regional {
-  const s = (server || "").toLowerCase();
-  if (["na1", "br1", "la1", "la2", "oc1"].includes(s)) return "americas";
-  if (["euw1", "eun1", "tr1", "ru"].includes(s)) return "europe";
-  if (["kr", "jp1"].includes(s)) return "asia";
-  if (["ph2", "sg2", "th2", "tw2", "vn2"].includes(s)) return "sea";
-  // default safely to Europe
-  return "europe";
+  return normalizePlatform(server).region ?? "europe";
 }
 
 /** Parse "GameName#TAG" (game name can contain spaces). */
@@ -28,12 +23,8 @@ export async function accountByRiotTag(
   serverHint: string,
   riotTag: string,
 ): Promise<{ puuid: string; gameName?: string; tagLine?: string }> {
-  const { gameName, tagLine } = parseRiotTag(riotTag);
   const regional = regionalForServer(serverHint || "euw1");
-  const url = `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(
-    gameName,
-  )}/${encodeURIComponent(tagLine)}`;
-  return riotFetchJSON<{ puuid: string; gameName?: string; tagLine?: string }>(url);
+  return resolveAccountByRiotTag(riotTag, { preferredRegion: regional });
 }
 
 export type SoloQRank = { tier: string; division?: string | null; lp: number };
@@ -43,7 +34,7 @@ export async function soloQueueEntry(
   server: string,
   puuid: string,
 ): Promise<SoloQRank | null> {
-  const url = `https://${server}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(
+  const url = `https://${normalizePlatform(server).platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(
     puuid,
   )}`;
   const entries = await riotFetchJSON<Array<Record<string, unknown>>>(url);
@@ -59,10 +50,10 @@ export async function soloQueueEntry(
 // ----------- Diagnostic helpers -----------
 
 const ALL_CLUSTERS: Record<string, string[]> = {
-  americas: ["na1", "br1", "la1", "la2", "oc1"],
-  europe: ["euw1", "eun1", "tr1", "ru"],
+  americas: ["na1", "br1", "la1", "la2"],
+  europe: ["euw1", "eun1", "tr1", "ru", "me1"],
   asia: ["kr", "jp1"],
-  sea: ["ph2", "sg2", "th2", "tw2", "vn2"],
+  sea: ["oc1", "sg2", "tw2", "vn2"],
 };
 
 /** Probe all servers for a summoner, with full attempt logs */
@@ -95,7 +86,7 @@ export async function summonerByPuuid(
   server: string,
   puuid: string,
 ): Promise<{ name: string }> {
-  const url = `https://${server}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`;
+  const url = `https://${normalizePlatform(server).platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`;
   const j = await riotFetchJSON<{ name: string }>(url);
   return { name: j.name as string };
 }

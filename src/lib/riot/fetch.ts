@@ -64,7 +64,7 @@ export async function riotFetchJSON<T>(
 ): Promise<T> {
   const target = new URL(url);
   if (target.protocol !== "https:" || target.port || target.username || target.password
-    || !/^(euw1|eun1|na1|oc1|br1|la1|la2|tr1|ru|kr|jp1|ph2|sg2|th2|tw2|vn2|europe|americas|asia|sea)\.api\.riotgames\.com$/.test(target.hostname)) {
+    || !/^(euw1|eun1|na1|oc1|br1|la1|la2|tr1|ru|kr|jp1|me1|sg2|tw2|vn2|europe|americas|asia|sea)\.api\.riotgames\.com$/.test(target.hostname)) {
     throw new Error("Unsupported Riot API host");
   }
   const method = (init.method || "GET").toUpperCase();

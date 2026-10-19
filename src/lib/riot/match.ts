@@ -1,4 +1,4 @@
-import { ACCOUNT_ROUTING_REGIONS, normalizePlatform, type Regional } from "./core";
+import { MATCH_ROUTING_REGIONS, normalizePlatform, type Regional } from "./core";
 import { riotFetchJSON } from "./fetch";
 import { composeMatchId } from "./matchId";
 
@@ -89,8 +89,8 @@ export async function matchByIdAcrossRegions(
   preferred?: Regional | null
 ): Promise<MatchDto> {
   const regions: Regional[] = preferred
-    ? [preferred, ...ACCOUNT_ROUTING_REGIONS.filter((region) => region !== preferred)]
-    : [...ACCOUNT_ROUTING_REGIONS];
+    ? [preferred, ...MATCH_ROUTING_REGIONS.filter((region) => region !== preferred)]
+    : [...MATCH_ROUTING_REGIONS];
 
   let saw404 = false;
   for (const regional of regions) {

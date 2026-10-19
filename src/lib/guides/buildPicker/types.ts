@@ -21,9 +21,8 @@ export const BUILD_PICKER_PLATFORMS = [
   { id: "ru", label: "RU" },
   { id: "kr", label: "KR" },
   { id: "jp1", label: "JP" },
-  { id: "ph2", label: "PH" },
-  { id: "sg2", label: "SG" },
-  { id: "th2", label: "TH" },
+  { id: "me1", label: "ME" },
+  { id: "sg2", label: "SEA" },
   { id: "tw2", label: "TW" },
   { id: "vn2", label: "VN" },
 ] as const;

@@ -1,8 +1,8 @@
 // Standard PvP Summoner's Rift queues. Unknown/new queues fail closed.
 // https://static.developer.riotgames.com/docs/lol/queues.json
-const STANDARD_RIFT_QUEUES = new Set([400, 420, 430, 440, 490, 700]);
+const STANDARD_RIFT_QUEUES = new Set([400, 420, 430, 440, 480, 490, 700]);
 
-export const UNSUPPORTED_GAME_MESSAGE = "This picker supports standard 5v5 Summoner's Rift games: Ranked Solo/Duo, Ranked Flex, normals, and Clash. Other modes aren't supported.";
+export const UNSUPPORTED_GAME_MESSAGE = "This picker supports standard 5v5 Summoner's Rift games: Ranked Solo/Duo, Ranked Flex, normals, Swiftplay, and Clash. Other modes aren't supported.";
 
 export function isSupportedPickerGame(game: {
   mapId?: number;
