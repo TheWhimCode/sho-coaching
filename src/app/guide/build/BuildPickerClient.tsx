@@ -43,6 +43,7 @@ import { createRandomGame, type RandomGameCatalog } from "@/lib/guides/buildPick
 import { matchInputPlatform } from "@/lib/guides/buildPicker/lookupInput";
 import type { TwitchStreamStatus } from "@/lib/twitch/types";
 import BuildPickerHeader from "./BuildPickerHeader";
+import { LOOKUP_FAILED_MESSAGE, RIOT_LIMIT_MESSAGE, RIOT_LIMIT_TITLE } from "@/lib/guides/buildPicker/lookupMessages";
 
 const PickerTextIconsContext = createContext<Record<string, string>>({});
 
@@ -1282,6 +1283,7 @@ function BuildSkeleton() {
 function MessagePanel({
   title,
   body,
+  hint,
   tone = "neutral",
   action,
   id,
@@ -1290,6 +1292,7 @@ function MessagePanel({
 }: {
   title: string;
   body: string;
+  hint?: string;
   tone?: "neutral" | "error";
   action?: ReactNode;
   id?: string;
@@ -1312,6 +1315,7 @@ function MessagePanel({
       >
         {title}
       </h2>
+      {hint ? <p className="mt-1.5 text-sm leading-relaxed text-[#F5E6D3]/65 sm:text-base">{hint}</p> : null}
       <p className="mt-1.5 text-sm leading-relaxed text-[#F5E6D3]/65 sm:text-base">{body}</p>
       {action}
     </section>
@@ -1438,7 +1442,7 @@ export default function BuildPickerClient({
       if (controller.signal.aborted) return;
       setResult({
         status: "error",
-        message: error instanceof Error ? error.message : "Something went wrong.",
+        message: LOOKUP_FAILED_MESSAGE,
       });
     } finally {
       window.clearTimeout(phaseTimer);
@@ -1449,6 +1453,10 @@ export default function BuildPickerClient({
   useEffect(() => {
     if (preview) return;
     const params = new URLSearchParams(window.location.search);
+    if (process.env.NODE_ENV === "development" && params.get("preview") === "riot-limit") {
+      setResult({ status: "error", code: "riot_rate_limit", message: RIOT_LIMIT_MESSAGE, retryAfter: 60 });
+      return;
+    }
     const fromUrl = params.get("id")?.trim() ?? "";
     const matchFromUrl = params.get("match")?.trim() ?? "";
     let storedId = "";
@@ -1644,8 +1652,8 @@ export default function BuildPickerClient({
             <MessagePanel
               id="build-picker-not-in-game"
               tinted
-              title="You're currently not in-game"
-              body="Do you want to check a previous game?"
+              title="Can't see you in a game yet"
+              body="You have to be past champ select to find a live game."
               action={
                 <button
                   type="button"
@@ -1657,26 +1665,31 @@ export default function BuildPickerClient({
               }
             />
           ) : result?.status === "unsupported_mode" ? (
-            <MessagePanel title="Game mode not supported" body={result.message} outlined />
+            <MessagePanel title="This one's a different mode" body={result.message} outlined />
           ) : result?.status === "not_found" ? (
             <MessagePanel
-              title="Riot ID not found"
-              body={`Couldn't find ${result.riotId}. Check the spelling and the tag after the #.`}
+              title="Couldn't find you"
+              body={`Double-check ${result.riotId}, including the tag after the #. Easy to miss a letter.`}
               tone="error"
             />
           ) : result?.status === "match_not_found" ? (
             <MessagePanel
-              title="Match not found"
-              body={`Couldn't find ${result.matchId}. Copy the full ID from your League match history, like EUW1_1234567890.`}
+              title="Couldn't find that game"
+              body={`No luck with game ID ${result.matchId}. Double-check the ID and server.`}
               tone="error"
             />
           ) : result?.status === "no_viego" ? (
             <MessagePanel
               title="No Viego in that game"
-              body={`${result.matchId} didn't have a Viego. This picker is for jungle Viego lobbies.`}
+              body="No Viego to build for here. Try a game where he's playing jungle."
             />
           ) : result?.status === "error" ? (
-            <MessagePanel title="Something went wrong" body={result.message} tone="error" />
+            <MessagePanel
+              title={result.code === "riot_rate_limit" ? RIOT_LIMIT_TITLE : result.code === "rate_limit" ? "Try again in a minute" : "Couldn't check your game"}
+              hint={result.code === "riot_rate_limit" ? "Try again in a minute." : undefined}
+              body={result.message}
+              tone="error"
+            />
           ) : null}
         </div>
 

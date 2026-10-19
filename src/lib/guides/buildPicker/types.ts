@@ -103,7 +103,7 @@ export type LiveGameLookup =
   | { status: "not_found"; riotId: string }
   | { status: "match_not_found"; matchId: string }
   | { status: "no_viego"; matchId: string }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; code?: "riot_rate_limit" | "rate_limit"; retryAfter?: number };
 
 /** Serialized `ChampionProfile` row for the admin-ish table at the bottom of the page. */
 export type ChampionProfileRow = {

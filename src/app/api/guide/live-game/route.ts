@@ -41,6 +41,7 @@ import {
 } from "@/lib/riot/match";
 import { activeGameByPuuid, NotInGameError, queueName } from "@/lib/riot/spectator";
 import { isSupportedPickerGame, UNSUPPORTED_GAME_MESSAGE } from "@/lib/guides/buildPicker/supportedGame";
+import { buildLookupError } from "@/lib/guides/buildPicker/lookupError";
 
 export const dynamic = "force-dynamic";
 
@@ -296,7 +297,7 @@ function isViego(participant: { championId: number; championName?: string }) {
 async function matchGame(rawMatchId: string): Promise<LiveGameLookup> {
   const parsed = parseMatchId(rawMatchId);
   if (!parsed) {
-    return { status: "error", message: "Enter a match ID like EUW1_1234567890." };
+    return { status: "error", message: "Paste the game ID from your match history, like EUW1_1234567890." };
   }
 
   let match;
@@ -337,7 +338,7 @@ async function matchGame(rawMatchId: string): Promise<LiveGameLookup> {
   const blue = participants.filter((p) => p.teamId === 100).map(toParticipant);
   const red = participants.filter((p) => p.teamId === 200).map(toParticipant);
   if (!blue.length || !red.length) {
-    return { status: "error", message: "This picker works on 5v5 games." };
+    return { status: "error", message: "This one's for 5v5 games on Summoner's Rift." };
   }
 
   const scored = await withProfileScores(blue, red);
@@ -374,15 +375,16 @@ const cachedMatchGame = unstable_cache((matchId: string) => withRiotLookupDeadli
 function lookupError(error: unknown) {
   const limited = error instanceof RequestLimitError;
   if (!limited) console.error("[live-game]", error);
-  return NextResponse.json({ status: "error", message: limited ? error.message : "Game lookup is temporarily unavailable. Please try again shortly." } satisfies LiveGameLookup, {
-    status: limited ? 429 : 503,
+  const { body, status } = buildLookupError(error);
+  return NextResponse.json(body, {
+    status,
     headers: { "Cache-Control": "no-store", ...(limited ? { "Retry-After": String(error.retryAfter) } : {}) },
   });
 }
 
 export async function GET(req: NextRequest) {
   // Reject malformed/oversized inputs before contacting the database or Riot.
-  if (req.nextUrl.search.length > 512) return NextResponse.json({ status: "error", message: "Lookup input is too long." }, { status: 400 });
+  if (req.nextUrl.search.length > 512) return NextResponse.json({ status: "error", message: "That looks a bit long. Just paste your Riot ID or game ID." }, { status: 400 });
   try {
     await enforceRequestLimit("picker:global", 600, 60_000);
     await enforceRequestLimit(`picker:ip:${visitorBucket(req.headers)}`, 20, 60_000);
@@ -396,12 +398,12 @@ async function handleLookup(req: NextRequest) {
   const platformInput = (req.nextUrl.searchParams.get("platform") ?? "auto").trim().toLowerCase();
   const normalized = normalizePlatform(platformInput);
   if (platformInput !== "auto" && !normalized.region) {
-    return NextResponse.json({ status: "error", message: "Choose a supported server." }, { status: 400 });
+    return NextResponse.json({ status: "error", message: "Pick your server from the list, or leave it on Auto." }, { status: 400 });
   }
   const platform = platformInput === "auto" ? "auto" : normalized.platform;
   const mock = process.env.NODE_ENV === "development" && req.nextUrl.searchParams.get("mock") === "1";
   if (process.env.NODE_ENV !== "development" && req.nextUrl.searchParams.has("mock")) {
-    return NextResponse.json({ status: "error", message: "Use the random game button to try the picker." }, { status: 400 });
+    return NextResponse.json({ status: "error", message: "Want to try it out? Hit 'Try a random game'." }, { status: 400 });
   }
 
   if (matchId) {
@@ -409,7 +411,7 @@ async function handleLookup(req: NextRequest) {
     if (!parsed?.platform) {
       const body: LiveGameLookup = {
         status: "error",
-        message: "Enter the match number and pick a server, or paste a full id like EUW1_1234567890.",
+        message: "Paste your game number and pick its server. A full ID like EUW1_1234567890 works too.",
       };
       return NextResponse.json(body, { status: 400 });
     }
@@ -430,7 +432,7 @@ async function handleLookup(req: NextRequest) {
   }
 
   if (!/^[^#]{3,16}#[^#]{3,5}$/.test(riotId)) {
-    const body: LiveGameLookup = { status: "error", message: 'Enter your Riot ID as "Name#TAG".' };
+    const body: LiveGameLookup = { status: "error", message: 'Put in your full Riot ID, including the tag. Like "Name#TAG".' };
     return NextResponse.json(body, { status: 400 });
   }
 
