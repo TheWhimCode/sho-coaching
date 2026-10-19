@@ -42,6 +42,7 @@ import {
 import { activeGameByPuuid, NotInGameError, queueName } from "@/lib/riot/spectator";
 import { isSupportedPickerGame, UNSUPPORTED_GAME_MESSAGE } from "@/lib/guides/buildPicker/supportedGame";
 import { buildLookupError } from "@/lib/guides/buildPicker/lookupError";
+import { applyRuneScoreOverrides } from "@/lib/guides/buildPicker/runeScoreOverrides";
 
 export const dynamic = "force-dynamic";
 
@@ -110,7 +111,8 @@ async function recommend(
 
   const result = runDecisionTree({ allies: traitsFor(allies), enemies: traitsFor(enemies) });
   const factChamp = (participant: LiveGameParticipant) => {
-    const row = byChampionId.get(participant.championId);
+    const base = byChampionId.get(participant.championId);
+    const row = base ? applyRuneScoreOverrides({ ...base, championId: participant.championId, perkIds: participant.perkIds }) : undefined;
     return {
       name: participant.championName,
       championId: participant.championId,
@@ -159,7 +161,8 @@ async function withProfileScores(blue: LiveGameParticipant[], red: LiveGameParti
   );
   const apply = (team: LiveGameParticipant[]) =>
     team.map((participant) => {
-      const row = byChampionId.get(participant.championId);
+      const base = byChampionId.get(participant.championId);
+      const row = base ? applyRuneScoreOverrides({ ...base, championId: participant.championId, perkIds: participant.perkIds }) : undefined;
       return {
         ...participant,
         durabilityScore: row?.durabilityScore ?? null,
@@ -215,6 +218,7 @@ async function sampleGame(
 async function liveGame(riotId: string, platformInput: string): Promise<LiveGameLookup> {
   // 1. Riot ID → PUUID. A chosen server tries its routing region first, then the rest.
   const chosen = platformInput !== "auto" ? normalizePlatform(platformInput) : null;
+  if (chosen?.platform === "vn2") return { status: "live_unavailable", platform: "vn2" };
   const preferredRegion: Regional | undefined = chosen?.region;
   const preferredPlatform = preferredRegion ? chosen?.platform : undefined;
 
@@ -235,6 +239,7 @@ async function liveGame(riotId: string, platformInput: string): Promise<LiveGame
   //    Auto keeps the usual order. A chosen server is moved to the front.
   const platform = await findPlatformForPuuid(account.puuid, account.regional, preferredPlatform);
   if (!platform) return { status: "not_found", riotId };
+  if (platform === "vn2") return { status: "live_unavailable", platform: "vn2" };
 
   // 3. Active game.
   let game;

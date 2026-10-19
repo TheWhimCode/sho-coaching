@@ -12,6 +12,7 @@ import {
   SHADOW_ECONOMY_CHAMPIONS,
 } from "./compositionFacts";
 import { BOOT_THRESHOLDS, SCORING_THRESHOLDS, type ScoringThresholds } from "./thresholds";
+import { applyRuneScoreOverrides } from "./runeScoreOverrides";
 
 /** The trait rows the tree reasons about (a `ChampionProfile` without timestamps). */
 export type ChampionTraits = {
@@ -1022,6 +1023,7 @@ function walkRemainingBranches(ctx: TreeContext, trace: TreeTraceStep[]) {
 }
 
 export function runDecisionTree(ctx: TreeContext, root: DecisionNode = VIEGO_DECISION_TREE): TreeResult {
+  ctx = { ...ctx, allies: ctx.allies.map(applyRuneScoreOverrides), enemies: ctx.enemies.map(applyRuneScoreOverrides) };
   const trace: TreeTraceStep[] = [];
   const node = walkChoice(ctx, root, trace, false);
   const resolved = finalizeLeaf(ctx, node, trace, false);

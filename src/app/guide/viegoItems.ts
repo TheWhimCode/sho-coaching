@@ -11,7 +11,7 @@ const SURVIVABILITY_DESCRIPTION =
   "This build is great when Plated Steelcaps or Mercury Treads value is peaking, because we combine Shieldbow's shield with the resistances.\nFull AD or AP compositions lack mixed damage, so even a champion like Viego can benefit from some defense.";
 
 const MAIN_COLLECTOR_EXPLANATION =
-  "Always best second. Double Lethality -> %pen. Insane item on Viego.";
+  "Insane item on Viego. Double Lethality -> %pen with crit is what enables our scaling.\nBecause of the execute and the gold refund, people sometimes feel like this item isn't as good as it actually is.";
 
 const IE_EXPLANATION =
   "This rounds out your crit build. With double Lethality start, LDR 3rd is always better, but IE 4th is definitely a requirement. It does CRAZY damage.";
@@ -99,7 +99,7 @@ const BASTIONBREAKER_VARIANT: GuideItemVariant = {
   label: "Bread & Butter Carnage",
   header: "Bread & Butter Carnage",
   description:
-    "This build hits hard against low armor. Maximum Lethality stronger first item spike and you can still oneshot squishies just the same. But only squishies.\nWhenever enemies are all squishy, you don't think you'll be able to stack Hubris, or you need earlygame power, Bastionbreaker is great.",
+    "This is the standard build because it gives you both a strong mid-game spike and the benefit of the scaling that Lethality provides.\nBastionbreaker's passive allows you to accelerate by taking turret gold or investing less tempo into neutral objectives.",
   activeChoiceIds: [2520, 6699, 6673, 6695],
   activePathIndex: 0,
   teamComp: {
@@ -251,7 +251,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           header: "Shadow Economy",
           summary: "Budget, counter, or midgame option.",
           description:
-            "When you start building for Hubris but you fall behind, you can pivot into Umbral Glaive for more mid-game power.\nOr if you know that you won't be getting a lot of kills because your teammates have low volatility lanes and everyone is playing safe, you can go Umbral to provide other value to your team and get to your other items more quickly.",
+            "Umbral Glaive is an amazing item. If you start building for Hubris but want a stronger mid-game option, it has the same build path. It does similar damage to Bastionbreaker, but it also provides a permanent map hack.\nUmbral's passive runs out when you're on vision, so you can always tell if an enemy can see you because they're in a bush, you're on a ward, or a Faelight. It also reveals Shaco boxes.",
           items: [
             { id: 3179, explanation: "Start with Umbral Glaive." },
             { id: 6676, explanation: "Build second, after Umbral Glaive." },
@@ -269,7 +269,7 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           header: "Titansbane",
           summary: "Maximum scaling DPS possible.",
           description:
-            "Hubris is the best item in extended fights because it does the most damage when the first person dies.\nYun Tal fourth, because Collector loses a lot of value and we need a crit item to fill the slot. But be careful, sometimes you face compositions that cannot be killed realistically (Zilean, K'Sante, Kindred). You won't be able to activate your Hubris then.",
+            "This is the best scaling anti-tank build.\nThis build provides the highest scaling damage. LDR second, it will outdamage collector even this early. Hubris is amazing in extended fights because it does the most damage once the first person dies.\nLDR second against a ton of tanks. Yun Tal fourth because Collector loses a lot of value as a fourth item, and Yun Tal allows us to maximize our DPS against high durability targets.",
           items: [
             HUBRIS_START_ITEM,
             { id: 3036, explanation: "Build second, after Hubris." },

@@ -54,6 +54,7 @@ export default function DonationPrompt() {
       const response = await fetch("/api/stripe/donation/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "build_recommender" }),
       });
       const data = await response.json() as { url?: string };
       if (!response.ok || !data.url) throw new Error("checkout_failed");

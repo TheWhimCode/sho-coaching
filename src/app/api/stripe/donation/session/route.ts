@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { SITE_URL } from "@/lib/site";
+import { donationAttribution } from "@/lib/checkout/donationAttribution";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -42,16 +43,16 @@ export async function POST(req: Request) {
   const origin = req.headers.get("origin") ?? SITE_URL;
 
   try {
+    const body: unknown = await req.json().catch(() => null);
+    const source = body && typeof body === "object" && "source" in body ? body.source : undefined;
+    const attribution = donationAttribution(source);
+    if (!attribution) return NextResponse.json({ error: "invalid_source" }, { status: 400 });
     const priceId = await getDonationPriceId();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      payment_intent_data: {
-        metadata: {
-          type: "guide_donation",
-        },
-      },
+      ...attribution,
       line_items: [
         {
           price: priceId,

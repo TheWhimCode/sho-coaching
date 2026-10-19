@@ -46,6 +46,7 @@ const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
     id: "sit-serpents-first",
     label: "Shieldbreaker's Edge",
     summary: "When you will always hit shields.",
+    description: "This build is great when you pretty much always hit a shield because every enemy has one, or they have champions like Karma or Ivern.\nKeep in mind that it makes you a little bit weaker when there's no shield in combat, but since it's so cheap, it allows you to get to your LDR spike a little bit sooner as well.",
     itemIds: [6695, 6676, 3036, 3031, 6699],
     source: "situational",
   },

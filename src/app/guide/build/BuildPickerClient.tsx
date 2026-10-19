@@ -426,12 +426,15 @@ function ServerPicker({
         >
           {options.map((entry) => {
             const active = entry.id === selected.id;
+            const unavailable = allowAuto && entry.id === "vn2";
             return (
               <button
                 key={entry.id}
                 type="button"
                 role="option"
                 aria-selected={active}
+                disabled={unavailable}
+                title={unavailable ? "Riot live-game lookups aren't working for Vietnam right now." : undefined}
                 onClick={() => {
                   onChange(entry.id);
                   setOpen(false);
@@ -439,7 +442,9 @@ function ServerPicker({
                 className={clsx(
                   "inline-flex h-9 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold transition",
                   entry.id === "auto" && "col-span-3 justify-between px-3",
-                  active
+                  unavailable
+                    ? "cursor-not-allowed text-[#B8D8EA]/30"
+                    : active
                     ? "bg-[#F0ABCF] text-[#2A1F2E]"
                     : "text-[#F5E6D3]/80 hover:bg-white/[0.06] hover:text-[#F5E6D3]"
                 )}
@@ -449,6 +454,11 @@ function ServerPicker({
               </button>
             );
           })}
+          {allowAuto ? (
+            <p className="col-span-3 px-3 py-2 text-xs leading-relaxed text-[#B8D8EA]/60">
+              Riot live-game lookups aren't working for Vietnam right now.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -1648,6 +1658,12 @@ export default function BuildPickerClient({
                 }
               />
             </div>
+          ) : result?.status === "live_unavailable" ? (
+            <MessagePanel
+              title="Live games aren't available for Vietnam right now"
+              body="Riot's live-game lookup isn't working for the Vietnamese server. You can still use a finished game ID or try a random game."
+              outlined
+            />
           ) : result?.status === "not_in_game" ? (
             <MessagePanel
               id="build-picker-not-in-game"

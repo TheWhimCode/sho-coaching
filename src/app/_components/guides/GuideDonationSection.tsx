@@ -24,6 +24,7 @@ export default function GuideDonationSection() {
       const res = await fetch("/api/stripe/donation/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "guide" }),
       });
 
       const data = (await res.json().catch(() => null)) as { url?: string } | null;

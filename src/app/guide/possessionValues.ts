@@ -127,7 +127,7 @@ export const POSSESSION_VALUES = {
   Senna: 3,
   Seraphine: 5,
   Sett: 7,
-  Shaco: 7,
+  Shaco: 6,
   Shen: 9,
   Shyvana: 3,
   Singed: 6,
