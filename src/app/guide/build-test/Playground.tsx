@@ -10,7 +10,7 @@ const CONTROLS: { key: keyof Settings; label: string; max: number; step?: number
   { key: "shield", label: "Minimum shields for Serpent’s", max: 30 },
   { key: "earlyShield", label: "Early shields for Serpent’s first", max: 30 },
   { key: "lethalityMax", label: "Full lethality: maximum durability", max: 25, step: 0.5 },
-  { key: "bastionMax", label: "Bastionbreaker: maximum durability", max: 30, step: 0.5 },
+  { key: "bastionMax", label: "Sneaky like a cat: maximum durability", max: 30, step: 0.5 },
   { key: "titansMin", label: "Titansbane: minimum base durability", max: 25 },
   { key: "forgedMomentumMax", label: "Forged Momentum: both teams below this damage", max: 25 },
   { key: "hubrisCcMin", label: "Hubris: allied CC must reach this", max: 25 },
@@ -109,7 +109,7 @@ export default function Playground({ allies, enemies, builds, bootItems, guideTe
         <summary className="cursor-pointer text-[#B8D8EA]/75">Scoring details</summary>
         <p className="mt-2 text-sm text-[#B8D8EA]">{score.reason}</p>
         {score.recommendation.alternative && <p className="mt-2 text-sm text-[#E8C676]">{score.recommendation.reason}</p>}
-      <p className="text-xs opacity-65">Same rules as the live picker. Shaco, Evelynn, or Rengar recommend Shadow Economy unless base durability reaches Titansbane. If both teams’ damage is below 12, Forged Momentum is next. Otherwise shield threshold first, then durability. Enough shields without the early threshold pick Reckoning. Shieldbreaker’s Path is only an alternative. Three or more allied physical champions with allied magic damage below 6 add +1 Steel durability to every Steelcaps-eligible enemy. Steelcaps points never trigger Titansbane. If allied CC is below 8, Hubris builds flip to their alternative as the primary pick. Role pools are approximate.</p>
+      <p className="text-xs opacity-65">Same rules as the live picker. If both teams’ damage is below 12, Forged Momentum is next. Otherwise shield threshold first, then durability. Enough shields without the early threshold pick Reckoning. Shieldbreaker’s Path is only an alternative. Three or more allied physical champions with allied magic damage below 6 add +1 Steel durability to every Steelcaps-eligible enemy. Steelcaps points never trigger Titansbane. If allied CC is below 8, Hubris builds flip to their alternative as the primary pick. Role pools are approximate.</p>
       </details>
     </section>
   </>;

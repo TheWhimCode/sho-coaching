@@ -1,5 +1,11 @@
 import type { GuideItemSectionConfig } from "@/lib/guides/itemGuideTypes";
 
+/** Turn off once the current itemization has been tested and builds are settled. */
+export const BUILD_ITEMIZATION_REVIEW = {
+  active: true,
+  message: "Viego's itemization recently changed. Some builds are still being tested.",
+} as const;
+
 /** A build the picker can recommend. Items are Data Dragon item ids in build order. */
 export type PickerBuildDef = {
   id: string;
@@ -10,6 +16,8 @@ export type PickerBuildDef = {
   itemIds: number[];
   /** Where the build comes from in the guide, for display only. */
   source: "main" | "situational";
+  /** Only displayed as an alternative, never in the primary build catalog. */
+  alternativeOnly?: boolean;
 };
 
 /** Serialized for the client with resolved item names and icons. */
@@ -25,13 +33,6 @@ export type PickerItem = {
 
 const MAIN_BUILDS: PickerBuildDef[] = [
   {
-    id: "main-bastionbreaker",
-    label: "Bread & Butter Carnage",
-    summary: "Insane mid-game spike, scaling, and economy buildup.",
-    itemIds: [2520, 6676, 3036, 3031, 6699],
-    source: "main",
-  },
-  {
     id: "main-hubris",
     label: "Another Bloodrush",
     summary: "Mino's original hyper scaling build.",
@@ -42,6 +43,24 @@ const MAIN_BUILDS: PickerBuildDef[] = [
 
 /** Picker-only builds that don't exist in the guide yet. */
 const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
+  {
+    id: "survivability-earlier-shieldbow",
+    label: "Earlier Shieldbow",
+    summary: "When it's fine to delay LDR because you're ahead.",
+    description: "When it's fine to delay LDR because you're ahead.",
+    itemIds: [6676, 6673, 3036, 3031, 6699],
+    source: "situational",
+    alternativeOnly: true,
+  },
+  {
+    id: "survivability-earlier-shieldbow-ad",
+    label: "Earlier Shieldbow",
+    summary: "When it's fine to delay LDR because you're ahead.",
+    description: "When it's fine to delay LDR because you're ahead.",
+    itemIds: [6676, 6673, 3036, 3026, 3031],
+    source: "situational",
+    alternativeOnly: true,
+  },
   {
     id: "sit-serpents-first",
     label: "Shieldbreaker's Edge",
@@ -62,14 +81,13 @@ const PICKER_ONLY_BUILDS: PickerBuildDef[] = [
 ];
 
 /**
- * The builds the decision tree chooses from: the two flattened main builds,
+ * The builds the decision tree chooses from: the flattened main build,
  * every variant in the guide's Situational tab, and picker-only builds.
  */
 export function pickerBuildDefs(config: GuideItemSectionConfig): PickerBuildDef[] {
   const main = config.tabs.find((tab) => tab.id === "main")?.variants ?? [];
   const situational = config.tabs.find((tab) => tab.id === "situational")?.variants ?? [];
   const mainDescriptionById: Record<string, string | undefined> = {
-    "main-bastionbreaker": main.find((variant) => variant.id === "bastionbreaker")?.description,
     "main-hubris": main.find((variant) => variant.id === "hubris")?.description,
   };
   return [

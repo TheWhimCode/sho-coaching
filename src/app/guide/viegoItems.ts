@@ -22,13 +22,6 @@ const SERPENTS_EXPLANATION =
 const MAIN_LDR_EXPLANATION =
   "Your MEGA spike. This is what we've been scaling for. Kill anything. Anyone. Would be the love of my life if I didn't have Isolde.";
 
-const BASTIONBREAKER_START_ITEM: GuideItemEntry = {
-  id: 2520,
-  title: "Bastionbreaker",
-  explanation:
-    "Completely overbuffed, same damage as Cyclo without the passive. The passive helps you secure early Drakes/Grubs that you didn't have the time for before",
-};
-
 const HUBRIS_START_ITEM: GuideItemEntry = {
   id: 6697,
   title: "Hubris",
@@ -81,7 +74,7 @@ const MID_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
 const MAIN_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
   paths: [
     {
-      diverge: [BASTIONBREAKER_START_ITEM, HUBRIS_START_ITEM],
+      diverge: [HUBRIS_START_ITEM],
       items: MAIN_SHARED_CORE_ITEMS,
       endDiverge: [
         BASTIONBREAKER_CYCLO_ITEM,
@@ -94,24 +87,11 @@ const MAIN_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
 
 const HUBRIS_GOOD_AGAINST = ["Skarner", "Darius", "Nautilus", "Sylas", "Nunu", "Hecarim"];
 
-const BASTIONBREAKER_VARIANT: GuideItemVariant = {
-  id: "bastionbreaker",
-  label: "Bread & Butter Carnage",
-  header: "Bread & Butter Carnage",
-  description:
-    "This is the standard build because it gives you both a strong mid-game spike and the benefit of the scaling that Lethality provides.\nBastionbreaker's passive allows you to accelerate by taking turret gold or investing less tempo into neutral objectives.",
-  activeChoiceIds: [2520, 6699, 6673, 6695],
-  activePathIndex: 0,
-  teamComp: {
-    ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
-    enemy: ["Kayle", "Kha'Zix", "Syndra", "Tristana", "Senna"],
-  },
-  goodAgainst: ["Kha'Zix", "Talon", "Qiyana", "Kindred", "Quinn", "Hwei"],
-};
-
 const MID_BASTIONBREAKER_VARIANT: GuideItemVariant = {
-  ...BASTIONBREAKER_VARIANT,
+  id: "bastionbreaker",
+  label: "Viego midlane works!!",
   header: "Viego midlane works!!",
+  activePathIndex: 0,
   activeChoiceIds: [],
   description:
     "Profane gives you the waveclear you need to get to rotate to all the skirmishes. Build boots after first item, usually Gluttonous.\nRespect until level 3, then abuse your high AD HOB short trades. With Ignite you can oneshot squishies, especially once you hit 6.\nThen use that tempo to crash your waves rotate around the map and look for skirmishes as much as possible until sidelane starts.",
@@ -203,9 +183,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
       id: "main",
       label: "Main Build",
       sharedPath: MAIN_SHARED_PATH,
-      defaultVariantId: "bastionbreaker",
+      defaultVariantId: "hubris",
       variants: [
-        BASTIONBREAKER_VARIANT,
         {
           id: "hubris",
           label: "Another Bloodrush",
@@ -235,8 +214,8 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           description:
             "This is the maximum burst possible.\nBuild this when the enemy has literally zero tanky champs and won't build any armor. We don't build LDR because we would overcap with armor penetration and do less damage.",
           items: [
-            { id: 2520, explanation: "Start with Bastionbreaker." },
-            { id: 6699, explanation: "Build second, after Bastionbreaker." },
+            { id: 3179, explanation: "Start with Umbral Glaive." },
+            { id: 6699, explanation: "Build second, after Umbral Glaive." },
             { id: 6676, explanation: "Build third, after Voltaic Cyclosword." },
             { id: 3031, explanation: "Build fourth, after The Collector." },
             { id: 6673, explanation: "Finish with Immortal Shieldbow." },
@@ -247,11 +226,11 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
         },
         {
           id: "umbral-collector",
-          label: "Shadow Economy",
-          header: "Shadow Economy",
-          summary: "Budget, counter, or midgame option.",
+          label: "Sneaky like a cat",
+          header: "Sneaky like a cat",
+          summary: "Well-balanced mid-game spike and pick potential.",
           description:
-            "Umbral Glaive is an amazing item. If you start building for Hubris but want a stronger mid-game option, it has the same build path. It does similar damage to Bastionbreaker, but it also provides a permanent map hack.\nUmbral's passive runs out when you're on vision, so you can always tell if an enemy can see you because they're in a bush, you're on a ward, or a Faelight. It also reveals Shaco boxes.",
+            "Umbral Glaive is an amazing item. You get a strong mid-game spike and scaling from lethality. If you start building for Hubris but want a stronger mid-game option, it has the same build path.\nUmbral's on-hit passive runs out when you're on vision, so you can always tell if an enemy can see you because they're in a bush, you're on a ward, or a Faelight. It also reveals Shaco boxes.",
           items: [
             { id: 3179, explanation: "Start with Umbral Glaive." },
             { id: 6676, explanation: "Build second, after Umbral Glaive." },
@@ -307,9 +286,9 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           description: SURVIVABILITY_DESCRIPTION,
           items: [
             { id: 6676, explanation: "Start with The Collector." },
-            { id: 6673, explanation: "Build second, after The Collector." },
-            { id: 3036, explanation: "Build third, after Immortal Shieldbow." },
-            { id: 3031, explanation: "Build fourth, after Lord Dominik's Regards." },
+            { id: 3036, explanation: "Build after Collector and Mercury Treads." },
+            { id: 6673, explanation: "Build after Lord Dominik's Regards." },
+            { id: 3031, explanation: "Build after Immortal Shieldbow." },
             { id: 6699, explanation: "Finish with Voltaic Cyclosword." },
           ],
           activeChoiceIds: [],
@@ -324,10 +303,10 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           description: SURVIVABILITY_DESCRIPTION,
           items: [
             { id: 6676, explanation: "Start with The Collector." },
-            { id: 6673, explanation: "Build after Collector; prioritize before Steelcaps against jungle Rengar or Talon when allied shields are 4 or below." },
-            { id: 3036, explanation: "Build after Immortal Shieldbow." },
-            { id: 3026, explanation: "Build after Lord Dominik's Regards for armor and a revive." },
-            { id: 3031, explanation: "Finish with Infinity Edge." },
+            { id: 3036, explanation: "Build after Collector and Plated Steelcaps." },
+            { id: 6673, explanation: "Build after Lord Dominik's Regards." },
+            { id: 3031, explanation: "Build after Immortal Shieldbow." },
+            { id: 3026, explanation: "Finish with Guardian Angel." },
           ],
           activeChoiceIds: [],
           teamComp: { ally: [], enemy: [] },

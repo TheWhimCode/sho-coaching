@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Check, ChevronDown, ChevronRight, Eye, Search } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, CircleHelp, Eye, FlaskConical, Search } from "lucide-react";
 import { possessionValueFor } from "../possessionValues";
 import {
   useCallback,
@@ -32,6 +32,7 @@ import {
   type LiveGameParticipant,
 } from "@/lib/guides/buildPicker/types";
 import type { PickerBuild, PickerItem } from "@/lib/guides/buildPicker/builds";
+import { BUILD_ITEMIZATION_REVIEW } from "@/lib/guides/buildPicker/builds";
 import { guideChampionIconImgClass, GUIDE } from "@/lib/guides/guideTheme";
 import { composeMatchId } from "@/lib/riot/matchId";
 import BootsLogicView from "./BootsLogicView";
@@ -46,19 +47,6 @@ import BuildPickerHeader from "./BuildPickerHeader";
 import { LOOKUP_FAILED_MESSAGE, RIOT_LIMIT_MESSAGE, RIOT_LIMIT_TITLE } from "@/lib/guides/buildPicker/lookupMessages";
 
 const PickerTextIconsContext = createContext<Record<string, string>>({});
-
-/** Recommended build → useful pivot when the reason you picked it stops being true. */
-const BUILD_ALTERNATIVES: Record<string, { buildId: string; label: string }> = {
-  "hubris-ldr": { buildId: "hubris-skip-anti-tank", label: "If you fall behind early" },
-  "main-hubris": { buildId: "umbral-collector", label: "If you fall behind early" },
-  "main-bastionbreaker": { buildId: "umbral-collector", label: "If your gold lines up better" },
-  "yun-tal-ldr": { buildId: "hubris-ldr", label: "If you miss B. F. Sword on first reset" },
-  "bastionbreaker-cyclosword": { buildId: "main-bastionbreaker", label: "If enemies end up stacking armor" },
-  "collector-shieldbow": { buildId: "umbral-collector", label: "If you fall too far behind" },
-  "collector-shieldbow-ga": { buildId: "umbral-collector", label: "If you fall too far behind" },
-  "sit-serpents-first": { buildId: "sit-serpents", label: "If you want anti-shield later" },
-  "sit-serpents-late": { buildId: "sit-serpents", label: "If you want anti-shield earlier" },
-};
 
 const STORAGE_RIOT_ID = "viego-build-picker-riot-id";
 const STORAGE_PLATFORM = "viego-build-picker-platform";
@@ -1065,6 +1053,7 @@ function ItemOrder({
   size = "md",
   noWrap = false,
   showNumbers = true,
+  vivid = false,
 }: {
   build: PickerBuild;
   boot?: PickerItem;
@@ -1072,6 +1061,7 @@ function ItemOrder({
   size?: "md" | "sm" | "xs";
   noWrap?: boolean;
   showNumbers?: boolean;
+  vivid?: boolean;
 }) {
   const tile = size === "xs" ? "h-[min(1.375rem,6vw)] w-[min(1.375rem,6vw)] sm:h-6 sm:w-6" : size === "sm" ? "h-[min(2.75rem,12vw)] w-[min(2.75rem,12vw)] sm:h-12 sm:w-12" : "h-[min(4rem,13vw)] w-[min(4rem,13vw)] sm:h-[4.5rem] sm:w-[4.5rem]";
   const items = [...build.items];
@@ -1090,12 +1080,60 @@ function ItemOrder({
             )}
             title={item.name}
           >
-            <GuideImage src={item.icon} alt={item.name} className={clsx("h-full w-full object-cover", size === "xs" && "opacity-[0.65] sepia-[0.65] saturate-50")} />
-            {size === "xs" ? <span aria-hidden className="pointer-events-none absolute inset-0 bg-[#9C7058]/25 mix-blend-color" /> : null}
+            <GuideImage src={item.icon} alt={item.name} className={clsx("h-full w-full object-cover", size === "xs" && !vivid && "opacity-[0.65] sepia-[0.65] saturate-50")} />
+            {size === "xs" && !vivid ? <span aria-hidden className="pointer-events-none absolute inset-0 bg-[#9C7058]/25 mix-blend-color" /> : null}
           </div>
         </li>
       ))}
     </ol>
+  );
+}
+
+function TheorycraftedBadge({ builds, bootItems }: { builds: PickerBuild[]; bootItems: PickerItem[] }) {
+  const [open, setOpen] = useState(false);
+  const tipId = useId();
+  const swifties = bootItems.find((item) => item.id === 3009);
+  const testedBuilds = ["umbral-collector", "hubris-skip-anti-tank", "bastionbreaker-cyclosword"]
+    .flatMap((id) => builds.find((build) => build.id === id) ?? []);
+
+  return (
+    <div className="relative z-40 mt-2" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false); }}>
+      <button
+        type="button"
+        aria-describedby={open ? tipId : undefined}
+        onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
+        onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
+        className="inline-flex items-center gap-1.5 rounded-full border border-[#E9BE82]/25 bg-[#E9BE82]/[0.08] px-3 py-1 text-[11px] font-semibold text-[#E9BE82] transition hover:bg-[#E9BE82]/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E9BE82]"
+      >
+        <FlaskConical className="h-3.5 w-3.5" aria-hidden />
+        Theorycrafted · Bastion nerfs
+        <CircleHelp className="ml-0.5 h-3.5 w-3.5" aria-hidden />
+      </button>
+      {open ? (
+        <div id={tipId} role="tooltip" className="absolute left-1/2 top-full w-[min(22rem,calc(100vw-3rem))] -translate-x-1/2 pt-2 text-left">
+          <div className="rounded-xl border border-[#F0ABCF]/25 bg-[#2A1F2E] p-5 shadow-[0_12px_40px_rgba(30,23,36,0.55)] ring-1 ring-[#B8D8EA]/10">
+            <p className="text-sm leading-relaxed text-[#F5E6D3]/85">{BUILD_ITEMIZATION_REVIEW.message}</p>
+            <ul className="mt-4 space-y-4 border-t border-[#F5E6D3]/10 pt-4">
+              {testedBuilds.map((build) => (
+                <li key={build.id} className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-[#FAD4E8]">{build.label}</span>
+                  <ItemOrder build={build} size="xs" showNumbers={false} noWrap vivid />
+                </li>
+              ))}
+              {swifties ? (
+                <li className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-[#FAD4E8]">{swifties.name}</span>
+                  <div className="h-[min(1.375rem,6vw)] w-[min(1.375rem,6vw)] overflow-hidden rounded-md bg-[#352839] sm:h-6 sm:w-6">
+                    <GuideImage src={swifties.icon} alt={swifties.name} className="h-full w-full object-cover" />
+                  </div>
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -1129,7 +1167,7 @@ function BuildCard({
   onTogglePossessions: () => void;
 }) {
   const playerTip = buildPickerPlayerTip(player);
-  const alternative = recommendedAlternative ?? BUILD_ALTERNATIVES[buildId];
+  const alternative = recommendedAlternative;
   const alternativeBuild = alternative
     ? builds.find((entry) => entry.id === alternative.buildId)
     : undefined;
@@ -1174,6 +1212,9 @@ function BuildCard({
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#FAD4E8] sm:text-3xl lg:text-[2.1rem]">
               {build.label}
             </h2>
+            {BUILD_ITEMIZATION_REVIEW.active ? (
+              <TheorycraftedBadge builds={builds} bootItems={bootItems} />
+            ) : null}
             {build.summary ? (
               <p className="mt-1.5 text-sm text-[#F5E6D3]/60 sm:text-base">{build.summary}</p>
             ) : null}
@@ -1724,7 +1765,7 @@ export default function BuildPickerClient({
                       : "First matching line in each check wins. For you, not for viewers."}
                   </p>
                 </div>
-                <p className="text-xs text-[#F5E6D3]/45">{builds.filter((build) => build.id !== "sit-serpents").length} builds</p>
+                <p className="text-xs text-[#F5E6D3]/45">{builds.filter((build) => build.id !== "sit-serpents" && !build.alternativeOnly).length} builds</p>
               </div>
               <PickerLogicView
                 builds={builds}

@@ -1,3 +1,5 @@
+import type { ChampionDamageType } from "@prisma/client";
+
 const ARCANE_COMET = 8229;
 const DEATHFIRE_TOUCH = 8992;
 
@@ -14,12 +16,15 @@ type RuneScoredChampion = {
   ccScore?: number | null;
   mercuryTreadsScore?: number | null;
   damageScore?: number | null;
+  damageType?: ChampionDamageType | null;
 };
 
 /** Infer Shaco's variant from a real keystone without changing the stored profile. */
 export function applyRuneScoreOverrides<T extends RuneScoredChampion>(champion: T): T {
   if (champion.championId !== "Shaco" && champion.name !== "Shaco") return champion;
   const keystone = champion.perkIds?.find(id => KEYSTONES.has(id));
-  if (keystone === undefined || keystone === ARCANE_COMET || keystone === DEATHFIRE_TOUCH) return champion;
-  return { ...champion, ccScore: 2, mercuryTreadsScore: 1, damageScore: 4 };
+  if (keystone === undefined || keystone === ARCANE_COMET || keystone === DEATHFIRE_TOUCH) {
+    return champion.damageType === "AP" ? champion : { ...champion, damageType: "AP" };
+  }
+  return { ...champion, damageType: "AD", ccScore: 2, mercuryTreadsScore: 1, damageScore: 4 };
 }

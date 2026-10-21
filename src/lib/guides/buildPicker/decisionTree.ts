@@ -9,7 +9,6 @@ import {
   physicalDamageScore,
   isPhysicalDamage,
   RESET_DENIER_MIN,
-  SHADOW_ECONOMY_CHAMPIONS,
 } from "./compositionFacts";
 import { BOOT_THRESHOLDS, SCORING_THRESHOLDS, type ScoringThresholds } from "./thresholds";
 import { applyRuneScoreOverrides } from "./runeScoreOverrides";
@@ -207,14 +206,6 @@ function shieldTotals(ctx: TreeContext) {
   return { total, late, early: total - late };
 }
 
-function isShadowEconomyChampion(champion: Pick<TreeParticipant, "name" | "championId">) {
-  return SHADOW_ECONOMY_CHAMPIONS.has(champion.name) || SHADOW_ECONOMY_CHAMPIONS.has(champion.championId);
-}
-
-function shadowEconomyTargets(team: TreeParticipant[]) {
-  return team.filter(isShadowEconomyChampion);
-}
-
 function enemyMagicDamage(ctx: TreeContext) {
   return ctx.enemies.reduce((sum, champion) => sum + magicDamageScore(champion), 0);
 }
@@ -230,11 +221,17 @@ function shieldbowBlockedByAlliedShields(ctx: TreeContext) {
 
 function shouldBuildSurvivability(ctx: TreeContext) {
   return !shieldbowBlockedByAlliedShields(ctx)
+    && enemyAdChampionDamage(ctx) >= 11
     && countEnemies(ctx, "damageType", "AD") >= 3 && enemyMagicDamage(ctx) <= 4;
 }
 
+function enemyAdChampionDamage(ctx: TreeContext) {
+  return scoreSum(ctx.enemies.filter((champion) => champion.damageType === "AD"), "damageScore");
+}
+
 function shouldBuildAssassinSurvivability(ctx: TreeContext) {
-  return countEnemies(ctx, "damageType", "AD") >= 3
+  return enemyAdChampionDamage(ctx) >= 11
+    && countEnemies(ctx, "damageType", "AD") >= 3
     && ctx.enemies.some((champion) => champion.damageType === "AD" && champion.spellIds.includes(11)
       && (champion.championId === "Rengar" || champion.championId === "Talon"
         || champion.name === "Rengar" || champion.name === "Talon"))
@@ -249,7 +246,7 @@ function shouldBuildMagicSurvivability(ctx: TreeContext) {
   return !shieldbowBlockedByAlliedShields(ctx)
     && countEnemies(ctx, "damageType", "AP") >= 3
     && enemyPhysicalDamage(ctx) <= 4
-    && enemyMercsScore(ctx) >= 9;
+    && enemyMercsScore(ctx) >= 8;
 }
 
 function enemyMercsScore(ctx: TreeContext) {
@@ -270,9 +267,9 @@ function recommendedBoots(ctx: TreeContext): {
 
   if (shouldBuildAssassinSurvivability(ctx)) {
     return {
-      boot: { itemId: 3047, slot: 3 },
+      boot: { itemId: 3047, slot: 2 },
       ruleId: "b9",
-      detail: `${detail}, enemy AD Rengar or Talon with Smite, allied shields ${teamShieldScore(ctx.allies)}`,
+      detail: `${detail}, enemy AD champion damage ${enemyAdChampionDamage(ctx)}, enemy AD Rengar or Talon with Smite, allied shields ${teamShieldScore(ctx.allies)}`,
     };
   }
   if (shouldBuildSurvivability(ctx)) {
@@ -419,37 +416,39 @@ const HOW_TANKY: DecisionNode = {
   kind: "choice",
   id: "tanky",
   title: "How tanky?",
-  rule: "Base durability 15+ → Titansbane. Adjusted durability (Steelcaps included) at or below 7 → full lethality. At or below 12 → Bastionbreaker. Otherwise Hubris. Steelcaps never counts toward Titansbane.",
+  rule: "Base durability 15+ → Titansbane. Adjusted durability (Steelcaps included) at or below 7 → The twink crusher. Otherwise Another Bloodrush starts at 13 durability when enemy physical damage is below 9, at 12 when physical damage is 9 to below 11, and at 11 when physical damage is 11+. Below that cutoff → Sneaky like a cat. Steelcaps never counts toward Titansbane.",
   pick: (ctx) => {
     const settings = treeSettings(ctx);
     const { base, adjusted } = durabilityTotals(ctx);
-    const detail = `base ${base}, adjusted ${adjusted}`;
+    const physical = enemyPhysicalDamage(ctx);
+    const sneakyMax = settings.bastionMax + (physical < 9 ? 1 : physical >= 11 ? -1 : 0);
+    const detail = `base ${base}, adjusted ${adjusted}, physical damage ${physical}, standard Hubris above ${sneakyMax} durability`;
     if (base >= settings.titansMin) return { optionId: "titans", ruleId: "t3", detail };
     if (adjusted <= settings.lethalityMax) return { optionId: "lethality", ruleId: "t1", detail };
-    if (adjusted <= settings.bastionMax) return { optionId: "bastion", ruleId: "t2", detail };
+    if (adjusted <= sneakyMax) return { optionId: "bastion", ruleId: "t2", detail };
     return { optionId: "hubris", ruleId: "t4", detail };
   },
   options: [
     {
       id: "lethality",
-      label: "Full lethality",
+      label: "The twink crusher",
       next: {
         kind: "build",
         id: "twink-crusher",
         buildId: "bastionbreaker-cyclosword",
         reason:
-          "Adjusted durability is low enough for full lethality. Bastionbreaker into Cyclosword and you one-shot anything you touch.",
+          "Adjusted durability is low enough for full lethality. Go The twink crusher: Umbral Glaive into Voltaic Cyclosword for maximum burst against squishies.",
       },
     },
     {
       id: "bastion",
-      label: "Bastionbreaker",
+      label: "Sneaky like a cat",
       next: {
         kind: "build",
         id: "bastionbreaker",
-        buildId: "main-bastionbreaker",
+        buildId: "umbral-collector",
         reason:
-          "Adjusted durability sits in the Bastionbreaker band. Strong first spike and you still one-shot the squishies.",
+          "Adjusted durability sits in the former Bastionbreaker band. After the Bastionbreaker nerfs, go Sneaky like a cat: Umbral Glaive into Collector instead.",
       },
     },
     {
@@ -471,7 +470,7 @@ const HOW_TANKY: DecisionNode = {
         id: "hubris",
         buildId: "main-hubris",
         reason:
-          "Adjusted durability is above Bastionbreaker, but base durability is below Titansbane. Standard Hubris build: scale into max AD and crit, play for three items.",
+          "Adjusted durability is above the Sneaky like a cat band, but base durability is below Titansbane. Standard Hubris build: scale into max AD and crit, play for three items.",
       },
     },
   ],
@@ -525,7 +524,7 @@ const SHIELD_DECISION_TREE: DecisionNode = {
 
 /**
  * With very little damage on either side, Viego gets enough room to DPS.
- * This runs after Shadow Economy and before shields.
+ * This runs before shields.
  */
 const LOW_DAMAGE_DPS: DecisionNode = {
   kind: "choice",
@@ -559,45 +558,11 @@ const LOW_DAMAGE_DPS: DecisionNode = {
   ],
 };
 
-/** Shaco / Evelynn / Rengar take Shadow Economy unless Titansbane already wins on durability. */
-const SHADOW_ECONOMY: DecisionNode = {
-  kind: "choice",
-  id: "shadow-economy",
-  title: "Shadow Economy?",
-  rule: "Shaco, Evelynn, or Rengar on the enemy team, and enemy durability below the Titansbane threshold → Shadow Economy. Otherwise continue.",
-  pick: (ctx) => {
-    const targets = shadowEconomyTargets(ctx.enemies);
-    const durability = scoreSum(ctx.enemies, "durabilityScore");
-    const pass = targets.length > 0 && durability < treeSettings(ctx).titansMin;
-    return {
-      optionId: pass ? "yes" : "no",
-      ruleId: pass ? "u1" : "u2",
-      detail: targets.length
-        ? `${targets.map((champion) => champion.name).join(", ")}, durability ${durability}`
-        : `no Shaco/Evelynn/Rengar, durability ${durability}`,
-    };
-  },
-  options: [
-    {
-      id: "yes",
-      label: "Stealth assassin",
-      next: {
-        kind: "build",
-        id: "shadow-economy",
-        buildId: "umbral-collector",
-        reason:
-          "Shaco, Evelynn, or Rengar is on the enemy team, and the lobby is not tanky enough for Titansbane. Shadow Economy is the primary build: Umbral Glaive into Collector.",
-      },
-    },
-    { id: "no", label: "No", next: LOW_DAMAGE_DPS },
-  ],
-};
-
 export const VIEGO_DECISION_TREE: DecisionNode = {
   kind: "choice",
   id: "survivability",
   title: "Damage concentrated in one type?",
-  rule: "Skip Survivability maxxing when allied shields exceed 4 and the enemy has Kha'Zix, Talon, Kayn, Rengar, Shaco, or Qiyana. Otherwise first check 3+ AD including AD Rengar or Talon with Smite and allied shields 4 or below for Steelcaps third, before Umbral. Otherwise 3+ AD and magic damage 4 or below for Steelcaps second; 3+ AP, physical damage 4 or below, and Mercs value 9+ for Mercury Treads second.",
+  rule: "Skip Survivability maxxing when allied shields exceed 4 and the enemy has Kha'Zix, Talon, Kayn, Rengar, Shaco, or Qiyana. Both AD survivability rules require enemy AD champion damage of at least 11. Otherwise first check 3+ AD including AD Rengar or Talon with Smite and allied shields 4 or below for Steelcaps second. Otherwise 3+ AD and magic damage 4 or below for Steelcaps second; 3+ AP, physical damage 4 or below, and Mercs value 8+ for Mercury Treads second.",
   pick: (ctx) => {
     const enemyAd = countEnemies(ctx, "damageType", "AD");
     const qualifies = shouldBuildSurvivability(ctx);
@@ -612,35 +577,35 @@ export const VIEGO_DECISION_TREE: DecisionNode = {
   options: [
     {
       id: "assassin",
-      label: "3+ AD including Rengar or Talon with Smite, allied shields 4 or below",
+      label: "3+ AD including Rengar or Talon with Smite, AD champion damage 11+, allied shields 4 or below",
       next: {
         kind: "build",
         id: "assassin-survivability",
         buildId: "collector-shieldbow-ga",
-        reason: "At least three enemies are AD, including Rengar or Talon with Smite, and allied shields are 4 or below. This takes priority over Umbral: Collector, Shieldbow, then Plated Steelcaps third.",
+        reason: "Enemy AD champions total at least 11 damage and at least three enemies are AD, including Rengar or Talon with Smite, and allied shields are 4 or below. This takes priority: Collector, Plated Steelcaps, LDR, Shieldbow, Infinity Edge, then Guardian Angel.",
       },
     },
     {
       id: "yes",
-      label: "3+ AD and magic damage 4 or below",
+      label: "3+ AD, AD champion damage 11+, and magic damage 4 or below",
       next: {
         kind: "build",
         id: "survivability",
         buildId: "collector-shieldbow-ga",
-        reason: "At least three enemies are AD and enemy magic damage is 4 or below. Go Survivability maxxing — AD with Plated Steelcaps second, Guardian Angel after LDR, and Infinity Edge last.",
+        reason: "Enemy AD champions total at least 11 damage, at least three enemies are AD, and enemy magic damage is 4 or below. Go Survivability maxxing — AD with Collector, Plated Steelcaps, LDR, Shieldbow, Infinity Edge, then Guardian Angel.",
       },
     },
     {
       id: "magic",
-      label: "3+ AP, physical damage 4 or below, Mercs value 9+",
+      label: "3+ AP, physical damage 4 or below, Mercs value 8+",
       next: {
         kind: "build",
         id: "magic-survivability",
         buildId: "collector-shieldbow",
-        reason: "At least three enemies are AP, enemy physical damage is 4 or below, and Mercury Treads value is at least 9. Go Survivability maxxing with Mercury Treads second.",
+        reason: "At least three enemies are AP, enemy physical damage is 4 or below, and Mercury Treads value is at least 8. Go Collector, Mercury Treads, LDR, Shieldbow, Infinity Edge, then Voltaic Cyclosword.",
       },
     },
-    { id: "no", label: "Otherwise continue", next: SHADOW_ECONOMY },
+    { id: "no", label: "Otherwise continue", next: LOW_DAMAGE_DPS },
   ],
 };
 
@@ -726,16 +691,6 @@ function antiTankDecisionFloatTags(enemies: TreeParticipant[]) {
   return durabilityFloatTagsForScores(enemies, [3, 4, 5]);
 }
 
-/** Umbral: name the stealth assassin, and tag every 1 and 2 because the lobby was not tanky enough. */
-function shadowEconomyFloatTags(enemies: TreeParticipant[]) {
-  return [
-    ...shadowEconomyTargets(enemies).map((champion) =>
-      floatTag(champion, "enemy", champion.name, "disengage")
-    ),
-    ...squishyDecisionFloatTags(enemies),
-  ];
-}
-
 function tankFloatTags(ctx: TreeContext, ruleId: string): BuildFloatTag[] {
   if (ruleId === "t1") return squishyDecisionFloatTags(ctx.enemies);
   if (ruleId === "t3" || ruleId === "t4") return antiTankDecisionFloatTags(ctx.enemies);
@@ -743,7 +698,7 @@ function tankFloatTags(ctx: TreeContext, ruleId: string): BuildFloatTag[] {
 }
 
 function scorePreviewFloatTags(ctx: TreeContext, buildId: string): BuildFloatTag[] {
-  if (buildId === "umbral-collector") return shadowEconomyFloatTags(ctx.enemies);
+  if (buildId === "umbral-collector") return squishyDecisionFloatTags(ctx.enemies);
   if (buildId === "sit-serpents-first" || buildId === "sit-serpents-late") {
     return shieldFloatTags(ctx.enemies);
   }
@@ -779,14 +734,33 @@ function buildFloatTags(
     tags = ctx.enemies
       .filter((champion) => champion.damageType === "AP")
       .map((champion) => floatTag(champion, "enemy", "AP", "ap"));
-  } else if (decisive?.nodeId === "shadow-economy" && decisive.ruleId === "u1") {
-    tags = shadowEconomyFloatTags(ctx.enemies);
+
   } else if (decisive?.nodeId === "shields" && decisive.ruleId !== "s6") {
     tags = shieldFloatTags(ctx.enemies);
   } else if (decisive?.nodeId === "low-damage-dps" && decisive.ruleId === "d1") {
     tags = lowDamageFloatTags(ctx);
   } else if (decisive?.nodeId === "tanky") {
     tags = tankFloatTags(ctx, decisive.ruleId);
+    const physical = enemyPhysicalDamage(ctx);
+    const { adjusted } = durabilityTotals(ctx);
+    const settings = treeSettings(ctx);
+    const blockedByLowPhysical = decisive.ruleId === "t2"
+      && physical < 9
+      && adjusted > settings.bastionMax
+      && adjusted <= settings.bastionMax + 1
+      && scoreSum(ctx.allies, "ccScore") >= settings.hubrisCcMin
+      && resetDenierCount(ctx) < RESET_DENIER_MIN;
+    const enabledByHighPhysical = decisive.ruleId === "t4"
+      && leafId === "hubris"
+      && physical >= 11
+      && adjusted > settings.bastionMax - 1
+      && adjusted <= settings.bastionMax;
+    if (blockedByLowPhysical || enabledByHighPhysical) {
+      const word = blockedByLowPhysical ? "AP" : "AD";
+      tags.push(...ctx.enemies
+        .filter((champion) => (blockedByLowPhysical ? magicDamageScore(champion) : physicalDamageScore(champion)) > 0)
+        .map((champion) => floatTag(champion, "enemy", word, blockedByLowPhysical ? "ap" : "ad")));
+    }
   } else if (originalLeafId === "score-preview") {
     tags = scorePreviewFloatTags(ctx, scoredBuildId);
   }
@@ -811,12 +785,6 @@ const SHIELD_BUILD_IDS = new Set(["sit-serpents-first", "sit-serpents-late", "si
 const SHIELD_PROXIMITY = 2;
 
 type BuildLeaf = Extract<DecisionNode, { kind: "build" }>;
-
-function joinOr(names: string[]) {
-  if (names.length <= 1) return names[0] ?? "";
-  if (names.length === 2) return `${names[0]} or ${names[1]}`;
-  return `${names.slice(0, -1).join(", ")}, or ${names[names.length - 1]}`;
-}
 
 function walkChoice(
   ctx: TreeContext,
@@ -893,120 +861,67 @@ function alreadyQualifiesForShields(ctx: TreeContext) {
   return shieldTotals(ctx).total >= treeSettings(ctx).shield;
 }
 
-function closeToAntiShield(ctx: TreeContext) {
+function closeToAntiShield(ctx: TreeContext, proximity: number) {
   if (alreadyQualifiesForShields(ctx)) return false;
   const gap = treeSettings(ctx).shield - shieldTotals(ctx).total;
-  return gap > 0 && gap <= SHIELD_PROXIMITY;
+  return gap > 0 && gap <= proximity;
 }
 
-function nearbyShieldBuild(ctx: TreeContext) {
-  const settings = treeSettings(ctx);
-  const { early } = shieldTotals(ctx);
-  if (early + SHIELD_PROXIMITY >= settings.earlyShield) return "sit-serpents-first";
-  return "sit-serpents-late";
-}
-
-function nearbyDurability(ctx: TreeContext, actualBuildId: string): AlternateRoute | null {
-  if (HOW_TANKY.kind !== "choice") return null;
-  const { optionId } = HOW_TANKY.pick(ctx);
-  const route =
-    optionId === "hubris"
-      ? {
-          buildId: "main-bastionbreaker",
-          reason: "A little less durability, and this build would have been better.",
-        }
-      : optionId === "bastion"
-        ? {
-            buildId: "main-hubris",
-            reason: "A little more durability, and this build would have been better.",
-          }
-        : optionId === "titans"
-          ? {
-              buildId: "main-hubris",
-              reason: "A little less durability, and this build would have been better.",
-            }
-          : optionId === "lethality"
-            ? {
-                buildId: "main-bastionbreaker",
-                reason: "A little more durability, and this build would have been better.",
-              }
-            : null;
-  if (!route || route.buildId === actualBuildId) return null;
-  return route;
-}
-
-function isStealthPrimary(
-  ctx: TreeContext,
-  buildId: string,
-  leafId: string,
-  originalLeafId: string
-) {
-  if (buildId !== "umbral-collector") return false;
-  if (leafId === "umbral-low-cc" || leafId === "umbral-reset-denial") return false;
-  const targets = shadowEconomyTargets(ctx.enemies);
-  if (targets.length === 0) return false;
-  if (originalLeafId === "shadow-economy" || leafId === "shadow-economy") return true;
-  return (
-    originalLeafId === "score-preview" &&
-    scoreSum(ctx.enemies, "durabilityScore") < treeSettings(ctx).titansMin
-  );
-}
-
-function pickDurabilityAlternate(
+function nearbyDurability(
   ctx: TreeContext,
   actualBuildId: string,
-  leafId: string,
-  originalLeafId: string
+  maxDistance = 1,
+  actionable = false
 ): AlternateRoute | null {
-  const take = (buildId: string, reason: string): AlternateRoute | null =>
-    buildId === actualBuildId ? null : { buildId, reason };
-
-  if (isStealthPrimary(ctx, actualBuildId, leafId, originalLeafId)) {
-    const targets = shadowEconomyTargets(ctx.enemies);
-    const withoutStealth = {
-      ...ctx,
-      enemies: ctx.enemies.filter((champion) => !isShadowEconomyChampion(champion)),
-    };
-    const names = joinOr(targets.map((champion) => champion.name));
-    const reason = `If they didn't have ${names}, this build would have been better.`;
-    const next = walkToResolved(withoutStealth, LOW_DAMAGE_DPS);
-    const stealthAlt = take(next.buildId, reason);
-    if (stealthAlt) return stealthAlt;
-    const tanky = walkToResolved(withoutStealth, HOW_TANKY);
-    const tankyAlt = take(tanky.buildId, reason);
-    if (tankyAlt) return tankyAlt;
-    return nearbyDurability(withoutStealth, actualBuildId);
+  const current = walkToResolved(ctx, HOW_TANKY);
+  if (current.buildId !== actualBuildId || ctx.enemies.length === 0) return null;
+  for (let distance = 1; distance <= maxDistance; distance++) {
+    for (const change of [distance, -distance]) {
+      const enemies = ctx.enemies.map((enemy, index) => index === 0
+        ? { ...enemy, durabilityScore: (enemy.durabilityScore ?? 0) + change }
+        : enemy);
+      const nearby = walkToResolved({ ...ctx, enemies }, HOW_TANKY);
+      if (nearby.buildId !== actualBuildId) {
+        return {
+          buildId: nearby.buildId,
+          reason: actionable
+            ? change > 0 ? "If they build tankier than expected." : "If they build squishier than expected."
+            : change > 0 ? "If they had a little more durability." : "If they had a little less durability.",
+        };
+      }
+    }
   }
-
-  const durability = walkToResolved(ctx, HOW_TANKY);
-  const reason = SHIELD_BUILD_IDS.has(actualBuildId)
-    ? "If they had fewer shields, this build would have been better."
-    : actualBuildId === "yun-tal-ldr"
-      ? "If there had been more damage in the lobby, this build would have been better."
-      : "If the earlier checks hadn't applied, this build would have been better.";
-  const durabilityAlt = take(durability.buildId, reason);
-  if (durabilityAlt) return durabilityAlt;
-  return nearbyDurability(ctx, actualBuildId);
+  return null;
 }
 
-function pickShieldAlternate(ctx: TreeContext, actualBuildId: string): AlternateRoute | null {
+function pickDurabilityAlternate(ctx: TreeContext, actualBuildId: string): AlternateRoute | null {
+  const durability = walkToResolved(ctx, HOW_TANKY);
+  if (durability.buildId !== actualBuildId) {
+    return {
+      buildId: durability.buildId,
+      reason: SHIELD_BUILD_IDS.has(actualBuildId)
+        ? "If they had fewer shields, this build would have been better."
+        : actualBuildId === "yun-tal-ldr"
+          ? "If there had been more damage in the lobby, this build would have been better."
+          : "If the earlier checks hadn't applied, this build would have been better.",
+    };
+  }
+  return nearbyDurability(ctx, actualBuildId, 25);
+}
+function pickShieldAlternate(ctx: TreeContext, actualBuildId: string, proximity = SHIELD_PROXIMITY): AlternateRoute | null {
   if (SHIELD_BUILD_IDS.has(actualBuildId)) return null;
-  if (!closeToAntiShield(ctx)) return null;
-  const buildId = nearbyShieldBuild(ctx);
-  if (buildId === actualBuildId) return null;
+  if (!closeToAntiShield(ctx, proximity)) return null;
   return {
-    buildId,
-    reason: "If they had a couple more shields, this build would have been better.",
+    buildId: "sit-serpents-late",
+    reason: "If they build extra shields.",
   };
 }
 
 function pickAlternateRoutes(
   ctx: TreeContext,
   actualBuildId: string,
-  leafId: string,
-  originalLeafId: string
 ): AlternateRoute[] {
-  const durability = pickDurabilityAlternate(ctx, actualBuildId, leafId, originalLeafId);
+  const durability = pickDurabilityAlternate(ctx, actualBuildId);
   const shield = pickShieldAlternate(ctx, actualBuildId);
   const routes: AlternateRoute[] = [];
   if (durability) routes.push(durability);
@@ -1015,7 +930,7 @@ function pickAlternateRoutes(
 }
 
 function walkRemainingBranches(ctx: TreeContext, trace: TreeTraceStep[]) {
-  for (const start of [SHADOW_ECONOMY, LOW_DAMAGE_DPS, SHIELD_DECISION_TREE, HOW_TANKY]) {
+  for (const start of [LOW_DAMAGE_DPS, SHIELD_DECISION_TREE, HOW_TANKY]) {
     if (start.kind !== "choice" || trace.some((step) => step.nodeId === start.id)) continue;
     const leaf = walkChoice(ctx, start, trace, true);
     finalizeLeaf(ctx, leaf, trace, true);
@@ -1043,8 +958,20 @@ export function runDecisionTree(ctx: TreeContext, root: DecisionNode = VIEGO_DEC
     leafId: resolved.leafId,
     reason: resolved.reason,
     boot: boots.boot,
-    alternative: resolved.alternative,
-    alternates: pickAlternateRoutes(ctx, resolved.buildId, resolved.leafId, node.id),
+    alternative: (() => {
+      if (resolved.buildId === "collector-shieldbow" || resolved.buildId === "collector-shieldbow-ga") {
+        return {
+          buildId: resolved.buildId === "collector-shieldbow-ga" ? "survivability-earlier-shieldbow-ad" : "survivability-earlier-shieldbow",
+          label: "If you get ahead",
+        };
+      }
+      const shield = pickShieldAlternate(ctx, resolved.buildId, 1);
+      if (shield) return { buildId: shield.buildId, label: "If they build more shields than expected." };
+      // Default practical pivot; special shield/survivability alternatives above take priority.
+      const nearby = nearbyDurability(ctx, resolved.buildId, 1, true);
+      return nearby ? { buildId: nearby.buildId, label: nearby.reason } : resolved.alternative;
+    })(),
+    alternates: pickAlternateRoutes(ctx, resolved.buildId),
     trace,
     floatTags: dedupeFloatTags([
       ...buildFloatTags(ctx, trace, resolved.leafId, node.id, node.buildId),

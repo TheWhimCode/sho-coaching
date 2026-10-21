@@ -14,7 +14,7 @@ function checkCatalog(node: DecisionNode) {
   assert.equal(build.itemIds.length, 5, `${node.buildId} must have a complete item order`);
 }
 checkCatalog(VIEGO_DECISION_TREE);
-assert.deepEqual(catalog.get("collector-shieldbow-ga")?.itemIds, [6676, 6673, 3036, 3026, 3031]);
+assert.deepEqual(catalog.get("collector-shieldbow-ga")?.itemIds, [6676, 3036, 6673, 3031, 3026]);
 
 function champion(name: string, overrides: Partial<TreeParticipant> = {}): TreeParticipant {
   return {
@@ -47,6 +47,6 @@ for (const bonus of [{ spellIds: [4, 21] }, { perkIds: [8465] }]) {
 }
 const jungleRengar = enemies("Rengar", false);
 jungleRengar[0].spellIds = [4, 11];
-assert.equal(runDecisionTree({ allies: allies(4), enemies: jungleRengar }).boot.slot, 3);
+assert.equal(runDecisionTree({ allies: allies(4), enemies: jungleRengar }).boot.slot, 2);
 assert.ok(!shieldbowBuilds.has(runDecisionTree({ allies: allies(5), enemies: jungleRengar }).buildId));
 console.log("Survivability allied-shield restrictions passed.");

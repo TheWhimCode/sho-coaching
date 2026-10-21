@@ -70,11 +70,6 @@ export function compositionFacts(
   const magicDamage = allies.reduce((sum, champion) => sum + magicDamageScore(champion), 0);
   const steelApplies = physical >= settings.physicalMin && magicDamage < settings.magicDamageMax;
   const steelTargets = enemies.filter((champion) => champion.canBuildSteelcaps === true);
-  const umbralTargets = enemies.filter(
-    (champion) =>
-      SHADOW_ECONOMY_CHAMPIONS.has(champion.name) || SHADOW_ECONOMY_CHAMPIONS.has(champion.championId)
-  );
-
   const facts: CompositionFact[] = [];
   if (steelApplies && steelTargets.length > 0) {
     facts.push({
@@ -83,15 +78,6 @@ export function compositionFacts(
       label: "Enemies can build",
       tone: "include",
       champions: portraits(steelTargets),
-    });
-  }
-  if (umbralTargets.length > 0) {
-    facts.push({
-      id: "umbral",
-      itemId: UMBRAL_ITEM_ID,
-      label: "Strong Against",
-      tone: "include",
-      champions: portraits(umbralTargets),
     });
   }
   const alliedCc = allies.reduce((sum, champion) => sum + (champion.ccScore ?? 0), 0);

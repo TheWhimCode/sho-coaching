@@ -17,7 +17,7 @@ export const SCORING_THRESHOLDS: ScoringThresholds = {
   shield: 7,
   earlyShield: 7,
   lethalityMax: 7,
-  bastionMax: 12,
+  bastionMax: 11,
   titansMin: 15,
   forgedMomentumMax: 12,
   hubrisCcMin: 8,
@@ -36,12 +36,12 @@ export type CompositionBarScale = {
 
 /** Live boot picker. First matching combat boot wins, then Swifties vs Gluttonous. */
 export const BOOT_THRESHOLDS = {
-  swiftiesDurabilityMax: 9,
+  swiftiesDurabilityMax: 12,
   steelcapsAdMin: 3,
   steelcapsMagicSecond: 3,
   steelcapsMagicThird: 5,
   steelcapsMagicFourth: 7,
-  mercsScoreMin: 10,
+  mercsScoreMin: 9,
   mercsDamageThird: 12,
   mercsDamageFourth: 14,
 } as const;

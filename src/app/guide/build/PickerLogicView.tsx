@@ -14,16 +14,6 @@ type RuleRow = {
   buildLabel: string;
 };
 
-const SHADOW_ECONOMY_RULES: RuleRow[] = [
-  {
-    id: "u1",
-    when: "Enemy Shaco, Evelynn, or Rengar, and durability below Titansbane",
-    buildId: "umbral-collector",
-    buildLabel: "Shadow Economy",
-  },
-  { id: "u2", when: "Anything else", buildId: null, buildLabel: "Otherwise continue" },
-];
-
 const LOW_DAMAGE_RULES: RuleRow[] = [
   {
     id: "d1",
@@ -43,8 +33,8 @@ const SHIELD_RULES: RuleRow[] = [
 const TANKY_RULES: RuleRow[] = [
   { id: "t3", when: "Base durability 15+", buildId: "hubris-ldr", buildLabel: "Titansbane" },
   { id: "t1", when: "Adjusted durability 7 or below", buildId: "bastionbreaker-cyclosword", buildLabel: "The twink crusher" },
-  { id: "t2", when: "Adjusted durability 12 or below", buildId: "main-bastionbreaker", buildLabel: "Bread & Butter Carnage" },
-  { id: "t4", when: "Anything else", buildId: "main-hubris", buildLabel: "Another Bloodrush" },
+  { id: "t2", when: "Adjusted durability below the Hubris cutoff (13 if physical damage <9; 12 if 9–<11; 11 if 11+)", buildId: "umbral-collector", buildLabel: "Sneaky like a cat" },
+  { id: "t4", when: "At or above the Hubris cutoff", buildId: "main-hubris", buildLabel: "Another Bloodrush" },
 ];
 
 const HUBRIS_CC_RULES: RuleRow[] = [
@@ -65,7 +55,6 @@ type Props = {
 
 export default function PickerLogicView({ builds, trace, activeBuildId }: Props) {
   const survivabilityStep = trace?.find((step) => step.nodeId === "survivability");
-  const shadowStep = trace?.find((step) => step.nodeId === "shadow-economy");
   const lowDamageStep = trace?.find((step) => step.nodeId === "low-damage-dps");
   const shieldStep = trace?.find((step) => step.nodeId === "shields");
   const tankyStep = trace?.find((step) => step.nodeId === "tanky");
@@ -77,11 +66,11 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
       <div className="space-y-6">
         <CheckBlock
           title="Survivability maxxing?"
-          note="Skip all Survivability maxxing builds at 5+ allied shields against Kha'Zix, Talon, Kayn, Rengar, Shaco, or Qiyana (any role). Otherwise checked before Shadow Economy. Rengar/Talon must have Smite for Steelcaps after Shieldbow. Other survivability rules put boots after Collector."
+          note="Skip all Survivability maxxing builds at 5+ allied shields against Kha'Zix, Talon, Kayn, Rengar, Shaco, or Qiyana (any role). Otherwise checked first. Survivability builds put boots after Collector, then LDR before Shieldbow. Earlier Shieldbow is an alternative if you get ahead."
           rows={[
-            { id: "v4", when: "3+ AD including AD Rengar or Talon with Smite, allied shields 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
-            { id: "v1", when: "3+ AD enemies and magic damage 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
-            { id: "v3", when: "3+ AP enemies, physical damage 4 or below, and Mercs value 9+", buildId: "collector-shieldbow", buildLabel: "Survivability maxxing" },
+            { id: "v4", when: "3+ AD including AD Rengar or Talon with Smite, AD champion damage 11+, allied shields 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
+            { id: "v1", when: "3+ AD enemies, AD champion damage 11+, and magic damage 4 or below", buildId: "collector-shieldbow-ga", buildLabel: "Survivability maxxing — AD" },
+            { id: "v3", when: "3+ AP enemies, physical damage 4 or below, and Mercs value 8+", buildId: "collector-shieldbow", buildLabel: "Survivability maxxing" },
             { id: "v2", when: "Anything else", buildId: null, buildLabel: "Otherwise continue" },
           ]}
           step={survivabilityStep}
@@ -89,15 +78,7 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
           builds={builds}
         />
         <CheckBlock
-          title="1. Shadow Economy?"
-          note="First matching line wins. Shaco, Evelynn, or Rengar recommend Umbral Glaive unless enemy durability already reaches Titansbane."
-          rows={SHADOW_ECONOMY_RULES}
-          step={shadowStep}
-          evaluated={evaluated}
-          builds={builds}
-        />
-        <CheckBlock
-          title="2. Enough room to DPS?"
+          title="1. Enough room to DPS?"
           note="Still evaluated after an earlier pick so the breakdown can show that route. Enemy damage and allied damage must both sit below 12."
           rows={LOW_DAMAGE_RULES}
           step={lowDamageStep}
@@ -106,8 +87,8 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
           builds={builds}
         />
         <CheckBlock
-          title="3. How much shield?"
-          note="Still evaluated after an earlier pick. Shield total uses each champion's shield score, plus Barrier and Guardian as early points. Late-tagged scores stay late. Shieldbreaker's Path is only an alternative, never the primary pick."
+          title="2. How much shield?"
+          note="Still evaluated after an earlier pick. Shield total uses each champion's shield score, plus Barrier and Guardian as early points. Late-tagged scores stay late. One point below the shield threshold offers Shieldbreaker's Reckoning at the top; the breakdown allows a two-point gap. Shieldbreaker's Path is only an alternative, never the primary pick."
           rows={SHIELD_RULES}
           step={shieldStep}
           evaluated={evaluated}
@@ -115,8 +96,8 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
           builds={builds}
         />
         <CheckBlock
-          title="4. How tanky?"
-          note="Still evaluated after an earlier pick. Adjusted durability adds Steelcaps points when you have 3+ physical allies and allied magic damage below 6. Steelcaps never counts toward Titansbane."
+          title="3. How tanky?"
+          note="Sneaky like a cat replaces Bread & Butter Carnage. The twink crusher remains the full-squishy recommendation. Still evaluated after an earlier pick. Adjusted durability adds Steelcaps points when you have 3+ physical allies and allied magic damage below 6. Steelcaps never counts toward Titansbane."
           rows={TANKY_RULES}
           step={tankyStep}
           evaluated={evaluated}
@@ -124,8 +105,8 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
           builds={builds}
         />
         <CheckBlock
-          title="5. Hubris setup?"
-          note="Runs when a Hubris build was picked, including later hypothetical durability checks. Allied CC below 8 makes Titansbane into Inevitable Doom, and Another Bloodrush into Shadow Economy. Hubris stays as the alternative."
+          title="4. Hubris setup?"
+          note="Runs when a Hubris build was picked, including later hypothetical durability checks. Allied CC below 8 makes Titansbane into Inevitable Doom, and Another Bloodrush into Sneaky like a cat. Hubris stays as the alternative."
           rows={HUBRIS_CC_RULES}
           step={hubrisCcStep}
           evaluated={evaluated}
@@ -137,7 +118,7 @@ export default function PickerLogicView({ builds, trace, activeBuildId }: Props)
       <div>
         <p className={LABEL_CLASS}>All builds</p>
         <ul className="mt-3 divide-y divide-[#F5E6D3]/10 rounded-2xl border border-[#F5E6D3]/12 bg-white/[0.03]">
-          {builds.filter((build) => build.id !== "sit-serpents").map((build) => {
+          {builds.filter((build) => build.id !== "sit-serpents" && !build.alternativeOnly).map((build) => {
             const active = activeBuildId === build.id;
             return (
               <li
