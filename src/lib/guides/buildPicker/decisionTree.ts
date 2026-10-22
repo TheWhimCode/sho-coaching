@@ -315,6 +315,17 @@ function resetDenierCount(ctx: TreeContext) {
 const RESET_DENIER_ALTERNATIVE = "Better scaling if you think you can stack it despite their reliable disengage";
 const LOW_CC_ALTERNATIVE = "Better scaling if your team has enough CC to set up Hubris stacks";
 
+/** Build-specific pivots take priority over generic nearby-composition fallbacks. */
+const BUILD_ALTERNATIVES: Record<string, NonNullable<TreeResult["alternative"]>> = {
+  "hubris-ldr": { buildId: "hubris-skip-anti-tank", label: "If you fall behind early" },
+  "main-hubris": { buildId: "umbral-collector", label: "If you fall behind early" },
+  "yun-tal-ldr": { buildId: "hubris-ldr", label: "If you miss B. F. Sword on first reset" },
+  "collector-shieldbow": { buildId: "umbral-collector", label: "If you fall too far behind" },
+  "collector-shieldbow-ga": { buildId: "umbral-collector", label: "If you fall too far behind" },
+  "sit-serpents-first": { buildId: "sit-serpents", label: "If you want anti-shield later" },
+  "sit-serpents-late": { buildId: "sit-serpents", label: "If you want anti-shield earlier" },
+};
+
 /** Hubris stacks are unreliable into 2+ reset deniers, so those leaves swap to the safer build. */
 function applyResetDenial(
   ctx: TreeContext,
@@ -965,11 +976,14 @@ export function runDecisionTree(ctx: TreeContext, root: DecisionNode = VIEGO_DEC
           label: "If you get ahead",
         };
       }
+      if (resolved.alternative) return resolved.alternative;
+      const buildSpecific = BUILD_ALTERNATIVES[resolved.buildId];
+      if (buildSpecific) return buildSpecific;
       const shield = pickShieldAlternate(ctx, resolved.buildId, 1);
       if (shield) return { buildId: shield.buildId, label: "If they build more shields than expected." };
-      // Default practical pivot; special shield/survivability alternatives above take priority.
+      // Nearby-composition rules fill gaps when no specific alternative is set.
       const nearby = nearbyDurability(ctx, resolved.buildId, 1, true);
-      return nearby ? { buildId: nearby.buildId, label: nearby.reason } : resolved.alternative;
+      return nearby ? { buildId: nearby.buildId, label: nearby.reason } : undefined;
     })(),
     alternates: pickAlternateRoutes(ctx, resolved.buildId),
     trace,

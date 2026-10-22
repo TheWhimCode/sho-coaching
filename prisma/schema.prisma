@@ -811,6 +811,8 @@ model ChampionProfile {
   canBuildSteelcaps Boolean?
   /// Mercury Treads value: 1 zero, 2 okay, 3 amazing. Null means not rated yet.
   mercuryTreadsScore Int?
+  /// QSS value: 1–3. Null means not rated yet.
+  qssScore          Int?
   /// Planned scoring model: 1–5. Null means not rated yet.
   ccScore         Int?
   damageType   ChampionDamageType

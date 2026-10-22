@@ -40,9 +40,9 @@ for (const [scores, expected] of [
   [[2, 2, 2, 2, 2], undefined],
   [[2, 2, 2, 2, 3], "main-hubris"],
   [[3, 3, 2, 2, 2], "umbral-collector"],
-  [[3, 3, 3, 2, 2], undefined],
-  [[3, 3, 3, 3, 2], "hubris-ldr"],
-  [[3, 3, 3, 3, 3], "main-hubris"],
+  [[3, 3, 3, 2, 2], "umbral-collector"],
+  [[3, 3, 3, 3, 2], "umbral-collector"],
+  [[3, 3, 3, 3, 3], "hubris-skip-anti-tank"],
 ] as const) {
   assert.equal(runDecisionTree(context([...scores])).alternative?.buildId, expected, `Top durability alternative at ${scores}`);
   assert.ok(runDecisionTree(context([...scores])).alternates.length > 0, "Breakdown retains broader durability alternatives");
@@ -52,9 +52,9 @@ for (const [scores, label, breakdownReason] of [
   [[1, 1, 1, 2, 2], "If they build tankier than expected.", "If they had a little more durability."],
   [[1, 1, 2, 2, 2], "If they build squishier than expected.", "If they had a little less durability."],
   [[2, 2, 2, 2, 3], "If they build tankier than expected.", "If they had a little more durability."],
-  [[3, 3, 2, 2, 2], "If they build squishier than expected.", "If they had a little less durability."],
-  [[3, 3, 3, 3, 2], "If they build tankier than expected.", "If they had a little more durability."],
-  [[3, 3, 3, 3, 3], "If they build squishier than expected.", "If they had a little less durability."],
+  [[3, 3, 2, 2, 2], "If you fall behind early", "If they had a little less durability."],
+  [[3, 3, 3, 3, 2], "If you fall behind early", "If they had a little more durability."],
+  [[3, 3, 3, 3, 3], "If you fall behind early", "If they had a little less durability."],
 ] as const) {
   const result = runDecisionTree(context([...scores]));
   assert.equal(result.alternative?.label, label, "Top durability alternative explains a practical itemization pivot");
@@ -106,7 +106,7 @@ for (const late of [false, true]) {
     assert.deepEqual(shieldAlternates, shieldTotal === 5 || shieldTotal === 6
       ? [{ buildId: "sit-serpents-late", reason: "If they build extra shields." }]
       : [], `Shield total ${shieldTotal}, late ${late}`);
-    assert.equal(result.alternative?.buildId, shieldTotal === 6 ? "sit-serpents-late" : undefined, "Top shield alternative requires one point");
+    assert.equal(result.alternative?.buildId, shieldTotal === 7 ? "sit-serpents" : shieldTotal === 6 ? "sit-serpents-late" : undefined, "Shield builds keep their specific pivot; generic shield fallback requires one point");
     if (shieldTotal === 6) {
       assert.equal(result.alternative?.label, "If they build more shields than expected.");
     }
@@ -117,14 +117,19 @@ for (const scores of [[1, 1, 1, 1, 1], [1, 1, 2, 2, 2], [3, 3, 2, 2, 2]]) {
   const withShields = context(scores);
   withShields.enemies[0].shieldScore = 6;
   const result = runDecisionTree(withShields);
-  assert.equal(result.alternative?.buildId, "sit-serpents-late", "Top shield alternative applies across primary builds and takes priority over durability");
+  assert.equal(result.alternative?.buildId, result.buildId === "main-hubris" ? "umbral-collector" : "sit-serpents-late", "Build-specific alternative wins; shield fallback otherwise takes priority over durability");
   assert.ok(result.alternates.some((route) => route.buildId !== "sit-serpents-late"), "Durability alternative remains in breakdown");
 }
 const lowDamage = context([2, 2, 2, 2, 2]);
 lowDamage.allies = lowDamage.allies.map((ally) => ({ ...ally, damageScore: 1 }));
 lowDamage.enemies = lowDamage.enemies.map((enemy) => ({ ...enemy, damageScore: 1 }));
 assert.equal(runDecisionTree(lowDamage).buildId, "yun-tal-ldr");
+assert.deepEqual(runDecisionTree(lowDamage).alternative, { buildId: "hubris-ldr", label: "If you miss B. F. Sword on first reset" });
 const builds = pickerBuildDefs(VIEGO_ITEM_SECTION);
+for (const ctx of [lowDamage, shields, context([3, 3, 3, 3, 3])]) {
+  const alternative = runDecisionTree(ctx).alternative;
+  assert.ok(alternative && builds.some(build => build.id === alternative.buildId), "Every restored alternative exists in the build catalog");
+}
 for (const assassin of [false, true]) {
   for (const adDamage of [10, 11]) {
     const ad = context([2, 2, 2, 2, 2]);
