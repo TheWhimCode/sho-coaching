@@ -10,12 +10,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       tone: "nightmare",
       matchups: [
         {
-          champion: "Qiyana", gameplayStyle: "Mid-game assassin",
-          banBadge: "Minos Ban",
-          snapshot: { invadePressure: 4, oneVOneThreat: 3, tempo: 5 },
-          dangerHint: { title: "Getting caught", detail: "from level 6" },
-        },
-        {
           champion: "Talon", gameplayStyle: "Scaling assassin",
           banBadge: "Good Ban",
           snapshot: { invadePressure: 5, oneVOneThreat: 5, tempo: 4 },
@@ -42,6 +36,16 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       subtitle: "It's winnable!!",
       tone: "difficult",
       matchups: [
+        {
+          champion: "Qiyana", gameplayStyle: "Mid-game assassin",
+          snapshot: { invadePressure: 4, oneVOneThreat: 3, tempo: 5 },
+          dangerHint: { title: "Getting caught", detail: "from level 6" },
+        },
+        {
+          champion: "Elise", gameplayStyle: "Mid-game assassin",
+          banBadge: "Minos Ban",
+          snapshot: { invadePressure: 2, oneVOneThreat: 1, tempo: 4 },
+        },
         {
           champion: "Hecarim", gameplayStyle: "Snowball skirmisher",
           banBadge: "Good Ban",
@@ -127,7 +131,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
             "This matchup is very boring because she plays a very similar game to you, and who wins mostly depends on how the team comps are structured around you two.\n\nSince the rework she's extremely weak until like level 7+. Try to not waste tempo in your first clear so that you can contest grubs on time. Since they give her a lot of stacks and accelerate her scaling, call your support to rotate preemptively.",
           snapshot: { invadePressure: 1, oneVOneThreat: 1, tempo: 3 },
         },
-        { champion: "Elise", gameplayStyle: "Mid-game assassin", snapshot: { invadePressure: 2, oneVOneThreat: 1, tempo: 4 } },
         {
           champion: "Graves", gameplayStyle: "Snowball skirmisher",
           snapshot: { invadePressure: 3, oneVOneThreat: 4, tempo: 4 },
