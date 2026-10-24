@@ -108,6 +108,7 @@ export default function TwitchLiveButton() {
         ) : null}
       </button>
 
+      <span className="text-xs text-white/50">Guide changes require exporting guide data and deploying.</span>
       {error ? <span className="text-xs text-red-300">{error}</span> : null}
     </div>
   );

@@ -1,7 +1,7 @@
 import { RANDOM_ROLE_POOLS } from "@/lib/guides/buildPicker/randomRolePools";
 import { notFound } from "next/navigation";
 import { randomInt } from "node:crypto";
-import { prisma } from "@/lib/prisma";
+import { pickerProfiles } from "@/lib/guides/buildPicker/profiles.server";
 import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
 import { ensureLiveDDragonPatch } from "@/lib/datadragon/patch";
 import { ensureSummonerSpellsAssets, summonerSpellIconById, summonerSpellKeyById } from "@/lib/datadragon/summonerspells";
@@ -17,7 +17,7 @@ export default async function BuildTestPage() {
   if (process.env.NODE_ENV !== "development") notFound();
   await Promise.all([ensureLiveDDragonPatch(), ensureSummonerSpellsAssets()]);
   const [profiles, builds, bootItems, guideTextIcons] = await Promise.all([
-    prisma.championProfile.findMany(), loadPickerBuilds(VIEGO_ITEM_SECTION), loadPickerBoots(),
+    pickerProfiles(), loadPickerBuilds(VIEGO_ITEM_SECTION), loadPickerBoots(),
     buildGuideTextIcons(),
   ]);
   const byName = new Map(profiles.map(row => [row.name, row]));

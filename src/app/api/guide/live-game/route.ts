@@ -23,7 +23,7 @@ import type {
 } from "@/lib/guides/buildPicker/types";
 import { pickerProfiles } from "@/lib/guides/buildPicker/profiles.server";
 import { unstable_cache } from "next/cache";
-import { enforceRequestLimit, RequestLimitError, visitorBucket } from "@/lib/security/requestLimit";
+import { enforcePublicRequestLimit as enforceRequestLimit, RequestLimitError, visitorBucket } from "@/lib/security/publicRequestLimit";
 import { SingleFlight } from "@/lib/security/singleFlight";
 import { withRiotLookupDeadline } from "@/lib/riot/fetch";
 import {

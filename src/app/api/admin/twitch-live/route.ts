@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -63,7 +62,7 @@ export async function PATCH(req: Request) {
     },
   });
 
-  revalidatePath("/guide");
+  // Public pages read the published file. Export guide data and deploy to publish.
 
   return NextResponse.json({
     isLive: row.twitchLiveManual,

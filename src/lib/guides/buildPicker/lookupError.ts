@@ -1,4 +1,4 @@
-import { RequestLimitError } from "@/lib/security/requestLimit";
+import { RequestLimitError } from "@/lib/security/requestLimitShared";
 import { RiotRequestLimitError } from "@/lib/riot/fetch";
 import type { LiveGameLookup } from "./types";
 import { LOOKUP_FAILED_MESSAGE, RIOT_LIMIT_MESSAGE } from "./lookupMessages";

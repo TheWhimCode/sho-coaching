@@ -2,7 +2,7 @@ import { DEFAULT_SOCIAL_IMAGE } from "@/lib/socialMetadata";
 import type { Metadata } from "next";
 import { fetchRunesTrees } from "@/lib/datadragon/runes";
 import { champSquareUrlById, resolveChampionId } from "@/lib/datadragon/champions";
-import { prisma } from "@/lib/prisma";
+import { pickerProfiles } from "@/lib/guides/buildPicker/profiles.server";
 import { buildGuideRunePageData } from "@/lib/guides/buildGuideRunePageData";
 import { buildGuideItemPageData } from "@/lib/guides/buildGuideItemPageData";
 import { buildGuideJungleTierMatchupPageData } from "@/lib/guides/buildGuideJungleTierMatchupData";
@@ -58,7 +58,7 @@ export default async function ViegoGuidePage() {
     buildGuideViegoAbilityIcons(),
     buildGuidePossessionPageData(VIEGO_POSSESSIONS_SECTION),
     getManualTwitchStreamStatus(),
-    prisma.championProfile.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
+    pickerProfiles(),
   ]);
   const tierListChampions = profiles.map((profile) => {
     const id = resolveChampionId(profile.name);

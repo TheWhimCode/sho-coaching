@@ -61,6 +61,7 @@ function GuideCoachingAd() {
   return (
     <Link
       href="/coaching"
+      prefetch={false}
       className={[
         "group flex w-[7.25rem] shrink-0 self-stretch sm:w-44 md:w-52",
         "transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",

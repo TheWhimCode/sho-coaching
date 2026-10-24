@@ -1,5 +1,5 @@
 import { bucketKeyFor, limiterGroup } from "./limiter";
-import { enforceRequestLimit, RequestLimitError } from "@/lib/security/requestLimit";
+import { enforcePublicRequestLimit as enforceRequestLimit, RequestLimitError } from "@/lib/security/publicRequestLimit";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 const DEFAULT_TIMEOUT_MS = 12_000;

@@ -1,22 +1,7 @@
-import { createHash } from "node:crypto";
-import { isIP } from "node:net";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-
-export class RequestLimitError extends Error {
-  constructor(public readonly retryAfter: number) {
-    super("Too many requests. Please wait a moment and try again.");
-    this.name = "RequestLimitError";
-  }
-}
-
-export function visitorBucket(headers: Headers): string {
-  // Vercel overwrites X-Forwarded-For. Other hosts must configure a trusted proxy.
-  const raw = headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
-  const ip = isIP(raw) ? raw : "unknown";
-  // Bounded anonymous storage. Rare collisions share a quota, never bypass it.
-  return createHash("sha256").update(ip.toLowerCase()).digest("hex").slice(0, 4);
-}
+import { RequestLimitError } from "./requestLimitShared";
+export { RequestLimitError, visitorBucket } from "./requestLimitShared";
 
 /** Atomic counter shared by all instances; database failures reject the request. */
 export function createRequestLimiter(database: Pick<Prisma.TransactionClient, "$queryRaw">) {

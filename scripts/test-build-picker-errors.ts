@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { buildLookupError } from "../src/lib/guides/buildPicker/lookupError";
 import { RIOT_LIMIT_MESSAGE, LOOKUP_FAILED_MESSAGE } from "../src/lib/guides/buildPicker/lookupMessages";
-import { RequestLimitError } from "../src/lib/security/requestLimit";
+import { RequestLimitError } from "../src/lib/security/requestLimitShared";
 import { RiotRequestLimitError, RiotApiError } from "../src/lib/riot/fetch";
 
 const riotLimit = buildLookupError(new RiotRequestLimitError(75));

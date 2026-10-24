@@ -1,8 +1,12 @@
-import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import type { ChampionProfile } from "@prisma/client";
+import profiles from "@/data/guide/champion-profiles.json";
 
-// Only public champion ratings are cached; never student/admin records.
-export const pickerProfiles = unstable_cache(
-  () => prisma.championProfile.findMany({ orderBy: { name: "asc" } }),
-  ["picker-champion-profiles-v1"], { revalidate: 60 },
-);
+export type PublishedChampionProfile = Omit<ChampionProfile, "updatedAt">;
+
+// JSON string fields are narrowed to the existing scoring enum types.
+const publishedProfiles: PublishedChampionProfile[] = profiles as PublishedChampionProfile[];
+
+/** File-backed in every environment, including cold starts and regeneration. */
+export async function pickerProfiles(): Promise<PublishedChampionProfile[]> {
+  return publishedProfiles;
+}
