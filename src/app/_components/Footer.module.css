@@ -1,0 +1,10 @@
+.light {
+  padding-top: clamp(5rem, 8vw, 8rem);
+  background: #f3e5ed;
+  color: #49353f;
+}
+
+.light a { color: #49353f; }
+.light a:hover { color: #9b526f; }
+.light p { color: #78636d; }
+.light [data-footer-divider] { background: #49353f24; }

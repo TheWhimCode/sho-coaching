@@ -92,6 +92,14 @@ export function pickerBuildDefs(config: GuideItemSectionConfig): PickerBuildDef[
   };
   return [
     ...MAIN_BUILDS.map((build) => ({ ...build, description: mainDescriptionById[build.id] })),
+    ...main.filter((variant) => variant.items).map<PickerBuildDef>((variant) => ({
+      id: variant.id,
+      label: variant.label,
+      summary: variant.summary ?? "",
+      description: variant.description,
+      itemIds: variant.items!.map((item) => item.id),
+      source: "main",
+    })),
     ...situational.map<PickerBuildDef>((variant) => ({
       id: variant.id,
       label: variant.label,

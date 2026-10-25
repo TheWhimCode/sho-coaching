@@ -70,7 +70,7 @@ const showFooter = !(isHome || isCoachingDetail || isCheckout || isQuickbook);
               : "hidden pointer-events-none"
           }
         >
-          <Footer />
+          <Footer light={p === "/about" || p === "/about/"} />
         </div>
       </div>
     </div>

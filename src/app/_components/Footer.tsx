@@ -2,13 +2,15 @@
 "use client";
 
 import Link from "next/link";
-import { FaDiscord, FaTiktok, FaEnvelope } from "react-icons/fa";
+import { FaDiscord, FaTiktok, FaEnvelope, FaInstagram } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import { Crown } from "lucide-react";
 import { COACHING_SALES_ENABLED } from "@/lib/coaching/coachingSales";
+import styles from "./Footer.module.css";
 
-export default function Footer() {
+export default function Footer({ light = false }: { light?: boolean }) {
   return (
-    <footer className="relative mt-32 text-white/70">
+    <footer className={light ? `relative ${styles.light}` : "relative mt-32 text-white/70"}>
       <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
 
         {COACHING_SALES_ENABLED ? (
@@ -25,7 +27,7 @@ export default function Footer() {
           </div>
         ) : null}
 
-        <div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div data-footer-divider className="my-6 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         {/* Email WITH icon (reduced spacing below divider) */}
         <div className="flex items-center justify-center mt-1">
@@ -66,6 +68,24 @@ export default function Footer() {
             className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
           >
             <FaXTwitter className="h-6 w-6" />
+          </a>
+          <a
+            href="https://www.instagram.com/itsminooooo_/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+            className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
+          >
+            <FaInstagram className="h-6 w-6" />
+          </a>
+          <a
+            href="https://throne.com/itsmino"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Throne"
+            className="p-2 rounded hover:bg-white/10 text-white/80 hover:text-orange-400 transition"
+          >
+            <Crown className="h-6 w-6" />
           </a>
         </div>
 

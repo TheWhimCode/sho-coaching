@@ -29,6 +29,7 @@ import {
   useOverlayScrollViewport,
 } from "@/lib/overlayScrollViewport";
 import { ABOUT_HERO_VIDEO } from "@/lib/coaching/coachingClipVideos";
+import MinoWorldSection from "./MinoWorldSection";
 
 function AboutPawIcon({
   className,
@@ -760,11 +761,10 @@ function RankAfterglowSection() {
 
   return (
     <section className="relative px-5 pb-0 pt-0 md:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col xl:max-w-7xl">
-        <div ref={panelRef} className="md:ml-[4%] xl:ml-[6%] 2xl:ml-[8%]">
+        <div ref={panelRef} className="md:ml-[5%] xl:ml-[8%] 2xl:ml-[10%]">
           <PlayForMyselfPanel inView={panelInView} />
         </div>
-
+      <div className="mx-auto flex w-full max-w-6xl flex-col xl:max-w-7xl">
         <div
           ref={gamesRef}
           className={clsx(
@@ -1047,7 +1047,7 @@ export default function AboutMinoClient() {
 
   return (
     <OverlayScrollRootContext.Provider value={scrollViewport}>
-      <div className="relative w-full overflow-x-hidden text-white">
+      <div className="relative w-full text-white" style={{ overflowX: "clip" }}>
         <AboutPageBackgrounds pinkPresence={pinkPresence} />
 
         <div className={ABOUT_CONTENT_Z}>
@@ -1166,11 +1166,7 @@ export default function AboutMinoClient() {
 
           <RankAfterglowSection />
 
-          <section className="flex min-h-[45vh] flex-col items-center justify-center px-5 pb-28 pt-20 text-center md:px-8 md:pb-36 md:pt-28">
-            <p className="text-base text-fg-muted/50 md:text-lg">
-              work in progress, adding more soon :3
-            </p>
-          </section>
+          <MinoWorldSection />
         </div>
       </div>
     </OverlayScrollRootContext.Provider>

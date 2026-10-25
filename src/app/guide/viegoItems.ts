@@ -74,7 +74,15 @@ const MID_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
 const MAIN_SHARED_PATH: GuideItemSectionConfig["tabs"][number]["sharedPath"] = {
   paths: [
     {
-      diverge: [HUBRIS_START_ITEM],
+      diverge: [
+        HUBRIS_START_ITEM,
+        {
+          id: 3179,
+          title: "Umbral Glaive",
+          explanation:
+            "Strong mid-game spike and pick potential. Start here for Sneaky like a cat.",
+        },
+      ],
       items: MAIN_SHARED_CORE_ITEMS,
       endDiverge: [
         BASTIONBREAKER_CYCLO_ITEM,
@@ -130,12 +138,6 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
   bootsSubheading: "Don't upgrade boots until LDR unless Steelcaps are OP",
   boots: [
     {
-      id: 3008,
-      title: "Gluttonous Greaves",
-      explanation:
-        "These are your go-to boots. Build them after third item. In most games, you don't need to fully stack them for them to be really strong.",
-    },
-    {
       id: 3009,
       title: "Boots of Swiftness",
       explanation:
@@ -146,6 +148,12 @@ const VIEGO_PRE_BUILD: GuideItemSectionConfig["preBuild"] = {
       title: "Plated Steelcaps",
       explanation:
         "These are your go-to against full AD comps. Generally don't finish them before LDR + Cloak.",
+    },
+    {
+      id: 3008,
+      title: "Gluttonous Greaves",
+      explanation:
+        "These are your go-to boots. Build them after third item. In most games, you don't need to fully stack them for them to be really strong.",
     },
     {
       id: 3111,
@@ -199,6 +207,28 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           },
           goodAgainst: HUBRIS_GOOD_AGAINST,
         },
+        {
+          id: "umbral-collector",
+          label: "Sneaky like a cat",
+          header: "Sneaky like a cat",
+          summary: "Well-balanced mid-game spike and pick potential.",
+          description:
+            "Umbral Glaive is an amazing item. You get a strong mid-game spike and scaling from lethality. If you start building for Hubris but want a stronger mid-game option, it has the same build path.\nUmbral's on-hit passive runs out when you're on vision, so you can always tell if an enemy can see you because they're in a bush, you're on a ward, or a Faelight. It also reveals Shaco boxes.",
+          items: [
+            { id: 3179, explanation: "Start with Umbral Glaive." },
+            { id: 6676, explanation: "Build second, after Umbral Glaive." },
+            { id: 3036, explanation: "Build third, after The Collector." },
+            { id: 3031, explanation: "Build fourth, after Lord Dominik's Regards." },
+            { id: 6699, explanation: "Finish with Voltaic Cyclosword." },
+          ],
+          activeChoiceIds: [3179, 6699, 6673, 6695],
+          activePathIndex: 0,
+          teamComp: {
+            ally: ["Volibear", "Viego", "Ahri", "Twitch", "Soraka"],
+            enemy: ["Kayle", "Kha'Zix", "Syndra", "Tristana", "Senna"],
+          },
+          goodAgainst: ["Kha'Zix", "Talon", "Qiyana", "Kindred", "Quinn", "Hwei"],
+        },
       ],
     },
     {
@@ -223,24 +253,6 @@ export const VIEGO_ITEM_SECTION: GuideItemSectionConfig = {
           activeChoiceIds: [],
           teamComp: { ally: [], enemy: [] },
           goodAgainst: ["Pyke", "Janna", "LeBlanc", "Kha'Zix", "Qiyana", "Vayne"],
-        },
-        {
-          id: "umbral-collector",
-          label: "Sneaky like a cat",
-          header: "Sneaky like a cat",
-          summary: "Well-balanced mid-game spike and pick potential.",
-          description:
-            "Umbral Glaive is an amazing item. You get a strong mid-game spike and scaling from lethality. If you start building for Hubris but want a stronger mid-game option, it has the same build path.\nUmbral's on-hit passive runs out when you're on vision, so you can always tell if an enemy can see you because they're in a bush, you're on a ward, or a Faelight. It also reveals Shaco boxes.",
-          items: [
-            { id: 3179, explanation: "Start with Umbral Glaive." },
-            { id: 6676, explanation: "Build second, after Umbral Glaive." },
-            { id: 3036, explanation: "Build third, after The Collector." },
-            { id: 3031, explanation: "Build fourth, after Lord Dominik's Regards." },
-            { id: 6699, explanation: "Finish with Voltaic Cyclosword." },
-          ],
-          activeChoiceIds: [],
-          teamComp: { ally: [], enemy: [] },
-          goodAgainst: ["Shaco"],
         },
         {
           id: "hubris-ldr",
