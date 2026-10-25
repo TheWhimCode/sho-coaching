@@ -44,7 +44,7 @@ const TOPICS = [
       "https://videos.its-mino.com/about/femboy/pinkSkirt.jpg",
     ],
     title: "All I want is to be cute",
-    description: "If I can be a little ray of light that makes your day just a tiny bit better, I'm happy. Often life can feel incredibly tough, crushing. I want to show people that it's not all bad, by becoming as adorable and kind as I can.\n\nAnd expressing that physically plays a part in that. White & pastel colors are my favorites <3",
+    description: "Often life can feel incredibly tough, crushing. I want to show people that it's not all bad, by becoming as adorable and kind as I can. If I can be a little ray of light that makes your day just a tiny bit better, I'm happy.\n\nAnd expressing that physically plays a part in that. White & pastel colors are my favorites <3",
     note: "Still learning how to do basic photography though...",
     captions: ["feeling like myself", "a little white", "a little pink"],
     alts: ["Mino wearing a blue skirt", "Mino wearing a white skirt", "Mino wearing a pink skirt"],
@@ -100,6 +100,7 @@ export default function MinoWorldSection() {
   const onScreen = useInView(sectionRef);
   const [autoStopped, setAutoStopped] = useState(false);
   const interactedRef = useRef(false);
+  const hoverEnabledAtRef = useRef<number | null>(null);
   const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const topic = TOPICS[active];
   const visible = inView || !!reducedMotion;
@@ -109,6 +110,13 @@ export default function MinoWorldSection() {
     animate: { opacity: visible ? 1 : 0, y: visible ? 0 : 44 },
     transition: { duration: reducedMotion ? 0 : 0.65, delay: reducedMotion ? 0 : delay, ease },
   });
+
+  useEffect(() => {
+    // The entering tab strip may pass under a stationary pointer.
+    if (inView && hoverEnabledAtRef.current === null) {
+      hoverEnabledAtRef.current = Date.now() + 3000;
+    }
+  }, [inView]);
 
   useEffect(() => {
     if (!inView || !onScreen || autoStopped || reducedMotion) return;
@@ -128,6 +136,11 @@ export default function MinoWorldSection() {
     setAutoStopped(true);
     if (autoTimerRef.current !== null) clearInterval(autoTimerRef.current);
     autoTimerRef.current = null;
+  }
+
+  function stopAutoRotationOnHover() {
+    const enabledAt = hoverEnabledAtRef.current;
+    if (enabledAt !== null && Date.now() >= enabledAt) stopAutoRotation();
   }
 
   function onTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -163,7 +176,8 @@ export default function MinoWorldSection() {
             <button key={entry.id} ref={(element) => { tabRefs.current[index] = element; }}
               type="button" role="tab" id={`mino-world-tab-${entry.id}`} aria-controls="mino-world-panel"
               aria-selected={active === index} tabIndex={active === index ? 0 : -1}
-              className={styles.tab} onPointerEnter={stopAutoRotation} onFocus={stopAutoRotation}
+              className={styles.tab} onPointerEnter={stopAutoRotationOnHover}
+              onPointerMove={stopAutoRotationOnHover} onFocus={stopAutoRotation}
               onClick={() => { stopAutoRotation(); setActive(index); }}>
               <span className={styles.tabNumber}>0{index + 1}</span><span>{entry.label}</span>
             </button>

@@ -31,7 +31,7 @@ export default function NavBar({
 }) {
   const [opacity, setOpacity] = useState(1);
 
-  // hover state for logo-only reveal
+  // Hover reveals the bar in both logo-only and scroll-fading modes.
   const [hovered, setHovered] = useState(false);
 
   // prevents flash on route enter while still allowing fade-out after
@@ -99,33 +99,27 @@ export default function NavBar({
     return () => cancelAnimationFrame(id);
   }, [effectiveLogoOnly]);
 
-  // In logo-only mode:
-  // - hidden by default
-  // - fades in/out on hover after ready
-  // Otherwise: normal scroll fade
-  const barOpacity = effectiveLogoOnly ? (hovered ? 1 : 0) : opacity;
+  // Hover takes precedence over scroll fading on every page.
+  const barOpacity = hovered ? 1 : effectiveLogoOnly ? 0 : opacity;
 
   // Pointer events logic
-  const barPointerEvents = effectiveLogoOnly
-    ? hovered
-      ? "auto"
-      : "none"
-    : opacity < 0.1
-      ? "none"
-      : "auto";
+  const barPointerEvents = barOpacity < 0.1 ? "none" : "auto";
 
   const barClassName = effectiveLogoOnly
     ? logoOnlyReady
       ? "transition-[opacity] duration-500"
       : ""
-    : "transition-[opacity] duration-75";
+    : "transition-[opacity] duration-300";
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-40 ${className}`}
-      onMouseEnter={() => effectiveLogoOnly && hoverArmed && setHovered(true)}
-      onMouseLeave={() => effectiveLogoOnly && setHovered(false)}
-      onMouseMove={() => effectiveLogoOnly && !hoverArmed && setHoverArmed(true)}
+      onMouseEnter={() => hoverArmed && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onMouseMove={() => {
+        if (!hoverArmed) setHoverArmed(true);
+        else if (!hovered) setHovered(true);
+      }}
     >
       {/* LOGO */}
       <Link

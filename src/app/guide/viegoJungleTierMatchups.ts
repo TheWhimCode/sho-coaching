@@ -10,6 +10,13 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
       tone: "nightmare",
       matchups: [
         {
+          champion: "Hecarim", gameplayStyle: "Snowball skirmisher",
+          banBadge: "Minos Ban",
+          snapshot: { invadePressure: 1, oneVOneThreat: 5, tempo: 3 },
+          dangerHint: { title: "Bad tempo", detail: "losing your camps" },
+          upgradeItem: { id: 3032, title: "Yun Tal Wildarrows" },
+        },
+        {
           champion: "Talon", gameplayStyle: "Scaling assassin",
           banBadge: "Good Ban",
           snapshot: { invadePressure: 5, oneVOneThreat: 5, tempo: 4 },
@@ -43,15 +50,7 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         },
         {
           champion: "Elise", gameplayStyle: "Mid-game assassin",
-          banBadge: "Minos Ban",
           snapshot: { invadePressure: 2, oneVOneThreat: 1, tempo: 4 },
-        },
-        {
-          champion: "Hecarim", gameplayStyle: "Snowball skirmisher",
-          banBadge: "Good Ban",
-          snapshot: { invadePressure: 1, oneVOneThreat: 5, tempo: 3 },
-          dangerHint: { title: "Bad tempo", detail: "losing your camps" },
-          upgradeItem: { id: 3032, title: "Yun Tal Wildarrows" },
         },
         {
           champion: "Lee Sin", gameplayStyle: "Mid-game skirmisher",
