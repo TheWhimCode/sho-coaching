@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
@@ -10,7 +10,7 @@ import styles from "./MinoWorldSection.module.css";
 // Public media URLs keep the showcase independent of the database.
 const TOPICS = [
   {
-    id: "model", label: "My VTuber model", category: "Learning to bring Mino to life",
+    id: "model", label: "My VTuber model", category: "Learning 3D art",
     photos: [
       "https://videos.its-mino.com/about/model/MinoTopology.png",
       "https://videos.its-mino.com/about/model/MinoArmWeights.png",
@@ -21,10 +21,10 @@ const TOPICS = [
     note: "Just making things one by one :3",
     captions: ["trying to figure out topology", "setting up weights", "one piece at a time"],
     alts: ["Mino VTuber model topology", "Arm weights on Mino's VTuber model", "Mino's VTuber model headpat setup"],
-    link: { label: "Come hang out while I create", href: TWITCH_CHANNEL_URL },
+    link: null,
   },
   {
-    id: "content", label: "Content Creation", category: "Streaming, creating & growing",
+    id: "content", label: "Content Creation", category: "Streaming & Creating",
     title: "Growing the Mino Empire",
     description: "My main goal is to grow my Twitch audience to eventually sustain myself via streaming League or variety. I'm trying to be active on TikTok and Reddit for growth (Youtube isn't currently an option for me).\n\nSince I have a substantial coaching background, I try to blend educational content with being a silly femboy VTuber. I can never tell if it's working 😭",
     note: "I've got so many ideas that I want to show you!!",
@@ -34,10 +34,10 @@ const TOPICS = [
     ],
     captions: ["bringing ideas to life", "sharing what I've learned"],
     alts: ["Mino editing content in Filmora", "Mino's coaching content"],
-    link: { label: "Come be part of it on Twitch", href: TWITCH_CHANNEL_URL },
+    link: { label: "Join my Discord to stay up to date", href: "https://discord.gg/HfvxZBp" },
   },
   {
-    id: "style", label: "I'm a femboy!!", category: "A little ray of light",
+    id: "style", label: "I'm a femboy!!", category: "A ray",
     photos: [
       "https://videos.its-mino.com/about/femboy/blueSkirt2.jpg",
       "https://videos.its-mino.com/about/femboy/whiteSkirt.jpg",
@@ -51,7 +51,7 @@ const TOPICS = [
     link: { label: "Find this side of me on Twitter", href: "https://x.com/itsMinooooo_" },
   },
   {
-    id: "kitchen", label: "I also cook :3", category: "Eating well, even on busy days",
+    id: "kitchen", label: "I also cook :3", category: "Making food",
     photos: [
       "https://studio.its-mino.com/recipes/carbonara.jpg",
       "https://studio.its-mino.com/recipes/cauli.jpg",
@@ -65,9 +65,9 @@ const TOPICS = [
     link: null,
   },
   {
-    id: "challenger", label: "SoloQ climb", category: "Finding balance on the climb",
+    id: "challenger", label: "SoloQ climb", category: "competitive",
     photos: [],
-    title: "Retraining Challenger",
+    title: "Retaining Challenger",
     description: "I've hit Challenger many times, but haven't been able to retain it through-out the season. The game has always stressed me out way too much, so if I play every day I get drained and start playing terribly.\n\nBecause I'm so inconsistent, my main goal has been to only play on good days. But it's difficult, especially on-stream.",
     note: "Trying to find a balance, only playing every second day.",
     captions: [],
@@ -95,15 +95,40 @@ export default function MinoWorldSection() {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const reducedMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "0px 0px -64px 0px" });
+  const revealRef = useRef<HTMLSpanElement>(null);
+  const inView = useInView(revealRef, { once: true });
+  const onScreen = useInView(sectionRef);
+  const [autoStopped, setAutoStopped] = useState(false);
+  const interactedRef = useRef(false);
+  const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const topic = TOPICS[active];
   const visible = inView || !!reducedMotion;
   const ease = [0.22, 1, 0.36, 1] as const;
   const entrance = (delay: number) => ({
-    initial: { opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 28 },
-    animate: { opacity: visible ? 1 : 0, y: visible ? 0 : 28 },
+    initial: { opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 44 },
+    animate: { opacity: visible ? 1 : 0, y: visible ? 0 : 44 },
     transition: { duration: reducedMotion ? 0 : 0.65, delay: reducedMotion ? 0 : delay, ease },
   });
+
+  useEffect(() => {
+    if (!inView || !onScreen || autoStopped || reducedMotion) return;
+    autoTimerRef.current = setInterval(() => {
+      if (!interactedRef.current && document.visibilityState === "visible") {
+        setActive(index => (index + 1) % TOPICS.length);
+      }
+    }, 4000);
+    return () => {
+      if (autoTimerRef.current !== null) clearInterval(autoTimerRef.current);
+      autoTimerRef.current = null;
+    };
+  }, [inView, onScreen, autoStopped, reducedMotion]);
+
+  function stopAutoRotation() {
+    interactedRef.current = true;
+    setAutoStopped(true);
+    if (autoTimerRef.current !== null) clearInterval(autoTimerRef.current);
+    autoTimerRef.current = null;
+  }
 
   function onTabKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     let index: number;
@@ -113,20 +138,22 @@ export default function MinoWorldSection() {
     else if (event.key === "End") index = TOPICS.length - 1;
     else return;
     event.preventDefault();
+    stopAutoRotation();
     setActive(index);
     tabRefs.current[index]?.focus();
   }
 
   return (
     <section ref={sectionRef} id="my-world" className={styles.section} aria-labelledby="mino-world-heading">
+      <span ref={revealRef} className={styles.revealTrigger} aria-hidden="true" />
       <motion.div aria-hidden="true" className={styles.background}
-        initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 72 }}
-        animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 72 }}
-        transition={{ duration: reducedMotion ? 0 : 0.9, ease }} />
+        initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 180 }}
+        animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 180 }}
+        transition={{ duration: reducedMotion ? 0 : 1.05, ease }} />
       <div className={styles.inner}>
         <motion.header className={styles.header} {...entrance(0.15)}>
           <div>
-            <p className={styles.eyebrow}>Who I am</p>
+            <p className={styles.eyebrow}>What I do</p>
             <h2 id="mino-world-heading">What occupies my mind right now?</h2>
           </div>
         </motion.header>
@@ -136,7 +163,8 @@ export default function MinoWorldSection() {
             <button key={entry.id} ref={(element) => { tabRefs.current[index] = element; }}
               type="button" role="tab" id={`mino-world-tab-${entry.id}`} aria-controls="mino-world-panel"
               aria-selected={active === index} tabIndex={active === index ? 0 : -1}
-              className={styles.tab} onClick={() => setActive(index)}>
+              className={styles.tab} onPointerEnter={stopAutoRotation} onFocus={stopAutoRotation}
+              onClick={() => { stopAutoRotation(); setActive(index); }}>
               <span className={styles.tabNumber}>0{index + 1}</span><span>{entry.label}</span>
             </button>
           ))}

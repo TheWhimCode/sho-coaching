@@ -1,0 +1,28 @@
+.theme {
+  --os-size: 14px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 8px;
+  --os-track-border-radius: 999px;
+  --os-track-bg: transparent;
+  --os-track-bg-hover: rgb(74 53 79 / 10%);
+  --os-track-bg-active: rgb(74 53 79 / 14%);
+  --os-handle-border-radius: 999px;
+  --os-handle-bg: linear-gradient(180deg, #f08fcb, #a79af2);
+  --os-handle-bg-hover: linear-gradient(180deg, #ffaddf, #bfb1ff);
+  --os-handle-bg-active: linear-gradient(180deg, #ed7dc2, #9786ea);
+  --os-handle-min-size: 48px;
+  --os-handle-interactive-area-offset: 4px;
+}
+
+.theme :global(.os-scrollbar-handle) {
+  box-shadow: 0 0 8px rgb(240 143 203 / 22%);
+  transition: background-color 180ms ease;
+}
+
+@media (max-width: 768px) {
+  .theme { --os-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme :global(.os-scrollbar-handle) { transition: none; }
+}

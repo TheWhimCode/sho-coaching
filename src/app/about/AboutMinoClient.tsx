@@ -900,9 +900,14 @@ export default function AboutMinoClient() {
       blinkAnimatingRef.current = true;
       animDirectionRef.current = "in";
       const from = pinkPresence.get();
-      blinkControlRef.current = animate(pinkPresence, [from, target], {
+      // Animate the lower-section entrance independently, but always let the
+      // hero's current scroll distance cap it, even between scroll events.
+      blinkControlRef.current = animate(from, target, {
         duration: LIGHTS_IN_DURATION_S,
         ease: LIGHTS_IN_EASE,
+        onUpdate: (value) => {
+          pinkPresence.set(Math.min(value, pinkTopFade(metricsRef.current.reveal)));
+        },
         onComplete: () => {
           stopBlink();
           pinkLightsOutRef.current = false;
@@ -916,6 +921,17 @@ export default function AboutMinoClient() {
       const presence = pinkPresence.get();
       const leftPinkZone = exit > 0;
       const inPinkZone = exit <= 0;
+
+      // A quick return to the hero must take over from either timed blink.
+      // Otherwise its stale target keeps the hero pink until onComplete snaps
+      // the overlay back to the distance-based value.
+      if (inPinkZone && target < 1) {
+        stopBlink();
+        pinkLightsOutRef.current = false;
+        pinkPresence.set(target);
+        setPanelDemonModeRef.current(false);
+        return;
+      }
 
       if (blinkAnimatingRef.current) {
         const reversed =

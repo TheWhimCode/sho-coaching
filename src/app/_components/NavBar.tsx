@@ -11,6 +11,7 @@ import { FaDiscord, FaTiktok, FaInstagram } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import { useNavChrome } from "@/app/_components/navChrome";
 import { usePathname } from "next/navigation";
+import styles from "./NavBar.module.css";
 
 type NavItem = { label: string; href: string; external?: boolean; badge?: string };
 
@@ -139,7 +140,7 @@ export default function NavBar({
           height={46}
           priority
           unoptimized
-          className="rounded-md"
+          className={`rounded-md ${styles.logo}`}
         />
       </Link>
 

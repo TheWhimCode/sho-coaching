@@ -2,17 +2,19 @@
 
 import { useEffect } from "react";
 import { OverlayScrollbars } from "overlayscrollbars";
+import styles from "./ScrollbarInit.module.css";
 
 const SCROLLBAR_OPTIONS = {
   overflow: { x: "hidden" as const, y: "scroll" as const },
   scrollbars: {
-    theme: "os-theme-custom",
+    theme: `os-theme-mino ${styles.theme}`,
     autoHide: "never" as const,
     visibility: "auto" as const,
   },
 };
 
 function configureInstance(instance: OverlayScrollbars) {
+  instance.options({ scrollbars: { theme: SCROLLBAR_OPTIONS.scrollbars.theme } });
   const viewport = instance.elements().viewport;
   if (viewport) viewport.style.scrollBehavior = "smooth";
 
