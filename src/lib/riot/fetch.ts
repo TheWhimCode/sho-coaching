@@ -6,7 +6,7 @@ const DEFAULT_TIMEOUT_MS = 12_000;
 const lookupDeadline = new AsyncLocalStorage<number>();
 
 export class RiotRequestLimitError extends RequestLimitError {
-  constructor(retryAfter: number) {
+  constructor(retryAfter: number, public readonly source: "upstream" | "safety_cap" = "upstream") {
     super(retryAfter);
     this.name = "RiotRequestLimitError";
     this.message = `Game lookups are busy for this region. Please try again in ${retryAfter} seconds.`;
@@ -79,7 +79,10 @@ export async function riotFetchJSON<T>(
       await enforceRequestLimit(`riot-outbound:${key}:two-minutes`, 90, 120_000);
       await enforceRequestLimit(`riot-outbound:${key}:second`, 18, 1000);
     } catch (error) {
-      if (error instanceof RequestLimitError) throw new RiotRequestLimitError(error.retryAfter);
+      if (error instanceof RequestLimitError) {
+        console.warn("[riot-rate-limit]", { source: "safety_cap", host: target.hostname, retryAfter: error.retryAfter });
+        throw new RiotRequestLimitError(error.retryAfter, "safety_cap");
+      }
       throw error;
     }
     const timeout = remainingTime(deadline);
@@ -97,7 +100,17 @@ export async function riotFetchJSON<T>(
 
       if (res.status === 429) {
         // Do not recursively re-enter a limiter while holding one of its slots.
-        throw new RiotRequestLimitError(parseRetryAfter(res));
+        const retryAfter = parseRetryAfter(res);
+        console.warn("[riot-rate-limit]", {
+          source: "upstream", host: target.hostname,
+          endpoint: target.pathname.split("/").slice(0, 5).join("/"),
+          retryAfter, type: res.headers.get("x-rate-limit-type"),
+          appLimit: res.headers.get("x-app-rate-limit"),
+          appUsage: res.headers.get("x-app-rate-limit-count"),
+          methodLimit: res.headers.get("x-method-rate-limit"),
+          methodUsage: res.headers.get("x-method-rate-limit-count"),
+        });
+        throw new RiotRequestLimitError(retryAfter);
       }
 
       if (!res.ok) {

@@ -5,7 +5,7 @@ import { LOOKUP_FAILED_MESSAGE, RIOT_LIMIT_MESSAGE } from "./lookupMessages";
 
 export function buildLookupError(error: unknown) {
   const limited = error instanceof RequestLimitError;
-  const riotLimited = error instanceof RiotRequestLimitError;
+  const riotLimited = error instanceof RiotRequestLimitError && error.source === "upstream";
   const body: Extract<LiveGameLookup, { status: "error" }> = {
     status: "error",
     message: riotLimited ? RIOT_LIMIT_MESSAGE : limited

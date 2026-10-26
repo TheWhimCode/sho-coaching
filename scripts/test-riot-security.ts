@@ -41,10 +41,10 @@ async function main() {
     assert.deepEqual(await riotFetchJSON("https://na1.api.riotgames.com/lol/test"), { ok: true });
     assert.deepEqual(budgets.slice(-2), ["riot-outbound:riot-app:na1.api.riotgames.com:two-minutes", "riot-outbound:riot-app:na1.api.riotgames.com:second"]);
     upstreamLimited = true;
-    await assert.rejects(riotFetchJSON("https://euw1.api.riotgames.com/lol/test"), error => error instanceof RiotRequestLimitError && error.retryAfter === 75 && /75 seconds/.test(error.message));
+    await assert.rejects(riotFetchJSON("https://euw1.api.riotgames.com/lol/test"), error => error instanceof RiotRequestLimitError && error.source === "upstream" && error.retryAfter === 75 && /75 seconds/.test(error.message));
     assert.equal(calls, 3, "Upstream throttling must not trigger recursive retries");
     blockEuw = true;
-    await assert.rejects(riotFetchJSON("https://euw1.api.riotgames.com/lol/test"), error => error instanceof RequestLimitError && error instanceof RiotRequestLimitError && error.retryAfter === 45);
+    await assert.rejects(riotFetchJSON("https://euw1.api.riotgames.com/lol/test"), error => error instanceof RequestLimitError && error instanceof RiotRequestLimitError && error.source === "safety_cap" && error.retryAfter === 45);
     assert.equal(calls, 3, "Exhausted shared budgets must block outbound calls");
     upstreamLimited = false;
     assert.deepEqual(await riotFetchJSON("https://na1.api.riotgames.com/lol/test"), { ok: true });

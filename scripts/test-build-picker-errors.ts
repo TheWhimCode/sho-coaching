@@ -11,6 +11,11 @@ assert.equal(riotLimit.body.retryAfter, 75);
 assert.equal(riotLimit.body.message, RIOT_LIMIT_MESSAGE);
 
 const visitorLimit = buildLookupError(new RequestLimitError(30));
+const outboundSafetyLimit = buildLookupError(new RiotRequestLimitError(45, "safety_cap"));
+assert.equal(outboundSafetyLimit.status, 429);
+assert.equal(outboundSafetyLimit.body.code, "rate_limit");
+assert.equal(outboundSafetyLimit.body.retryAfter, 45);
+assert.ok(!outboundSafetyLimit.body.message.includes("Riot"), "Our outbound safety cap must not be presented as a Riot rejection");
 assert.equal(visitorLimit.status, 429);
 assert.equal(visitorLimit.body.code, "rate_limit");
 assert.equal(visitorLimit.body.retryAfter, 30);
