@@ -592,6 +592,43 @@ model WorkoutLog {
   @@schema("admin")
 }
 
+enum RecurringItemType {
+  task
+  event
+
+  @@schema("admin")
+}
+
+enum RecurrenceFrequency {
+  daily
+  weekly
+  monthly
+  yearly
+
+  @@schema("admin")
+}
+
+/// A personal task or event that repeats. Weekdays are 0 (Sunday) through 6 (Saturday).
+/// "Every year" is yearly with interval 1. "Every 2 weeks" is weekly with interval 2.
+model RecurringItem {
+  id        String              @id @default(cuid())
+  title     String
+  type      RecurringItemType
+  date      String?
+  time      String?
+  allDay    Boolean             @default(false)
+  category  String?
+  frequency RecurrenceFrequency
+  interval  Int                 @default(1)
+  weekdays  Int[]               @default([])
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([date])
+  @@index([category])
+  @@schema("admin")
+}
+
 model RecipeIngredient {
   id       String @id @default(cuid())
   recipeId String
@@ -859,4 +896,22 @@ enum ChampionCcLevel {
   High
 
   @@schema("public")
+}
+
+/// Personal well-being snapshots. Ratings are nullable integers from 1 to 5.
+/// Database CHECK constraints enforce rating ranges and at least one rating.
+model MoodEntry {
+  id            String   @id @default(cuid())
+  recordedAt    DateTime @db.Timestamptz(3)
+  mood          Int?
+  energy        Int?
+  stress        Int?
+  motivation    Int?
+  mentalClarity Int?
+  note          String?
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([recordedAt])
+  @@schema("admin")
 }

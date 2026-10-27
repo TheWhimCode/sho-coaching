@@ -19,7 +19,8 @@ The migrations dated **2026-09-24 to 2026-09-26** under `prisma/migrations/` tha
 
 ## Database
 
-- There is one shared Postgres database (Neon). It holds real data; there is no separate dev database. Treat every write as live.
+- This website uses its original live Postgres database (Neon); there is no separate website dev database. Treat every write as live.
+- Orbit at C:\Orbit has used its own separate Neon database since October 27, 2026. Orbit owns its schema and migrations under C:\Orbit\runtime\prisma; do not automatically copy website migrations or data into Orbit.
 - After pulling: `npx prisma migrate deploy` then `npx prisma generate`. On Windows, stop the Next.js dev server first or `generate` fails with `EPERM` on the query engine file.
 - Schema migrations are hand-written SQL in `prisma/migrations/<timestamp>_<name>/migration.sql`, additive where possible. Say that you are adding one before you do it. See `docs/PRISMA_MIGRATIONS.md`.
 - Ask before anything destructive: dropping or truncating tables, deleting rows in bulk, rewriting migration history.
