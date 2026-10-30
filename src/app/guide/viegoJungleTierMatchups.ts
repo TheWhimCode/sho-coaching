@@ -157,6 +157,13 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
           upgradeItem: { id: 3036, title: "LDR", purchaseOrder: "2nd" },
         },
         {
+          champion: "Skarner", gameplayStyle: "Mid-game engager",
+          explanation:
+            "Watch out for his Heartsteel spike: he can one-shot you from that point. Don't become his target. If his W connects, you're always dead from the CC chain. If he ever tries to ult you without stunning you first, you can just press R and his ult disappears.\n\nHe becomes surprisingly tanky, so play fights a little slower and rely on your team to deal some damage to him. You need LDR for this guy.",
+          snapshot: { invadePressure: 1, oneVOneThreat: 4, tempo: 1 },
+          upgradeItem: { id: 3036, title: "LDR", purchaseOrder: "2nd" },
+        },
+        {
           champion: "Taliyah",
           gameplayStyle: "Mid-game mage",
           explanation:
@@ -235,11 +242,6 @@ export const VIEGO_JUNGLE_TIER_MATCHUPS: GuideJungleTierMatchupSectionConfig = {
         },
         { champion: "Olaf", gameplayStyle: "Isolation mid-game skirmisher", snapshot: { invadePressure: 2, oneVOneThreat: 1, tempo: 3 } },
         { champion: "Rek'Sai", gameplayStyle: "Isolation mid-game skirmisher", snapshot: { invadePressure: 4, oneVOneThreat: 2, tempo: 4 } },
-        {
-          champion: "Skarner", gameplayStyle: "Mid-game engager",
-          snapshot: { invadePressure: 1, oneVOneThreat: 1, tempo: 2 },
-          upgradeItem: { id: 3036, title: "LDR", purchaseOrder: "2nd" },
-        },
         {
           champion: "Trundle",
           gameplayStyle: "Mid-game isolation skirmisher",
